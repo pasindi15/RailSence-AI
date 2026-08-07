@@ -1,8 +1,6 @@
 # 🚆 RailSense AI
 ## Agentic AI System for Intelligent Railway Operations
 
-![RailSense AI Banner](docs/assets/banner.png)
-
 > **IT3041 – Information Retrieval & Web Analytics**  
 > Multi-Agent AI System integrating LLMs, NLP, Information Retrieval, Security, and Agent Communication Protocols.
 
