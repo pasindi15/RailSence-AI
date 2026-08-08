@@ -1,0 +1,38 @@
+[
+  {
+    "text": "The red light at the junction wouldn't clear for several minutes.",
+    "expected": "signal_fault",
+    "predicted": "other",
+    "correct": false
+  },
+  {
+    "text": "Driver noticed the engine was running hot and pulled in for a check.",
+    "expected": "mechanical",
+    "predicted": "mechanical",
+    "correct": true
+  },
+  {
+    "text": "Torrential downpour forced us to slow right down through the valley.",
+    "expected": "weather",
+    "predicted": "other",
+    "correct": false
+  },
+  {
+    "text": "A cow wandered onto the tracks just past the bridge.",
+    "expected": "track_obstruction",
+    "predicted": "other",
+    "correct": false
+  },
+  {
+    "text": "Conductor didn't show up on time so we left 15 minutes late.",
+    "expected": "staffing",
+    "predicted": "other",
+    "correct": false
+  },
+  {
+    "text": "Everything ran smoothly, no issues to report.",
+    "expected": "other",
+    "predicted": "other",
+    "correct": true
+  }
+]

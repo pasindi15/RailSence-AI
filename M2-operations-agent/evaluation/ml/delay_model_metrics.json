@@ -1,0 +1,8 @@
+{
+  "model": "GradientBoostingRegressor",
+  "n_train": 2400,
+  "n_test": 600,
+  "mae_minutes": 2.239,
+  "rmse_minutes": 2.876,
+  "r2": 0.8716
+}
