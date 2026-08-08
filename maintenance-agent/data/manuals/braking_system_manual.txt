@@ -1,0 +1,136 @@
+RAILSENSE ROLLING STOCK MAINTENANCE MANUAL
+Component: Braking System
+Document Reference: RSM-BRAKE-4.2
+Revision: 3.1 | Effective Date: 2025-01-01
+
+================================================================================
+SECTION 1 — OVERVIEW
+================================================================================
+
+The braking system is a safety-critical assembly responsible for controlled
+deceleration and stopping of the rolling stock. It comprises hydraulic disc
+brakes, brake calipers, brake pads (part number BR-4021), hydraulic actuators
+(part number BR-7710), and the emergency brake override unit (part number
+BR-8801). All components must be maintained in strict accordance with this
+manual to ensure passenger safety and regulatory compliance.
+
+================================================================================
+SECTION 2 — INSPECTION INTERVALS
+================================================================================
+
+2.1 Routine Inspection
+Perform a full braking system inspection every 90 days or every 15,000 km,
+whichever occurs first. Record all readings in the maintenance log.
+
+2.2 Interim Visual Check
+A visual check of brake pad wear indicators and hydraulic line integrity must
+be performed every 30 days or 5,000 km.
+
+2.3 Emergency Brake Test
+A full emergency brake application test must be conducted every 180 days.
+Document the stopping distance and compare against the baseline in Table 3.1.
+
+================================================================================
+SECTION 3 — INSPECTION PROCEDURES
+================================================================================
+
+3.1 Brake Pad Inspection (Part BR-4021)
+Measure brake pad thickness using a calibrated pad-thickness gauge.
+- Acceptable: 12 mm or above — no action required.
+- Advisory (AMBER): 10–12 mm — schedule replacement within 30 days.
+- Critical (RED): below 10 mm — replace immediately before returning to service.
+Uneven wear, glazing, or surface cracking are signs of caliper misalignment.
+Inspect caliper mounting bolts (torque to 85 Nm) if uneven wear is detected.
+
+3.2 Hydraulic Pressure Check
+Connect a calibrated pressure gauge to test port HYD-TP1.
+- Normal operating pressure: 3.5 to 5.5 bar.
+- Low pressure warning (AMBER): 1.5 to 3.5 bar — inspect for hydraulic leaks.
+- Critical low pressure (RED): below 1.5 bar — remove from service immediately.
+- Over-pressure (RED): above 6.0 bar — inspect pressure relief valve PRV-2200.
+Oil pressure below 1.5 bar typically indicates a hydraulic fluid leak or a
+failed hydraulic pump. Do not operate the vehicle until the fault is resolved.
+
+3.3 Temperature Monitoring
+Brake disc surface temperature should be measured immediately after a standard
+braking cycle using an infrared thermometer.
+- Normal: below 80°C.
+- Advisory (AMBER): 80–95°C — increase inspection frequency to weekly.
+- Critical (RED): above 95°C — investigate immediately. Likely causes include
+  dragging brakes, contaminated discs, or a seized caliper. Continued operation
+  above 95°C risks disc warping and total braking failure.
+
+3.4 Vibration During Braking
+Vibration level is measured on the caliper bracket using an accelerometer.
+- Normal: 0 to 3 mm/s² — acceptable.
+- Advisory (AMBER): 3 to 5 mm/s² — inspect caliper alignment and disc surface.
+- Critical (RED): above 5 mm/s² — indicates severe disc warping, worn pad
+  backing plate, or loose caliper mounting. Remove from service immediately.
+
+================================================================================
+SECTION 4 — FAULT DIAGNOSIS
+================================================================================
+
+4.1 Symptom: Excessive Vibration During Braking
+Cause: Warped brake disc, loose caliper, worn backing plate (BR-4021 variant B).
+Action: Measure disc runout — maximum allowable is 0.15 mm. Replace disc
+part number BR-DISC-9900 if runout exceeds limit. Torque caliper to 85 Nm.
+
+4.2 Symptom: High Operating Temperature (above 95°C)
+Cause: Dragging brakes, contaminated disc, seized caliper piston.
+Action: Release brakes manually and check caliper piston retraction. Flush
+hydraulic fluid if contaminated. Replace caliper if piston travel is restricted.
+
+4.3 Symptom: Oil Pressure Drop Below 1.5 Bar
+Cause: Hydraulic fluid leak, failed pump, cracked hydraulic line.
+Action: Inspect all hydraulic lines for leaks. Check fluid reservoir level.
+Replace hydraulic pump assembly HP-5500 if pressure cannot be restored.
+
+4.4 Symptom: Spongy Brake Pedal Feel
+Cause: Air in hydraulic lines.
+Action: Bleed hydraulic system at bleed nipple BN-1100. Refill with approved
+hydraulic fluid to the MAX line on reservoir. Repeat pressure check.
+
+================================================================================
+SECTION 5 — SERVICE PROCEDURES
+================================================================================
+
+5.1 Brake Pad Replacement (BR-4021)
+1. Raise and secure the bogie.
+2. Remove caliper mounting bolts (2x M14, torque 85 Nm on reassembly).
+3. Slide out worn pads. Do not allow caliper to hang by the hydraulic line.
+4. Retract caliper piston using piston retraction tool RT-220.
+5. Insert new pads — minimum new pad thickness is 18 mm.
+6. Reinstall caliper. Torque bolts to 85 Nm.
+7. Apply brakes 5–10 times to bed in new pads before returning to service.
+
+5.2 Hydraulic Fluid Change
+Hydraulic fluid must be replaced every 180 days regardless of condition.
+Use only approved fluid grade HYD-46 or equivalent. Mixing fluid grades will
+cause seal degradation and premature pump failure.
+
+5.3 Caliper Overhaul
+Full caliper overhaul is required every 360 days or at the third brake pad
+replacement, whichever comes first. Use caliper rebuild kit CRK-3300.
+
+================================================================================
+SECTION 6 — PARTS REFERENCE
+================================================================================
+
+Part Number  | Description                     | Replace Interval
+BR-4021      | Brake pad set (per axle)        | When < 10 mm or every 90 days
+BR-7710      | Hydraulic actuator assembly     | Every 360 days or on failure
+BR-8801      | Emergency brake override unit   | Every 720 days
+BR-DISC-9900 | Brake disc                      | When runout > 0.15 mm
+HP-5500      | Hydraulic pump assembly         | On pressure failure
+CRK-3300     | Caliper rebuild kit             | Every 360 days
+
+================================================================================
+SECTION 7 — SAFETY WARNINGS
+================================================================================
+
+WARNING: Never operate rolling stock with brake system pressure below 1.5 bar.
+WARNING: Brake disc temperature above 95°C indicates an active fault condition.
+WARNING: Vibration levels above 5 mm/s² require immediate service withdrawal.
+WARNING: Always chock wheels before beginning brake system maintenance.
+WARNING: Hydraulic fluid is flammable. Keep away from heat sources.
