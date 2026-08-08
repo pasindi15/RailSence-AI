@@ -6,7 +6,7 @@ Endpoints:
     GET  /health              -> liveness check
     POST /predict-delay       -> delay prediction (stubbed until Phase 2 ML model lands)
     GET  /route-status/{id}   -> latest known status for a route
-    POST /incident-report     -> ingest a raw staff incident report (stubbed until Phase 3 NLP lands)
+    POST /incident-report     -> summarize and classify a raw staff incident report
 
 This file intentionally keeps Phase-2/3/4 logic behind clearly marked TODOs so
 the service is runnable and demoable end-to-end from day one, and each later
@@ -15,9 +15,12 @@ phase only has to fill in one function at a time.
 
 from datetime import datetime, timezone
 from enum import Enum
+from pathlib import Path
 from typing import Optional
 
 from fastapi import FastAPI, HTTPException, status
+from fastapi.responses import FileResponse
+import bleach
 from pydantic import BaseModel, Field, field_validator
 
 from ml import predict as delay_model
@@ -31,6 +34,7 @@ app = FastAPI(
 )
 
 AGENT_NAME = "operations-agent"
+UI_PATH = Path(__file__).parent / "ui" / "index.html"
 
 
 # ---------------------------------------------------------------------------
@@ -101,15 +105,27 @@ class IncidentReportRequest(BaseModel):
     station: str = Field(..., min_length=2, max_length=80)
     raw_text: str = Field(..., min_length=5, max_length=2000)
 
-    @field_validator("raw_text")
+    @field_validator("train_id", "station", "raw_text")
     @classmethod
-    def sanitize_raw_text(cls, v: str) -> str:
-        lowered = v.lower()
-        if "<script" in lowered:
-            raise ValueError("raw_text contains disallowed content")
-        if any(ord(ch) < 9 for ch in v):
-            raise ValueError("raw_text contains invalid control characters")
-        return v.strip()
+    def sanitize_text(cls, v: str, info) -> str:
+        value = v.strip()
+        if any(ord(ch) < 32 and ch not in "\t\n\r" for ch in value):
+            raise ValueError(f"{info.field_name} contains invalid control characters")
+
+        if info.field_name == "raw_text":
+            cleaned = bleach.clean(
+                value,
+                tags=[],
+                attributes={},
+                protocols=[],
+                strip=True,
+                strip_comments=True,
+            )
+            if cleaned != value:
+                raise ValueError("raw_text contains disallowed markup")
+            value = cleaned
+
+        return value
 
 
 class IncidentReportResponse(BaseModel):
@@ -125,6 +141,10 @@ class IncidentReportResponse(BaseModel):
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
+
+@app.get("/", include_in_schema=False)
+def dashboard():
+    return FileResponse(UI_PATH)
 
 @app.get("/health")
 def health():
