@@ -1,0 +1,178 @@
+RAILSENSE ROLLING STOCK MAINTENANCE MANUAL
+Component: Gearbox
+Document Reference: RSM-GRBX-7.4
+Revision: 2.7 | Effective Date: 2025-01-01
+
+================================================================================
+SECTION 1 — OVERVIEW
+================================================================================
+
+The traction gearbox transmits torque from the traction motor to the axle,
+providing the gear reduction required to match motor speed to axle rotational
+speed. The gearbox assembly (part number GB-MAIN-1100) is a single-stage
+helical gear unit housed in a sealed, oil-bath lubricated casing. Key
+components include the gear pair (GB-GEAR-2200), input shaft bearing
+(GB-BRG-3300), output shaft bearing (GB-BRG-3301), shaft seals (GB-SEAL-4400),
+oil level plug (GB-OIL-5500), and the gearbox casing (GB-CASE-6600).
+
+Gearbox failure in service causes immediate loss of traction on the affected
+axle and may cause damage to the traction motor and bogie.
+
+================================================================================
+SECTION 2 — INSPECTION INTERVALS
+================================================================================
+
+2.1 Routine Inspection
+Full gearbox inspection every 90 days or 20,000 km, whichever is first.
+
+2.2 Oil Level and Quality Check
+Check gearbox oil level and quality every 30 days via the inspection plug.
+
+2.3 Oil Change
+Change gearbox oil every 180 days regardless of condition.
+Use only approved gear oil grade G-220.
+
+2.4 Post-Impact Inspection
+After any buffer impact, derailment, or abnormal noise reported by the driver,
+a full gearbox inspection is mandatory before return to service.
+
+================================================================================
+SECTION 3 — INSPECTION PROCEDURES
+================================================================================
+
+3.1 Operating Temperature
+Gearbox oil temperature is measured using a probe at the oil drain plug or
+via a permanently mounted temperature sensor (if fitted).
+- Normal: 50–80°C under normal traction load.
+- Advisory (AMBER): 80–95°C — check oil level and quality. Reduce load.
+  Elevated temperature indicates low oil level, degraded oil, or early gear
+  wear increasing friction.
+- Critical (RED): above 95°C — shut down traction on affected axle immediately.
+  Operation above 95°C causes oil breakdown, accelerated bearing wear, and
+  risk of gear tooth fracture. Inspect oil for metallic particles.
+
+3.2 Oil Pressure (Forced Lubrication, If Fitted)
+Some gearbox variants use a forced oil lubrication pump (GB-PUMP-7700).
+- Normal oil pressure: 2.0 to 5.0 bar.
+- Low pressure (AMBER): 1.5 to 2.0 bar — top up oil, check for leaks.
+- Critical low (RED): below 1.5 bar — stop traction. Gear and bearing seizure
+  risk. Inspect oil pump GB-PUMP-7700 and all lubrication lines.
+- Over-pressure (RED): above 6.0 bar — inspect pressure relief valve.
+For gravity-lubricated gearboxes: oil level must be between MIN and MAX marks.
+Below MIN is equivalent to the low-pressure AMBER condition above.
+
+3.3 Vibration Measurement
+Measure vibration on the gearbox casing during a controlled loaded run.
+- Normal: 0 to 3 mm/s² — serviceable.
+- Advisory (AMBER): 3 to 5 mm/s² — inspect input shaft bearing (GB-BRG-3300)
+  and gear tooth contact pattern at next oil change.
+- Critical (RED): above 5 mm/s² — indicates a failing bearing, a chipped or
+  cracked gear tooth (GB-GEAR-2200), or a loose gearbox mounting.
+  Remove from service immediately. Continued operation risks gear tooth fracture
+  and catastrophic gearbox failure.
+
+3.4 Oil Quality Inspection
+Remove the oil drain plug and collect a small oil sample.
+- Acceptable: clear to light amber, no particles.
+- Advisory (AMBER): dark brown colour — oil has exceeded its service life.
+  Change oil immediately with G-220. Inspect for root cause of degradation.
+- Critical (RED): milky white — water contamination. Drain and flush system.
+  Inspect shaft seals (GB-SEAL-4400) and identify water ingress path.
+- Critical (RED): metallic particles or swarf visible — gear or bearing is
+  shedding material. Do not return to service. Workshop inspection required.
+  Inspect gear pair (GB-GEAR-2200) and both bearings (GB-BRG-3300, GB-BRG-3301).
+
+3.5 External Seal and Leak Inspection (GB-SEAL-4400)
+- Inspect around input and output shaft seals for oil weeping or active drips.
+- Minor seepage (damp but no drips): monitor and plan seal replacement.
+- Active drip (drops visible): replace shaft seal at next maintenance window.
+  An oil leak reduces the oil level inside the gearbox, leading to lubrication
+  failure and the overtemperature condition described in Section 3.1.
+
+3.6 Gear Backlash Check
+Measure gear backlash using a dial indicator on the output shaft.
+- Acceptable backlash: 0.15–0.35 mm.
+- Excessive backlash above 0.40 mm: gear teeth are worn. Schedule overhaul.
+
+================================================================================
+SECTION 4 — FAULT DIAGNOSIS
+================================================================================
+
+4.1 Symptom: Gearbox Temperature Above 95°C
+Cause 1: Oil level below MIN.
+Action: Top up with G-220. Investigate source of oil loss.
+Cause 2: Degraded oil (dark brown, high viscosity).
+Action: Drain and replace with fresh G-220.
+Cause 3: Gear or bearing generating heat from wear.
+Action: Collect oil sample. If metallic particles found — workshop inspection.
+
+4.2 Symptom: Vibration Above 5 mm/s²
+Cause 1: Chipped or cracked gear tooth (GB-GEAR-2200).
+Action: Workshop inspection. Replace gear pair.
+Cause 2: Worn input shaft bearing (GB-BRG-3300).
+Action: Replace bearing. Inspect shaft for scoring.
+Cause 3: Loose gearbox mounting bolt.
+Action: Inspect all mounting bolts. Torque to 110 Nm.
+
+4.3 Symptom: Oil Pressure Below 1.5 Bar (Forced Lubrication)
+Cause: Failed oil pump (GB-PUMP-7700) or blocked oil gallery.
+Action: Replace pump. Flush oil gallery with flushing oil.
+
+4.4 Symptom: Metallic Particles in Oil
+Cause: Gear tooth fracture or bearing failure.
+Action: Full gearbox disassembly in workshop. Replace gear pair and bearings.
+
+4.5 Symptom: Oil Leak at Shaft Seal
+Cause: Worn shaft seal (GB-SEAL-4400).
+Action: Replace shaft seal. Clean housing mating face before fitting new seal.
+
+================================================================================
+SECTION 5 — SERVICE PROCEDURES
+================================================================================
+
+5.1 Oil Change
+1. Warm gearbox by running for 10 minutes.
+2. Remove drain plug and drain fully into a catch tray.
+3. If last change was over 360 days ago, flush with flushing oil G-FLUSH.
+4. Replace drain plug washer.
+5. Fill via filler plug to MAX line (approximately 2.8 litres for standard unit).
+6. Run for 5 minutes. Recheck level.
+
+5.2 Shaft Seal Replacement (GB-SEAL-4400)
+1. Remove gearbox from bogie (bogie workshop required).
+2. Drain oil completely.
+3. Remove shaft end cover and circlip.
+4. Press out old seal using seal extractor ST-180.
+5. Clean shaft and housing bore.
+6. Press in new seal — apply thin oil film to seal lips before fitting.
+7. Reassemble and refill with G-220.
+
+5.3 Gear Pair Replacement (GB-GEAR-2200)
+Full workshop disassembly. Gear pairs must be replaced as a matched set.
+After reassembly, verify backlash (Section 3.6) and run-in for 200 km at
+50% load before returning to full-load service.
+
+================================================================================
+SECTION 6 — PARTS REFERENCE
+================================================================================
+
+Part Number    | Description                    | Replace Interval
+GB-MAIN-1100   | Gearbox assembly               | 5-year overhaul or on failure
+GB-GEAR-2200   | Gear pair (matched set)        | On damage or excessive backlash
+GB-BRG-3300    | Input shaft bearing            | Every 360 days or on vibration
+GB-BRG-3301    | Output shaft bearing           | Every 360 days or on vibration
+GB-SEAL-4400   | Shaft seal kit                 | Every 360 days or on oil leak
+GB-OIL-5500    | Oil level / filler plug        | Replace washer every oil change
+GB-CASE-6600   | Gearbox casing                 | On crack or deformation
+GB-PUMP-7700   | Forced lubrication oil pump    | Every 720 days or on failure
+G-220          | Gear oil (approved grade)      | Every 180 days
+
+================================================================================
+SECTION 7 — SAFETY WARNINGS
+================================================================================
+
+WARNING: Gearbox temperature above 95°C is an immediate traction shutdown condition.
+WARNING: Vibration above 5 mm/s² indicates gear or bearing failure — do not run.
+WARNING: Metallic particles in oil mean internal failure — do not return to service.
+WARNING: Never mix oil grades — seal and bearing degradation will result.
+WARNING: Oil pressure below 1.5 bar (forced lubrication) means bearing seizure risk.

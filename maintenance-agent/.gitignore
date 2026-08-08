@@ -1,0 +1,8 @@
+.env
+data/chroma_db/
+predictive/health_model.pkl
+predictive/feature_importances.json
+data/maintenance_logs.csv
+__pycache__/
+*.pyc
+*.pyo
