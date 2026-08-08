@@ -14,6 +14,18 @@ The system consists of **four autonomous AI agents** coordinated through a centr
 
 Each agent independently provides specialized intelligence while collaborating with other agents to solve complex railway problems.
 
+### Operations Agent Progress
+
+The Operations Agent has completed Phases 1–4:
+
+- Phase 1: FastAPI service, synthetic operations dataset, and stable API contract
+- Phase 2: Gradient Boosting delay model with held-out evaluation metrics
+- Phase 3: Sanitized incident summarization and classification
+- Phase 4: Historical incident retrieval and grounded prediction explanations
+
+Phase 5 covers Hub integration, rate limiting, audit logging, and the complete
+multi-agent production dashboard.
+
 ### 🚉 Core AI Agents
 
 | Agent | Responsibility |
@@ -126,7 +138,47 @@ Provides intelligent railway operation monitoring.
 | ML Model | Random Forest / Gradient Boosting |
 | Explainability | Feature Importance |
 | NLP | Incident Summarization |
-| IR | Historical Incident RAG |
+| IR / RAG | MiniLM embeddings, Supabase pgvector, local TF-IDF fallback |
+| Explanation | Grounded template or optional Claude API |
+
+### Operations Agent Phase 4 Flow
+
+The `/predict-delay` workflow combines the Phase 2 model with historical
+evidence:
+
+1. Build a retrieval query from route, station, weather, and incident type.
+2. Retrieve the top three similar historical incident records.
+3. Combine the prediction, top model features, and retrieved incidents.
+4. Return a plain-language explanation with cited precedent.
+
+The local TF-IDF index works without cloud credentials, which keeps local
+demos reproducible. When `SUPABASE_URL` and `SUPABASE_KEY` are configured,
+the API uses the Supabase pgvector `match_incidents` function. When
+`ANTHROPIC_API_KEY` is configured, Claude composes the explanation using only
+the supplied prediction and retrieved evidence.
+
+Example `/predict-delay` response:
+
+```json
+{
+      "route": "Colombo Fort - Kandy",
+      "train_id": "PM-4082",
+      "predicted_delay_minutes": 14.2,
+      "confidence": "medium",
+      "explanation": "Expect approximately 14.2 minutes of delay on Colombo Fort - Kandy. A similar signal fault was recorded at Kandy with a 14.1-minute delay.",
+      "top_contributing_features": [
+            {"feature": "incident_type_none", "importance": 0.7390},
+            {"feature": "incident_type_mechanical", "importance": 0.0708},
+            {"feature": "weather_clear", "importance": 0.0390}
+      ],
+      "similar_past_incidents": [
+            "signal fault at Kandy on Colombo Fort - Kandy ... historical delay 14.1 min"
+      ],
+      "model_version": "phase2-gbr-v1",
+      "retrieval_method": "local_tfidf",
+      "explanation_method": "template_grounded"
+}
+```
 
 Example:
 
@@ -361,6 +413,11 @@ Features:
 * Incident timeline
 * Prediction confidence
 
+The current Operations Agent dashboard is served by FastAPI at
+`http://localhost:8001/`. It already supports incident processing and
+grounded delay prediction with historical precedent. Route heatmaps, live
+statistics, and Hub events are Phase 5 additions.
+
 ## Security Console
 
 Features:
@@ -447,7 +504,9 @@ RailSense-AI/
 
 ## Vector Database
 
-* ChromaDB
+* Supabase Postgres + pgvector for shared incident retrieval
+* Local TF-IDF fallback for offline Operations Agent demos
+* ChromaDB remains available for Passenger Agent retrieval where appropriate
 
 ## Frontend
 
@@ -492,6 +551,8 @@ RailSense-AI/
 
 * Precision@3
 * Relevant document retrieval
+* Phase 4 evidence: `/predict-delay` returns three retrieved incident citations
+      plus the `retrieval_method` used (`local_tfidf` or `supabase_pgvector`)
 
 ## ML Evaluation
 
@@ -535,6 +596,23 @@ This launches:
 ✓ Maintenance Agent
 ```
 
+### Run the Operations Agent locally
+
+```powershell
+python -m uvicorn main:app --app-dir M2-operations-agent --reload --port 8001
+```
+
+Open the dashboard at `http://localhost:8001/` or the API documentation at
+`http://localhost:8001/docs`.
+
+To enable Supabase Phase 4 retrieval, run
+`M2-operations-agent/rag/supabase_schema.sql` in the Supabase SQL editor,
+configure `SUPABASE_URL` and `SUPABASE_KEY`, and index the corpus:
+
+```powershell
+python M2-operations-agent/rag/embed_documents.py
+```
+
 ---
 
 # 📅 Development Timeline
@@ -547,7 +625,7 @@ This launches:
 | 4    | LLM integration                  |
 | 5    | NLP implementation               |
 | 6    | Mid Evaluation                   |
-| 7    | RAG implementation               |
+| 7    | RAG implementation and grounded Operations predictions |
 | 8    | Security hardening               |
 | 9    | Full integration                 |
 | 10   | Final submission                 |
