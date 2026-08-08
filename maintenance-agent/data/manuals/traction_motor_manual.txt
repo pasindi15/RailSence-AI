@@ -1,0 +1,155 @@
+RAILSENSE ROLLING STOCK MAINTENANCE MANUAL
+Component: Traction Motor
+Document Reference: RSM-TRMOT-6.1
+Revision: 2.4 | Effective Date: 2025-01-01
+
+================================================================================
+SECTION 1 — OVERVIEW
+================================================================================
+
+The traction motor converts electrical energy into mechanical torque to drive
+the axles. Each locomotive is fitted with two traction motors (part number
+TM-3301) per bogie, coupled to the axle via a hollow shaft flexible drive.
+Supporting components include the motor cooling blower (TM-4402), motor
+controller unit (TM-5503), and temperature sensors (TM-TSENS-6600).
+
+Traction motors are among the highest-wear components in the rolling stock
+fleet. Adherence to inspection intervals is mandatory to prevent in-service
+failure, which constitutes a service-affecting incident.
+
+================================================================================
+SECTION 2 — INSPECTION INTERVALS
+================================================================================
+
+2.1 Routine Inspection
+Full traction motor inspection every 90 days or 20,000 km, whichever is first.
+
+2.2 Carbon Brush Inspection
+Inspect carbon brushes (part TM-BRUSH-7700) every 45 days. Measure brush
+length and contact surface condition.
+
+2.3 Insulation Resistance Test
+Perform megohmmeter insulation test every 90 days before service starts.
+Minimum acceptable insulation resistance: 1 MΩ at 500 V DC.
+
+2.4 Post-Incident Inspection
+A full motor inspection is mandatory within 24 hours of any speed overshoot,
+electrical fault, or emergency brake application at speeds above 80 km/h.
+
+================================================================================
+SECTION 3 — INSPECTION PROCEDURES
+================================================================================
+
+3.1 Winding Temperature Monitoring
+Winding temperature is monitored continuously via sensor TM-TSENS-6600.
+- Normal: 60–80°C under full load.
+- Advisory (AMBER): 80–95°C — reduce load, increase cooling airflow check.
+- Critical (RED): above 95°C — shut down traction motor immediately. Continued
+  operation above 95°C will cause winding insulation breakdown, leading to
+  inter-turn short circuits and irreparable winding damage.
+After any overtemperature event, the insulation resistance must be re-tested
+before returning the motor to service.
+
+3.2 Vibration Level Measurement
+Measure vibration at the motor mounting foot using a calibrated accelerometer.
+- Normal: 0 to 3 mm/s² — serviceable.
+- Advisory (AMBER): 3 to 5 mm/s² — inspect motor bearings and coupling.
+- Critical (RED): above 5 mm/s² — remove from service. Likely cause is a
+  failed bearing (TM-BRG-8800 or TM-BRG-8801), a damaged armature, or a
+  loose mounting bolt. Do not continue operation — bearing seizure risk.
+
+3.3 Carbon Brush Inspection (TM-BRUSH-7700)
+Minimum acceptable brush length: 25 mm.
+Replace when brush length falls below 25 mm or if the contact surface shows
+chipping, cracking, or uneven wear.
+Brushes worn below 15 mm will arc excessively, scoring the commutator surface
+(part TM-COMM-9900) and causing catastrophic winding damage.
+
+3.4 Cooling Airflow Check
+The cooling blower (TM-4402) must deliver a minimum of 0.8 m³/s airflow.
+Measure airflow at the blower outlet with an anemometer.
+- Reduced airflow is the primary cause of overtemperature events.
+- Clean or replace blower filter element TM-FILT-1100 every 90 days.
+
+3.5 Oil / Grease Check (Hollow Shaft Drive)
+The hollow shaft drive requires lubrication with grease grade G-220.
+Check grease level every 90 days. Replenish if the sight glass is below
+the MIN line. Over-greasing causes overheating — do not exceed MAX line.
+
+================================================================================
+SECTION 4 — FAULT DIAGNOSIS
+================================================================================
+
+4.1 Symptom: Motor Temperature Above 95°C
+Cause 1: Blocked cooling blower filter (TM-FILT-1100).
+Action: Clean or replace filter. Verify airflow reaches 0.8 m³/s.
+Cause 2: Overloaded operation on steep gradient.
+Action: Check load profile. Limit gradient operations during peak hours.
+Cause 3: Faulty temperature sensor reporting false readings.
+Action: Cross-check with handheld IR thermometer.
+
+4.2 Symptom: Vibration Above 5 mm/s²
+Cause 1: Worn or seized motor bearing (TM-BRG-8800).
+Action: Replace bearing immediately. Check shaft for scoring.
+Cause 2: Motor mounting bolt loose.
+Action: Inspect all four mounting bolts. Torque to 120 Nm.
+Cause 3: Armature imbalance due to carbon deposit build-up.
+Action: Clean commutator with approved solvent. Balance armature if needed.
+
+4.3 Symptom: Low Insulation Resistance (below 1 MΩ)
+Cause: Moisture ingress or insulation degradation.
+Action: Dry motor in oven at 80°C for 6 hours. Retest. If still below 1 MΩ
+send for rewind. Do not return to service with wet insulation.
+
+4.4 Symptom: Excessive Arcing at Commutator
+Cause: Worn brushes (below 25 mm) or scored commutator.
+Action: Replace brushes TM-BRUSH-7700. Skim commutator TM-COMM-9900 if
+surface runout exceeds 0.05 mm.
+
+================================================================================
+SECTION 5 — SERVICE PROCEDURES
+================================================================================
+
+5.1 Carbon Brush Replacement (TM-BRUSH-7700)
+1. Isolate traction motor from supply. Lock out / tag out.
+2. Remove brush holder cover (4x M10 bolts).
+3. Lift brush spring and slide out worn brush.
+4. Insert new brush. Ensure correct grade — only use approved TM-BRUSH-7700.
+5. Bed in new brushes: operate motor at 50% load for 30 minutes before
+   returning to full-load service.
+
+5.2 Bearing Replacement (TM-BRG-8800)
+1. Remove motor from bogie frame (requires bogie workshop access).
+2. Press out old bearing using bearing press BP-440.
+3. Heat new bearing to 80°C before pressing onto shaft.
+4. Reassemble and perform vibration check before reinstalling motor.
+
+5.3 Full Motor Service (Every 360 Days)
+Full disassembly, cleaning, insulation test, commutator skim, brush and
+bearing replacement, and regreasing. Must be performed in a workshop
+environment free of moisture and contamination.
+
+================================================================================
+SECTION 6 — PARTS REFERENCE
+================================================================================
+
+Part Number    | Description                    | Replace Interval
+TM-3301        | Traction motor assembly        | On failure or 5-year overhaul
+TM-4402        | Cooling blower assembly        | Every 720 days
+TM-5503        | Motor controller unit          | On fault code
+TM-BRUSH-7700  | Carbon brush set               | When < 25 mm or every 45 days
+TM-BRG-8800    | Drive-end bearing              | Every 360 days or on vibration
+TM-BRG-8801    | Non-drive-end bearing          | Every 360 days
+TM-COMM-9900   | Commutator assembly            | When runout > 0.05 mm
+TM-FILT-1100   | Cooling blower filter          | Every 90 days
+TM-TSENS-6600  | Winding temperature sensor     | Every 360 days or on fault
+
+================================================================================
+SECTION 7 — SAFETY WARNINGS
+================================================================================
+
+WARNING: Always isolate and lock out power before opening motor covers.
+WARNING: Traction motor temperature above 95°C is a mandatory shutdown condition.
+WARNING: Vibration above 5 mm/s² indicates bearing or armature failure risk.
+WARNING: Never operate with insulation resistance below 1 MΩ — electrocution risk.
+WARNING: Carbon dust from worn brushes is conductive — clean regularly.

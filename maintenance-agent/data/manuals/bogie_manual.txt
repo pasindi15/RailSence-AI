@@ -1,0 +1,166 @@
+RAILSENSE ROLLING STOCK MAINTENANCE MANUAL
+Component: Bogie
+Document Reference: RSM-BOGIE-2.3
+Revision: 4.0 | Effective Date: 2025-01-01
+
+================================================================================
+SECTION 1 — OVERVIEW
+================================================================================
+
+The bogie is the wheeled undercarriage assembly that supports the car body,
+guides the rolling stock along the track, and absorbs dynamic forces from the
+rail. Each bogie consists of a bogie frame (BG-FRAME-1100), two wheelsets
+(BG-WHEEL-2200), primary suspension springs (BG-SPRING-3300), secondary air
+suspension bags (BG-AIRBAG-4400), axle boxes (BG-AXLEBOX-5500), yaw dampers
+(BG-DAMPER-6600), and lateral bump stops (BG-STOP-7700).
+
+Bogie integrity is directly linked to ride quality, wheel-rail interaction, and
+the safe operation of the braking and traction systems. Defective bogies are a
+leading cause of derailment incidents.
+
+================================================================================
+SECTION 2 — INSPECTION INTERVALS
+================================================================================
+
+2.1 Routine Bogie Inspection
+Full bogie inspection every 90 days or 20,000 km, whichever is first.
+The bogie must be removed from under the car body for a full inspection.
+
+2.2 Wheel Profile Check
+Wheel profile measurement using a wheel profile gauge every 30 days.
+Check flange height, flange thickness, and tread wear.
+
+2.3 Axle Box Inspection
+Inspect axle box oil level and bearing condition every 90 days.
+
+2.4 Post-Derailment or High-Impact Inspection
+After any derailment, buffer impact, or abnormal vibration report, a full
+bogie inspection is mandatory before return to service.
+
+================================================================================
+SECTION 3 — INSPECTION PROCEDURES
+================================================================================
+
+3.1 Vibration Monitoring
+Bogie vibration is measured on the bogie frame using an accelerometer.
+Vibration can originate from wheel flats, worn bearings, or suspension failure.
+- Normal: 0 to 3 mm/s² — serviceable.
+- Advisory (AMBER): 3 to 5 mm/s² — inspect wheelset profiles and axle box
+  bearings. Check primary suspension springs for fatigue or breakage.
+- Critical (RED): above 5 mm/s² — remove from service immediately. Likely
+  causes: wheel flat (>2 mm depth), failed axle box bearing (BG-BRG-9900),
+  broken suspension spring, or loose bogie frame bolt.
+  Do not operate above 5 mm/s² — risk of rail damage and derailment.
+
+3.2 Temperature Monitoring (Axle Box)
+Axle box temperature is measured using a handheld IR thermometer or
+trackside hot axle box detector reading.
+- Normal: ambient +20°C to ambient +40°C.
+- Advisory (AMBER): ambient +40°C to ambient +55°C — inspect bearing
+  lubrication. Replenish oil to MAX line.
+- Critical (RED): above 95°C absolute, or ambient +55°C or more — indicates
+  bearing failure or inadequate lubrication. Remove from service immediately.
+  A hot axle box above 95°C risks bearing seizure and axle fracture.
+
+3.3 Oil Pressure / Lubrication Check
+Axle box oil level must be checked using the sight glass on each axle box.
+- Normal: oil level between MIN and MAX marks.
+- Low oil (AMBER): below MIN — top up with approved gear oil grade G-90.
+- Contaminated oil: milky appearance indicates water ingress. Drain and
+  replace with fresh oil. Inspect axle box seals (BG-SEAL-8800).
+Oil pressure in the forced lubrication circuit (if fitted):
+- Normal: 1.5 to 6.0 bar.
+- Low pressure (RED): below 1.5 bar — inspect pump and oil lines.
+- Over-pressure (RED): above 6.0 bar — inspect pressure relief valve.
+
+3.4 Wheel Profile Inspection (BG-WHEEL-2200)
+Measure flange height and thickness with a calibrated wheel profile gauge.
+- Flange height maximum: 36 mm. Condemn wheel if above 36 mm.
+- Flange thickness minimum: 22 mm. Condemn wheel if below 22 mm.
+- Tread hollow: maximum 5 mm concavity. Beyond 5 mm — condemn and regrind.
+- Wheel flat: visible flat spot — measure depth. Above 2 mm depth: mandatory
+  immediate reprofiling or wheel replacement.
+
+3.5 Primary Suspension Spring Inspection (BG-SPRING-3300)
+- Check for cracked or broken coils (visual inspection with torch).
+- Measure free height — compare against baseline in Table 5.1.
+- A broken primary spring results in abnormal car body tilt and elevated
+  vibration. Replace immediately if a broken spring is found.
+
+3.6 Secondary Air Suspension (BG-AIRBAG-4400)
+- Check air bag pressure — normal range 5.0 to 7.0 bar.
+- Inspect rubber bellows for cracks, cuts, or abrasion damage.
+- A deflated air bag lowers the car body on one side, causing door misalignment
+  and passenger discomfort. Replace defective bag within 48 hours.
+
+================================================================================
+SECTION 4 — FAULT DIAGNOSIS
+================================================================================
+
+4.1 Symptom: Vibration Above 5 mm/s²
+Cause 1: Wheel flat spot (BG-WHEEL-2200 flat depth > 2 mm).
+Action: Reprogram reprofiling at the next wheel lathe opportunity.
+Cause 2: Failed axle box bearing (BG-BRG-9900).
+Action: Replace bearing in workshop. Inspect shaft for scoring.
+Cause 3: Broken primary suspension spring (BG-SPRING-3300).
+Action: Replace spring pair (always replace in pairs per axle).
+
+4.2 Symptom: High Axle Box Temperature (above 95°C)
+Cause: Bearing lubrication failure or bearing fatigue.
+Action: Remove from service. Drain and inspect axle box.
+Replace bearing BG-BRG-9900 and seals BG-SEAL-8800.
+
+4.3 Symptom: Car Body Tilt (uneven ride height)
+Cause: Deflated secondary air bag (BG-AIRBAG-4400).
+Action: Check air bag pressure. Replace defective bag.
+
+4.4 Symptom: Oil Pressure Below 1.5 Bar
+Cause: Lubrication pump failure or blocked oil line.
+Action: Inspect pump and lines. Replace pump if output below specification.
+
+================================================================================
+SECTION 5 — SERVICE PROCEDURES
+================================================================================
+
+5.1 Bogie Removal
+1. Raise car body on hydraulic jacks — use designated jack points only.
+2. Roll out bogie on maintenance track.
+3. Secure bogie frame on bogie overhaul stand.
+
+5.2 Axle Box Bearing Replacement (BG-BRG-9900)
+1. Drain axle box oil.
+2. Remove axle box end cover (6x M12 bolts, 95 Nm).
+3. Press out bearing using hydraulic bearing press BP-660.
+4. Clean housing. Inspect for scoring.
+5. Press in new bearing (heat to 80°C). Reassemble.
+6. Fill with approved gear oil G-90 to MAX line.
+
+5.3 Wheel Reprofiling
+Reprofiling must be performed on a CNC wheel lathe. Target profile as per
+Table 5.2 (worn rail profile). Minimum wheel diameter after reprofiling: 830 mm.
+Condemn wheel if diameter falls below 830 mm.
+
+================================================================================
+SECTION 6 — PARTS REFERENCE
+================================================================================
+
+Part Number      | Description                   | Replace Interval
+BG-FRAME-1100    | Bogie frame                   | Structural inspection every 5 years
+BG-WHEEL-2200    | Wheelset                      | Reprogram when out of profile
+BG-SPRING-3300   | Primary suspension spring     | On breakage or fatigue (always pairs)
+BG-AIRBAG-4400   | Secondary air suspension bag  | On deflation or rubber damage
+BG-AXLEBOX-5500  | Axle box assembly             | Every 720 days full overhaul
+BG-DAMPER-6600   | Yaw damper                    | Every 360 days
+BG-STOP-7700     | Lateral bump stop             | Every 360 days or on impact
+BG-SEAL-8800     | Axle box seal kit             | Every 360 days or on oil leak
+BG-BRG-9900      | Axle box bearing              | Every 360 days or on heat/vibration
+
+================================================================================
+SECTION 7 — SAFETY WARNINGS
+================================================================================
+
+WARNING: Vibration above 5 mm/s² on the bogie is a mandatory withdrawal condition.
+WARNING: Hot axle box above 95°C risks bearing seizure — remove from service.
+WARNING: Never operate a vehicle with a known wheel flat above 2 mm depth.
+WARNING: Always use designated jack points when raising a car body.
+WARNING: Broken suspension springs must be replaced in pairs.
