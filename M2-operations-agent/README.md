@@ -82,9 +82,17 @@ embedding).
 
 ### Train / retrain
 
+From the repository root, Bash and PowerShell commands are:
+
 ```bash
 cd ml && python train_delay_model.py
 ```
+
+```powershell
+Set-Location M2-operations-agent\ml; python train_delay_model.py
+```
+
+PowerShell 5.1 does not support `&&`; use `;` as the command separator.
 
 ### Current held-out test metrics (3000-row synthetic dataset, 80/20 split)
 
@@ -110,14 +118,20 @@ project's evaluation-framework rule against invented scores.
 {
   "route": "Colombo Fort - Kandy",
   "train_id": "PM-4082",
+  "station": "Kandy",
+  "incident_type": "mechanical",
   "predicted_delay_minutes": 7.1,
   "confidence": "medium",
-  "explanation": "Expect ~7.1 min delay ... strongest signals: incident type none, incident type mechanical, weather clear ...",
+  "explanation": "Expect ~7.1 min delay ... strongest learned signals: incident type none, incident type mechanical, weather clear ...",
   "top_contributing_features": [...],
   "similar_past_incidents": [],
   "model_version": "phase2-gbr-v1"
 }
 ```
+
+`station` and `incident_type` are optional for backwards compatibility. When
+provided, they are passed to the Phase 2 model as additional categorical
+features; omitted values use the model wrapper's `unknown` / `none` defaults.
 
 If `delay_model.pkl` hasn't been trained yet, the endpoint automatically
 falls back to the labelled Phase 1 heuristic instead of failing — so the
