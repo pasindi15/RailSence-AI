@@ -1,0 +1,54 @@
+version: "3.9"
+
+# RailSense AI — all 5 stateless services.
+# Data layer (Postgres/pgvector, Redis) is cloud-hosted on Supabase + Upstash.
+# Prerequisites: copy .env.example → .env and fill in secrets.
+
+services:
+
+  agent-hub:
+    build: ./agent-hub
+    ports:
+      - "8000:8000"
+    env_file: .env
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  passenger-agent:
+    build: ./passenger-agent
+    ports:
+      - "8001:8001"
+    env_file: .env
+    depends_on:
+      agent-hub:
+        condition: service_healthy
+
+  operations-agent:
+    build: ./M2-operations-agent
+    ports:
+      - "8002:8002"
+    env_file: .env
+    depends_on:
+      agent-hub:
+        condition: service_healthy
+
+  security-agent:
+    build: ./security-agent
+    ports:
+      - "8003:8003"
+    env_file: .env
+    depends_on:
+      agent-hub:
+        condition: service_healthy
+
+  maintenance-agent:
+    build: ./maintenance-agent
+    ports:
+      - "8004:8004"
+    env_file: .env
+    depends_on:
+      agent-hub:
+        condition: service_healthy
