@@ -51,12 +51,23 @@ class DayType(str, Enum):
     public_holiday = "public_holiday"
 
 
+class IncidentType(str, Enum):
+    none = "none"
+    signal_fault = "signal_fault"
+    mechanical = "mechanical"
+    weather = "weather"
+    track_obstruction = "track_obstruction"
+    staffing = "staffing"
+
+
 class DelayPredictionRequest(BaseModel):
     route: str = Field(..., min_length=3, max_length=120, examples=["Colombo Fort - Kandy"])
     train_id: str = Field(..., min_length=3, max_length=20, examples=["PM-4082"])
     scheduled_time: datetime = Field(..., description="ISO 8601 scheduled departure/arrival time")
     weather: Optional[WeatherCondition] = None
     day_type: Optional[DayType] = None
+    station: Optional[str] = Field(None, min_length=2, max_length=80)
+    incident_type: Optional[IncidentType] = None
 
     @field_validator("route", "train_id")
     @classmethod
@@ -165,6 +176,8 @@ def predict_delay(req: DelayPredictionRequest):
         scheduled_hour=req.scheduled_time.hour,
         weather=req.weather.value if req.weather else None,
         day_type=req.day_type.value if req.day_type else None,
+        station=req.station,
+        incident_type=req.incident_type.value if req.incident_type else None,
     )
 
     top_features = result["top_features"]
@@ -172,7 +185,7 @@ def predict_delay(req: DelayPredictionRequest):
         feature_note = ", ".join(f["feature"].replace("_", " ") for f in top_features)
         explanation = (
             f"Expect ~{result['predicted_delay_minutes']} min delay on {req.route}. "
-            f"Model's strongest signals for this prediction: {feature_note}. "
+            f"Model's strongest learned signals: {feature_note}. "
             "(Templated explanation — Phase 4 replaces this with a full LLM-generated summary "
             "grounded in similar historical incidents.)"
         )
