@@ -56,6 +56,14 @@
     .stat-value { margin-top: 13px; font-size: 34px; }
     .stat-note { margin-top: 4px; color: var(--muted); font: 12px Arial, sans-serif; }
     .error { color: var(--red); font: 12px Arial, sans-serif; }
+    .prediction-panel { margin-top: 20px; }
+    .prediction-output { margin-top: 20px; border-top: 1px solid var(--line); padding-top: 18px; }
+    .prediction-output strong { color: var(--green); font-size: 28px; font-weight: 400; }
+    .prediction-output p { margin: 8px 0 0; color: var(--muted); font: 13px/1.5 Arial, sans-serif; }
+    .citations { margin: 22px 0 0; border-top: 1px solid var(--line); padding-top: 16px; }
+    .citations h3 { margin: 0 0 10px; font: 700 10px Arial, sans-serif; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); }
+    .citations ol { margin: 0; padding-left: 18px; color: var(--muted); font: 12px/1.5 Arial, sans-serif; }
+    .citations li { margin-bottom: 8px; }
     @media (max-width: 800px) { header { display: block; } .health { margin-top: 18px; } .grid, .lower { grid-template-columns: 1fr; } .shell { padding: 22px 16px 35px; } }
     @media (max-width: 500px) { .fields { grid-template-columns: 1fr; } .field-wide { grid-column: auto; } }
   </style>
@@ -86,19 +94,37 @@
       </form>
 
       <section class="panel result" aria-live="polite">
-        <div id="emptyResult" class="empty">Your classified incident will appear here.<br>Phase 4 retrieval can add historical context to this view.</div>
+        <div id="emptyResult" class="empty">Your classified incident will appear here.<br>Phase 4 retrieval powers the prediction evidence below.</div>
         <div id="resultCard" class="result-card">
           <span id="resultType" class="type"></span>
           <p id="resultSummary" class="summary"></p>
           <div class="meta"><div>TRAIN<strong id="resultTrain"></strong></div><div>STATION<strong id="resultStation"></strong></div><div>METHOD<strong id="resultMethod"></strong></div><div>RECEIVED<strong id="resultTime"></strong></div></div>
+          <div class="citations"><h3>Historical precedent</h3><ol id="citationsList"></ol></div>
         </div>
       </section>
+    </section>
+
+    <section class="panel prediction-panel">
+      <h2>Predict a delay</h2>
+      <p class="panel-intro">Combine the trained model with historical incident precedent.</p>
+      <form id="predictionForm">
+        <div class="fields">
+          <div><label for="route">Route</label><input id="route" required value="Colombo Fort - Kandy"></div>
+          <div><label for="predictionTrain">Train ID</label><input id="predictionTrain" required value="PM-4082"></div>
+          <div><label for="scheduledTime">Scheduled time</label><input id="scheduledTime" type="datetime-local" required value="2025-01-01T08:30"></div>
+          <div><label for="predictionStation">Station</label><input id="predictionStation" value="Kandy"></div>
+          <div><label for="weather">Weather</label><select id="weather"><option value="clear">Clear</option><option value="light_rain" selected>Light rain</option><option value="heavy_rain">Heavy rain</option><option value="fog">Fog</option><option value="extreme_heat">Extreme heat</option></select></div>
+          <div><label for="incidentType">Incident type</label><select id="incidentType"><option value="none">None</option><option value="signal_fault" selected>Signal fault</option><option value="mechanical">Mechanical</option><option value="weather">Weather</option><option value="track_obstruction">Track obstruction</option><option value="staffing">Staffing</option></select></div>
+        </div>
+        <div class="actions"><button id="predictionButton" type="submit">Generate grounded prediction</button><span id="predictionError" class="error"></span></div>
+      </form>
+      <div id="predictionOutput" class="prediction-output" hidden><strong id="predictionValue"></strong><p id="predictionExplanation"></p><p id="predictionEvidence"></p></div>
     </section>
 
     <section class="lower">
       <div class="panel stat"><div class="stat-label">Service</div><div id="serviceValue" class="stat-value">--</div><div class="stat-note">FastAPI operations agent</div></div>
       <div class="panel stat"><div class="stat-label">Prediction engine</div><div class="stat-value">ML</div><div class="stat-note">Phase 2 model connected</div></div>
-      <div class="panel stat"><div class="stat-label">Next intelligence layer</div><div class="stat-value">RAG</div><div class="stat-note">Historical precedent arrives in Phase 4</div></div>
+      <div class="panel stat"><div class="stat-label">Evidence layer</div><div class="stat-value">RAG</div><div class="stat-note">Three historical precedents per prediction</div></div>
     </section>
   </main>
   <script>
@@ -134,7 +160,24 @@
         $('resultStation').textContent = data.station;
         $('resultMethod').textContent = data.nlp_method.replaceAll('_', ' ');
         $('resultTime').textContent = new Date(data.received_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        $('citationsList').replaceChildren(...data.similar_past_incidents.map((citation) => { const item = document.createElement('li'); item.textContent = citation; return item; }));
       } catch (error) { errorText.textContent = error.message; }
+      finally { button.disabled = false; }
+    });
+    $('predictionForm').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const button = $('predictionButton');
+      $('predictionError').textContent = '';
+      button.disabled = true;
+      try {
+        const response = await fetch('/predict-delay', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ route: $('route').value, train_id: $('predictionTrain').value, scheduled_time: new Date($('scheduledTime').value).toISOString(), station: $('predictionStation').value || null, weather: $('weather').value, day_type: 'weekday', incident_type: $('incidentType').value }) });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.detail?.[0]?.msg || 'Could not generate prediction');
+        $('predictionOutput').hidden = false;
+        $('predictionValue').textContent = `${data.predicted_delay_minutes} min expected delay`;
+        $('predictionExplanation').textContent = data.explanation;
+        $('predictionEvidence').textContent = `${data.similar_past_incidents.length} precedents retrieved via ${data.retrieval_method}.`;
+      } catch (error) { $('predictionError').textContent = error.message; }
       finally { button.disabled = false; }
     });
     checkHealth();
