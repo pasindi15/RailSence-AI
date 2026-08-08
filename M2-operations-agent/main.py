@@ -6,7 +6,7 @@ Endpoints:
     GET  /health              -> liveness check
     POST /predict-delay       -> delay prediction (stubbed until Phase 2 ML model lands)
     GET  /route-status/{id}   -> latest known status for a route
-    POST /incident-report     -> ingest a raw staff incident report (stubbed until Phase 3 NLP lands)
+    POST /incident-report     -> summarize and classify a raw staff incident report
 
 This file intentionally keeps Phase-2/3/4 logic behind clearly marked TODOs so
 the service is runnable and demoable end-to-end from day one, and each later
@@ -15,14 +15,19 @@ phase only has to fill in one function at a time.
 
 from datetime import datetime, timezone
 from enum import Enum
+from pathlib import Path
 from typing import Optional
 
 from fastapi import FastAPI, HTTPException, status
+from fastapi.responses import FileResponse
+import bleach
 from pydantic import BaseModel, Field, field_validator
 
 from ml import predict as delay_model
 from nlp import classify_incident as incident_classifier
 from nlp import summarize_incident as incident_summarizer
+from rag import explanation as explanation_layer
+from rag import incident_retriever
 
 app = FastAPI(
     title="M2 — Operations & Delay-Prediction Agent",
@@ -31,6 +36,7 @@ app = FastAPI(
 )
 
 AGENT_NAME = "operations-agent"
+UI_PATH = Path(__file__).parent / "ui" / "index.html"
 
 
 # ---------------------------------------------------------------------------
@@ -86,6 +92,8 @@ class DelayPredictionResponse(BaseModel):
     top_contributing_features: list[dict] = []
     similar_past_incidents: list[str] = []
     model_version: str
+    retrieval_method: str = "local_tfidf"
+    explanation_method: str = "template_grounded"
 
 
 class RouteStatusResponse(BaseModel):
@@ -101,15 +109,27 @@ class IncidentReportRequest(BaseModel):
     station: str = Field(..., min_length=2, max_length=80)
     raw_text: str = Field(..., min_length=5, max_length=2000)
 
-    @field_validator("raw_text")
+    @field_validator("train_id", "station", "raw_text")
     @classmethod
-    def sanitize_raw_text(cls, v: str) -> str:
-        lowered = v.lower()
-        if "<script" in lowered:
-            raise ValueError("raw_text contains disallowed content")
-        if any(ord(ch) < 9 for ch in v):
-            raise ValueError("raw_text contains invalid control characters")
-        return v.strip()
+    def sanitize_text(cls, v: str, info) -> str:
+        value = v.strip()
+        if any(ord(ch) < 32 and ch not in "\t\n\r" for ch in value):
+            raise ValueError(f"{info.field_name} contains invalid control characters")
+
+        if info.field_name == "raw_text":
+            cleaned = bleach.clean(
+                value,
+                tags=[],
+                attributes={},
+                protocols=[],
+                strip=True,
+                strip_comments=True,
+            )
+            if cleaned != value:
+                raise ValueError("raw_text contains disallowed markup")
+            value = cleaned
+
+        return value
 
 
 class IncidentReportResponse(BaseModel):
@@ -125,6 +145,10 @@ class IncidentReportResponse(BaseModel):
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
+
+@app.get("/", include_in_schema=False)
+def dashboard():
+    return FileResponse(UI_PATH)
 
 @app.get("/health")
 def health():
@@ -144,10 +168,28 @@ def predict_delay(req: DelayPredictionRequest):
     Falls back to a labelled heuristic only if delay_model.pkl hasn't been
     trained yet, so the endpoint never hard-fails during setup.
 
-    Phase 4 TODO: replace `explanation` (currently a templated sentence)
-    with the full LLM explanation layer, and populate
-    `similar_past_incidents` via rag/incident_retriever.py.
+    Phase 4: retrieves similar historical incidents and composes a grounded
+    explanation. The local TF-IDF index is always available; configured
+    Supabase pgvector and Anthropic credentials are used automatically.
     """
+    query_parts = [req.route]
+    if req.station:
+        query_parts.append(req.station)
+    if req.weather:
+        query_parts.append(req.weather.value)
+    if req.incident_type and req.incident_type != IncidentType.none:
+        query_parts.append(req.incident_type.value.replace("_", " "))
+    retrieval = incident_retriever.retrieve_similar_incidents(
+        " ".join(query_parts),
+        top_k=3,
+        route=req.route,
+        station=req.station,
+        incident_type=req.incident_type.value if req.incident_type else None,
+    )
+    incidents = retrieval["incidents"]
+    citations = incident_retriever.format_incident_citations(incidents)
+    prefer_llm = bool(__import__("os").getenv("ANTHROPIC_API_KEY"))
+
     if not delay_model.is_model_available():
         baseline = 4.0
         if req.weather in (WeatherCondition.heavy_rain, WeatherCondition.fog):
@@ -157,18 +199,20 @@ def predict_delay(req: DelayPredictionRequest):
         if req.day_type == DayType.public_holiday:
             baseline += 3.0
 
+        grounded = explanation_layer.compose_explanation(
+            req.route, baseline, [], incidents, prefer_llm=prefer_llm
+        )
         return DelayPredictionResponse(
             route=req.route,
             train_id=req.train_id,
             predicted_delay_minutes=round(baseline, 1),
             confidence="low",
-            explanation=(
-                "Placeholder estimate — trained model not found. "
-                "Run `python ml/train_delay_model.py` to enable Phase 2 predictions."
-            ),
+            explanation=grounded["explanation"],
             top_contributing_features=[],
-            similar_past_incidents=[],
+            similar_past_incidents=citations,
             model_version="phase1-heuristic-v0",
+            retrieval_method=retrieval["method"],
+            explanation_method=grounded["method"],
         )
 
     result = delay_model.predict_delay(
@@ -181,16 +225,13 @@ def predict_delay(req: DelayPredictionRequest):
     )
 
     top_features = result["top_features"]
-    if top_features:
-        feature_note = ", ".join(f["feature"].replace("_", " ") for f in top_features)
-        explanation = (
-            f"Expect ~{result['predicted_delay_minutes']} min delay on {req.route}. "
-            f"Model's strongest learned signals: {feature_note}. "
-            "(Templated explanation — Phase 4 replaces this with a full LLM-generated summary "
-            "grounded in similar historical incidents.)"
-        )
-    else:
-        explanation = f"Expect ~{result['predicted_delay_minutes']} min delay on {req.route}."
+    grounded = explanation_layer.compose_explanation(
+        req.route,
+        result["predicted_delay_minutes"],
+        top_features,
+        incidents,
+        prefer_llm=prefer_llm,
+    )
 
     confidence = "medium" if abs(result["predicted_delay_minutes"]) < 20 else "low"
 
@@ -199,10 +240,12 @@ def predict_delay(req: DelayPredictionRequest):
         train_id=req.train_id,
         predicted_delay_minutes=result["predicted_delay_minutes"],
         confidence=confidence,
-        explanation=explanation,
+        explanation=grounded["explanation"],
         top_contributing_features=top_features,
-        similar_past_incidents=[],
+        similar_past_incidents=citations,
         model_version=result["model_version"],
+        retrieval_method=retrieval["method"],
+        explanation_method=grounded["method"],
     )
 
 

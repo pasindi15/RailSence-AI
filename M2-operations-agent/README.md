@@ -40,6 +40,12 @@ python -m uvicorn main:app --reload --port 8001
 
 Then visit `http://localhost:8001/docs` for interactive Swagger UI.
 
+The operations dashboard is available at `http://localhost:8001/`. It submits
+incident reports to `/incident-report`, displays the generated summary and
+category, and checks `/health` for service status. Prediction responses now
+include grounded historical precedent from the local TF-IDF index or
+Supabase pgvector when configured.
+
 ## Endpoints (Phase 1 contracts — stable going forward)
 
 - `GET /health` — liveness check
@@ -137,9 +143,28 @@ If `delay_model.pkl` hasn't been trained yet, the endpoint automatically
 falls back to the labelled Phase 1 heuristic instead of failing — so the
 service is always runnable.
 
-`explanation` is still a templated sentence, not an LLM call — that's
-Phase 4. `similar_past_incidents` is still empty — that's also Phase 4
-(RAG over incident descriptions).
+## Phase 4 — Retrieval, Grounding & Explanation
+
+| File | Purpose |
+|---|---|
+| `rag/incident_retriever.py` | Retrieves the top 3 historical incidents using Supabase pgvector or local TF-IDF fallback |
+| `rag/embed_documents.py` | Embeds incident notes with `all-MiniLM-L6-v2` and uploads them to Supabase |
+| `rag/supabase_schema.sql` | Creates the pgvector table, index, and `match_incidents` RPC |
+| `rag/explanation.py` | Composes a grounded template or optional Anthropic explanation |
+
+`/predict-delay` now returns `similar_past_incidents`, `retrieval_method`, and
+`explanation_method`. Without cloud variables it is fully demoable offline
+using the CSV corpus and TF-IDF. With `SUPABASE_URL` and `SUPABASE_KEY`, the
+retriever uses the pgvector RPC. With `ANTHROPIC_API_KEY`, it also asks Claude
+to compose the final explanation from only the prediction, model signals,
+and retrieved evidence.
+
+To enable Supabase retrieval, run `rag/supabase_schema.sql` in the Supabase
+SQL editor, then execute:
+
+```bash
+python M2-operations-agent/rag/embed_documents.py
+```
 
 ## Phase 3 — Incident Summarization & Classification (NLP)
 
@@ -212,13 +237,12 @@ as the natural upgrade.
 }
 ```
 
-Input sanitization from Phase 1 (control characters, `<script>` tags,
-length limits) still runs before any of this — tested again and still
-rejects malicious input with a 422.
+Input sanitization runs in the Pydantic request model before either NLP
+function is called. It enforces field length limits and rejects control
+characters or any HTML markup after checking it with `bleach`, returning a
+422 for malicious input.
 
-## Next: Phase 4
+## Next: Phase 5
 
-Retrieval (IR/RAG) over past incident descriptions using
-sentence-transformers + Supabase pgvector, plus the LLM explanation layer
-that turns the Phase 2 model's numeric prediction + retrieved similar
-incidents into the final plain-language `/predict-delay` response.
+Hub integration, rate limiting, audit logging, live operational statistics,
+and the complete multi-agent dashboard remain for Phase 5.

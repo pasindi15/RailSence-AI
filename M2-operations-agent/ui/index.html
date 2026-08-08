@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RailSense Operations</title>
+  <style>
+    :root {
+      --ink: #17211b;
+      --muted: #68736c;
+      --paper: #f5f1e8;
+      --panel: #fffdf8;
+      --line: #ded8ca;
+      --green: #165c4b;
+      --green-soft: #dcebe2;
+      --amber: #c77827;
+      --red: #b94b3a;
+      --shadow: 0 18px 45px rgba(46, 54, 42, .09);
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: var(--ink); background: var(--paper); font-family: Georgia, 'Times New Roman', serif; }
+    button, input, select, textarea { font: inherit; }
+    .shell { max-width: 1280px; margin: 0 auto; padding: 30px 28px 50px; }
+    header { display: flex; align-items: end; justify-content: space-between; gap: 24px; margin-bottom: 34px; }
+    .eyebrow { margin: 0 0 8px; color: var(--green); font: 700 11px/1.2 Arial, sans-serif; letter-spacing: 2px; text-transform: uppercase; }
+    h1 { margin: 0; font-size: clamp(35px, 5vw, 64px); font-weight: 400; line-height: .95; letter-spacing: -2px; }
+    .subtitle { max-width: 420px; margin: 0; color: var(--muted); font: 15px/1.5 Arial, sans-serif; }
+    .health { display: flex; align-items: center; gap: 8px; white-space: nowrap; color: var(--muted); font: 12px Arial, sans-serif; }
+    .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--amber); }
+    .dot.ok { background: #43a66e; }
+    .grid { display: grid; grid-template-columns: 1.15fr .85fr; gap: 20px; }
+    .panel { background: var(--panel); border: 1px solid var(--line); box-shadow: var(--shadow); padding: 24px; }
+    .panel h2 { margin: 0 0 5px; font-size: 25px; font-weight: 400; }
+    .panel-intro { margin: 0 0 22px; color: var(--muted); font: 13px/1.5 Arial, sans-serif; }
+    label { display: block; margin: 0 0 7px; color: var(--muted); font: 700 11px Arial, sans-serif; letter-spacing: .8px; text-transform: uppercase; }
+    input, select, textarea { width: 100%; border: 1px solid var(--line); border-radius: 2px; background: #fff; color: var(--ink); padding: 11px 12px; outline: none; }
+    input:focus, select:focus, textarea:focus { border-color: var(--green); box-shadow: 0 0 0 3px var(--green-soft); }
+    textarea { min-height: 130px; resize: vertical; line-height: 1.45; }
+    .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .field-wide { grid-column: 1 / -1; }
+    .actions { display: flex; align-items: center; gap: 14px; margin-top: 18px; }
+    button { border: 0; border-radius: 2px; background: var(--green); color: white; cursor: pointer; padding: 12px 18px; font: 700 12px Arial, sans-serif; letter-spacing: .4px; }
+    button:hover { background: #0d493b; }
+    button:disabled { cursor: wait; opacity: .6; }
+    .result { min-height: 260px; display: flex; flex-direction: column; justify-content: center; }
+    .empty { color: var(--muted); font: 14px/1.6 Arial, sans-serif; }
+    .result-card { display: none; }
+    .result-card.visible { display: block; }
+    .type { display: inline-block; margin: 0 0 17px; padding: 7px 9px; background: var(--green-soft); color: var(--green); font: 700 11px Arial, sans-serif; letter-spacing: .7px; text-transform: uppercase; }
+    .summary { margin: 0 0 20px; font-size: 25px; line-height: 1.2; }
+    .meta { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; border-top: 1px solid var(--line); padding-top: 15px; color: var(--muted); font: 12px/1.4 Arial, sans-serif; }
+    .meta strong { display: block; color: var(--ink); font-size: 13px; }
+    .lower { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 20px; }
+    .stat { min-height: 125px; }
+    .stat-label { color: var(--muted); font: 700 10px Arial, sans-serif; letter-spacing: 1px; text-transform: uppercase; }
+    .stat-value { margin-top: 13px; font-size: 34px; }
+    .stat-note { margin-top: 4px; color: var(--muted); font: 12px Arial, sans-serif; }
+    .error { color: var(--red); font: 12px Arial, sans-serif; }
+    .prediction-panel { margin-top: 20px; }
+    .prediction-output { margin-top: 20px; border-top: 1px solid var(--line); padding-top: 18px; }
+    .prediction-output strong { color: var(--green); font-size: 28px; font-weight: 400; }
+    .prediction-output p { margin: 8px 0 0; color: var(--muted); font: 13px/1.5 Arial, sans-serif; }
+    .citations { margin: 22px 0 0; border-top: 1px solid var(--line); padding-top: 16px; }
+    .citations h3 { margin: 0 0 10px; font: 700 10px Arial, sans-serif; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); }
+    .citations ol { margin: 0; padding-left: 18px; color: var(--muted); font: 12px/1.5 Arial, sans-serif; }
+    .citations li { margin-bottom: 8px; }
+    @media (max-width: 800px) { header { display: block; } .health { margin-top: 18px; } .grid, .lower { grid-template-columns: 1fr; } .shell { padding: 22px 16px 35px; } }
+    @media (max-width: 500px) { .fields { grid-template-columns: 1fr; } .field-wide { grid-column: auto; } }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <div>
+        <p class="eyebrow">RailSense AI / M2 Operations</p>
+        <h1>Control room</h1>
+      </div>
+      <div>
+        <p class="subtitle">A live workspace for delay intelligence and incident triage.</p>
+        <p class="health"><span id="healthDot" class="dot"></span><span id="healthText">Checking service...</span></p>
+      </div>
+    </header>
+
+    <section class="grid">
+      <form id="incidentForm" class="panel">
+        <h2>Log an incident</h2>
+        <p class="panel-intro">Turn a staff report into an operator brief and incident category.</p>
+        <div class="fields">
+          <div><label for="trainId">Train ID</label><input id="trainId" required minlength="3" maxlength="20" value="PM-4082"></div>
+          <div><label for="station">Station</label><input id="station" required minlength="2" maxlength="80" value="Peradeniya"></div>
+          <div class="field-wide"><label for="rawText">Raw report</label><textarea id="rawText" required minlength="5" maxlength="2000" placeholder="Describe what happened..."></textarea></div>
+        </div>
+        <div class="actions"><button id="incidentButton" type="submit">Process report</button><span id="incidentError" class="error"></span></div>
+      </form>
+
+      <section class="panel result" aria-live="polite">
+        <div id="emptyResult" class="empty">Your classified incident will appear here.<br>Phase 4 retrieval powers the prediction evidence below.</div>
+        <div id="resultCard" class="result-card">
+          <span id="resultType" class="type"></span>
+          <p id="resultSummary" class="summary"></p>
+          <div class="meta"><div>TRAIN<strong id="resultTrain"></strong></div><div>STATION<strong id="resultStation"></strong></div><div>METHOD<strong id="resultMethod"></strong></div><div>RECEIVED<strong id="resultTime"></strong></div></div>
+          <div class="citations"><h3>Historical precedent</h3><ol id="citationsList"></ol></div>
+        </div>
+      </section>
+    </section>
+
+    <section class="panel prediction-panel">
+      <h2>Predict a delay</h2>
+      <p class="panel-intro">Combine the trained model with historical incident precedent.</p>
+      <form id="predictionForm">
+        <div class="fields">
+          <div><label for="route">Route</label><input id="route" required value="Colombo Fort - Kandy"></div>
+          <div><label for="predictionTrain">Train ID</label><input id="predictionTrain" required value="PM-4082"></div>
+          <div><label for="scheduledTime">Scheduled time</label><input id="scheduledTime" type="datetime-local" required value="2025-01-01T08:30"></div>
+          <div><label for="predictionStation">Station</label><input id="predictionStation" value="Kandy"></div>
+          <div><label for="weather">Weather</label><select id="weather"><option value="clear">Clear</option><option value="light_rain" selected>Light rain</option><option value="heavy_rain">Heavy rain</option><option value="fog">Fog</option><option value="extreme_heat">Extreme heat</option></select></div>
+          <div><label for="incidentType">Incident type</label><select id="incidentType"><option value="none">None</option><option value="signal_fault" selected>Signal fault</option><option value="mechanical">Mechanical</option><option value="weather">Weather</option><option value="track_obstruction">Track obstruction</option><option value="staffing">Staffing</option></select></div>
+        </div>
+        <div class="actions"><button id="predictionButton" type="submit">Generate grounded prediction</button><span id="predictionError" class="error"></span></div>
+      </form>
+      <div id="predictionOutput" class="prediction-output" hidden><strong id="predictionValue"></strong><p id="predictionExplanation"></p><p id="predictionEvidence"></p></div>
+    </section>
+
+    <section class="lower">
+      <div class="panel stat"><div class="stat-label">Service</div><div id="serviceValue" class="stat-value">--</div><div class="stat-note">FastAPI operations agent</div></div>
+      <div class="panel stat"><div class="stat-label">Prediction engine</div><div class="stat-value">ML</div><div class="stat-note">Phase 2 model connected</div></div>
+      <div class="panel stat"><div class="stat-label">Evidence layer</div><div class="stat-value">RAG</div><div class="stat-note">Three historical precedents per prediction</div></div>
+    </section>
+  </main>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    async function checkHealth() {
+      try {
+        const response = await fetch('/health');
+        if (!response.ok) throw new Error('offline');
+        const data = await response.json();
+        $('healthDot').classList.add('ok');
+        $('healthText').textContent = 'Service online';
+        $('serviceValue').textContent = data.status.toUpperCase();
+      } catch (error) {
+        $('healthText').textContent = 'Service unavailable';
+        $('serviceValue').textContent = 'OFFLINE';
+      }
+    }
+    $('incidentForm').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const button = $('incidentButton');
+      const errorText = $('incidentError');
+      button.disabled = true;
+      errorText.textContent = '';
+      try {
+        const response = await fetch('/incident-report', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ train_id: $('trainId').value, station: $('station').value, raw_text: $('rawText').value }) });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.detail?.[0]?.msg || 'Could not process report');
+        $('emptyResult').style.display = 'none';
+        $('resultCard').classList.add('visible');
+        $('resultType').textContent = data.classified_type.replaceAll('_', ' ');
+        $('resultSummary').textContent = data.summary;
+        $('resultTrain').textContent = data.train_id;
+        $('resultStation').textContent = data.station;
+        $('resultMethod').textContent = data.nlp_method.replaceAll('_', ' ');
+        $('resultTime').textContent = new Date(data.received_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        $('citationsList').replaceChildren(...data.similar_past_incidents.map((citation) => { const item = document.createElement('li'); item.textContent = citation; return item; }));
+      } catch (error) { errorText.textContent = error.message; }
+      finally { button.disabled = false; }
+    });
+    $('predictionForm').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const button = $('predictionButton');
+      $('predictionError').textContent = '';
+      button.disabled = true;
+      try {
+        const response = await fetch('/predict-delay', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ route: $('route').value, train_id: $('predictionTrain').value, scheduled_time: new Date($('scheduledTime').value).toISOString(), station: $('predictionStation').value || null, weather: $('weather').value, day_type: 'weekday', incident_type: $('incidentType').value }) });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.detail?.[0]?.msg || 'Could not generate prediction');
+        $('predictionOutput').hidden = false;
+        $('predictionValue').textContent = `${data.predicted_delay_minutes} min expected delay`;
+        $('predictionExplanation').textContent = data.explanation;
+        $('predictionEvidence').textContent = `${data.similar_past_incidents.length} precedents retrieved via ${data.retrieval_method}.`;
+      } catch (error) { $('predictionError').textContent = error.message; }
+      finally { button.disabled = false; }
+    });
+    checkHealth();
+  </script>
+</body>
+</html>
