@@ -40,6 +40,13 @@ python -m uvicorn main:app --reload --port 8001
 
 Then visit `http://localhost:8001/docs` for interactive Swagger UI.
 
+The Phase 3 operations dashboard is available at `http://localhost:8001/`.
+It submits incident reports to `/incident-report`, displays the generated
+summary and category, and checks `/health` for service status. Phase 4 can
+extend this same screen with retrieved historical incidents and grounded
+prediction explanations; Phase 5 can add live Hub events, route heatmaps,
+and operational statistics.
+
 ## Endpoints (Phase 1 contracts — stable going forward)
 
 - `GET /health` — liveness check
@@ -212,9 +219,10 @@ as the natural upgrade.
 }
 ```
 
-Input sanitization from Phase 1 (control characters, `<script>` tags,
-length limits) still runs before any of this — tested again and still
-rejects malicious input with a 422.
+Input sanitization runs in the Pydantic request model before either NLP
+function is called. It enforces field length limits and rejects control
+characters or any HTML markup after checking it with `bleach`, returning a
+422 for malicious input.
 
 ## Next: Phase 4
 
