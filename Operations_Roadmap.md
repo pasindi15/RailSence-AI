@@ -41,13 +41,15 @@
 
 **Deliverable:** `/predict-delay` returns prediction + explanation + cited similar past incident — your strongest demo moment.
 
-## Phase 5 — Hub Integration, Security, Dashboard, Evaluation
+## Phase 5 — Hub Integration, Security, Dashboard, Evaluation ✅
 **Goal:** Plug into the multi-agent system and make it presentable.
 
-- `hub_client.py`: respond to `delay_check` requests from the Passenger Agent via the Hub; publish `delay_alert` events (Redis/Upstash pub-sub) when predicted delay exceeds threshold
-- Rate-limit `/predict-delay` (slowapi), log every prediction request for audit
-- Build the Ops dashboard per the Section 2 design system: route heatmap, delay stats, model confidence, auto-summarized incident feed
-- Populate `/evaluation/ml/` and `/evaluation/nlp/` with real MAE/RMSE and classification metrics — no invented numbers
+- `hub_client.py`: registers capabilities, sends MCP-style envelopes, and publishes `delay_alert` events to the Hub and Upstash Redis when the 5-minute threshold is crossed
+- `/hub/message` accepts Passenger Agent `delay_check` envelopes and returns a grounded `delay_check_response`
+- `/predict-delay` is protected by slowapi and every prediction/incident/hub action is written to `data/audit_log.jsonl`
+- `/api/dashboard` provides live route heatmap data, hourly delay pressure, incident mix, feature importance, model/NLP metrics, alert events, and incident feed
+- `ui/index.html` is a responsive operations control room with live polling, prediction drawer, incident triage, evaluation panels, and Hub status
+- `/evaluation/ml/` and `/evaluation/nlp/` are read directly by the dashboard; displayed scores are the committed held-out evaluation artifacts
 
 **Deliverable:** Full round trip — Passenger asks about a train → Hub → your agent responds with grounded explanation → `delay_alert` fires if threshold crossed → dashboard shows it live.
 
