@@ -1,0 +1,901 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RailSense AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ── Design tokens (Section 2.1) ─────────────────────────────────────── */
+:root{
+  --bg:#F7F9FC;--surface:#FFFFFF;--brand:#4F46E5;
+  --passenger:#0EA5E9;--ops:#F59E0B;--security:#F43F5E;--maintenance:#8B5CF6;
+  --ink:#1E293B;--muted:#64748B;--line:#E2E8F0;
+  --r:14px;--shadow:0 4px 16px rgba(15,23,42,0.06);
+  --shadow-md:0 8px 32px rgba(15,23,42,0.10);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;font-size:14px;min-height:100vh}
+h1,h2,h3,h4{font-family:'Plus Jakarta Sans',sans-serif}
+
+/* ── Layout ───────────────────────────────────────────────────────────── */
+.shell{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+
+/* ── Sidebar ──────────────────────────────────────────────────────────── */
+.sidebar{background:var(--surface);border-right:1px solid var(--line);padding:24px 16px;display:flex;flex-direction:column;gap:6px;position:sticky;top:0;height:100vh;overflow-y:auto}
+.logo{display:flex;align-items:center;gap:10px;padding:8px 12px;margin-bottom:16px}
+.logo-mark{width:36px;height:36px;background:var(--brand);border-radius:10px;display:grid;place-items:center;color:#fff;font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:14px;flex-shrink:0}
+.logo-text{font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:15px;color:var(--ink)}
+.logo-sub{font-size:11px;color:var(--muted);font-weight:400}
+.nav-label{font-size:10px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);padding:4px 12px;margin-top:8px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:pointer;transition:all .15s;color:var(--muted);font-weight:500;border:none;background:none;width:100%;text-align:left;font-size:13px}
+.nav-item:hover{background:#F1F5F9;color:var(--ink)}
+.nav-item.active{color:#fff;font-weight:600}
+.nav-item.active.passenger{background:var(--passenger)}
+.nav-item.active.ops{background:var(--ops)}
+.nav-item.active.security{background:var(--security)}
+.nav-item.active.maintenance{background:var(--maintenance)}
+.nav-item.active.overview{background:var(--brand)}
+.nav-dot{width:8px;height:8px;border-radius:50%;background:var(--line);flex-shrink:0;transition:background .3s}
+.nav-dot.online{background:#22C55E}
+.nav-dot.offline{background:#EF4444}
+.nav-icon{font-size:16px;width:20px;text-align:center}
+.sidebar-footer{margin-top:auto;padding-top:16px;border-top:1px solid var(--line);font-size:11px;color:var(--muted);text-align:center}
+
+/* ── Main content ─────────────────────────────────────────────────────── */
+.main{padding:32px 36px;overflow:auto}
+.page{display:none}
+.page.active{display:block}
+
+/* ── Page header ──────────────────────────────────────────────────────── */
+.page-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px}
+.page-header h2{font-size:26px;font-weight:800;letter-spacing:-0.5px}
+.page-header p{color:var(--muted);font-size:13px;margin-top:4px}
+.badge{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;font-size:12px;font-weight:600}
+.badge-brand{background:#EEF2FF;color:var(--brand)}
+.badge-ops{background:#FFFBEB;color:#D97706}
+.badge-security{background:#FFF1F2;color:#E11D48}
+.badge-maintenance{background:#F5F3FF;color:#7C3AED}
+.badge-passenger{background:#F0F9FF;color:#0284C7}
+
+/* ── Cards ────────────────────────────────────────────────────────────── */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:20px}
+.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.card-title{font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:14px;color:var(--ink)}
+.card-sub{font-size:12px;color:var(--muted);margin-bottom:16px}
+
+/* ── Grid helpers ─────────────────────────────────────────────────────── */
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px}
+.g2{display:grid;grid-template-columns:1.4fr 1fr;gap:16px;margin-bottom:20px}
+.g2e{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+
+/* ── Metric card ──────────────────────────────────────────────────────── */
+.metric-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:20px 22px}
+.metric-label{font-size:11px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.metric-value{font-family:'Plus Jakarta Sans',sans-serif;font-size:36px;font-weight:800;letter-spacing:-1.5px;color:var(--ink);line-height:1}
+.metric-note{font-size:11px;color:var(--muted);margin-top:6px}
+.metric-accent{width:3px;height:36px;border-radius:2px;position:absolute;left:0;top:50%;transform:translateY(-50%)}
+.metric-inner{position:relative;padding-left:14px}
+
+/* ── Agent status card (overview) ─────────────────────────────────────── */
+.agent-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:22px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+.agent-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
+.agent-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px}
+.agent-card.passenger::before{background:var(--passenger)}
+.agent-card.ops::before{background:var(--ops)}
+.agent-card.security::before{background:var(--security)}
+.agent-card.maintenance::before{background:var(--maintenance)}
+.agent-name{font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:15px;margin:10px 0 4px}
+.agent-role{font-size:11px;color:var(--muted);margin-bottom:14px}
+.agent-stat{font-family:'Plus Jakarta Sans',sans-serif;font-size:28px;font-weight:800;letter-spacing:-1px}
+.agent-stat-label{font-size:11px;color:var(--muted);margin-top:2px}
+.status-pill{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;margin-top:12px}
+.status-pill.online{background:#DCFCE7;color:#15803D}
+.status-pill.offline{background:#FEE2E2;color:#DC2626}
+.status-pill.loading{background:#F1F5F9;color:var(--muted)}
+.pulse-dot{width:6px;height:6px;border-radius:50%}
+.pulse-dot.online{background:#22C55E;animation:pulse 2s infinite}
+.pulse-dot.offline{background:#EF4444}
+.pulse-dot.loading{background:#94A3B8}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ── Chart bar ────────────────────────────────────────────────────────── */
+.chart-wrap{height:180px;display:flex;align-items:flex-end;gap:5px;padding:0 2px}
+.bar{flex:1;border-radius:4px 4px 0 0;position:relative;min-width:6px;transition:opacity .2s;cursor:default}
+.bar:hover{opacity:.8}
+.bar-label{position:absolute;top:calc(100%+6px);font-size:9px;color:var(--muted);left:50%;transform:translateX(-50%);white-space:nowrap}
+
+/* ── Route list ───────────────────────────────────────────────────────── */
+.route-row{display:grid;grid-template-columns:1fr 56px 64px;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:12px}
+.route-row:last-child{border-bottom:none}
+.route-name{font-weight:600;font-size:13px;color:var(--ink)}
+.route-sub{color:var(--muted);font-size:11px;margin-top:2px}
+.pill{padding:3px 8px;border-radius:6px;font-size:10px;font-weight:700;text-transform:uppercase}
+.pill-normal{background:#DCFCE7;color:#15803D}
+.pill-watch{background:#FFFBEB;color:#D97706}
+.pill-critical{background:#FEE2E2;color:#DC2626}
+
+/* ── Feed ─────────────────────────────────────────────────────────────── */
+.feed-item{padding:12px 0;border-bottom:1px solid var(--line)}
+.feed-item:last-child{border-bottom:none}
+.feed-type{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--ops);margin-bottom:4px}
+.feed-text{font-size:12px;color:var(--muted);line-height:1.5}
+
+/* ── Progress bar ─────────────────────────────────────────────────────── */
+.progress-wrap{height:6px;background:#F1F5F9;border-radius:3px;margin:8px 0 4px;overflow:hidden}
+.progress-fill{height:100%;border-radius:3px;transition:width .6s}
+
+/* ── Table ────────────────────────────────────────────────────────────── */
+.tbl{width:100%;border-collapse:collapse;font-size:12px}
+.tbl th{text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);padding:8px 12px;border-bottom:2px solid var(--line)}
+.tbl td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:#F8FAFC}
+
+/* ── Health badge ─────────────────────────────────────────────────────── */
+.health-green{background:#DCFCE7;color:#15803D;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700}
+.health-amber{background:#FFFBEB;color:#D97706;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700}
+.health-red{background:#FEE2E2;color:#DC2626;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700}
+
+/* ── Chat ─────────────────────────────────────────────────────────────── */
+.chat-wrap{display:flex;flex-direction:column;height:420px}
+.chat-messages{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:10px}
+.chat-bubble{max-width:78%;padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.5}
+.chat-bubble.user{background:var(--passenger);color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
+.chat-bubble.agent{background:#F1F5F9;color:var(--ink);align-self:flex-start;border-bottom-left-radius:4px}
+.chat-bubble.agent .source{font-size:10px;color:var(--muted);margin-top:6px}
+.chat-input-row{display:flex;gap:8px;padding:12px;border-top:1px solid var(--line)}
+.chat-input{flex:1;border:1px solid var(--line);border-radius:10px;padding:10px 14px;font-size:13px;outline:none;font-family:inherit}
+.chat-input:focus{border-color:var(--passenger)}
+
+/* ── Buttons ──────────────────────────────────────────────────────────── */
+.btn{padding:9px 18px;border-radius:10px;font-weight:600;font-size:13px;cursor:pointer;border:none;transition:all .15s;font-family:'Plus Jakarta Sans',sans-serif}
+.btn-brand{background:var(--brand);color:#fff}
+.btn-brand:hover{background:#4338CA}
+.btn-ops{background:var(--ops);color:#fff}
+.btn-ops:hover{background:#D97706}
+.btn-passenger{background:var(--passenger);color:#fff}
+.btn-passenger:hover{background:#0284C7}
+.btn-maintenance{background:var(--maintenance);color:#fff}
+.btn-maintenance:hover{background:#7C3AED}
+.btn-outline{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.btn-outline:hover{background:#F1F5F9}
+
+/* ── Offline placeholder ──────────────────────────────────────────────── */
+.offline-box{background:#FFF8F8;border:1px dashed #FECACA;border-radius:var(--r);padding:32px;text-align:center;color:var(--muted)}
+.offline-box h4{color:#DC2626;margin-bottom:8px}
+.offline-icon{font-size:36px;margin-bottom:12px}
+
+/* ── Predict drawer ───────────────────────────────────────────────────── */
+.drawer-overlay{position:fixed;inset:0;background:rgba(15,23,42,.4);display:none;z-index:100;justify-content:flex-end}
+.drawer-overlay.open{display:flex}
+.drawer-panel{width:min(480px,100%);background:var(--surface);padding:32px;overflow-y:auto;display:flex;flex-direction:column;gap:16px;box-shadow:var(--shadow-md)}
+.drawer-panel h3{font-size:20px;font-weight:800}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-group label{font-size:12px;font-weight:600;color:var(--ink)}
+.form-group input,.form-group select,.form-group textarea{border:1px solid var(--line);border-radius:8px;padding:9px 12px;font-size:13px;outline:none;font-family:inherit;background:var(--surface)}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--ops)}
+.result-box{background:#F0FDF4;border:1px solid #BBF7D0;border-radius:10px;padding:14px;font-size:13px;line-height:1.6;display:none}
+.result-box.show{display:block}
+.result-box strong{color:var(--ink);display:block;margin-bottom:6px}
+
+/* ── Topbar ───────────────────────────────────────────────────────────── */
+.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px;padding-bottom:20px;border-bottom:1px solid var(--line)}
+.topbar-title h2{font-size:22px;font-weight:800;letter-spacing:-.5px}
+.topbar-title p{font-size:12px;color:var(--muted);margin-top:3px}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.clock{font-size:12px;color:var(--muted);font-family:'Inter',monospace}
+
+/* ── Separator ────────────────────────────────────────────────────────── */
+.section-label{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin:24px 0 12px}
+
+/* ── Scrollbar ────────────────────────────────────────────────────────── */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#CBD5E1;border-radius:10px}
+
+/* ── Responsive ───────────────────────────────────────────────────────── */
+@media(max-width:900px){
+  .shell{grid-template-columns:1fr}
+  .sidebar{display:none}
+  .g4{grid-template-columns:repeat(2,1fr)}
+  .g3{grid-template-columns:1fr}
+  .g2,.g2e{grid-template-columns:1fr}
+  .main{padding:20px}
+}
+@media(max-width:560px){
+  .g4{grid-template-columns:1fr}
+  .metric-value{font-size:28px}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- ── Sidebar ─────────────────────────────────────────────────────── -->
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-mark">RS</div>
+    <div>
+      <div class="logo-text">RailSense AI</div>
+      <div class="logo-sub">IT3041 · Agentic System</div>
+    </div>
+  </div>
+
+  <button class="nav-item overview active" onclick="showPage('overview', this)">
+    <span class="nav-icon">🏠</span> Overview
+    <span class="nav-dot" id="dot-overview" style="margin-left:auto"></span>
+  </button>
+
+  <div class="nav-label">Agents</div>
+
+  <button class="nav-item passenger" onclick="showPage('passenger', this)">
+    <span class="nav-icon">🧑‍💼</span> Passenger Assistant
+    <span class="nav-dot" id="dot-passenger" style="margin-left:auto"></span>
+  </button>
+  <button class="nav-item ops" onclick="showPage('ops', this)">
+    <span class="nav-icon">🚦</span> Operations
+    <span class="nav-dot" id="dot-ops" style="margin-left:auto"></span>
+  </button>
+  <button class="nav-item security" onclick="showPage('security', this)">
+    <span class="nav-icon">🛡️</span> Security & Fraud
+    <span class="nav-dot" id="dot-security" style="margin-left:auto"></span>
+  </button>
+  <button class="nav-item maintenance" onclick="showPage('maintenance', this)">
+    <span class="nav-icon">🔧</span> Maintenance
+    <span class="nav-dot" id="dot-maintenance" style="margin-left:auto"></span>
+  </button>
+
+  <div class="sidebar-footer">
+    RailSense AI · Group Project<br>IT3041 · 2026
+  </div>
+</aside>
+
+<!-- ── Main ────────────────────────────────────────────────────────── -->
+<main class="main">
+
+  <!-- ── Clock / topbar ─────────────────────────────────────────── -->
+  <div class="topbar">
+    <div class="topbar-title">
+      <h2 id="page-title">System Overview</h2>
+      <p id="page-sub">All four agents · live status</p>
+    </div>
+    <div class="topbar-right">
+      <span class="clock" id="clock">--:--:--</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       PAGE: OVERVIEW
+  ════════════════════════════════════════════════════════════════ -->
+  <div class="page active" id="page-overview">
+
+    <div class="g4">
+      <!-- Passenger -->
+      <div class="agent-card passenger" onclick="showPage('passenger', document.querySelector('.nav-item.passenger'))">
+        <div style="font-size:28px">🧑‍💼</div>
+        <div class="agent-name">Passenger Assistant</div>
+        <div class="agent-role">Multilingual chatbot · RAG · NLP</div>
+        <div class="agent-stat" id="ov-passenger-stat">—</div>
+        <div class="agent-stat-label">chat sessions</div>
+        <div class="status-pill loading" id="pill-passenger">
+          <div class="pulse-dot loading" id="pdot-passenger"></div>
+          <span id="pstatus-passenger">Checking…</span>
+        </div>
+      </div>
+
+      <!-- Operations -->
+      <div class="agent-card ops" onclick="showPage('ops', document.querySelector('.nav-item.ops'))">
+        <div style="font-size:28px">🚦</div>
+        <div class="agent-name">Operations Agent</div>
+        <div class="agent-role">Delay prediction · Incident NLP · RAG</div>
+        <div class="agent-stat" id="ov-ops-stat">—</div>
+        <div class="agent-stat-label">history records</div>
+        <div class="status-pill loading" id="pill-ops">
+          <div class="pulse-dot loading" id="pdot-ops"></div>
+          <span id="pstatus-ops">Checking…</span>
+        </div>
+      </div>
+
+      <!-- Security -->
+      <div class="agent-card security" onclick="showPage('security', document.querySelector('.nav-item.security'))">
+        <div style="font-size:28px">🛡️</div>
+        <div class="agent-name">Security & Fraud</div>
+        <div class="agent-role">JWT · Fraud detection · Encryption</div>
+        <div class="agent-stat" id="ov-security-stat">—</div>
+        <div class="agent-stat-label">audit events</div>
+        <div class="status-pill loading" id="pill-security">
+          <div class="pulse-dot loading" id="pdot-security"></div>
+          <span id="pstatus-security">Checking…</span>
+        </div>
+      </div>
+
+      <!-- Maintenance -->
+      <div class="agent-card maintenance" onclick="showPage('maintenance', document.querySelector('.nav-item.maintenance'))">
+        <div style="font-size:28px">🔧</div>
+        <div class="agent-name">Maintenance Agent</div>
+        <div class="agent-role">Health prediction · Manual RAG · NER</div>
+        <div class="agent-stat" id="ov-maintenance-stat">—</div>
+        <div class="agent-stat-label">assets tracked</div>
+        <div class="status-pill loading" id="pill-maintenance">
+          <div class="pulse-dot loading" id="pdot-maintenance"></div>
+          <span id="pstatus-maintenance">Checking…</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Agent interaction example -->
+    <div class="section-label">Agent message flow</div>
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-header"><span class="card-title">Live hub interactions</span>
+        <span class="badge badge-brand">MCP-style JSON protocol</span></div>
+      <div class="card-sub">Inter-agent messages routed through the hub</div>
+      <div id="ov-events" style="display:grid;gap:8px">
+        <div style="color:var(--muted);font-size:12px;padding:16px 0;text-align:center">No events yet — run a prediction to see the flow.</div>
+      </div>
+    </div>
+
+  </div><!-- /overview -->
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       PAGE: PASSENGER
+  ════════════════════════════════════════════════════════════════ -->
+  <div class="page" id="page-passenger">
+    <div id="passenger-content">
+      <div class="offline-box">
+        <div class="offline-icon">🧑‍💼</div>
+        <h4>Passenger Agent Offline</h4>
+        <p>Start the passenger-agent service on port 8001 to activate this panel.</p>
+        <code style="font-size:11px;color:var(--muted)">uvicorn main:app --port 8001</code>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       PAGE: OPERATIONS
+  ════════════════════════════════════════════════════════════════ -->
+  <div class="page" id="page-ops">
+    <div id="ops-content">
+      <div class="offline-box">
+        <div class="offline-icon">🚦</div>
+        <h4>Operations Agent Offline</h4>
+        <p>Start the M2-operations-agent on port 8002 to see live data.</p>
+        <code style="font-size:11px;color:var(--muted)">uvicorn main:app --port 8002</code>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       PAGE: SECURITY
+  ════════════════════════════════════════════════════════════════ -->
+  <div class="page" id="page-security">
+    <div id="security-content">
+      <div class="offline-box">
+        <div class="offline-icon">🛡️</div>
+        <h4>Security Agent Offline</h4>
+        <p>Start the security-agent on port 8003 to see live data.</p>
+        <code style="font-size:11px;color:var(--muted)">uvicorn main:app --port 8003</code>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       PAGE: MAINTENANCE
+  ════════════════════════════════════════════════════════════════ -->
+  <div class="page" id="page-maintenance">
+    <div id="maintenance-content">
+      <div class="offline-box">
+        <div class="offline-icon">🔧</div>
+        <h4>Maintenance Agent Offline</h4>
+        <p>Start the maintenance-agent on port 8004 to see live data.</p>
+        <code style="font-size:11px;color:var(--muted)">uvicorn main:app --port 8004</code>
+      </div>
+    </div>
+  </div>
+
+</main>
+</div><!-- /shell -->
+
+<!-- Prediction drawer -->
+<div class="drawer-overlay" id="drawer">
+  <div class="drawer-panel">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <h3>Run Delay Prediction</h3>
+      <button class="btn btn-outline" onclick="document.getElementById('drawer').classList.remove('open')" style="padding:6px 12px">✕</button>
+    </div>
+    <div class="form-group"><label>Route</label><select id="d-route"></select></div>
+    <div class="form-group"><label>Train ID</label><input id="d-train" value="PM-4082"></div>
+    <div class="form-group"><label>Scheduled time</label><input id="d-time" type="datetime-local"></div>
+    <div class="form-group"><label>Weather</label>
+      <select id="d-weather"><option>clear</option><option selected>light_rain</option><option>heavy_rain</option><option>fog</option><option>extreme_heat</option></select></div>
+    <div class="form-group"><label>Incident type</label>
+      <select id="d-incident"><option>none</option><option selected>signal_fault</option><option>mechanical</option><option>weather</option><option>track_obstruction</option><option>staffing</option></select></div>
+    <button class="btn btn-ops" onclick="runPrediction()">Generate prediction</button>
+    <div class="result-box" id="d-result"></div>
+    <hr style="border:none;border-top:1px solid var(--line)">
+    <h4 style="font-size:15px;font-weight:700">Incident Triage</h4>
+    <div class="form-group"><label>Station</label><input id="d-station" value="Kandy"></div>
+    <div class="form-group"><label>Raw incident report</label>
+      <textarea id="d-raw" rows="3" placeholder="Describe what happened…"></textarea></div>
+    <button class="btn btn-outline" onclick="runTriage()">Classify incident</button>
+    <div class="result-box" id="d-triage"></div>
+  </div>
+</div>
+
+<script>
+// ── State ────────────────────────────────────────────────────────────────
+const STATUS = {passenger:false, ops:false, security:false, maintenance:false};
+
+// ── Navigation ────────────────────────────────────────────────────────────
+const PAGE_META = {
+  overview:    {title:'System Overview',     sub:'All four agents · live status'},
+  passenger:   {title:'Passenger Assistant', sub:'Multilingual chatbot · RAG · NLP'},
+  ops:         {title:'Operations Agent',    sub:'Delay prediction · Incident intelligence'},
+  security:    {title:'Security & Fraud',    sub:'JWT authentication · Fraud detection · Encryption'},
+  maintenance: {title:'Maintenance Agent',   sub:'Predictive maintenance · Manual RAG · NER'},
+};
+
+function showPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  if (btn) btn.classList.add('active');
+  const m = PAGE_META[id] || {};
+  document.getElementById('page-title').textContent = m.title || id;
+  document.getElementById('page-sub').textContent = m.sub || '';
+  if (id === 'ops' && STATUS.ops) renderOps();
+  if (id === 'maintenance' && STATUS.maintenance) renderMaintenance();
+  if (id === 'passenger') renderPassenger();
+  if (id === 'security') renderSecurity();
+}
+
+// ── Clock ─────────────────────────────────────────────────────────────────
+setInterval(() => {
+  document.getElementById('clock').textContent =
+    new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}, 1000);
+
+// ── Agent polling ─────────────────────────────────────────────────────────
+async function checkStatus() {
+  try {
+    const r = await fetch('/status');
+    const data = await r.json();
+    updateAgentPill('passenger',  data.passenger);
+    updateAgentPill('ops',        data.operations);
+    updateAgentPill('security',   data.security);
+    updateAgentPill('maintenance',data.maintenance);
+  } catch(e) {
+    ['passenger','ops','security','maintenance'].forEach(a => updateAgentPill(a, {online:false}));
+  }
+}
+
+function updateAgentPill(agent, info={}) {
+  const online = info?.online === true;
+  STATUS[agent] = online;
+  const dot   = document.getElementById('dot-'+agent);
+  const pill  = document.getElementById('pill-'+agent);
+  const pdot  = document.getElementById('pdot-'+agent);
+  const pstat = document.getElementById('pstatus-'+agent);
+  if (!dot) return;
+  dot.className = 'nav-dot ' + (online ? 'online' : 'offline');
+  if (pill) {
+    pill.className = 'status-pill ' + (online ? 'online' : 'offline');
+    pdot.className = 'pulse-dot ' + (online ? 'online' : 'offline');
+    pstat.textContent = online ? 'Online' : 'Offline';
+  }
+
+  // Update overview stat numbers
+  const stat = document.getElementById('ov-'+agent+'-stat');
+  if (stat && online) {
+    if (agent === 'ops' && info.history_records != null)
+      stat.textContent = info.history_records.toLocaleString();
+    else
+      stat.textContent = '●';
+  }
+}
+
+// ── Operations data ───────────────────────────────────────────────────────
+let opsData = null;
+
+async function fetchOps() {
+  try {
+    const r = await fetch('/proxy/operations/api/dashboard');
+    if (!r.ok) return;
+    opsData = await r.json();
+    // Populate route selector in drawer
+    const sel = document.getElementById('d-route');
+    if (sel && !sel.options.length && opsData.routes)
+      opsData.routes.forEach(x => sel.add(new Option(x.route, x.route)));
+    // If ops page active, render immediately
+    if (document.getElementById('page-ops').classList.contains('active')) renderOps();
+    // Update overview events
+    renderOverviewEvents(opsData.events || []);
+  } catch(e){}
+}
+
+function renderOps() {
+  if (!STATUS.ops) {
+    document.getElementById('ops-content').innerHTML = offlineBox('🚦','Operations Agent Offline','Start the M2-operations-agent on port 8002.','uvicorn main:app --port 8002');
+    return;
+  }
+  if (!opsData) { fetchOps(); return; }
+  const o = opsData.overview || {};
+  const routes = opsData.routes || [];
+  const feed   = opsData.feed   || [];
+  const hourly = opsData.hourly || [];
+  const ml     = opsData.ml_metrics || {};
+  const nlp    = opsData.nlp_metrics|| {};
+
+  document.getElementById('ops-content').innerHTML = `
+    <div class="g4">
+      ${metric('Network delay', fmt(o.average_delay)+'m', 'avg minutes / trip','--ops')}
+      ${metric('On-time rate',  fmt(o.on_time_rate)+'%',  '≤5 min arrivals','--ops')}
+      ${metric('Active alerts', o.active_alerts??0,       'delay_alert events','--ops')}
+      ${metric('Audit trail',   o.audit_events??0,        'prediction actions','--ops')}
+    </div>
+    <div class="g2">
+      <div class="card">
+        <div class="card-header"><span class="card-title">Delay by departure hour</span>
+          <button class="btn btn-ops" style="font-size:11px;padding:6px 12px" onclick="document.getElementById('drawer').classList.add('open');setDrawerTime()">Run prediction</button></div>
+        <div class="card-sub">Historical average delay · 5:00–22:00</div>
+        ${hourlyChart(hourly,'--ops')}
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Incident mix</span></div>
+        <div class="card-sub">Classified by type</div>
+        ${(opsData.incident_mix||[]).map(x=>`
+          <div class="route-row">
+            <div class="route-name">${x.type.replaceAll('_',' ')}</div>
+            <strong>${x.count}</strong><span class="pill pill-watch">cases</span>
+          </div>`).join('')}
+      </div>
+    </div>
+    <div class="g2">
+      <div class="card">
+        <div class="card-header"><span class="card-title">Route heatmap</span></div>
+        <div class="card-sub">Ranked by average delay</div>
+        ${routes.slice(0,8).map(r=>`
+          <div class="route-row">
+            <div><div class="route-name">${r.route}</div>
+            <div class="route-sub">${r.trips} trips · ${r.incident_rate}% incidents</div></div>
+            <strong>${r.average_delay}m</strong>
+            <span class="pill pill-${r.status}">${r.status}</span>
+          </div>`).join('')}
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Incident feed</span></div>
+        <div class="card-sub">Auto-summarized reports</div>
+        ${feed.slice(0,6).map(x=>`
+          <div class="feed-item">
+            <div class="feed-type">${(x.type||'incident').replaceAll('_',' ')} · ${x.station||''}</div>
+            <div class="feed-text">${x.summary||'No summary.'}</div>
+          </div>`).join('') || '<div style="color:var(--muted);font-size:12px;padding:8px 0">No incidents on record.</div>'}
+      </div>
+    </div>
+    <div class="g3">
+      <div class="card">
+        <div class="card-title">ML model quality</div>
+        <div class="card-sub" style="margin-bottom:12px">GradientBoostingRegressor · held-out set</div>
+        <div style="font-size:11px;color:var(--muted)">R² score</div>
+        <div class="progress-wrap"><div class="progress-fill" style="width:${(ml.r2||0)*100}%;background:var(--ops)"></div></div>
+        <div style="font-size:12px"><strong>${fmt(ml.r2)}</strong></div>
+        <div style="font-size:11px;color:var(--muted);margin-top:8px">MAE ${fmt(ml.mae_minutes)} min · RMSE ${fmt(ml.rmse_minutes)} min</div>
+      </div>
+      <div class="card">
+        <div class="card-title">NLP quality</div>
+        <div class="card-sub" style="margin-bottom:12px">Intent classification · F1</div>
+        <div style="font-size:11px;color:var(--muted)">Macro F1</div>
+        <div class="progress-wrap"><div class="progress-fill" style="width:${(nlp.macro_avg?.f1||0)*100}%;background:var(--ops)"></div></div>
+        <div style="font-size:12px"><strong>${fmt(nlp.macro_avg?.f1)}</strong></div>
+        <div style="font-size:11px;color:var(--muted);margin-top:8px">Out-of-template: ${fmt((opsData.robustness?.filter?.accuracy||opsData.robustness?.accuracy||0)*100)}%</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Agent bridge</div>
+        <div class="card-sub" style="margin-bottom:12px">Passenger → Hub → Operations</div>
+        <div style="font-size:26px;font-weight:800;color:${opsData.hub?.configured?'var(--ops)':'var(--muted)'}">
+          ${opsData.hub?.configured?'CONNECTED':'OFFLINE FALLBACK'}
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:8px">delay_check · delay_alert · incident_triage</div>
+      </div>
+    </div>
+  `;
+}
+
+// ── Maintenance data ──────────────────────────────────────────────────────
+async function renderMaintenance() {
+  if (!STATUS.maintenance) {
+    document.getElementById('maintenance-content').innerHTML =
+      offlineBox('🔧','Maintenance Agent Offline','Start the maintenance-agent on port 8004.','uvicorn main:app --port 8004');
+    return;
+  }
+  try {
+    const r = await fetch('/proxy/maintenance/health');
+    const info = await r.json();
+    document.getElementById('maintenance-content').innerHTML = `
+      <div class="g4">
+        ${metric('Agent status','ONLINE','maintenance-agent','--maintenance')}
+        ${metric('Port','8004','HTTP service','--maintenance')}
+        ${metric('Endpoints','3','log-ingest · status · manual-query','--maintenance')}
+        ${metric('RAG','ChromaDB','equipment manuals indexed','--maintenance')}
+      </div>
+      <div class="g2">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Ask the manual</span>
+            <span class="badge badge-maintenance">RAG · ChromaDB</span></div>
+          <div class="card-sub">Query equipment manuals — answer is grounded in actual manual text</div>
+          <div style="display:flex;gap:8px;margin-bottom:14px">
+            <input id="mq-input" class="chat-input" placeholder="e.g. What is the brake pressure threshold?" style="flex:1">
+            <button class="btn btn-maintenance" onclick="runManualQuery()">Ask</button>
+          </div>
+          <div id="mq-result" style="display:none" class="result-box show"></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Log ingest</span>
+            <span class="badge badge-maintenance">POST /log-ingest</span></div>
+          <div class="card-sub">Submit sensor readings to get a health prediction</div>
+          <div class="form-group"><label>Train ID</label><input id="li-train" value="TR-001"></div>
+          <div class="form-group"><label>Component</label>
+            <select id="li-comp"><option>braking system</option><option>traction motor</option><option>bogie</option><option>compressor</option><option>pantograph</option><option>gearbox</option></select></div>
+          <div class="form-group"><label>Vibration level (mm/s²)</label><input id="li-vib" type="number" value="3.2" step="0.1"></div>
+          <div class="form-group"><label>Temperature (°C)</label><input id="li-temp" type="number" value="78"></div>
+          <div class="form-group"><label>Oil pressure (bar)</label><input id="li-oil" type="number" value="3.5" step="0.1"></div>
+          <button class="btn btn-maintenance" style="margin-top:8px" onclick="runLogIngest()">Ingest log</button>
+          <div id="li-result" style="display:none;margin-top:14px" class="result-box show"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Maintenance components</div>
+        <div class="card-sub">Equipment covered by the manual RAG corpus</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px">
+          ${['braking system','traction motor','bogie','compressor','pantograph','gearbox'].map(c=>`
+            <div style="background:#F5F3FF;border-radius:10px;padding:14px;font-size:13px;font-weight:600;color:var(--maintenance)">
+              ${c.charAt(0).toUpperCase()+c.slice(1)}
+            </div>`).join('')}
+        </div>
+      </div>
+    `;
+  } catch(e){
+    document.getElementById('maintenance-content').innerHTML =
+      offlineBox('🔧','Maintenance Agent Offline','Start the maintenance-agent on port 8004.','uvicorn main:app --port 8004');
+  }
+}
+
+async function runManualQuery() {
+  const q = document.getElementById('mq-input').value.trim();
+  if (!q) return;
+  const box = document.getElementById('mq-result');
+  box.style.display='block'; box.innerHTML='<span style="color:var(--muted)">Searching manuals…</span>';
+  try {
+    const r = await fetch('/proxy/maintenance/manual-query',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({query:q})
+    });
+    const data = await r.json();
+    if (data.online===false) { box.innerHTML='<strong style="color:#DC2626">Agent offline</strong>'; return; }
+    box.innerHTML=`<strong>${data.answer||'No answer returned.'}</strong>
+      ${(data.sources||[]).map(s=>`<div style="font-size:11px;color:var(--muted);margin-top:8px;padding:8px;background:#F8FAFC;border-radius:6px">
+        📄 ${s.source} · chunk ${s.chunk_index}<br>${s.excerpt}…</div>`).join('')}`;
+  } catch(e){ box.innerHTML='<strong style="color:#DC2626">Query failed.</strong>'; }
+}
+
+async function runLogIngest() {
+  const box = document.getElementById('li-result');
+  box.style.display='block'; box.innerHTML='<span style="color:var(--muted)">Ingesting…</span>';
+  const payload = {
+    train_id: document.getElementById('li-train').value,
+    component: document.getElementById('li-comp').value,
+    sensor_readings: {
+      vibration_level: parseFloat(document.getElementById('li-vib').value),
+      temperature_celsius: parseFloat(document.getElementById('li-temp').value),
+      oil_pressure_bar: parseFloat(document.getElementById('li-oil').value),
+    },
+    technician_notes: ''
+  };
+  try {
+    const r = await fetch('/proxy/maintenance/log-ingest',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const data = await r.json();
+    if (data.online===false) { box.innerHTML='<strong style="color:#DC2626">Agent offline</strong>'; return; }
+    const hc = data.health==='RED'?'health-red':data.health==='AMBER'?'health-amber':'health-green';
+    box.innerHTML=`
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <strong>${data.train_id} · ${data.component}</strong>
+        <span class="${hc}">${data.health}</span>
+      </div>
+      <div style="font-size:13px">${data.recommendation||''}</div>
+      ${data.log_summary?`<div style="font-size:11px;color:var(--muted);margin-top:8px">${data.log_summary}</div>`:''}
+    `;
+  } catch(e){ box.innerHTML='<strong style="color:#DC2626">Ingest failed.</strong>'; }
+}
+
+// ── Passenger placeholder ─────────────────────────────────────────────────
+function renderPassenger() {
+  if (!STATUS.passenger) {
+    document.getElementById('passenger-content').innerHTML =
+      offlineBox('🧑‍💼','Passenger Agent Offline','Start the passenger-agent on port 8001.','uvicorn main:app --port 8001');
+    return;
+  }
+  document.getElementById('passenger-content').innerHTML = `
+    <div class="g3">
+      ${metric('Status','ONLINE','passenger-agent','--passenger')}
+      ${metric('Port','8001','HTTP service','--passenger')}
+      ${metric('Languages','3','Sinhala · Tamil · English','--passenger')}
+    </div>
+    <div class="card" style="max-width:640px">
+      <div class="card-header"><span class="card-title">Passenger chat interface</span>
+        <span class="badge badge-passenger">RAG · NLU · Multilingual</span></div>
+      <div class="card-sub">Connected to passenger-agent · answers grounded in FAQ + live delay data</div>
+      <div class="chat-wrap">
+        <div class="chat-messages" id="chat-msgs">
+          <div class="chat-bubble agent">Hi! I can help with schedules, tickets, delays and complaints.<br>Ask me in Sinhala, Tamil, or English. 🙂
+            <div class="source">RailSense Passenger Assistant</div>
+          </div>
+        </div>
+        <div class="chat-input-row">
+          <input id="chat-in" class="chat-input" placeholder="Ask about schedules, delays, fares…" onkeydown="if(event.key==='Enter')sendChat()">
+          <button class="btn btn-passenger" onclick="sendChat()">Send</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+async function sendChat() {
+  const input = document.getElementById('chat-in');
+  const msgs  = document.getElementById('chat-msgs');
+  const text  = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  msgs.insertAdjacentHTML('beforeend',`<div class="chat-bubble user">${text}</div>`);
+  msgs.scrollTop = msgs.scrollHeight;
+  try {
+    const r = await fetch('/proxy/passenger/chat',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({message:text})
+    });
+    const data = await r.json();
+    const reply = data.reply || data.response || data.answer || JSON.stringify(data);
+    msgs.insertAdjacentHTML('beforeend',`<div class="chat-bubble agent">${reply}<div class="source">${data.source||'passenger-agent'}</div></div>`);
+  } catch(e){
+    msgs.insertAdjacentHTML('beforeend',`<div class="chat-bubble agent" style="background:#FEE2E2">Agent offline or error.</div>`);
+  }
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+// ── Security placeholder ──────────────────────────────────────────────────
+async function renderSecurity() {
+  if (!STATUS.security) {
+    document.getElementById('security-content').innerHTML =
+      offlineBox('🛡️','Security Agent Offline','Start the security-agent on port 8003.','uvicorn main:app --port 8003');
+    return;
+  }
+  document.getElementById('security-content').innerHTML = `
+    <div class="g4">
+      ${metric('Status','ONLINE','security-agent','--security')}
+      ${metric('Port','8003','HTTP service','--security')}
+      ${metric('Auth','JWT','inter-agent tokens','--security')}
+      ${metric('Fraud','Isolation Forest','anomaly detection','--security')}
+    </div>
+    <div class="offline-box" style="background:#FFF1F2;border-color:#FECDD3">
+      <div style="font-size:28px">🛡️</div>
+      <h4 style="color:#E11D48;margin:8px 0">Security console loading…</h4>
+      <p>Fetching audit log, fraud alerts, and session data from security-agent.</p>
+    </div>
+  `;
+  try {
+    const r = await fetch('/proxy/security/api/dashboard');
+    const data = await r.json();
+    if (data.online===false) return;
+    document.getElementById('security-content').innerHTML += `<pre style="font-size:11px;color:var(--muted);margin-top:16px">${JSON.stringify(data,null,2)}</pre>`;
+  } catch(e){}
+}
+
+// ── Overview events ───────────────────────────────────────────────────────
+function renderOverviewEvents(events) {
+  const container = document.getElementById('ov-events');
+  if (!events.length) return;
+  container.innerHTML = events.slice(0,5).map(ev=>`
+    <div style="display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;padding:10px 14px;background:#F8FAFC;border-radius:10px;font-size:12px">
+      <span style="background:#EEF2FF;color:var(--brand);padding:3px 8px;border-radius:6px;font-size:10px;font-weight:700;white-space:nowrap">${(ev.event_type||ev.intent||'event').replaceAll('_',' ')}</span>
+      <span style="color:var(--muted)">${ev.route||ev.sender_agent||''}</span>
+      <span style="color:var(--muted);white-space:nowrap">${ev.train_id||''}</span>
+    </div>`).join('');
+}
+
+// ── Prediction drawer ─────────────────────────────────────────────────────
+function setDrawerTime() {
+  const el = document.getElementById('d-time');
+  if (!el.value) {
+    const d = new Date(Date.now()+3600000);
+    el.value = new Date(d - d.getTimezoneOffset()*60000).toISOString().slice(0,16);
+  }
+}
+
+async function runPrediction() {
+  const box = document.getElementById('d-result');
+  box.className = 'result-box show';
+  box.innerHTML = '<span style="color:var(--muted)">Running prediction…</span>';
+  try {
+    const r = await fetch('/proxy/operations/predict-delay',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        route:          document.getElementById('d-route').value,
+        train_id:       document.getElementById('d-train').value,
+        scheduled_time: new Date(document.getElementById('d-time').value).toISOString(),
+        weather:        document.getElementById('d-weather').value,
+        day_type:       'weekday',
+        station:        document.getElementById('d-station')?.value || 'Kandy',
+        incident_type:  document.getElementById('d-incident').value,
+      })
+    });
+    const data = await r.json();
+    if (data.online===false) { box.innerHTML='<strong style="color:#DC2626">Operations agent offline.</strong>'; return; }
+    box.innerHTML=`<strong>${data.predicted_delay_minutes} min expected · ${data.confidence} confidence</strong><br>${data.explanation}<br><span style="font-size:11px;color:var(--muted)">${data.model_version} · ${data.similar_past_incidents?.length||0} precedents</span>`;
+    fetchOps();
+  } catch(e){ box.innerHTML='<strong style="color:#DC2626">Prediction failed.</strong>'; }
+}
+
+async function runTriage() {
+  const box = document.getElementById('d-triage');
+  box.className = 'result-box show';
+  box.innerHTML = '<span style="color:var(--muted)">Classifying…</span>';
+  try {
+    const r = await fetch('/proxy/operations/incident-report',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        train_id: document.getElementById('d-train').value,
+        station:  document.getElementById('d-station')?.value || 'Kandy',
+        raw_text: document.getElementById('d-raw').value,
+      })
+    });
+    const data = await r.json();
+    if (data.online===false) { box.innerHTML='<strong style="color:#DC2626">Operations agent offline.</strong>'; return; }
+    box.innerHTML=`<strong>${(data.classified_type||'').replaceAll('_',' ')}</strong><br>${data.summary}`;
+  } catch(e){ box.innerHTML='<strong style="color:#DC2626">Triage failed.</strong>'; }
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────
+const fmt = v => Number(v||0).toFixed(1);
+
+function metric(label, value, note, colorVar) {
+  return `<div class="metric-card">
+    <div class="metric-label">${label}</div>
+    <div class="metric-inner">
+      <div class="metric-accent" style="background:var(${colorVar})"></div>
+      <div class="metric-value">${value}</div>
+    </div>
+    <div class="metric-note">${note}</div>
+  </div>`;
+}
+
+function hourlyChart(hourly, colorVar) {
+  const filtered = hourly.filter(x => x.hour >= 5 && x.hour <= 22);
+  const max = Math.max(...filtered.map(x => x.average_delay), 1);
+  return `<div class="chart-wrap">
+    ${filtered.map(x=>`
+      <div class="bar" style="height:${Math.max(5, x.average_delay/max*100)}%;background:linear-gradient(to top, var(${colorVar}), color-mix(in srgb, var(${colorVar}) 60%, white))" title="${x.hour}:00 · ${x.average_delay} min">
+        <span class="bar-label">${x.hour}</span>
+      </div>`).join('')}
+  </div>`;
+}
+
+function offlineBox(icon, title, msg, cmd) {
+  return `<div class="offline-box">
+    <div class="offline-icon">${icon}</div>
+    <h4>${title}</h4>
+    <p style="margin-bottom:12px">${msg}</p>
+    <code style="font-size:11px;color:var(--muted);background:#F1F5F9;padding:6px 12px;border-radius:6px">${cmd}</code>
+  </div>`;
+}
+
+// ── Boot ──────────────────────────────────────────────────────────────────
+checkStatus();
+fetchOps();
+setInterval(checkStatus, 10000);
+setInterval(fetchOps,    15000);
+</script>
+</body>
+</html>
