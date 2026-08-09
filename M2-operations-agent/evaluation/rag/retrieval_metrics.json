@@ -1,0 +1,32 @@
+{
+  "backend": "local_tfidf",
+  "relevance_proxy": "retrieved incident shares the query incident_type",
+  "n_queries": 150,
+  "precision_at_k": {
+    "p@1": 1.0,
+    "p@3": 1.0,
+    "p@5": 1.0
+  },
+  "precision_at_5_by_category": {
+    "mechanical": {
+      "n_queries": 32,
+      "precision_at_5": 1.0
+    },
+    "signal_fault": {
+      "n_queries": 50,
+      "precision_at_5": 1.0
+    },
+    "staffing": {
+      "n_queries": 18,
+      "precision_at_5": 1.0
+    },
+    "track_obstruction": {
+      "n_queries": 31,
+      "precision_at_5": 1.0
+    },
+    "weather": {
+      "n_queries": 19,
+      "precision_at_5": 1.0
+    }
+  }
+}
