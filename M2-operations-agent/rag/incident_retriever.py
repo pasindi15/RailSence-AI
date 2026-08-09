@@ -16,6 +16,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
 THIS_DIR = Path(__file__).resolve().parent
+ROOT_DIR = THIS_DIR.parents[1]
 DATA_PATH = THIS_DIR.parent / "data" / "operations_history.csv"
 CACHE_PATH = THIS_DIR / "incident_embeddings.json"
 DEFAULT_TOP_K = 3
@@ -24,6 +25,19 @@ _vectorizer: Optional[TfidfVectorizer] = None
 _matrix = None
 _records: list[dict] = []
 _embedding_model = None
+
+
+def _load_root_env() -> None:
+    """Load the repository root .env when the service is started directly."""
+    env_path = ROOT_DIR / ".env"
+    if not env_path.exists():
+        return
+    for line in env_path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
 
 
 def _load_records() -> list[dict]:
@@ -54,8 +68,9 @@ def _build_tfidf_index() -> None:
 
 def _search_supabase(query: str, top_k: int) -> Optional[list[dict]]:
     """Query the optional pgvector RPC; return None when it is not configured."""
+    _load_root_env()
     url = os.getenv("SUPABASE_URL")
-    key = os.getenv("SUPABASE_KEY")
+    key = os.getenv("SUPABASE_PUBLISHABLE_KEY", os.getenv("SUPABASE_KEY"))
     if not url or not key:
         return None
 
