@@ -390,6 +390,117 @@ body::after{
 @media(max-width:1100px){.g4{grid-template-columns:repeat(2,1fr)}.g3{grid-template-columns:1fr 1fr}.g2{grid-template-columns:1fr}}
 @media(max-width:768px){.shell{grid-template-columns:1fr}.sidebar{display:none}.content{padding:14px}.g4,.g3,.g2,.g2e{grid-template-columns:1fr}.topbar{padding:12px 14px}}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* ══════════════ THEME TOGGLE BUTTON ══════════════ */
+.theme-toggle{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,.07);border:1px solid var(--border);color:var(--muted-hi);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s var(--ease);flex-shrink:0}
+.theme-toggle:hover{background:rgba(255,255,255,.13);color:var(--ink);border-color:var(--border-hi)}
+.theme-toggle:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.theme-toggle svg{transition:transform .35s var(--ease),opacity .2s}
+.theme-toggle:hover svg{transform:rotate(20deg)}
+
+/* ══════════════ LIGHT THEME OVERRIDES ══════════════ */
+html[data-theme="light"]{
+  --bg:        #EFF6FF;
+  --rail-dark: #E0EAFF;
+  --card:      rgba(255,255,255,0.88);
+  --card-hi:   rgba(255,255,255,0.96);
+  --border:    rgba(0,0,0,0.08);
+  --border-hi: rgba(0,0,0,0.15);
+  --track:     rgba(0,0,0,0.05);
+  --ink:       #0F172A;
+  --muted:     #64748B;
+  --muted-hi:  #475569;
+  --steel:     #64748B;
+  --shadow:    0 4px 24px rgba(0,0,0,0.10);
+  --shadow-xl: 0 16px 48px rgba(0,0,0,0.16);
+}
+html[data-theme="light"] body::before{background-image:linear-gradient(rgba(37,99,235,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.07) 1px,transparent 1px);background-size:48px 48px}
+html[data-theme="light"] body::after{background:radial-gradient(ellipse 800px 600px at 10% 20%,rgba(37,99,235,.07) 0%,transparent 60%),radial-gradient(ellipse 600px 400px at 85% 70%,rgba(168,85,247,.04) 0%,transparent 60%),radial-gradient(ellipse 400px 300px at 50% 100%,rgba(245,158,11,.03) 0%,transparent 60%)}
+
+/* Sidebar */
+html[data-theme="light"] .sidebar{background:rgba(241,246,255,0.97);border-right-color:rgba(0,0,0,.1)}
+html[data-theme="light"] .nav-item{color:#475569}
+html[data-theme="light"] .nav-item:hover{background:rgba(0,0,0,.04);color:#0F172A;border-color:rgba(0,0,0,.08)}
+html[data-theme="light"] .nav-dot.off{background:#CBD5E1}
+html[data-theme="light"] .nav-item.active{color:var(--brand);background:rgba(37,99,235,.08);border-color:rgba(37,99,235,.2)}
+html[data-theme="light"] .nav-item.active .nav-ico{filter:none}
+html[data-theme="light"] .nav-section{color:#94A3B8}
+html[data-theme="light"] .logo-name{color:#0F172A}
+html[data-theme="light"] .logo{background:linear-gradient(135deg,rgba(37,99,235,.1),rgba(37,99,235,.03))}
+html[data-theme="light"] .signal-box{background:rgba(255,255,255,.85);border-color:rgba(0,0,0,.1)}
+html[data-theme="light"] .signal-status{color:#0F172A}
+html[data-theme="light"] .signal-panel{border-top-color:rgba(0,0,0,.08)}
+
+/* Track banner + topbar */
+html[data-theme="light"] .track-banner{background:linear-gradient(180deg,rgba(228,240,255,.95) 0%,rgba(210,228,255,.8) 100%);border-bottom-color:rgba(0,0,0,.08)}
+html[data-theme="light"] .topbar{background:rgba(241,246,255,.9);border-bottom-color:rgba(0,0,0,.08)}
+html[data-theme="light"] .topbar-title{color:#0F172A}
+html[data-theme="light"] .topbar-sub{color:#64748B}
+html[data-theme="light"] .theme-toggle{background:rgba(0,0,0,.06);color:#475569}
+html[data-theme="light"] .theme-toggle:hover{background:rgba(0,0,0,.11);color:#0F172A}
+
+/* Departure board — keep the warm amber board feel */
+html[data-theme="light"] .dep-board{background:#FDF8F0;border-color:rgba(180,130,50,.3)}
+html[data-theme="light"] .dep-board-header{background:linear-gradient(90deg,rgba(180,120,30,.14),rgba(180,120,30,.04));border-bottom-color:rgba(180,120,30,.2)}
+html[data-theme="light"] .dep-row{border-bottom-color:rgba(0,0,0,.05)}
+html[data-theme="light"] .dep-row.header-row{background:rgba(0,0,0,.03)}
+html[data-theme="light"] .dep-row:hover{background:rgba(245,158,11,.05)}
+html[data-theme="light"] .dep-dest{color:#1E293B}
+html[data-theme="light"] .dep-dest-sub{color:#64748B}
+html[data-theme="light"] .dep-col-label{color:#64748B}
+
+/* Cards + metrics + platform cards */
+html[data-theme="light"] .card{background:rgba(255,255,255,.9);box-shadow:0 4px 20px rgba(0,0,0,.09)}
+html[data-theme="light"] .card:hover{border-color:rgba(0,0,0,.14)}
+html[data-theme="light"] .platform-card{background:rgba(255,255,255,.9)}
+html[data-theme="light"] .metric{background:rgba(255,255,255,.9);box-shadow:0 4px 20px rgba(0,0,0,.09)}
+html[data-theme="light"] .metric:hover{border-color:rgba(0,0,0,.14)}
+html[data-theme="light"] .metric-value{color:#0F172A}
+html[data-theme="light"] .pc-stat{filter:saturate(1.1) brightness(.9)}
+
+/* Hub events */
+html[data-theme="light"] .hub-event{background:rgba(0,0,0,.025);border-color:rgba(0,0,0,.06)}
+html[data-theme="light"] .hub-event:hover{background:rgba(0,0,0,.05)}
+html[data-theme="light"] .he-route{color:#334155}
+html[data-theme="light"] .he-train{color:#64748B}
+
+/* Forms + chat */
+html[data-theme="light"] .chat-input{background:rgba(0,0,0,.04);border-color:rgba(0,0,0,.1);color:#0F172A}
+html[data-theme="light"] .chat-input:focus{border-color:rgba(6,182,212,.4)}
+html[data-theme="light"] .bubble.agent{background:rgba(0,0,0,.04);border-color:rgba(0,0,0,.08);color:#0F172A}
+html[data-theme="light"] .bubble-src{color:rgba(0,0,0,.35)}
+html[data-theme="light"] .form-group input,
+html[data-theme="light"] .form-group select,
+html[data-theme="light"] .form-group textarea{background:#fff;border-color:rgba(0,0,0,.12);color:#0F172A}
+html[data-theme="light"] .form-group select option{background:#fff;color:#0F172A}
+html[data-theme="light"] .form-group label{color:#475569}
+
+/* Components + offline */
+html[data-theme="light"] .comp-tile{background:rgba(139,92,246,.07);border-color:rgba(139,92,246,.18);color:#7C3AED}
+html[data-theme="light"] .offline-box{background:rgba(241,246,255,.8);border-color:rgba(0,0,0,.1)}
+html[data-theme="light"] .offline-title{color:#334155}
+html[data-theme="light"] .offline-sub{color:#64748B}
+html[data-theme="light"] .offline-cmd{background:rgba(0,0,0,.05);border-color:rgba(0,0,0,.1);color:#334155}
+
+/* Drawer */
+html[data-theme="light"] .drawer-panel{background:rgba(241,246,255,.98)}
+html[data-theme="light"] .drawer-overlay{background:rgba(15,23,42,.45)}
+
+/* Misc */
+html[data-theme="light"] .feed-item{border-bottom-color:rgba(0,0,0,.06)}
+html[data-theme="light"] .feed-text{color:#334155}
+html[data-theme="light"] .route-row{border-bottom-color:rgba(0,0,0,.06)}
+html[data-theme="light"] .rname{color:#0F172A}
+html[data-theme="light"] .rsub{color:#64748B}
+html[data-theme="light"] .sec-title{color:#0F172A}
+html[data-theme="light"] .sec-sub{color:#64748B}
+html[data-theme="light"] .station-dot{background:#fff!important}
+html[data-theme="light"] .btn-ghost{background:rgba(0,0,0,.05);color:#0F172A;border-color:rgba(0,0,0,.1)}
+html[data-theme="light"] .btn-ghost:hover{background:rgba(0,0,0,.1)}
+html[data-theme="light"] .result-box{background:rgba(34,197,94,.05);border-color:rgba(34,197,94,.2)}
+html[data-theme="light"] ::-webkit-scrollbar-thumb{background:rgba(0,0,0,.15)}
+html[data-theme="light"] .prog-wrap{background:rgba(0,0,0,.08)}
+html[data-theme="light"] .bar-col .bar-tick{color:#64748B}
 </style>
 </head>
 <body>
@@ -545,6 +656,12 @@ body::after{
         <div class="pulse-dot" aria-hidden="true"></div>
         Live
       </div>
+      <button class="theme-toggle" onclick="toggleTheme()" id="theme-btn" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+        <!-- Moon: visible in dark mode -->
+        <svg id="icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <!-- Sun: visible in light mode -->
+        <svg id="icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:none"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      </button>
       <div class="depot-clock" id="clock" aria-label="Current time">--:--:--</div>
     </div>
   </div>
@@ -1267,6 +1384,25 @@ function offlineBox(key) {
   const [name, msg, cmd] = OFFLINE_CFG[key]||['Agent','...','uvicorn main:app'];
   return `<div class="offline-box"><div class="offline-ico" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#4A6080" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div><div class="offline-title">${name} Offline</div><div class="offline-sub">Start ${msg}</div><div class="offline-cmd">${cmd}</div></div>`;
 }
+
+// ── Theme toggle ──────────────────────────────────────────────────────────
+function applyTheme(t) {
+  document.documentElement.setAttribute('data-theme', t);
+  const light = t === 'light';
+  $('icon-moon').style.display = light ? 'none' : '';
+  $('icon-sun').style.display  = light ? '' : 'none';
+}
+function toggleTheme() {
+  const next = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+  applyTheme(next);
+  localStorage.setItem('railsense-theme', next);
+}
+// Initialise: saved preference → system preference → dark
+(function(){
+  const saved = localStorage.getItem('railsense-theme');
+  const sys   = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+  applyTheme(saved || sys);
+})();
 
 // ── Boot ──────────────────────────────────────────────────────────────────
 checkStatus();
