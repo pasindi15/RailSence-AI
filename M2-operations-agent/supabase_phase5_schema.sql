@@ -99,10 +99,24 @@ create index if not exists operational_events_created_idx on public.operational_
 create index if not exists operational_events_type_idx on public.operational_events(event_type);
 create index if not exists operational_events_route_idx on public.operational_events(route);
 
+-- Extensible operational control-center entities. Each row keeps its stable id
+-- and entity type relational, while the evolving dashboard fields live in JSONB.
+create table if not exists public.operation_entities (
+    id text primary key,
+    entity_type text not null,
+    data jsonb not null default '{}'::jsonb,
+    created_at timestamptz not null default now(),
+    updated_at timestamptz not null default now()
+);
+
+create index if not exists operation_entities_type_idx on public.operation_entities(entity_type);
+create index if not exists operation_entities_updated_idx on public.operation_entities(updated_at desc);
+
 alter table public.operations_history enable row level security;
 alter table public.incident_embeddings enable row level security;
 alter table public.audit_events enable row level security;
 alter table public.operational_events enable row level security;
+alter table public.operation_entities enable row level security;
 
 drop policy if exists operations_history_read_authenticated on public.operations_history;
 create policy operations_history_read_authenticated
@@ -119,3 +133,7 @@ on public.audit_events for select to authenticated using (true);
 drop policy if exists operational_events_read_authenticated on public.operational_events;
 create policy operational_events_read_authenticated
 on public.operational_events for select to authenticated using (true);
+
+drop policy if exists operation_entities_read_authenticated on public.operation_entities;
+create policy operation_entities_read_authenticated
+on public.operation_entities for select to authenticated using (true);
