@@ -1,0 +1,82 @@
+[
+  {
+    "feature": "incident_type_none",
+    "importance": 0.7390359992516556
+  },
+  {
+    "feature": "incident_type_mechanical",
+    "importance": 0.07079776186677945
+  },
+  {
+    "feature": "weather_clear",
+    "importance": 0.039020739603102136
+  },
+  {
+    "feature": "incident_type_staffing",
+    "importance": 0.0340580735080534
+  },
+  {
+    "feature": "weather_heavy_rain",
+    "importance": 0.031951825640613885
+  },
+  {
+    "feature": "day_type_public_holiday",
+    "importance": 0.02052762138068711
+  },
+  {
+    "feature": "incident_type_track_obstruction",
+    "importance": 0.017759366497365422
+  },
+  {
+    "feature": "incident_type_weather",
+    "importance": 0.01222416947638697
+  },
+  {
+    "feature": "weather_fog",
+    "importance": 0.006432411624827106
+  },
+  {
+    "feature": "weather_light_rain",
+    "importance": 0.006005094158498333
+  },
+  {
+    "feature": "scheduled_hour",
+    "importance": 0.005890256681596736
+  },
+  {
+    "feature": "day_type_weekend",
+    "importance": 0.004833631373782403
+  },
+  {
+    "feature": "incident_type_signal_fault",
+    "importance": 0.0011281793101170275
+  },
+  {
+    "feature": "station_Polonnaruwa",
+    "importance": 0.0008659749464515282
+  },
+  {
+    "feature": "station_Matara",
+    "importance": 0.000696203964110851
+  },
+  {
+    "feature": "route_Colombo Fort - Trincomalee",
+    "importance": 0.0006100878278417908
+  },
+  {
+    "feature": "station_Jaffna",
+    "importance": 0.0005836743055424999
+  },
+  {
+    "feature": "station_Polgahawela",
+    "importance": 0.0005680800818375976
+  },
+  {
+    "feature": "weather_extreme_heat",
+    "importance": 0.0005632356679075059
+  },
+  {
+    "feature": "station_Trincomalee",
+    "importance": 0.000537660853214991
+  }
+]
