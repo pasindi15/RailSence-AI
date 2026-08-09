@@ -711,5 +711,5 @@ IT3041 – Information Retrieval & Web Analytics
 
 ```
 
-This version is suitable for a **GitHub repository front page** and looks closer to an industry AI product documentation style rather than an assignment document.
+This version is suitable for a **GitHub repository front page** and looks closer to an industry AI product documentation style rather than an assignment document...........
 ```
