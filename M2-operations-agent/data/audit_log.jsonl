@@ -12,3 +12,16 @@
 {"timestamp": "2026-08-09T07:17:34.193882+00:00", "action": "prediction", "client": "127.0.0.1", "route": "Colombo Fort - Badulla", "train_id": "PM-4082", "delay": 18.9, "model": "phase2-gbr-v1"}
 {"timestamp": "2026-08-09T07:17:42.353913+00:00", "action": "prediction", "client": "127.0.0.1", "route": "Colombo Fort - Badulla", "train_id": "PM-4082", "delay": 21.2, "model": "phase2-gbr-v1"}
 {"timestamp": "2026-08-09T09:42:04.499730+00:00", "action": "prediction", "client": "127.0.0.1", "route": "Colombo Fort - Kandy", "train_id": "PM-4082", "delay": 25.3, "model": "phase2-gbr-v1"}
+{"timestamp": "2026-08-09T10:18:39.332545+00:00", "action": "incident_report", "client": "127.0.0.1", "incident_id": "abb552b1-6ce3-4cc0-9247-33b637d34df5", "train_id": "PM-4082", "classified_type": "other"}
+{"timestamp": "2026-08-09T10:18:39.389552+00:00", "action": "incident_report", "client": "127.0.0.1", "incident_id": "a2ff3527-d575-47b7-94df-8e92a3901213", "train_id": "PM-4082", "classified_type": "other"}
+{"timestamp": "2026-08-09T10:18:39.399798+00:00", "action": "incident_report", "client": "127.0.0.1", "incident_id": "f64e6691-4fba-478f-80c1-497146aa621d", "train_id": "PM-4082", "classified_type": "other"}
+{"timestamp": "2026-08-09T10:18:39.400573+00:00", "action": "incident_report", "client": "127.0.0.1", "incident_id": "40b45beb-db45-47a6-9712-27e4c8c92e5b", "train_id": "PM-4082", "classified_type": "other"}
+{"timestamp": "2026-08-09T10:18:39.908164+00:00", "action": "prediction", "client": "127.0.0.1", "route": "Colombo Fort - Trincomalee", "train_id": "PM-4082", "delay": 13.8, "model": "phase2-gbr-v1"}
+{"timestamp": "2026-08-09T10:18:41.893525+00:00", "action": "prediction", "client": "127.0.0.1", "route": "Colombo Fort - Trincomalee", "train_id": "PM-4082", "delay": 13.8, "model": "phase2-gbr-v1"}
+{"timestamp": "2026-08-09T10:18:41.985095+00:00", "action": "prediction", "client": "127.0.0.1", "route": "Colombo Fort - Trincomalee", "train_id": "PM-4082", "delay": 13.8, "model": "phase2-gbr-v1"}
+{"timestamp": "2026-08-09T10:18:41.985853+00:00", "action": "prediction", "client": "127.0.0.1", "route": "Colombo Fort - Trincomalee", "train_id": "PM-4082", "delay": 13.8, "model": "phase2-gbr-v1"}
+{"timestamp": "2026-08-09T10:19:21.485385+00:00", "action": "prediction", "client": "127.0.0.1", "route": "Colombo Fort - Trincomalee", "train_id": "PM-4082", "delay": 13.8, "model": "phase2-gbr-v1"}
+{"timestamp": "2026-08-09T10:19:23.621633+00:00", "action": "prediction", "client": "127.0.0.1", "route": "Colombo Fort - Trincomalee", "train_id": "PM-4082", "delay": 13.8, "model": "phase2-gbr-v1"}
+{"timestamp": "2026-08-09T10:19:23.646840+00:00", "action": "prediction", "client": "127.0.0.1", "route": "Colombo Fort - Trincomalee", "train_id": "PM-4082", "delay": 13.8, "model": "phase2-gbr-v1"}
+{"timestamp": "2026-08-09T10:19:23.677683+00:00", "action": "prediction", "client": "127.0.0.1", "route": "Colombo Fort - Trincomalee", "train_id": "PM-4082", "delay": 13.8, "model": "phase2-gbr-v1"}
+{"timestamp": "2026-08-09T10:19:23.818623+00:00", "action": "prediction", "client": "127.0.0.1", "route": "Colombo Fort - Trincomalee", "train_id": "PM-4082", "delay": 13.8, "model": "phase2-gbr-v1"}
