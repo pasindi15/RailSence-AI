@@ -135,11 +135,8 @@ body::after{
 .track-sleepers-h{position:absolute;bottom:7px;left:0;right:0;height:8px;pointer-events:none;
   background:repeating-linear-gradient(90deg,transparent 0px,transparent 18px,rgba(148,163,184,.12) 18px,rgba(148,163,184,.12) 22px)}
 
-/* Animated trains on track */
-.train-anim-wrap{position:absolute;bottom:2px;animation:trainRide 32s linear infinite}
-.train-anim-wrap-fast{position:absolute;bottom:2px;animation:trainRideFast 9s linear infinite;animation-delay:-3s}
-@keyframes trainRide    {from{transform:translateX(-700px)}to{transform:translateX(calc(100vw + 700px))}}
-@keyframes trainRideFast{from{transform:translateX(-700px)}to{transform:translateX(calc(100vw + 700px))}}
+/* Train stages — JS-controlled, one at a time */
+.train-stage{position:absolute;bottom:2px;display:none;will-change:transform}
 
 /* Topbar */
 .topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 28px;border-bottom:1px solid var(--border);background:rgba(4,12,24,.7);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);position:sticky;top:0;z-index:20}
@@ -613,15 +610,15 @@ html[data-theme="light"] .bar-col .bar-tick{color:#64748B}
   <div class="track-banner" aria-hidden="true">
     <div class="track-sleepers-h"></div>
     <div class="track-rails"></div>
-    <!-- Steam train — slow -->
-    <div class="train-anim-wrap">
+    <!-- Steam train stage (JS-controlled) -->
+    <div class="train-stage" id="ts1">
       <img src="/Src/Trains/train1.png" alt="" aria-hidden="true"
-           style="height:42px;width:auto;display:block;transform:scaleX(-1);image-rendering:auto">
+           style="height:42px;width:auto;display:block;image-rendering:auto">
     </div>
-    <!-- Bullet train — fast, overtakes -->
-    <div class="train-anim-wrap-fast">
+    <!-- Bullet train stage (JS-controlled) -->
+    <div class="train-stage" id="ts2">
       <img src="/Src/Trains/train2.png" alt="" aria-hidden="true"
-           style="height:36px;width:auto;display:block;transform:scaleX(-1);image-rendering:auto">
+           style="height:36px;width:auto;display:block;image-rendering:auto">
     </div>
   </div>
 
@@ -1364,6 +1361,50 @@ function offlineBox(key) {
   const [name, msg, cmd] = OFFLINE_CFG[key]||['Agent','...','uvicorn main:app'];
   return `<div class="offline-box"><div class="offline-ico" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#4A6080" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div><div class="offline-title">${name} Offline</div><div class="offline-sub">Start ${msg}</div><div class="offline-cmd">${cmd}</div></div>`;
 }
+
+// ── Train scheduler — one train at a time, random train + direction ───────
+(function trainScheduler() {
+  const TRAINS = [
+    { id:'ts1', dur:26000 },  // steam — slow
+    { id:'ts2', dur:7000  },  // bullet — fast
+  ];
+  const OFF = 720; // px off-screen buffer
+
+  function runNext() {
+    const t   = TRAINS[Math.floor(Math.random() * TRAINS.length)];
+    const ltr = Math.random() > 0.5;             // direction: left-to-right or right-to-left
+    const vw  = window.innerWidth;
+    const startX = ltr ? -OFF : vw + OFF;
+    const endX   = ltr ? vw + OFF : -OFF;
+    // LTR: flip loco to face right (loco is on right of image → scaleX(-1) puts it on left = front)
+    // RTL: no flip (loco already on right of image = front when moving right→left)
+    const flip   = ltr ? 'scaleX(-1)' : 'scaleX(1)';
+
+    const stage = $(t.id);
+    const img   = stage.querySelector('img');
+
+    img.style.transform   = flip;
+    stage.style.transition = 'none';
+    stage.style.transform  = `translateX(${startX}px)`;
+    stage.style.display    = 'block';
+
+    stage.offsetWidth; // force reflow so transition fires
+
+    stage.style.transition = `transform ${t.dur}ms linear`;
+    stage.style.transform  = `translateX(${endX}px)`;
+
+    const done = () => {
+      stage.removeEventListener('transitionend', done);
+      stage.style.display = 'none';
+      // Gap between trains: 1.5–4.5 s
+      setTimeout(runNext, 1500 + Math.random() * 3000);
+    };
+    stage.addEventListener('transitionend', done);
+  }
+
+  // First train appears after a short pause
+  setTimeout(runNext, 1000);
+})();
 
 // ── Theme toggle ──────────────────────────────────────────────────────────
 function applyTheme(t) {
