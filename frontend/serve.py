@@ -18,7 +18,7 @@ import os
 from pathlib import Path
 
 import httpx
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -92,6 +92,16 @@ async def all_status():
             except Exception:
                 results[name] = {"online": False}
     return results
+
+
+@app.get("/{filepath:path}", include_in_schema=False)
+async def serve_static(filepath: str):
+    """Serve any static asset from the frontend directory (images, fonts, etc.)."""
+    base = Path(__file__).parent.resolve()
+    target = (base / filepath).resolve()
+    if str(target).startswith(str(base)) and target.is_file():
+        return FileResponse(target)
+    raise HTTPException(status_code=404, detail="Not found")
 
 
 if __name__ == "__main__":
