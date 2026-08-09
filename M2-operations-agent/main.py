@@ -21,8 +21,9 @@ import asyncio
 from pathlib import Path
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException, Request, status
+from fastapi import Body, FastAPI, HTTPException, Request, status
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 import bleach
 from pydantic import BaseModel, Field, field_validator
 from slowapi import Limiter
@@ -37,6 +38,8 @@ from rag import explanation as explanation_layer
 from rag import incident_retriever
 import hub_client
 import supabase_store
+from admin import admin_db
+from admin.admin_router import router as admin_router
 
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
 logger = logging.getLogger("railsense.operations")
@@ -58,6 +61,8 @@ app = FastAPI(
     version="0.5.0",
     lifespan=lifespan,
 )
+app.include_router(admin_router)
+app.mount("/admin", StaticFiles(directory=Path(__file__).parent / "admin_ui", html=True), name="admin_ui")
 app.state.limiter = limiter
 app.add_middleware(SlowAPIMiddleware)
 
@@ -75,6 +80,38 @@ AUDIT_PATH = Path(__file__).parent / "data" / "audit_log.jsonl"
 _predictions: list[dict] = []
 _incidents: list[dict] = []
 _events: list[dict] = []
+OPERATION_TYPES = ("trains", "incidents", "risk_zones", "crossings", "alerts", "dispatch_actions")
+_operation_store: dict[str, list[dict]] = {
+    "trains": [
+        {"id": "PM-8056", "name": "Podi Menike", "route": "Colombo Fort - Badulla", "station": "Rambukkana", "lat": 7.254, "lng": 80.403, "speed": 42, "eta": "18:42", "delay": 9, "risk": 78, "status": "watch"},
+        {"id": "IC-1001", "name": "Intercity Express", "route": "Colombo Fort - Kandy", "station": "Kadugannawa", "lat": 7.254, "lng": 80.527, "speed": 61, "eta": "18:28", "delay": 2, "risk": 32, "status": "normal"},
+        {"id": "DM-8055", "name": "Night Mail", "route": "Colombo Fort - Batticaloa", "station": "Habarana", "lat": 8.034, "lng": 80.752, "speed": 38, "eta": "21:14", "delay": 12, "risk": 86, "status": "critical"},
+    ],
+    "incidents": [
+        {"id": "INC-2408", "type": "wildlife", "title": "Wildlife activity near line", "location": "Habarana - Minneriya", "train_id": "DM-8055", "severity": "critical", "status": "open", "impact": 18, "time": "21:14", "note": "Historical elephant movement during evening hours."},
+        {"id": "INC-2407", "type": "person_on_track", "title": "Person reported beside track", "location": "Kelaniya", "train_id": "PM-8056", "severity": "high", "status": "investigating", "impact": 12, "time": "18:09", "note": "Driver alerted; next section held for verification."},
+        {"id": "INC-2406", "type": "flood", "title": "Heavy rain and waterlogging", "location": "Kalutara South", "train_id": "UD-8050", "severity": "medium", "status": "monitoring", "impact": 14, "time": "17:52", "note": "Speed restriction active through the low-lying section."},
+    ],
+    "risk_zones": [
+        {"id": "RZ-01", "name": "Habarana wildlife corridor", "kind": "wildlife", "location": "Habarana - Minneriya", "score": 86, "level": "high", "lat": 8.034, "lng": 80.752, "evidence": "17 historical sightings · 19:00-23:00"},
+        {"id": "RZ-02", "name": "Kalutara flood plain", "kind": "flood", "location": "Kalutara - Aluthgama", "score": 71, "level": "high", "lat": 6.585, "lng": 79.96, "evidence": "Heavy rain · low-lying track bed"},
+        {"id": "RZ-03", "name": "Kelaniya trespass corridor", "kind": "people", "location": "Kelaniya", "score": 64, "level": "watch", "lat": 6.968, "lng": 79.887, "evidence": "Repeated reports near station approaches"},
+    ],
+    "crossings": [
+        {"id": "LC-042", "location": "Gampaha", "status": "high_risk", "vehicles": 23, "train_eta": "02:14", "risk": 82, "gate": "closed", "pedestrians": 4},
+        {"id": "LC-018", "location": "Ragama", "status": "normal", "vehicles": 11, "train_eta": "08:40", "risk": 27, "gate": "open", "pedestrians": 1},
+        {"id": "LC-067", "location": "Polgahawela", "status": "fault", "vehicles": 18, "train_eta": "04:05", "risk": 74, "gate": "manual", "pedestrians": 7},
+    ],
+    "alerts": [
+        {"id": "ALT-901", "title": "Wildlife risk: Night Mail 8055", "location": "Habarana", "severity": "critical", "status": "active", "age": "2 min", "action": "Reduce speed and notify driver"},
+        {"id": "ALT-900", "title": "Flood probability 71%", "location": "Kalutara", "severity": "high", "status": "acknowledged", "age": "8 min", "action": "Maintain 40 km/h restriction"},
+        {"id": "ALT-899", "title": "Level crossing malfunction", "location": "Polgahawela", "severity": "medium", "status": "active", "age": "12 min", "action": "Dispatch crossing team"},
+    ],
+    "dispatch_actions": [
+        {"id": "ACT-100", "action": "Alert driver", "owner": "Control desk", "target": "DM-8055", "status": "queued", "priority": "critical", "created": "21:14"},
+        {"id": "ACT-099", "action": "Notify station master", "owner": "Operations", "target": "Habarana", "status": "sent", "priority": "high", "created": "21:12"},
+    ],
+}
 
 
 def _load_history() -> list[dict]:
@@ -109,6 +146,21 @@ def _metric_file(path: Path) -> dict:
         return json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
         return {}
+
+
+def _operations_payload() -> dict[str, list[dict]]:
+    result = {}
+    for entity_type in OPERATION_TYPES:
+        result[entity_type] = supabase_store.fetch_entities(entity_type)
+        if result[entity_type] is None:
+            result[entity_type] = list(_operation_store[entity_type])
+    return result
+
+
+def _validate_operation_type(entity_type: str) -> str:
+    if entity_type not in OPERATION_TYPES:
+        raise HTTPException(status_code=404, detail="Unknown operation resource")
+    return entity_type
 
 
 # ---------------------------------------------------------------------------
@@ -299,7 +351,46 @@ def dashboard_data():
         "feed": _recent_feed(),
         "events": (supabase_store.fetch_recent_events(12) or list(reversed(_events[-12:]))),
         "hub": {"configured": bool(os.getenv("HUB_BASE_URL")), "endpoint": hub_client.HUB_BASE_URL, "alert_threshold_minutes": hub_client.DELAY_ALERT_THRESHOLD_MINUTES},
+        "operations": _operations_payload(),
     }
+
+
+@app.get("/api/operations")
+def operations_data():
+    return {"generated_at": datetime.now(timezone.utc).isoformat(), **_operations_payload()}
+
+
+@app.post("/api/operations/{entity_type}")
+def create_operation(entity_type: str, payload: dict = Body(...)):
+    entity_type = _validate_operation_type(entity_type)
+    entity = {"id": payload.get("id") or f"{entity_type[:3].upper()}-{uuid.uuid4().hex[:6].upper()}", **payload}
+    if not supabase_store.insert_entity(entity_type, entity):
+        _operation_store[entity_type].insert(0, entity)
+    return entity
+
+
+@app.patch("/api/operations/{entity_type}/{entity_id}")
+def update_operation(entity_type: str, entity_id: str, payload: dict = Body(...)):
+    entity_type = _validate_operation_type(entity_type)
+    updated = supabase_store.update_entity(entity_type, entity_id, payload)
+    if updated is None:
+        matches = [item for item in _operation_store[entity_type] if item.get("id") == entity_id]
+        if not matches:
+            raise HTTPException(status_code=404, detail="Operation entity not found")
+        matches[0].update(payload)
+        updated = matches[0]
+    return updated
+
+
+@app.delete("/api/operations/{entity_type}/{entity_id}")
+def delete_operation(entity_type: str, entity_id: str):
+    entity_type = _validate_operation_type(entity_type)
+    if not supabase_store.delete_entity(entity_type, entity_id):
+        before = len(_operation_store[entity_type])
+        _operation_store[entity_type] = [item for item in _operation_store[entity_type] if item.get("id") != entity_id]
+        if len(_operation_store[entity_type]) == before:
+            raise HTTPException(status_code=404, detail="Operation entity not found")
+    return {"deleted": entity_id, "entity_type": entity_type}
 
 
 @app.get("/api/events")
@@ -454,6 +545,17 @@ def incident_report(request: Request, req: IncidentReportRequest):
         received_at=datetime.now(timezone.utc),
     )
     _incidents.append({"id": response.incident_id, "route": "Live report", "station": response.station, "type": response.classified_type, "summary": response.summary, "time": response.received_at.isoformat()})
+    admin_db.insert_row("incident_reports", {
+        "incident_id": response.incident_id,
+        "train_id": response.train_id,
+        "station": response.station,
+        "raw_text": req.raw_text,
+        "summary": response.summary,
+        "classified_type": response.classified_type,
+        "nlp_method": response.nlp_method,
+        "review_status": "pending",
+        "received_at": response.received_at.isoformat(),
+    })
     _audit("incident_report", request, {"incident_id": response.incident_id, "train_id": req.train_id, "classified_type": response.classified_type})
     return response
 

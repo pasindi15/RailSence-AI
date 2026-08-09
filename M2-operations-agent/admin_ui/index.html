@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>RailSense AI — Operations Admin</title>
+<link rel="stylesheet" href="css/admin.css" />
+</head>
+<body>
+
+<!-- ==================== LOGIN SCREEN ==================== -->
+<div id="login-screen">
+  <div class="login-card">
+    <span class="brand-mark">RAILSENSE AI · OPERATIONS</span>
+    <h1>Admin Dashboard</h1>
+    <p class="sub">Sign in to manage data, incidents, models, and integrations.</p>
+    <div class="error-msg" id="login-error"></div>
+    <form id="login-form">
+      <div class="field">
+        <label>Username</label>
+        <input id="login-username" type="text" autocomplete="username" required value="admin" />
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input id="login-password" type="password" autocomplete="current-password" required />
+      </div>
+      <button class="btn btn-primary btn-block" type="submit" id="login-submit">Sign in</button>
+    </form>
+  </div>
+</div>
+
+<!-- ==================== APP SHELL ==================== -->
+<div id="app">
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="mark">🚦</div>
+      <div>
+        <div class="name">RailSense AI</div>
+        <div class="subtitle">Operations Admin</div>
+      </div>
+    </div>
+    <nav id="sidebar-nav"></nav>
+    <div class="sidebar-footer">
+      <div class="user-row">
+        <span class="username" id="current-username">…</span>
+        <a id="logout-link">Log out</a>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <h2 id="topbar-title">Home</h2>
+      <div class="status-pills" id="topbar-pills"></div>
+    </div>
+
+    <div class="content">
+      <div class="view active" id="view-home"></div>
+      <div class="view" id="view-data"></div>
+      <div class="view" id="view-incidents"></div>
+      <div class="view" id="view-health"></div>
+      <div class="view" id="view-model"></div>
+      <div class="view" id="view-hub"></div>
+      <div class="view" id="view-audit"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SHARED WIDGETS ==================== -->
+<div class="modal-overlay" id="modal-overlay"></div>
+<div class="toast-stack" id="toast-stack"></div>
+
+<!-- ==================== SCRIPTS ==================== -->
+<script src="js/api.js"></script>
+<script src="js/modal.js"></script>
+<script src="js/views/home.js"></script>
+<script src="js/views/data.js"></script>
+<script src="js/views/incidents.js"></script>
+<script src="js/views/health.js"></script>
+<script src="js/views/model.js"></script>
+<script src="js/views/hub.js"></script>
+<script src="js/views/audit.js"></script>
+<script src="js/nav.js"></script>
+</body>
+</html>
