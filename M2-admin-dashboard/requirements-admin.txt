@@ -1,0 +1,8 @@
+# Extra dependencies for the M2 Admin Dashboard.
+# Everything else (fastapi, httpx, pydantic, supabase) is already in
+# M2-operations-agent/requirements.txt.
+#
+# python-multipart is required for the CSV upload endpoint
+# (/admin/api/data/operations/import-csv) since FastAPI needs it to parse
+# multipart/form-data file uploads.
+python-multipart>=0.0.9
