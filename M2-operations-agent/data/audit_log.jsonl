@@ -11,3 +11,4 @@
 {"timestamp": "2026-08-09T07:17:26.881640+00:00", "action": "prediction", "client": "127.0.0.1", "route": "Colombo Fort - Badulla", "train_id": "PM-4082", "delay": 16.6, "model": "phase2-gbr-v1"}
 {"timestamp": "2026-08-09T07:17:34.193882+00:00", "action": "prediction", "client": "127.0.0.1", "route": "Colombo Fort - Badulla", "train_id": "PM-4082", "delay": 18.9, "model": "phase2-gbr-v1"}
 {"timestamp": "2026-08-09T07:17:42.353913+00:00", "action": "prediction", "client": "127.0.0.1", "route": "Colombo Fort - Badulla", "train_id": "PM-4082", "delay": 21.2, "model": "phase2-gbr-v1"}
+{"timestamp": "2026-08-09T09:42:04.499730+00:00", "action": "prediction", "client": "127.0.0.1", "route": "Colombo Fort - Kandy", "train_id": "PM-4082", "delay": 25.3, "model": "phase2-gbr-v1"}
