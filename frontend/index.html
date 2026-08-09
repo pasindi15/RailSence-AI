@@ -3,892 +3,1269 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>RailSense AI</title>
+<title>RailSense AI — Railway Intelligence Platform</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Share+Tech+Mono&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-/* ── Design tokens (Section 2.1) ─────────────────────────────────────── */
-:root{
-  --bg:#F7F9FC;--surface:#FFFFFF;--brand:#4F46E5;
-  --passenger:#0EA5E9;--ops:#F59E0B;--security:#F43F5E;--maintenance:#8B5CF6;
-  --ink:#1E293B;--muted:#64748B;--line:#E2E8F0;
-  --r:14px;--shadow:0 4px 16px rgba(15,23,42,0.06);
-  --shadow-md:0 8px 32px rgba(15,23,42,0.10);
+/* ── Tokens ────────────────────────────────────────────────────────── */
+:root {
+  --bg:          #040C18;
+  --rail-dark:   #060F1E;
+  --card:        rgba(8,18,38,0.82);
+  --card-hi:     rgba(12,24,50,0.92);
+  --border:      rgba(255,255,255,0.07);
+  --border-hi:   rgba(255,255,255,0.14);
+  --track:       rgba(255,255,255,0.06);
+  --ink:         #E8F0FE;
+  --muted:       #4A6080;
+  --muted-hi:    #7A98BC;
+  --brand:       #2563EB;
+  --brand-glow:  rgba(37,99,235,0.25);
+  --passenger:   #06B6D4;
+  --ops:         #F59E0B;
+  --security:    #F43F5E;
+  --maintenance: #A855F7;
+  --signal-g:    #22C55E;
+  --signal-a:    #F59E0B;
+  --signal-r:    #EF4444;
+  --steel:       #94A3B8;
+  --r:           14px;
+  --ease:        cubic-bezier(0.16,1,0.3,1);
+  --shadow:      0 4px 30px rgba(0,0,0,0.6);
+  --shadow-xl:   0 16px 60px rgba(0,0,0,0.7);
+  --blur:        blur(24px);
 }
+
+/* ── Reset ─────────────────────────────────────────────────────────── */
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;font-size:14px;min-height:100vh}
-h1,h2,h3,h4{font-family:'Plus Jakarta Sans',sans-serif}
+body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;font-size:14px;min-height:100vh;overflow-x:hidden}
 
-/* ── Layout ───────────────────────────────────────────────────────────── */
-.shell{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+/* ── Rail grid background ──────────────────────────────────────────── */
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:
+    linear-gradient(rgba(37,99,235,.04) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(37,99,235,.04) 1px,transparent 1px);
+  background-size:48px 48px;
+}
+/* Ambient glow */
+body::after{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(ellipse 800px 600px at 10% 20%,rgba(37,99,235,.12) 0%,transparent 60%),
+    radial-gradient(ellipse 600px 400px at 85% 70%,rgba(168,85,247,.08) 0%,transparent 60%),
+    radial-gradient(ellipse 400px 300px at 50% 100%,rgba(245,158,11,.06) 0%,transparent 60%);
+}
 
-/* ── Sidebar ──────────────────────────────────────────────────────────── */
-.sidebar{background:var(--surface);border-right:1px solid var(--line);padding:24px 16px;display:flex;flex-direction:column;gap:6px;position:sticky;top:0;height:100vh;overflow-y:auto}
-.logo{display:flex;align-items:center;gap:10px;padding:8px 12px;margin-bottom:16px}
-.logo-mark{width:36px;height:36px;background:var(--brand);border-radius:10px;display:grid;place-items:center;color:#fff;font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:14px;flex-shrink:0}
-.logo-text{font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:15px;color:var(--ink)}
-.logo-sub{font-size:11px;color:var(--muted);font-weight:400}
-.nav-label{font-size:10px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);padding:4px 12px;margin-top:8px}
-.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:pointer;transition:all .15s;color:var(--muted);font-weight:500;border:none;background:none;width:100%;text-align:left;font-size:13px}
-.nav-item:hover{background:#F1F5F9;color:var(--ink)}
-.nav-item.active{color:#fff;font-weight:600}
-.nav-item.active.passenger{background:var(--passenger)}
-.nav-item.active.ops{background:var(--ops)}
-.nav-item.active.security{background:var(--security)}
-.nav-item.active.maintenance{background:var(--maintenance)}
-.nav-item.active.overview{background:var(--brand)}
-.nav-dot{width:8px;height:8px;border-radius:50%;background:var(--line);flex-shrink:0;transition:background .3s}
-.nav-dot.online{background:#22C55E}
-.nav-dot.offline{background:#EF4444}
-.nav-icon{font-size:16px;width:20px;text-align:center}
-.sidebar-footer{margin-top:auto;padding-top:16px;border-top:1px solid var(--line);font-size:11px;color:var(--muted);text-align:center}
+/* ── Shell ─────────────────────────────────────────────────────────── */
+.shell{display:grid;grid-template-columns:252px 1fr;min-height:100vh;position:relative;z-index:1}
 
-/* ── Main content ─────────────────────────────────────────────────────── */
-.main{padding:32px 36px;overflow:auto}
-.page{display:none}
-.page.active{display:block}
+/* ══════════════ SIDEBAR ══════════════ */
+.sidebar{
+  background:rgba(3,8,20,0.95);
+  backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  position:sticky;top:0;height:100vh;overflow:hidden;
+}
 
-/* ── Page header ──────────────────────────────────────────────────────── */
-.page-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px}
-.page-header h2{font-size:26px;font-weight:800;letter-spacing:-0.5px}
-.page-header p{color:var(--muted);font-size:13px;margin-top:4px}
-.badge{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;font-size:12px;font-weight:600}
-.badge-brand{background:#EEF2FF;color:var(--brand)}
-.badge-ops{background:#FFFBEB;color:#D97706}
-.badge-security{background:#FFF1F2;color:#E11D48}
-.badge-maintenance{background:#F5F3FF;color:#7C3AED}
-.badge-passenger{background:#F0F9FF;color:#0284C7}
+/* Double-rail track down the left edge */
+.rail-l{position:absolute;left:10px;top:0;bottom:0;width:3px;background:linear-gradient(to bottom,transparent 0%,rgba(148,163,184,.25) 10%,rgba(148,163,184,.25) 90%,transparent 100%);border-radius:2px}
+.rail-r{position:absolute;left:16px;top:0;bottom:0;width:3px;background:linear-gradient(to bottom,transparent 0%,rgba(148,163,184,.18) 10%,rgba(148,163,184,.18) 90%,transparent 100%);border-radius:2px}
+/* Sleeper ticks */
+.sleepers{position:absolute;left:6px;top:0;bottom:0;width:16px;pointer-events:none;overflow:hidden}
+.sleepers::before{
+  content:'';position:absolute;inset:0;
+  background:repeating-linear-gradient(
+    to bottom,
+    transparent 0px,transparent 12px,
+    rgba(100,130,160,.18) 12px,rgba(100,130,160,.18) 16px
+  );
+}
 
-/* ── Cards ────────────────────────────────────────────────────────────── */
-.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:20px}
-.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
-.card-title{font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:14px;color:var(--ink)}
-.card-sub{font-size:12px;color:var(--muted);margin-bottom:16px}
+.sidebar-inner{position:relative;z-index:1;display:flex;flex-direction:column;height:100%;padding:20px 14px 20px 32px}
 
-/* ── Grid helpers ─────────────────────────────────────────────────────── */
-.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px}
-.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px}
-.g2{display:grid;grid-template-columns:1.4fr 1fr;gap:16px;margin-bottom:20px}
-.g2e{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+/* Logo / brand */
+.logo{display:flex;align-items:center;gap:12px;padding:10px 10px;margin-bottom:28px;border-radius:12px;background:linear-gradient(135deg,rgba(37,99,235,.15),rgba(37,99,235,.04));border:1px solid rgba(37,99,235,.2)}
+.logo-emblem{width:42px;height:42px;flex-shrink:0}
+.logo-name{font-family:'Plus Jakarta Sans',sans-serif;font-weight:900;font-size:16px;color:#fff;letter-spacing:-.3px;line-height:1}
+.logo-tagline{font-size:10px;color:var(--muted-hi);font-weight:500;margin-top:3px;letter-spacing:.3px}
 
-/* ── Metric card ──────────────────────────────────────────────────────── */
-.metric-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:20px 22px}
-.metric-label{font-size:11px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
-.metric-value{font-family:'Plus Jakarta Sans',sans-serif;font-size:36px;font-weight:800;letter-spacing:-1.5px;color:var(--ink);line-height:1}
-.metric-note{font-size:11px;color:var(--muted);margin-top:6px}
-.metric-accent{width:3px;height:36px;border-radius:2px;position:absolute;left:0;top:50%;transform:translateY(-50%)}
-.metric-inner{position:relative;padding-left:14px}
+/* Nav */
+.nav-section{font-size:9px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--muted);padding:2px 10px;margin:10px 0 4px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;cursor:pointer;color:var(--muted-hi);font-weight:600;font-size:12.5px;border:1px solid transparent;background:transparent;width:100%;text-align:left;transition:all .2s var(--ease);position:relative;font-family:'Inter',sans-serif}
+.nav-item:hover{background:rgba(255,255,255,.04);color:var(--ink);border-color:var(--border)}
+.nav-item:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.nav-ico{width:18px;height:18px;flex-shrink:0}
+.nav-dot{width:7px;height:7px;border-radius:50%;margin-left:auto;flex-shrink:0;transition:all .3s}
+.nav-dot.on{background:var(--signal-g);box-shadow:0 0 8px var(--signal-g)}
+.nav-dot.off{background:#1E293B}
 
-/* ── Agent status card (overview) ─────────────────────────────────────── */
-.agent-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:22px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
-.agent-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
-.agent-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px}
-.agent-card.passenger::before{background:var(--passenger)}
-.agent-card.ops::before{background:var(--ops)}
-.agent-card.security::before{background:var(--security)}
-.agent-card.maintenance::before{background:var(--maintenance)}
-.agent-name{font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:15px;margin:10px 0 4px}
-.agent-role{font-size:11px;color:var(--muted);margin-bottom:14px}
-.agent-stat{font-family:'Plus Jakarta Sans',sans-serif;font-size:28px;font-weight:800;letter-spacing:-1px}
-.agent-stat-label{font-size:11px;color:var(--muted);margin-top:2px}
-.status-pill{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;margin-top:12px}
-.status-pill.online{background:#DCFCE7;color:#15803D}
-.status-pill.offline{background:#FEE2E2;color:#DC2626}
-.status-pill.loading{background:#F1F5F9;color:var(--muted)}
-.pulse-dot{width:6px;height:6px;border-radius:50%}
-.pulse-dot.online{background:#22C55E;animation:pulse 2s infinite}
-.pulse-dot.offline{background:#EF4444}
-.pulse-dot.loading{background:#94A3B8}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.nav-item.active{color:#fff;background:rgba(37,99,235,.15);border-color:rgba(37,99,235,.3)}
+.nav-item.active .nav-ico{filter:drop-shadow(0 0 4px currentColor)}
 
-/* ── Chart bar ────────────────────────────────────────────────────────── */
-.chart-wrap{height:180px;display:flex;align-items:flex-end;gap:5px;padding:0 2px}
-.bar{flex:1;border-radius:4px 4px 0 0;position:relative;min-width:6px;transition:opacity .2s;cursor:default}
-.bar:hover{opacity:.8}
-.bar-label{position:absolute;top:calc(100%+6px);font-size:9px;color:var(--muted);left:50%;transform:translateX(-50%);white-space:nowrap}
+/* Signal panel at bottom */
+.signal-panel{margin-top:auto;border-top:1px solid var(--border);padding-top:16px}
+.signal-box{background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:12px 14px;display:flex;align-items:center;gap:14px}
+.signal-head{display:flex;flex-direction:column;gap:6px}
+.sig{width:11px;height:11px;border-radius:50%}
+.sig-r{background:#3B0A0A;box-shadow:0 0 0 1px rgba(239,68,68,.3)}
+.sig-a{background:#3B2800;box-shadow:0 0 0 1px rgba(245,158,11,.3)}
+.sig-g{background:#0A3B1A;box-shadow:0 0 0 1px rgba(34,197,94,.3)}
+.sig-r.lit{background:var(--signal-r);box-shadow:0 0 10px var(--signal-r),0 0 3px #fff}
+.sig-a.lit{background:var(--signal-a);box-shadow:0 0 10px var(--signal-a),0 0 3px #fff}
+.sig-g.lit{background:var(--signal-g);box-shadow:0 0 10px var(--signal-g),0 0 3px #fff}
+.signal-info{flex:1}
+.signal-status{font-family:'Share Tech Mono',monospace;font-size:11px;color:#fff;font-weight:400}
+.signal-sub{font-size:10px;color:var(--muted);margin-top:2px}
 
-/* ── Route list ───────────────────────────────────────────────────────── */
-.route-row{display:grid;grid-template-columns:1fr 56px 64px;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:12px}
-.route-row:last-child{border-bottom:none}
-.route-name{font-weight:600;font-size:13px;color:var(--ink)}
-.route-sub{color:var(--muted);font-size:11px;margin-top:2px}
-.pill{padding:3px 8px;border-radius:6px;font-size:10px;font-weight:700;text-transform:uppercase}
-.pill-normal{background:#DCFCE7;color:#15803D}
-.pill-watch{background:#FFFBEB;color:#D97706}
-.pill-critical{background:#FEE2E2;color:#DC2626}
+/* ══════════════ MAIN ══════════════ */
+.main{display:flex;flex-direction:column;overflow:auto;min-width:0}
 
-/* ── Feed ─────────────────────────────────────────────────────────────── */
-.feed-item{padding:12px 0;border-bottom:1px solid var(--line)}
-.feed-item:last-child{border-bottom:none}
-.feed-type{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--ops);margin-bottom:4px}
-.feed-text{font-size:12px;color:var(--muted);line-height:1.5}
+/* Track banner across top */
+.track-banner{
+  height:48px;flex-shrink:0;position:relative;overflow:hidden;
+  background:linear-gradient(180deg,rgba(8,18,38,0.95) 0%,rgba(4,12,24,0.8) 100%);
+  border-bottom:1px solid var(--border);
+}
+.track-rails{position:absolute;bottom:10px;left:0;right:0;height:6px;pointer-events:none}
+.track-rails::before,.track-rails::after{content:'';position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent 0%,var(--steel) 5%,var(--steel) 95%,transparent 100%);opacity:.25}
+.track-rails::before{top:0}
+.track-rails::after{top:4px}
+.track-sleepers-h{position:absolute;bottom:7px;left:0;right:0;height:8px;pointer-events:none;
+  background:repeating-linear-gradient(90deg,transparent 0px,transparent 18px,rgba(148,163,184,.12) 18px,rgba(148,163,184,.12) 22px)}
 
-/* ── Progress bar ─────────────────────────────────────────────────────── */
-.progress-wrap{height:6px;background:#F1F5F9;border-radius:3px;margin:8px 0 4px;overflow:hidden}
-.progress-fill{height:100%;border-radius:3px;transition:width .6s}
+/* Animated train on track */
+.train-anim-wrap{position:absolute;bottom:4px;animation:trainRide 28s linear infinite}
+@keyframes trainRide{from{transform:translateX(-300px)}to{transform:translateX(calc(100vw + 100px))}}
 
-/* ── Table ────────────────────────────────────────────────────────────── */
-.tbl{width:100%;border-collapse:collapse;font-size:12px}
-.tbl th{text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);padding:8px 12px;border-bottom:2px solid var(--line)}
-.tbl td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
-.tbl tr:last-child td{border-bottom:none}
-.tbl tr:hover td{background:#F8FAFC}
-
-/* ── Health badge ─────────────────────────────────────────────────────── */
-.health-green{background:#DCFCE7;color:#15803D;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700}
-.health-amber{background:#FFFBEB;color:#D97706;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700}
-.health-red{background:#FEE2E2;color:#DC2626;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700}
-
-/* ── Chat ─────────────────────────────────────────────────────────────── */
-.chat-wrap{display:flex;flex-direction:column;height:420px}
-.chat-messages{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:10px}
-.chat-bubble{max-width:78%;padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.5}
-.chat-bubble.user{background:var(--passenger);color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
-.chat-bubble.agent{background:#F1F5F9;color:var(--ink);align-self:flex-start;border-bottom-left-radius:4px}
-.chat-bubble.agent .source{font-size:10px;color:var(--muted);margin-top:6px}
-.chat-input-row{display:flex;gap:8px;padding:12px;border-top:1px solid var(--line)}
-.chat-input{flex:1;border:1px solid var(--line);border-radius:10px;padding:10px 14px;font-size:13px;outline:none;font-family:inherit}
-.chat-input:focus{border-color:var(--passenger)}
-
-/* ── Buttons ──────────────────────────────────────────────────────────── */
-.btn{padding:9px 18px;border-radius:10px;font-weight:600;font-size:13px;cursor:pointer;border:none;transition:all .15s;font-family:'Plus Jakarta Sans',sans-serif}
-.btn-brand{background:var(--brand);color:#fff}
-.btn-brand:hover{background:#4338CA}
-.btn-ops{background:var(--ops);color:#fff}
-.btn-ops:hover{background:#D97706}
-.btn-passenger{background:var(--passenger);color:#fff}
-.btn-passenger:hover{background:#0284C7}
-.btn-maintenance{background:var(--maintenance);color:#fff}
-.btn-maintenance:hover{background:#7C3AED}
-.btn-outline{background:transparent;color:var(--ink);border:1px solid var(--line)}
-.btn-outline:hover{background:#F1F5F9}
-
-/* ── Offline placeholder ──────────────────────────────────────────────── */
-.offline-box{background:#FFF8F8;border:1px dashed #FECACA;border-radius:var(--r);padding:32px;text-align:center;color:var(--muted)}
-.offline-box h4{color:#DC2626;margin-bottom:8px}
-.offline-icon{font-size:36px;margin-bottom:12px}
-
-/* ── Predict drawer ───────────────────────────────────────────────────── */
-.drawer-overlay{position:fixed;inset:0;background:rgba(15,23,42,.4);display:none;z-index:100;justify-content:flex-end}
-.drawer-overlay.open{display:flex}
-.drawer-panel{width:min(480px,100%);background:var(--surface);padding:32px;overflow-y:auto;display:flex;flex-direction:column;gap:16px;box-shadow:var(--shadow-md)}
-.drawer-panel h3{font-size:20px;font-weight:800}
-.form-group{display:flex;flex-direction:column;gap:5px}
-.form-group label{font-size:12px;font-weight:600;color:var(--ink)}
-.form-group input,.form-group select,.form-group textarea{border:1px solid var(--line);border-radius:8px;padding:9px 12px;font-size:13px;outline:none;font-family:inherit;background:var(--surface)}
-.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--ops)}
-.result-box{background:#F0FDF4;border:1px solid #BBF7D0;border-radius:10px;padding:14px;font-size:13px;line-height:1.6;display:none}
-.result-box.show{display:block}
-.result-box strong{color:var(--ink);display:block;margin-bottom:6px}
-
-/* ── Topbar ───────────────────────────────────────────────────────────── */
-.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px;padding-bottom:20px;border-bottom:1px solid var(--line)}
-.topbar-title h2{font-size:22px;font-weight:800;letter-spacing:-.5px}
-.topbar-title p{font-size:12px;color:var(--muted);margin-top:3px}
+/* Topbar */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 28px;border-bottom:1px solid var(--border);background:rgba(4,12,24,.7);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);position:sticky;top:0;z-index:20}
+.topbar-title{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:19px;color:#fff;letter-spacing:-.3px}
+.topbar-sub{font-size:11px;color:var(--muted-hi);margin-top:2px}
 .topbar-right{display:flex;align-items:center;gap:10px}
-.clock{font-size:12px;color:var(--muted);font-family:'Inter',monospace}
 
-/* ── Separator ────────────────────────────────────────────────────────── */
-.section-label{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin:24px 0 12px}
+/* Departure-board style clock */
+.depot-clock{
+  background:#050A14;border:1px solid rgba(245,158,11,.25);border-radius:8px;
+  padding:5px 14px;font-family:'Share Tech Mono',monospace;font-size:15px;
+  color:#F59E0B;letter-spacing:3px;
+  text-shadow:0 0 12px rgba(245,158,11,.6);
+  box-shadow:inset 0 0 20px rgba(245,158,11,.04);
+}
+.live-chip{display:flex;align-items:center;gap:6px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2);border-radius:8px;padding:5px 12px;font-size:11px;font-weight:700;color:var(--signal-g);text-transform:uppercase;letter-spacing:.8px}
+.pulse-dot{width:7px;height:7px;border-radius:50%;background:var(--signal-g);animation:pulseGreen 1.4s ease-in-out infinite}
+@keyframes pulseGreen{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.6);opacity:.5}}
 
-/* ── Scrollbar ────────────────────────────────────────────────────────── */
-::-webkit-scrollbar{width:5px;height:5px}
+/* ── Content ──────────────────────────────────────────────────────── */
+.content{padding:24px 28px;flex:1}
+.page{display:none}.page.active{display:block}
+
+/* ── Glass card ──────────────────────────────────────────────────── */
+.card{background:var(--card);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow);transition:border-color .25s var(--ease),box-shadow .25s var(--ease)}
+.card:hover{border-color:var(--border-hi)}
+.card-pad{padding:20px 22px}
+
+/* ── Grid ────────────────────────────────────────────────────────── */
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px}
+.g2{display:grid;grid-template-columns:1.5fr 1fr;gap:14px;margin-bottom:18px}
+.g2e{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px}
+
+/* ══════════════ DEPARTURES BOARD ══════════════ */
+.dep-board{
+  background:#050A14;border:1px solid rgba(245,158,11,.2);border-radius:var(--r);
+  overflow:hidden;box-shadow:0 0 40px rgba(245,158,11,.04),var(--shadow);
+}
+.dep-board-header{
+  background:linear-gradient(90deg,rgba(245,158,11,.2),rgba(245,158,11,.06));
+  padding:12px 20px;display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid rgba(245,158,11,.15);
+}
+.dep-board-title{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--ops);letter-spacing:2px;text-transform:uppercase}
+.dep-board-body{padding:0}
+.dep-row{display:grid;grid-template-columns:1fr 90px 80px 90px;align-items:center;gap:0;padding:11px 20px;border-bottom:1px solid rgba(255,255,255,.03);transition:background .15s}
+.dep-row:hover{background:rgba(245,158,11,.04)}
+.dep-row:last-child{border-bottom:none}
+.dep-row.header-row{background:rgba(255,255,255,.03);padding:8px 20px}
+.dep-col-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+.dep-train{font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--ops);letter-spacing:.5px}
+.dep-dest{font-size:13px;color:var(--ink);font-weight:600}
+.dep-dest-sub{font-size:10px;color:var(--muted)}
+.dep-delay{font-family:'Share Tech Mono',monospace;font-size:14px;font-weight:700}
+.dep-delay.norm{color:var(--signal-g)}
+.dep-delay.warn{color:var(--signal-a)}
+.dep-delay.crit{color:var(--signal-r)}
+.dep-status{padding:3px 10px;border-radius:5px;font-size:10px;font-weight:700;text-align:center;text-transform:uppercase;letter-spacing:.5px;font-family:'Share Tech Mono',monospace}
+
+/* ══════════════ PLATFORM CARDS (agent overview) ══════════════ */
+.platform-card{
+  border-radius:var(--r);padding:22px 20px 18px;position:relative;overflow:hidden;
+  cursor:pointer;transition:all .25s var(--ease);background:var(--card);
+  border:1px solid var(--border);
+}
+.platform-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-xl)}
+.platform-card:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+
+/* Top edge colored beam */
+.platform-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--r) var(--r) 0 0}
+.pc-cyan::before  {background:linear-gradient(90deg,var(--passenger),rgba(6,182,212,.2));box-shadow:0 0 16px rgba(6,182,212,.4)}
+.pc-amber::before {background:linear-gradient(90deg,var(--ops),rgba(245,158,11,.2));box-shadow:0 0 16px rgba(245,158,11,.4)}
+.pc-rose::before  {background:linear-gradient(90deg,var(--security),rgba(244,63,94,.2));box-shadow:0 0 16px rgba(244,63,94,.4)}
+.pc-purple::before{background:linear-gradient(90deg,var(--maintenance),rgba(168,85,247,.2));box-shadow:0 0 16px rgba(168,85,247,.4)}
+
+/* Platform number badge */
+.platform-num{
+  position:absolute;top:16px;right:16px;
+  width:28px;height:28px;border-radius:7px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Share Tech Mono',monospace;font-size:12px;font-weight:700;color:#fff;
+}
+.pc-cyan   .platform-num{background:rgba(6,182,212,.2);border:1px solid rgba(6,182,212,.3)}
+.pc-amber  .platform-num{background:rgba(245,158,11,.2);border:1px solid rgba(245,158,11,.3)}
+.pc-rose   .platform-num{background:rgba(244,63,94,.2); border:1px solid rgba(244,63,94,.3)}
+.pc-purple .platform-num{background:rgba(168,85,247,.2);border:1px solid rgba(168,85,247,.3)}
+
+.pc-icon{margin-bottom:14px}
+.pc-name{font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:14px;color:#fff;margin-bottom:2px}
+.pc-role{font-size:11px;color:var(--muted-hi);margin-bottom:14px}
+.pc-stat{font-family:'Share Tech Mono',monospace;font-size:28px;font-weight:700;margin-bottom:2px;letter-spacing:-1px}
+.pc-cyan   .pc-stat{color:var(--passenger)}
+.pc-amber  .pc-stat{color:var(--ops)}
+.pc-rose   .pc-stat{color:var(--security)}
+.pc-purple .pc-stat{color:var(--maintenance)}
+.pc-note{font-size:11px;color:var(--muted);margin-bottom:14px}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px}
+.pill-on{background:rgba(34,197,94,.1);color:var(--signal-g);border:1px solid rgba(34,197,94,.2)}
+.pill-off{background:rgba(255,255,255,.04);color:var(--muted);border:1px solid var(--border)}
+
+/* Glow on hover */
+.pc-cyan:hover  {box-shadow:0 16px 50px rgba(6,182,212,.15),var(--shadow);border-color:rgba(6,182,212,.25)}
+.pc-amber:hover {box-shadow:0 16px 50px rgba(245,158,11,.15),var(--shadow);border-color:rgba(245,158,11,.25)}
+.pc-rose:hover  {box-shadow:0 16px 50px rgba(244,63,94,.15), var(--shadow);border-color:rgba(244,63,94,.25)}
+.pc-purple:hover{box-shadow:0 16px 50px rgba(168,85,247,.15),var(--shadow);border-color:rgba(168,85,247,.25)}
+
+/* ══════════════ ROUTE MAP ══════════════ */
+.route-map{padding:22px;position:relative}
+.route-line{display:flex;align-items:center;gap:0;position:relative;padding:28px 20px}
+.station{display:flex;flex-direction:column;align-items:center;gap:8px;z-index:2;flex-shrink:0}
+.station-dot{width:18px;height:18px;border-radius:50%;border:3px solid;background:var(--card)}
+.station-dot.terminus{width:22px;height:22px;border-width:3px}
+.station-dot.active{animation:stationPulse 2s ease-in-out infinite}
+@keyframes stationPulse{0%,100%{box-shadow:0 0 0 0 currentColor}50%{box-shadow:0 0 0 6px transparent}}
+.station-name{font-size:10px;font-weight:700;color:var(--muted-hi);text-align:center;max-width:60px;line-height:1.3;font-family:'Share Tech Mono',monospace}
+.station-time{font-size:9px;color:var(--muted);font-family:'Share Tech Mono',monospace}
+.track-seg{flex:1;height:3px;background:linear-gradient(90deg,rgba(148,163,184,.15) 0%,rgba(148,163,184,.25) 50%,rgba(148,163,184,.15) 100%);position:relative;overflow:hidden}
+.track-seg::after{content:'';position:absolute;top:0;left:-100%;right:0;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.6),transparent);animation:trackShine 4s ease-in-out infinite;animation-delay:var(--d,0s)}
+@keyframes trackShine{0%,80%{transform:translateX(0)}100%{transform:translateX(400%)}}
+.seg-active{background:linear-gradient(90deg,rgba(34,197,94,.4),rgba(34,197,94,.6),rgba(34,197,94,.4))}
+
+/* Mini train sprite on route */
+.train-sprite{position:absolute;bottom:18px;animation:trainMove 8s ease-in-out infinite;font-size:0}
+@keyframes trainMove{0%,100%{left:8%}50%{left:60%}}
+
+/* ══════════════ METRIC CARDS ══════════════ */
+.metric{background:var(--card);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;position:relative;overflow:hidden;transition:all .25s var(--ease)}
+.metric:hover{border-color:var(--border-hi);transform:translateY(-2px)}
+.metric::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;opacity:.9}
+.m-ops::before      {background:linear-gradient(90deg,var(--ops),transparent)}
+.m-passenger::before{background:linear-gradient(90deg,var(--passenger),transparent)}
+.m-maintenance::before{background:linear-gradient(90deg,var(--maintenance),transparent)}
+.m-security::before {background:linear-gradient(90deg,var(--security),transparent)}
+.metric-label{font-size:10px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.metric-value{font-family:'Share Tech Mono',monospace;font-size:32px;color:#fff;letter-spacing:-1px;line-height:1;margin-bottom:4px}
+.metric-sub{font-size:11px;color:var(--muted-hi)}
+
+/* Speed gauge */
+.gauge-wrap{display:flex;align-items:center;justify-content:center;padding:16px 0 8px}
+
+/* ══════════════ BAR CHART ══════════════ */
+.chart-bars{height:140px;display:flex;align-items:flex-end;gap:3px;padding:0 4px}
+.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:default}
+.bar-fill{width:100%;border-radius:3px 3px 0 0;min-height:3px;transition:opacity .2s;position:relative}
+.bar-fill:hover{opacity:.75}
+.bar-tick{font-size:9px;color:var(--muted);font-family:'Share Tech Mono',monospace}
+
+/* ══════════════ ROUTE ROWS ══════════════ */
+.route-row{display:grid;grid-template-columns:1fr 56px 70px;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.route-row:last-child{border-bottom:none}
+.rname{font-weight:600;font-size:13px;color:var(--ink)}
+.rsub{color:var(--muted);font-size:10px;margin-top:1px;font-family:'Share Tech Mono',monospace}
+.tag{padding:3px 8px;border-radius:5px;font-size:9px;font-weight:800;text-transform:uppercase;text-align:center;letter-spacing:.5px;font-family:'Share Tech Mono',monospace}
+.t-ok  {background:rgba(34,197,94,.08);color:var(--signal-g);border:1px solid rgba(34,197,94,.15)}
+.t-warn{background:rgba(245,158,11,.08);color:var(--signal-a);border:1px solid rgba(245,158,11,.15)}
+.t-crit{background:rgba(239,68,68,.08); color:var(--signal-r);border:1px solid rgba(239,68,68,.15)}
+
+/* ══════════════ HUB EVENT FEED ══════════════ */
+.hub-event{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.05);margin-bottom:8px;transition:background .15s}
+.hub-event:hover{background:rgba(255,255,255,.04)}
+.he-intent{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;padding:3px 8px;border-radius:5px;white-space:nowrap;font-family:'Share Tech Mono',monospace}
+.he-route{font-size:12px;color:var(--muted-hi);flex:1}
+.he-train{font-size:11px;color:var(--muted);font-family:'Share Tech Mono',monospace}
+
+/* ══════════════ CHAT ══════════════ */
+.chat-area{display:flex;flex-direction:column;height:390px}
+.chat-msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.07) transparent}
+.bubble{max-width:78%;padding:11px 15px;border-radius:13px;font-size:13px;line-height:1.55}
+.bubble.user{background:linear-gradient(135deg,rgba(6,182,212,.7),rgba(2,132,199,.8));color:#fff;align-self:flex-end;border-bottom-right-radius:3px}
+.bubble.agent{background:rgba(255,255,255,.05);border:1px solid var(--border);color:var(--ink);align-self:flex-start;border-bottom-left-radius:3px}
+.bubble-src{font-size:9px;color:rgba(255,255,255,.4);margin-top:5px;font-family:'Share Tech Mono',monospace}
+.chat-input-row{display:flex;gap:8px;padding:12px;border-top:1px solid var(--border)}
+.chat-input{flex:1;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-size:13px;color:var(--ink);outline:none;font-family:'Inter',sans-serif;transition:border-color .2s}
+.chat-input::placeholder{color:var(--muted)}
+.chat-input:focus{border-color:rgba(6,182,212,.4)}
+
+/* ══════════════ FORMS ══════════════ */
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-group label{font-size:10px;font-weight:700;color:var(--muted-hi);letter-spacing:.5px;text-transform:uppercase}
+.form-group input,.form-group select,.form-group textarea{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:9px;padding:9px 13px;font-size:13px;color:var(--ink);outline:none;font-family:'Inter',sans-serif;transition:border-color .2s}
+.form-group input::placeholder,.form-group textarea::placeholder{color:var(--muted)}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--border-hi)}
+.form-group select option{background:#050A14;color:var(--ink)}
+.result-box{background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.14);border-radius:10px;padding:14px;font-size:13px;line-height:1.6;color:var(--ink);display:none}
+.result-box.show{display:block}
+
+/* ══════════════ BUTTONS ══════════════ */
+.btn{padding:9px 18px;border-radius:10px;font-weight:700;font-size:12px;cursor:pointer;border:none;transition:all .2s var(--ease);font-family:'Plus Jakarta Sans',sans-serif;display:inline-flex;align-items:center;gap:6px}
+.btn:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.btn-ops{background:linear-gradient(135deg,#D97706,#F59E0B);color:#fff;box-shadow:0 4px 16px rgba(245,158,11,.3)}
+.btn-ops:hover{transform:translateY(-1px);box-shadow:0 6px 22px rgba(245,158,11,.4)}
+.btn-cyan{background:linear-gradient(135deg,#0891B2,#06B6D4);color:#fff;box-shadow:0 4px 16px rgba(6,182,212,.3)}
+.btn-cyan:hover{transform:translateY(-1px)}
+.btn-purple{background:linear-gradient(135deg,#7C3AED,#A855F7);color:#fff;box-shadow:0 4px 16px rgba(168,85,247,.3)}
+.btn-purple:hover{transform:translateY(-1px)}
+.btn-ghost{background:rgba(255,255,255,.05);color:var(--ink);border:1px solid var(--border)}
+.btn-ghost:hover{background:rgba(255,255,255,.09)}
+
+/* ══════════════ HEALTH SIGNALS ══════════════ */
+.hs{display:inline-flex;align-items:center;gap:8px;padding:5px 12px;border-radius:7px;font-weight:700;font-size:12px;font-family:'Share Tech Mono',monospace}
+.hs-green{background:rgba(34,197,94,.1);color:var(--signal-g);border:1px solid rgba(34,197,94,.2)}
+.hs-amber{background:rgba(245,158,11,.1);color:var(--signal-a);border:1px solid rgba(245,158,11,.2)}
+.hs-red{background:rgba(239,68,68,.1);color:var(--signal-r);border:1px solid rgba(239,68,68,.2)}
+
+/* ══════════════ COMPONENT GRID ══════════════ */
+.comp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
+.comp-tile{background:rgba(168,85,247,.07);border:1px solid rgba(168,85,247,.14);border-radius:10px;padding:14px;font-size:12px;font-weight:600;color:var(--maintenance);transition:all .2s var(--ease);cursor:default;display:flex;align-items:center;gap:8px}
+.comp-tile:hover{background:rgba(168,85,247,.13);transform:translateY(-1px)}
+
+/* ══════════════ OFFLINE BOXES ══════════════ */
+.offline-box{background:rgba(4,12,24,.7);border:1px dashed rgba(255,255,255,.08);border-radius:var(--r);padding:44px;text-align:center}
+.offline-ico{width:60px;height:60px;border-radius:18px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;margin:0 auto 14px}
+.offline-title{font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:16px;color:var(--muted-hi);margin-bottom:8px}
+.offline-sub{font-size:12px;color:var(--muted);margin-bottom:14px}
+.offline-cmd{display:inline-block;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:7px;padding:5px 14px;font-size:12px;color:var(--muted-hi);font-family:'Share Tech Mono',monospace}
+
+/* ══════════════ PREDICTION DRAWER ══════════════ */
+.drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:none;z-index:100;justify-content:flex-end}
+.drawer-overlay.open{display:flex}
+.drawer-panel{width:min(490px,100%);background:rgba(5,10,24,.97);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border-left:1px solid var(--border);padding:24px;overflow-y:auto;display:flex;flex-direction:column;gap:14px;animation:slideIn .3s var(--ease)}
+@keyframes slideIn{from{transform:translateX(40px);opacity:0}to{transform:translateX(0);opacity:1}}
+
+/* ══════════════ SECTION HEADERS ══════════════ */
+.sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.sec-title{font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:14px;color:#fff}
+.sec-sub{font-size:11px;color:var(--muted);margin-top:1px}
+.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:5px;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;font-family:'Share Tech Mono',monospace}
+.badge-ops   {background:rgba(245,158,11,.1);color:var(--ops);border:1px solid rgba(245,158,11,.2)}
+.badge-cyan  {background:rgba(6,182,212,.1);color:var(--passenger);border:1px solid rgba(6,182,212,.2)}
+.badge-purple{background:rgba(168,85,247,.1);color:var(--maintenance);border:1px solid rgba(168,85,247,.2)}
+.badge-brand {background:rgba(37,99,235,.1);color:#93C5FD;border:1px solid rgba(37,99,235,.2)}
+
+/* ══════════════ PROG BAR ══════════════ */
+.prog-wrap{height:4px;background:rgba(255,255,255,.05);border-radius:2px;margin:6px 0 3px;overflow:hidden}
+.prog-fill{height:100%;border-radius:2px;transition:width .8s var(--ease)}
+
+/* ══════════════ FEED ══════════════ */
+.feed-item{padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.feed-item:last-child{border-bottom:none}
+.feed-type{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:var(--ops);margin-bottom:3px;font-family:'Share Tech Mono',monospace}
+.feed-text{font-size:12px;color:var(--muted-hi);line-height:1.5}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:4px;height:4px}
 ::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:#CBD5E1;border-radius:10px}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.08);border-radius:10px}
 
-/* ── Responsive ───────────────────────────────────────────────────────── */
-@media(max-width:900px){
-  .shell{grid-template-columns:1fr}
-  .sidebar{display:none}
-  .g4{grid-template-columns:repeat(2,1fr)}
-  .g3{grid-template-columns:1fr}
-  .g2,.g2e{grid-template-columns:1fr}
-  .main{padding:20px}
-}
-@media(max-width:560px){
-  .g4{grid-template-columns:1fr}
-  .metric-value{font-size:28px}
-}
+/* Responsive */
+@media(max-width:1100px){.g4{grid-template-columns:repeat(2,1fr)}.g3{grid-template-columns:1fr 1fr}.g2{grid-template-columns:1fr}}
+@media(max-width:768px){.shell{grid-template-columns:1fr}.sidebar{display:none}.content{padding:14px}.g4,.g3,.g2,.g2e{grid-template-columns:1fr}.topbar{padding:12px 14px}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
+
 <div class="shell">
 
-<!-- ── Sidebar ─────────────────────────────────────────────────────── -->
-<aside class="sidebar">
-  <div class="logo">
-    <div class="logo-mark">RS</div>
-    <div>
-      <div class="logo-text">RailSense AI</div>
-      <div class="logo-sub">IT3041 · Agentic System</div>
+<!-- ══════════ SIDEBAR ══════════ -->
+<aside class="sidebar" role="navigation" aria-label="Main navigation">
+  <div class="rail-l" aria-hidden="true"></div>
+  <div class="rail-r" aria-hidden="true"></div>
+  <div class="sleepers" aria-hidden="true"></div>
+
+  <div class="sidebar-inner">
+
+    <!-- Logo with locomotive emblem -->
+    <div class="logo">
+      <!-- Locomotive SVG emblem -->
+      <svg class="logo-emblem" viewBox="0 0 42 42" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="42" height="42" rx="11" fill="url(#logoGrad)"/>
+        <defs>
+          <linearGradient id="logoGrad" x1="0" y1="0" x2="42" y2="42">
+            <stop offset="0%" stop-color="#1D4ED8"/><stop offset="100%" stop-color="#7C3AED"/>
+          </linearGradient>
+        </defs>
+        <!-- Locomotive body -->
+        <rect x="6" y="20" width="26" height="10" rx="2" fill="rgba(255,255,255,0.9)"/>
+        <!-- Cab -->
+        <rect x="22" y="14" width="10" height="8" rx="2" fill="rgba(255,255,255,0.75)"/>
+        <!-- Front nose -->
+        <path d="M6 22 Q4 25 6 28" stroke="rgba(255,255,255,0.7)" stroke-width="1.5" fill="none"/>
+        <!-- Stack -->
+        <rect x="16" y="16" width="3" height="5" rx="1" fill="rgba(255,255,255,0.6)"/>
+        <!-- Windows -->
+        <rect x="24" y="16" width="3" height="3" rx=".5" fill="rgba(100,180,255,0.9)"/>
+        <rect x="28" y="16" width="2.5" height="3" rx=".5" fill="rgba(100,180,255,0.9)"/>
+        <!-- Wheels -->
+        <circle cx="11" cy="31" r="3" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.8)" stroke-width="1.5"/>
+        <circle cx="11" cy="31" r="1" fill="rgba(255,255,255,0.6)"/>
+        <circle cx="20" cy="31" r="3" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.8)" stroke-width="1.5"/>
+        <circle cx="20" cy="31" r="1" fill="rgba(255,255,255,0.6)"/>
+        <circle cx="29" cy="31" r="3" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.8)" stroke-width="1.5"/>
+        <circle cx="29" cy="31" r="1" fill="rgba(255,255,255,0.6)"/>
+        <!-- Rail line -->
+        <line x1="4" y1="34" x2="38" y2="34" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+        <line x1="4" y1="36" x2="38" y2="36" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+      </svg>
+      <div>
+        <div class="logo-name">RailSense AI</div>
+        <div class="logo-tagline">Railway Intelligence Platform</div>
+      </div>
     </div>
-  </div>
 
-  <button class="nav-item overview active" onclick="showPage('overview', this)">
-    <span class="nav-icon">🏠</span> Overview
-    <span class="nav-dot" id="dot-overview" style="margin-left:auto"></span>
-  </button>
+    <button class="nav-item active" id="nav-overview" onclick="showPage('overview',this)">
+      <svg class="nav-ico" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="11" y="1" width="6" height="6" rx="1"/><rect x="1" y="11" width="6" height="6" rx="1"/><rect x="11" y="11" width="6" height="6" rx="1"/></svg>
+      Control Room
+    </button>
 
-  <div class="nav-label">Agents</div>
+    <div class="nav-section">Agents</div>
 
-  <button class="nav-item passenger" onclick="showPage('passenger', this)">
-    <span class="nav-icon">🧑‍💼</span> Passenger Assistant
-    <span class="nav-dot" id="dot-passenger" style="margin-left:auto"></span>
-  </button>
-  <button class="nav-item ops" onclick="showPage('ops', this)">
-    <span class="nav-icon">🚦</span> Operations
-    <span class="nav-dot" id="dot-ops" style="margin-left:auto"></span>
-  </button>
-  <button class="nav-item security" onclick="showPage('security', this)">
-    <span class="nav-icon">🛡️</span> Security & Fraud
-    <span class="nav-dot" id="dot-security" style="margin-left:auto"></span>
-  </button>
-  <button class="nav-item maintenance" onclick="showPage('maintenance', this)">
-    <span class="nav-icon">🔧</span> Maintenance
-    <span class="nav-dot" id="dot-maintenance" style="margin-left:auto"></span>
-  </button>
+    <button class="nav-item" id="nav-passenger" onclick="showPage('passenger',this)">
+      <svg class="nav-ico" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 14v-1a3 3 0 0 0-3-3H5a3 3 0 0 0-3 3v1"/><circle cx="7" cy="5" r="3"/><path d="M17 14v-1a3 3 0 0 0-2.25-2.9"/><path d="M12 2.1a3 3 0 0 1 0 5.8"/></svg>
+      Passenger
+      <span class="nav-dot off" id="nd-passenger" aria-label="offline"></span>
+    </button>
 
-  <div class="sidebar-footer">
-    RailSense AI · Group Project<br>IT3041 · 2026
+    <button class="nav-item" id="nav-ops" onclick="showPage('ops',this)">
+      <!-- Track signal icon -->
+      <svg class="nav-ico" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="17 9 14 9 11 16 7 2 4 9 1 9"/></svg>
+      Operations
+      <span class="nav-dot off" id="nd-ops" aria-label="offline"></span>
+    </button>
+
+    <button class="nav-item" id="nav-security" onclick="showPage('security',this)">
+      <svg class="nav-ico" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 17s6-3 6-7.5V4L9 2 3 4v5.5C3 14 9 17 9 17z"/></svg>
+      Security &amp; Fraud
+      <span class="nav-dot off" id="nd-security" aria-label="offline"></span>
+    </button>
+
+    <button class="nav-item" id="nav-maintenance" onclick="showPage('maintenance',this)">
+      <!-- Wrench/spanner icon -->
+      <svg class="nav-ico" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 3.05A5 5 0 0 1 5.5 13H3l-1 2h8l1-2h-.5A5 5 0 0 1 11 3.05z"/><path d="m14 4-1 3 3 1-1-3z"/></svg>
+      Maintenance
+      <span class="nav-dot off" id="nd-maintenance" aria-label="offline"></span>
+    </button>
+
+    <!-- Signal panel -->
+    <div class="signal-panel">
+      <div class="signal-box" aria-label="Network signal status">
+        <div class="signal-head" aria-hidden="true">
+          <div class="sig sig-r" id="sig-r"></div>
+          <div class="sig sig-a" id="sig-a"></div>
+          <div class="sig sig-g" id="sig-g"></div>
+        </div>
+        <div class="signal-info">
+          <div class="signal-status" id="sig-text">INITIALISING</div>
+          <div class="signal-sub">Network status</div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </aside>
 
-<!-- ── Main ────────────────────────────────────────────────────────── -->
+<!-- ══════════ MAIN ══════════ -->
 <main class="main">
 
-  <!-- ── Clock / topbar ─────────────────────────────────────────── -->
-  <div class="topbar">
-    <div class="topbar-title">
-      <h2 id="page-title">System Overview</h2>
-      <p id="page-sub">All four agents · live status</p>
-    </div>
-    <div class="topbar-right">
-      <span class="clock" id="clock">--:--:--</span>
+  <!-- Animated track banner -->
+  <div class="track-banner" aria-hidden="true">
+    <div class="track-sleepers-h"></div>
+    <div class="track-rails"></div>
+    <!-- Animated mini train -->
+    <div class="train-anim-wrap">
+      <svg width="120" height="28" viewBox="0 0 120 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Loco body -->
+        <rect x="2" y="8" width="50" height="14" rx="3" fill="rgba(37,99,235,0.6)" stroke="rgba(100,160,255,0.4)" stroke-width="1"/>
+        <!-- Cab -->
+        <rect x="36" y="3" width="16" height="7" rx="2" fill="rgba(37,99,235,0.5)" stroke="rgba(100,160,255,0.3)" stroke-width="1"/>
+        <!-- Window -->
+        <rect x="38" y="5" width="5" height="3" rx="1" fill="rgba(147,210,255,0.7)"/>
+        <!-- Headlight -->
+        <circle cx="4" cy="15" r="2" fill="rgba(255,240,150,0.8)"/>
+        <!-- Wheels -->
+        <circle cx="12" cy="23" r="3.5" fill="none" stroke="rgba(180,200,230,0.5)" stroke-width="1.5"/>
+        <circle cx="25" cy="23" r="3.5" fill="none" stroke="rgba(180,200,230,0.5)" stroke-width="1.5"/>
+        <circle cx="38" cy="23" r="3.5" fill="none" stroke="rgba(180,200,230,0.5)" stroke-width="1.5"/>
+        <!-- Coach 1 -->
+        <rect x="56" y="10" width="28" height="12" rx="2" fill="rgba(14,116,144,0.5)" stroke="rgba(100,200,230,0.3)" stroke-width="1"/>
+        <rect x="60" y="12" width="5" height="4" rx="1" fill="rgba(147,210,255,0.5)"/>
+        <rect x="68" y="12" width="5" height="4" rx="1" fill="rgba(147,210,255,0.5)"/>
+        <circle cx="62" cy="23" r="2.5" fill="none" stroke="rgba(180,200,230,0.4)" stroke-width="1.2"/>
+        <circle cx="74" cy="23" r="2.5" fill="none" stroke="rgba(180,200,230,0.4)" stroke-width="1.2"/>
+        <!-- Coach 2 -->
+        <rect x="88" y="10" width="28" height="12" rx="2" fill="rgba(14,116,144,0.4)" stroke="rgba(100,200,230,0.25)" stroke-width="1"/>
+        <rect x="92" y="12" width="5" height="4" rx="1" fill="rgba(147,210,255,0.4)"/>
+        <rect x="100" y="12" width="5" height="4" rx="1" fill="rgba(147,210,255,0.4)"/>
+        <circle cx="94" cy="23" r="2.5" fill="none" stroke="rgba(180,200,230,0.35)" stroke-width="1.2"/>
+        <circle cx="106" cy="23" r="2.5" fill="none" stroke="rgba(180,200,230,0.35)" stroke-width="1.2"/>
+        <!-- Coupler -->
+        <line x1="52" y1="16" x2="56" y2="16" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/>
+        <line x1="84" y1="16" x2="88" y2="16" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/>
+      </svg>
     </div>
   </div>
 
-  <!-- ═══════════════════════════════════════════════════════════════
-       PAGE: OVERVIEW
-  ════════════════════════════════════════════════════════════════ -->
+  <!-- Topbar -->
+  <div class="topbar">
+    <div>
+      <div class="topbar-title" id="page-title">Control Room</div>
+      <div class="topbar-sub" id="page-sub">All agents · live network status</div>
+    </div>
+    <div class="topbar-right">
+      <div class="live-chip" role="status" aria-live="polite">
+        <div class="pulse-dot" aria-hidden="true"></div>
+        Live
+      </div>
+      <div class="depot-clock" id="clock" aria-label="Current time">--:--:--</div>
+    </div>
+  </div>
+
+  <div class="content">
+
+  <!-- ══════ PAGE: CONTROL ROOM (OVERVIEW) ══════ -->
   <div class="page active" id="page-overview">
 
-    <div class="g4">
-      <!-- Passenger -->
-      <div class="agent-card passenger" onclick="showPage('passenger', document.querySelector('.nav-item.passenger'))">
-        <div style="font-size:28px">🧑‍💼</div>
-        <div class="agent-name">Passenger Assistant</div>
-        <div class="agent-role">Multilingual chatbot · RAG · NLP</div>
-        <div class="agent-stat" id="ov-passenger-stat">—</div>
-        <div class="agent-stat-label">chat sessions</div>
-        <div class="status-pill loading" id="pill-passenger">
-          <div class="pulse-dot loading" id="pdot-passenger"></div>
-          <span id="pstatus-passenger">Checking…</span>
+    <!-- 4 platform agent cards -->
+    <div class="g4" role="list">
+
+      <div class="platform-card pc-cyan" onclick="showPage('passenger',qs('#nav-passenger'))" role="listitem" tabindex="0" aria-label="Navigate to Passenger agent" onkeydown="if(event.key==='Enter')showPage('passenger',qs('#nav-passenger'))">
+        <div class="platform-num">P1</div>
+        <div class="pc-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#06B6D4" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+        <div class="pc-name">Passenger Assistant</div>
+        <div class="pc-role">Multilingual NLP · RAG · Chat</div>
+        <div class="pc-stat" id="ov-stat-passenger">—</div>
+        <div class="pc-note">chat sessions today</div>
+        <div class="pill pill-off" id="ov-pill-passenger">
+          <svg width="6" height="6" viewBox="0 0 6 6" aria-hidden="true"><circle cx="3" cy="3" r="3" fill="currentColor"/></svg>
+          <span id="ov-ptxt-passenger">Offline</span>
         </div>
       </div>
 
-      <!-- Operations -->
-      <div class="agent-card ops" onclick="showPage('ops', document.querySelector('.nav-item.ops'))">
-        <div style="font-size:28px">🚦</div>
-        <div class="agent-name">Operations Agent</div>
-        <div class="agent-role">Delay prediction · Incident NLP · RAG</div>
-        <div class="agent-stat" id="ov-ops-stat">—</div>
-        <div class="agent-stat-label">history records</div>
-        <div class="status-pill loading" id="pill-ops">
-          <div class="pulse-dot loading" id="pdot-ops"></div>
-          <span id="pstatus-ops">Checking…</span>
+      <div class="platform-card pc-amber" onclick="showPage('ops',qs('#nav-ops'))" role="listitem" tabindex="0" aria-label="Navigate to Operations agent" onkeydown="if(event.key==='Enter')showPage('ops',qs('#nav-ops'))">
+        <div class="platform-num">P2</div>
+        <div class="pc-icon">
+          <!-- Train/departure icon -->
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="9" width="16" height="10" rx="2"/><path d="M6 9V7a2 2 0 0 1 4 0v2"/><circle cx="5.5" cy="16.5" r="1.5"/><circle cx="12.5" cy="16.5" r="1.5"/><path d="M2 12h16"/><path d="M20 9l2 2-2 2"/></svg>
+        </div>
+        <div class="pc-name">Operations Agent</div>
+        <div class="pc-role">Delay ML · Incident NLP · RAG</div>
+        <div class="pc-stat" id="ov-stat-ops">—</div>
+        <div class="pc-note">history records</div>
+        <div class="pill pill-off" id="ov-pill-ops">
+          <svg width="6" height="6" viewBox="0 0 6 6" aria-hidden="true"><circle cx="3" cy="3" r="3" fill="currentColor"/></svg>
+          <span id="ov-ptxt-ops">Offline</span>
         </div>
       </div>
 
-      <!-- Security -->
-      <div class="agent-card security" onclick="showPage('security', document.querySelector('.nav-item.security'))">
-        <div style="font-size:28px">🛡️</div>
-        <div class="agent-name">Security & Fraud</div>
-        <div class="agent-role">JWT · Fraud detection · Encryption</div>
-        <div class="agent-stat" id="ov-security-stat">—</div>
-        <div class="agent-stat-label">audit events</div>
-        <div class="status-pill loading" id="pill-security">
-          <div class="pulse-dot loading" id="pdot-security"></div>
-          <span id="pstatus-security">Checking…</span>
+      <div class="platform-card pc-rose" onclick="showPage('security',qs('#nav-security'))" role="listitem" tabindex="0" aria-label="Navigate to Security agent" onkeydown="if(event.key==='Enter')showPage('security',qs('#nav-security'))">
+        <div class="platform-num">P3</div>
+        <div class="pc-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#F43F5E" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <div class="pc-name">Security &amp; Fraud</div>
+        <div class="pc-role">JWT Auth · Fraud Detection · AES</div>
+        <div class="pc-stat" id="ov-stat-security">—</div>
+        <div class="pc-note">audit events</div>
+        <div class="pill pill-off" id="ov-pill-security">
+          <svg width="6" height="6" viewBox="0 0 6 6" aria-hidden="true"><circle cx="3" cy="3" r="3" fill="currentColor"/></svg>
+          <span id="ov-ptxt-security">Offline</span>
         </div>
       </div>
 
-      <!-- Maintenance -->
-      <div class="agent-card maintenance" onclick="showPage('maintenance', document.querySelector('.nav-item.maintenance'))">
-        <div style="font-size:28px">🔧</div>
-        <div class="agent-name">Maintenance Agent</div>
-        <div class="agent-role">Health prediction · Manual RAG · NER</div>
-        <div class="agent-stat" id="ov-maintenance-stat">—</div>
-        <div class="agent-stat-label">assets tracked</div>
-        <div class="status-pill loading" id="pill-maintenance">
-          <div class="pulse-dot loading" id="pdot-maintenance"></div>
-          <span id="pstatus-maintenance">Checking…</span>
+      <div class="platform-card pc-purple" onclick="showPage('maintenance',qs('#nav-maintenance'))" role="listitem" tabindex="0" aria-label="Navigate to Maintenance agent" onkeydown="if(event.key==='Enter')showPage('maintenance',qs('#nav-maintenance'))">
+        <div class="platform-num">P4</div>
+        <div class="pc-icon">
+          <!-- Gear/cog icon for maintenance -->
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#A855F7" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </div>
+        <div class="pc-name">Maintenance Agent</div>
+        <div class="pc-role">Health Predict · Manual RAG · NER</div>
+        <div class="pc-stat" id="ov-stat-maintenance">—</div>
+        <div class="pc-note">assets tracked</div>
+        <div class="pill pill-off" id="ov-pill-maintenance">
+          <svg width="6" height="6" viewBox="0 0 6 6" aria-hidden="true"><circle cx="3" cy="3" r="3" fill="currentColor"/></svg>
+          <span id="ov-ptxt-maintenance">Offline</span>
         </div>
       </div>
     </div>
 
-    <!-- Agent interaction example -->
-    <div class="section-label">Agent message flow</div>
-    <div class="card" style="margin-bottom:20px">
-      <div class="card-header"><span class="card-title">Live hub interactions</span>
-        <span class="badge badge-brand">MCP-style JSON protocol</span></div>
-      <div class="card-sub">Inter-agent messages routed through the hub</div>
-      <div id="ov-events" style="display:grid;gap:8px">
-        <div style="color:var(--muted);font-size:12px;padding:16px 0;text-align:center">No events yet — run a prediction to see the flow.</div>
+    <!-- Route map + Hub events side-by-side -->
+    <div class="g2">
+
+      <!-- Live route map -->
+      <div class="card">
+        <div style="padding:18px 20px 0">
+          <div class="sec-head">
+            <div><div class="sec-title">Live Route Map</div><div class="sec-sub">Colombo Main Line — real-time positions</div></div>
+            <span class="badge badge-ops">ACTIVE</span>
+          </div>
+        </div>
+        <div class="route-map">
+          <!-- Decorative overhead wire -->
+          <div style="position:absolute;top:12px;left:20px;right:20px;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.12),rgba(255,255,255,.12),transparent);pointer-events:none" aria-hidden="true"></div>
+          <div style="position:absolute;top:10px;left:30%;height:6px;width:1px;background:rgba(255,255,255,.1);pointer-events:none" aria-hidden="true"></div>
+          <div style="position:absolute;top:10px;left:60%;height:6px;width:1px;background:rgba(255,255,255,.1);pointer-events:none" aria-hidden="true"></div>
+
+          <div class="route-line" role="img" aria-label="Route map from Colombo Fort to Kandy">
+            <div class="station">
+              <div class="station-dot terminus" style="border-color:var(--passenger);color:var(--passenger)"></div>
+              <div class="station-name">COLOMBO FORT</div>
+              <div class="station-time">06:20</div>
+            </div>
+            <div class="track-seg seg-active" style="--d:0s"></div>
+            <div class="station">
+              <div class="station-dot" style="border-color:var(--signal-g)"></div>
+              <div class="station-name">RAGAMA</div>
+              <div class="station-time">06:52</div>
+            </div>
+            <div class="track-seg" style="--d:.5s"></div>
+            <div class="station">
+              <div class="station-dot active" style="border-color:var(--ops);color:var(--ops)"></div>
+              <div class="station-name">GAMPAHA</div>
+              <div class="station-time">07:18</div>
+            </div>
+            <div class="track-seg" style="--d:1s"></div>
+            <div class="station">
+              <div class="station-dot" style="border-color:var(--muted)"></div>
+              <div class="station-name">POLGAHAWELA</div>
+              <div class="station-time">08:05</div>
+            </div>
+            <div class="track-seg" style="--d:1.5s"></div>
+            <div class="station">
+              <div class="station-dot terminus" style="border-color:var(--maintenance);color:var(--maintenance)"></div>
+              <div class="station-name">KANDY</div>
+              <div class="station-time">09:15</div>
+            </div>
+          </div>
+
+          <!-- Legend -->
+          <div style="display:flex;gap:16px;padding:0 20px 8px;flex-wrap:wrap">
+            <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--muted-hi);font-family:'Share Tech Mono',monospace">
+              <div style="width:8px;height:8px;border-radius:50%;background:var(--signal-g)"></div>CLEAR
+            </div>
+            <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--muted-hi);font-family:'Share Tech Mono',monospace">
+              <div style="width:8px;height:8px;border-radius:50%;background:var(--signal-a);animation:pulseGreen 2s infinite"></div>TRAIN ACTIVE
+            </div>
+            <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--muted-hi);font-family:'Share Tech Mono',monospace">
+              <div style="width:8px;height:8px;border-radius:50%;background:var(--muted);opacity:.5"></div>UPCOMING
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hub event stream -->
+      <div class="card card-pad">
+        <div class="sec-head">
+          <div><div class="sec-title">Agent Hub Events</div><div class="sec-sub">Inter-agent message flow</div></div>
+          <span class="badge badge-brand">MCP</span>
+        </div>
+        <div id="ov-events" role="log" aria-live="polite" aria-label="Hub event feed">
+          <div style="text-align:center;padding:28px 0;color:var(--muted);font-size:12px;font-family:'Share Tech Mono',monospace">
+            AWAITING EVENTS…
+          </div>
+        </div>
       </div>
     </div>
 
-  </div><!-- /overview -->
+    <!-- Departure board -->
+    <div class="dep-board">
+      <div class="dep-board-header">
+        <div class="dep-board-title">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="display:inline-block;vertical-align:-2px;margin-right:6px" aria-hidden="true"><rect x="2" y="9" width="16" height="10" rx="2"/><circle cx="5.5" cy="16.5" r="1.5"/><circle cx="12.5" cy="16.5" r="1.5"/><path d="M2 12h16"/><path d="M20 9l2 2-2 2"/></svg>
+          DEPARTURES — ALL LINES
+        </div>
+        <span style="font-family:'Share Tech Mono',monospace;font-size:11px;color:rgba(245,158,11,.6)">COLOMBO NETWORK</span>
+      </div>
+      <div class="dep-board-body">
+        <div class="dep-row header-row">
+          <div class="dep-col-label">Train / Destination</div>
+          <div class="dep-col-label" style="text-align:right">Delay</div>
+          <div class="dep-col-label" style="text-align:right">Platform</div>
+          <div class="dep-col-label" style="text-align:right">Status</div>
+        </div>
+        <div class="dep-row">
+          <div><div class="dep-train">EXP-1014</div><div class="dep-dest">Kandy via Gampaha</div><div class="dep-dest-sub">Udarata Manike</div></div>
+          <div class="dep-delay norm" style="text-align:right">+0m</div>
+          <div style="text-align:right;font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--muted-hi)">PF 2</div>
+          <div style="text-align:right"><span class="dep-status" style="background:rgba(34,197,94,.1);color:var(--signal-g);border:1px solid rgba(34,197,94,.15)">ON TIME</span></div>
+        </div>
+        <div class="dep-row">
+          <div><div class="dep-train">LOC-3301</div><div class="dep-dest">Galle via Kalutara</div><div class="dep-dest-sub">Ruhunu Kumari</div></div>
+          <div class="dep-delay warn" style="text-align:right">+14m</div>
+          <div style="text-align:right;font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--muted-hi)">PF 4</div>
+          <div style="text-align:right"><span class="dep-status" style="background:rgba(245,158,11,.1);color:var(--signal-a);border:1px solid rgba(245,158,11,.15)">DELAYED</span></div>
+        </div>
+        <div class="dep-row">
+          <div><div class="dep-train">EXP-2087</div><div class="dep-dest">Jaffna via Anuradhapura</div><div class="dep-dest-sub">Yal Devi</div></div>
+          <div class="dep-delay norm" style="text-align:right">+0m</div>
+          <div style="text-align:right;font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--muted-hi)">PF 1</div>
+          <div style="text-align:right"><span class="dep-status" style="background:rgba(34,197,94,.1);color:var(--signal-g);border:1px solid rgba(34,197,94,.15)">BOARDING</span></div>
+        </div>
+        <div class="dep-row">
+          <div><div class="dep-train">LOC-4412</div><div class="dep-dest">Badulla via Nanu Oya</div><div class="dep-dest-sub">Podi Menike</div></div>
+          <div class="dep-delay crit" style="text-align:right">+31m</div>
+          <div style="text-align:right;font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--muted-hi)">PF 5</div>
+          <div style="text-align:right"><span class="dep-status" style="background:rgba(239,68,68,.1);color:var(--signal-r);border:1px solid rgba(239,68,68,.15)">ALERT</span></div>
+        </div>
+        <div class="dep-row">
+          <div><div class="dep-train">IC-5505</div><div class="dep-dest">Colombo to Matara</div><div class="dep-dest-sub">Coastal Line IC</div></div>
+          <div class="dep-delay norm" style="text-align:right">+0m</div>
+          <div style="text-align:right;font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--muted-hi)">PF 3</div>
+          <div style="text-align:right"><span class="dep-status" style="background:rgba(34,197,94,.1);color:var(--signal-g);border:1px solid rgba(34,197,94,.15)">ON TIME</span></div>
+        </div>
+      </div>
+    </div>
 
-  <!-- ═══════════════════════════════════════════════════════════════
-       PAGE: PASSENGER
-  ════════════════════════════════════════════════════════════════ -->
+  </div><!-- /page-overview -->
+
+  <!-- ══════ PAGE: PASSENGER ══════ -->
   <div class="page" id="page-passenger">
     <div id="passenger-content">
       <div class="offline-box">
-        <div class="offline-icon">🧑‍💼</div>
-        <h4>Passenger Agent Offline</h4>
-        <p>Start the passenger-agent service on port 8001 to activate this panel.</p>
-        <code style="font-size:11px;color:var(--muted)">uvicorn main:app --port 8001</code>
+        <div class="offline-ico" aria-hidden="true">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#4A6080" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        </div>
+        <div class="offline-title">Passenger Agent Offline</div>
+        <div class="offline-sub">Start passenger-agent on port 8001 to activate the chat interface.</div>
+        <div class="offline-cmd">uvicorn main:app --port 8001</div>
       </div>
     </div>
   </div>
 
-  <!-- ═══════════════════════════════════════════════════════════════
-       PAGE: OPERATIONS
-  ════════════════════════════════════════════════════════════════ -->
+  <!-- ══════ PAGE: OPERATIONS ══════ -->
   <div class="page" id="page-ops">
     <div id="ops-content">
       <div class="offline-box">
-        <div class="offline-icon">🚦</div>
-        <h4>Operations Agent Offline</h4>
-        <p>Start the M2-operations-agent on port 8002 to see live data.</p>
-        <code style="font-size:11px;color:var(--muted)">uvicorn main:app --port 8002</code>
+        <div class="offline-ico" aria-hidden="true">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#4A6080" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="9" width="16" height="10" rx="2"/><circle cx="5.5" cy="16.5" r="1.5"/><circle cx="12.5" cy="16.5" r="1.5"/><path d="M2 12h16"/></svg>
+        </div>
+        <div class="offline-title">Operations Agent Offline</div>
+        <div class="offline-sub">Start M2-operations-agent on port 8002 to view live delay data.</div>
+        <div class="offline-cmd">uvicorn main:app --port 8002</div>
       </div>
     </div>
   </div>
 
-  <!-- ═══════════════════════════════════════════════════════════════
-       PAGE: SECURITY
-  ════════════════════════════════════════════════════════════════ -->
+  <!-- ══════ PAGE: SECURITY ══════ -->
   <div class="page" id="page-security">
     <div id="security-content">
       <div class="offline-box">
-        <div class="offline-icon">🛡️</div>
-        <h4>Security Agent Offline</h4>
-        <p>Start the security-agent on port 8003 to see live data.</p>
-        <code style="font-size:11px;color:var(--muted)">uvicorn main:app --port 8003</code>
+        <div class="offline-ico" aria-hidden="true">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#4A6080" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <div class="offline-title">Security Agent Offline</div>
+        <div class="offline-sub">Start security-agent on port 8003 to access the fraud console.</div>
+        <div class="offline-cmd">uvicorn main:app --port 8003</div>
       </div>
     </div>
   </div>
 
-  <!-- ═══════════════════════════════════════════════════════════════
-       PAGE: MAINTENANCE
-  ════════════════════════════════════════════════════════════════ -->
+  <!-- ══════ PAGE: MAINTENANCE ══════ -->
   <div class="page" id="page-maintenance">
     <div id="maintenance-content">
       <div class="offline-box">
-        <div class="offline-icon">🔧</div>
-        <h4>Maintenance Agent Offline</h4>
-        <p>Start the maintenance-agent on port 8004 to see live data.</p>
-        <code style="font-size:11px;color:var(--muted)">uvicorn main:app --port 8004</code>
+        <div class="offline-ico" aria-hidden="true">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#4A6080" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </div>
+        <div class="offline-title">Maintenance Agent Offline</div>
+        <div class="offline-sub">Start maintenance-agent on port 8004 to access asset intelligence.</div>
+        <div class="offline-cmd">uvicorn main:app --port 8004</div>
       </div>
     </div>
   </div>
 
+  </div><!-- /content -->
 </main>
 </div><!-- /shell -->
 
-<!-- Prediction drawer -->
-<div class="drawer-overlay" id="drawer">
+<!-- ══════ PREDICTION DRAWER ══════ -->
+<div class="drawer-overlay" id="drawer" role="dialog" aria-modal="true" aria-label="Run delay prediction">
   <div class="drawer-panel">
     <div style="display:flex;justify-content:space-between;align-items:center">
-      <h3>Run Delay Prediction</h3>
-      <button class="btn btn-outline" onclick="document.getElementById('drawer').classList.remove('open')" style="padding:6px 12px">✕</button>
+      <div>
+        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:17px;font-weight:800;color:#fff">Delay Prediction</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px;font-family:'Share Tech Mono',monospace">GROUNDED BY HISTORICAL RAG</div>
+      </div>
+      <button class="btn btn-ghost" onclick="closeDrawer()" aria-label="Close drawer" style="padding:7px 11px">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
     </div>
-    <div class="form-group"><label>Route</label><select id="d-route"></select></div>
-    <div class="form-group"><label>Train ID</label><input id="d-train" value="PM-4082"></div>
-    <div class="form-group"><label>Scheduled time</label><input id="d-time" type="datetime-local"></div>
-    <div class="form-group"><label>Weather</label>
+    <div class="form-group"><label for="d-route">Route</label><select id="d-route"></select></div>
+    <div class="form-group"><label for="d-train">Train ID</label><input id="d-train" value="EXP-1014"></div>
+    <div class="form-group"><label for="d-time">Scheduled departure</label><input id="d-time" type="datetime-local"></div>
+    <div class="form-group"><label for="d-weather">Weather condition</label>
       <select id="d-weather"><option>clear</option><option selected>light_rain</option><option>heavy_rain</option><option>fog</option><option>extreme_heat</option></select></div>
-    <div class="form-group"><label>Incident type</label>
+    <div class="form-group"><label for="d-incident">Incident type</label>
       <select id="d-incident"><option>none</option><option selected>signal_fault</option><option>mechanical</option><option>weather</option><option>track_obstruction</option><option>staffing</option></select></div>
-    <button class="btn btn-ops" onclick="runPrediction()">Generate prediction</button>
-    <div class="result-box" id="d-result"></div>
-    <hr style="border:none;border-top:1px solid var(--line)">
-    <h4 style="font-size:15px;font-weight:700">Incident Triage</h4>
-    <div class="form-group"><label>Station</label><input id="d-station" value="Kandy"></div>
-    <div class="form-group"><label>Raw incident report</label>
-      <textarea id="d-raw" rows="3" placeholder="Describe what happened…"></textarea></div>
-    <button class="btn btn-outline" onclick="runTriage()">Classify incident</button>
-    <div class="result-box" id="d-triage"></div>
+    <button class="btn btn-ops" onclick="runPrediction()" style="width:100%;justify-content:center">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      Run Prediction
+    </button>
+    <div class="result-box" id="d-result" role="status" aria-live="polite"></div>
+    <hr style="border:none;border-top:1px solid var(--border)">
+    <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;color:#fff;font-size:13px">Incident Triage</div>
+    <div class="form-group"><label for="d-station">Station</label><input id="d-station" value="Gampaha"></div>
+    <div class="form-group"><label for="d-raw">Incident report (free text)</label>
+      <textarea id="d-raw" rows="3" placeholder="e.g. Points failure at Gampaha junction…"></textarea></div>
+    <button class="btn btn-ghost" onclick="runTriage()" style="width:100%;justify-content:center">Classify Incident</button>
+    <div class="result-box" id="d-triage" role="status" aria-live="polite"></div>
   </div>
 </div>
 
 <script>
-// ── State ────────────────────────────────────────────────────────────────
-const STATUS = {passenger:false, ops:false, security:false, maintenance:false};
+// ── Helpers ────────────────────────────────────────────────────────────────
+const qs  = s => document.querySelector(s);
+const qsa = s => document.querySelectorAll(s);
+const $   = id => document.getElementById(id);
+const fmt = v  => Number(v||0).toFixed(1);
 
-// ── Navigation ────────────────────────────────────────────────────────────
+const ONLINE = {};
+let   opsData = null;
+
 const PAGE_META = {
-  overview:    {title:'System Overview',     sub:'All four agents · live status'},
-  passenger:   {title:'Passenger Assistant', sub:'Multilingual chatbot · RAG · NLP'},
-  ops:         {title:'Operations Agent',    sub:'Delay prediction · Incident intelligence'},
-  security:    {title:'Security & Fraud',    sub:'JWT authentication · Fraud detection · Encryption'},
-  maintenance: {title:'Maintenance Agent',   sub:'Predictive maintenance · Manual RAG · NER'},
+  overview:    ['Control Room',           'All agents · live network status'],
+  passenger:   ['Passenger Assistant',    'Multilingual chatbot · RAG · NLP'],
+  ops:         ['Operations Agent',       'Delay prediction · Incident intelligence · RAG'],
+  security:    ['Security & Fraud',       'JWT auth · Fraud detection · AES encryption'],
+  maintenance: ['Maintenance Agent',      'Predictive maintenance · Equipment manual RAG · NER'],
 };
 
+// ── Navigation ────────────────────────────────────────────────────────────
 function showPage(id, btn) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById('page-'+id).classList.add('active');
-  if (btn) btn.classList.add('active');
-  const m = PAGE_META[id] || {};
-  document.getElementById('page-title').textContent = m.title || id;
-  document.getElementById('page-sub').textContent = m.sub || '';
-  if (id === 'ops' && STATUS.ops) renderOps();
-  if (id === 'maintenance' && STATUS.maintenance) renderMaintenance();
-  if (id === 'passenger') renderPassenger();
-  if (id === 'security') renderSecurity();
+  qsa('.page').forEach(p => p.classList.remove('active'));
+  qsa('.nav-item').forEach(n => { n.classList.remove('active'); n.removeAttribute('aria-current'); });
+  $('page-'+id).classList.add('active');
+  if (btn) { btn.classList.add('active'); btn.setAttribute('aria-current','page'); }
+  const [t, s] = PAGE_META[id]||[id,''];
+  $('page-title').textContent = t;
+  $('page-sub').textContent   = s;
+  if (id==='ops')         renderOps();
+  if (id==='maintenance') renderMaintenance();
+  if (id==='passenger')   renderPassenger();
+  if (id==='security')    renderSecurity();
 }
 
 // ── Clock ─────────────────────────────────────────────────────────────────
-setInterval(() => {
-  document.getElementById('clock').textContent =
-    new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'});
-}, 1000);
+setInterval(() => { $('clock').textContent = new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}); }, 1000);
 
-// ── Agent polling ─────────────────────────────────────────────────────────
+// ── Signal display ─────────────────────────────────────────────────────────
+function updateSignal(onlineCount) {
+  $('sig-r').className = 'sig sig-r' + (onlineCount === 0 ? ' lit' : '');
+  $('sig-a').className = 'sig sig-a' + (onlineCount > 0 && onlineCount < 4 ? ' lit' : '');
+  $('sig-g').className = 'sig sig-g' + (onlineCount === 4 ? ' lit' : '');
+  $('sig-text').textContent = onlineCount === 0 ? 'STANDBY' : onlineCount < 4 ? 'PARTIAL' : 'ALL CLEAR';
+}
+
+// ── Status polling ─────────────────────────────────────────────────────────
 async function checkStatus() {
   try {
     const r = await fetch('/status');
-    const data = await r.json();
-    updateAgentPill('passenger',  data.passenger);
-    updateAgentPill('ops',        data.operations);
-    updateAgentPill('security',   data.security);
-    updateAgentPill('maintenance',data.maintenance);
-  } catch(e) {
-    ['passenger','ops','security','maintenance'].forEach(a => updateAgentPill(a, {online:false}));
+    const d = await r.json();
+    updateAgent('passenger',  d.passenger);
+    updateAgent('operations', d.operations, 'ops');
+    updateAgent('security',   d.security);
+    updateAgent('maintenance',d.maintenance);
+    const count = ['passenger','operations','security','maintenance'].filter(k=>d[k]?.online).length;
+    updateSignal(count);
+  } catch {
+    updateSignal(0);
   }
 }
 
-function updateAgentPill(agent, info={}) {
+function updateAgent(key, info={}, navKey) {
   const online = info?.online === true;
-  STATUS[agent] = online;
-  const dot   = document.getElementById('dot-'+agent);
-  const pill  = document.getElementById('pill-'+agent);
-  const pdot  = document.getElementById('pdot-'+agent);
-  const pstat = document.getElementById('pstatus-'+agent);
-  if (!dot) return;
-  dot.className = 'nav-dot ' + (online ? 'online' : 'offline');
-  if (pill) {
-    pill.className = 'status-pill ' + (online ? 'online' : 'offline');
-    pdot.className = 'pulse-dot ' + (online ? 'online' : 'offline');
-    pstat.textContent = online ? 'Online' : 'Offline';
-  }
+  ONLINE[key] = online;
+  const nk = navKey || key;
 
-  // Update overview stat numbers
-  const stat = document.getElementById('ov-'+agent+'-stat');
-  if (stat && online) {
-    if (agent === 'ops' && info.history_records != null)
-      stat.textContent = info.history_records.toLocaleString();
-    else
-      stat.textContent = '●';
-  }
+  // Sidebar dot
+  const nd = $('nd-'+nk);
+  if (nd) { nd.className = 'nav-dot ' + (online ? 'on' : 'off'); nd.setAttribute('aria-label', online ? 'online' : 'offline'); }
+
+  // Overview card
+  const pill = $('ov-pill-'+nk), ptxt = $('ov-ptxt-'+nk), stat = $('ov-stat-'+nk);
+  if (pill)  pill.className  = 'pill ' + (online ? 'pill-on' : 'pill-off');
+  if (ptxt)  ptxt.textContent = online ? 'Online' : 'Offline';
+  if (stat && online && key==='operations' && info.history_records!=null)
+    stat.textContent = info.history_records.toLocaleString();
+  else if (stat && online && stat.textContent === '—')
+    stat.textContent = '●';
 }
 
-// ── Operations data ───────────────────────────────────────────────────────
-let opsData = null;
-
+// ── Operations page ──────────────────────────────────────────────────────────
 async function fetchOps() {
   try {
     const r = await fetch('/proxy/operations/api/dashboard');
     if (!r.ok) return;
     opsData = await r.json();
-    // Populate route selector in drawer
-    const sel = document.getElementById('d-route');
+    const sel = $('d-route');
     if (sel && !sel.options.length && opsData.routes)
       opsData.routes.forEach(x => sel.add(new Option(x.route, x.route)));
-    // If ops page active, render immediately
-    if (document.getElementById('page-ops').classList.contains('active')) renderOps();
-    // Update overview events
     renderOverviewEvents(opsData.events || []);
-  } catch(e){}
+    if ($('page-ops').classList.contains('active')) renderOps();
+  } catch {}
 }
 
 function renderOps() {
-  if (!STATUS.ops) {
-    document.getElementById('ops-content').innerHTML = offlineBox('🚦','Operations Agent Offline','Start the M2-operations-agent on port 8002.','uvicorn main:app --port 8002');
-    return;
-  }
+  if (!ONLINE.operations) { $('ops-content').innerHTML = offlineBox('ops'); return; }
   if (!opsData) { fetchOps(); return; }
-  const o = opsData.overview || {};
-  const routes = opsData.routes || [];
-  const feed   = opsData.feed   || [];
-  const hourly = opsData.hourly || [];
-  const ml     = opsData.ml_metrics || {};
-  const nlp    = opsData.nlp_metrics|| {};
+  const o = opsData.overview||{}, routes = opsData.routes||[], feed = opsData.feed||[], hourly = opsData.hourly||[], ml = opsData.ml_metrics||{}, nlp = opsData.nlp_metrics||{};
+  const hrs = hourly.filter(x => x.hour >= 5 && x.hour <= 22);
+  const maxH = Math.max(...hrs.map(x => x.average_delay), 1);
 
-  document.getElementById('ops-content').innerHTML = `
+  $('ops-content').innerHTML = `
     <div class="g4">
-      ${metric('Network delay', fmt(o.average_delay)+'m', 'avg minutes / trip','--ops')}
-      ${metric('On-time rate',  fmt(o.on_time_rate)+'%',  '≤5 min arrivals','--ops')}
-      ${metric('Active alerts', o.active_alerts??0,       'delay_alert events','--ops')}
-      ${metric('Audit trail',   o.audit_events??0,        'prediction actions','--ops')}
-    </div>
-    <div class="g2">
-      <div class="card">
-        <div class="card-header"><span class="card-title">Delay by departure hour</span>
-          <button class="btn btn-ops" style="font-size:11px;padding:6px 12px" onclick="document.getElementById('drawer').classList.add('open');setDrawerTime()">Run prediction</button></div>
-        <div class="card-sub">Historical average delay · 5:00–22:00</div>
-        ${hourlyChart(hourly,'--ops')}
+      <div class="metric m-ops">
+        <div class="metric-label">Network avg delay</div>
+        <div class="metric-value">${fmt(o.average_delay)}<span style="font-size:15px">m</span></div>
+        <div class="metric-sub">${o.trips?.toLocaleString()||0} trips analysed</div>
       </div>
-      <div class="card">
-        <div class="card-header"><span class="card-title">Incident mix</span></div>
-        <div class="card-sub">Classified by type</div>
-        ${(opsData.incident_mix||[]).map(x=>`
+      <div class="metric m-ops">
+        <div class="metric-label">On-time rate</div>
+        <div class="metric-value">${fmt(o.on_time_rate)}<span style="font-size:15px">%</span></div>
+        <div class="metric-sub">within 5-minute window</div>
+      </div>
+      <div class="metric m-ops">
+        <div class="metric-label">Active alerts</div>
+        <div class="metric-value">${o.active_alerts??0}</div>
+        <div class="metric-sub">delay_alert events fired</div>
+      </div>
+      <div class="metric m-ops">
+        <div class="metric-label">Audit trail</div>
+        <div class="metric-value">${o.audit_events??0}</div>
+        <div class="metric-sub">prediction &amp; triage actions</div>
+      </div>
+    </div>
+
+    <div class="g2">
+      <div class="card card-pad">
+        <div class="sec-head">
+          <div><div class="sec-title">Hourly delay pattern</div><div class="sec-sub">Average minutes late · 05:00–22:00</div></div>
+          <button class="btn btn-ops" onclick="openDrawer()" style="font-size:11px;padding:7px 12px">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Predict
+          </button>
+        </div>
+        <div class="chart-bars" role="img" aria-label="Bar chart of average delay by departure hour">
+          ${hrs.map(x => `
+            <div class="bar-col">
+              <div class="bar-fill" style="height:${Math.max(4, x.average_delay/maxH*100)}%;background:linear-gradient(to top,#D97706,#FCD34D)" title="${x.hour}:00 · ${x.average_delay}min" aria-label="${x.hour}:00, ${x.average_delay} minutes"></div>
+              <span class="bar-tick">${x.hour}</span>
+            </div>`).join('')}
+        </div>
+      </div>
+
+      <div class="card card-pad">
+        <div class="sec-head"><div><div class="sec-title">Incident types</div><div class="sec-sub">Classified by NLP</div></div></div>
+        ${(opsData.incident_mix||[]).map(x => `
           <div class="route-row">
-            <div class="route-name">${x.type.replaceAll('_',' ')}</div>
-            <strong>${x.count}</strong><span class="pill pill-watch">cases</span>
+            <div class="rname">${x.type.replaceAll('_',' ')}</div>
+            <strong style="color:#fff;font-family:'Share Tech Mono',monospace">${x.count}</strong>
+            <span class="tag t-warn">cases</span>
           </div>`).join('')}
       </div>
     </div>
+
     <div class="g2">
-      <div class="card">
-        <div class="card-header"><span class="card-title">Route heatmap</span></div>
-        <div class="card-sub">Ranked by average delay</div>
-        ${routes.slice(0,8).map(r=>`
+      <div class="card card-pad">
+        <div class="sec-head"><div><div class="sec-title">Route heatmap</div><div class="sec-sub">Ranked by average delay</div></div><span class="badge badge-ops">${routes.length} routes</span></div>
+        ${routes.slice(0,8).map(r => `
           <div class="route-row">
-            <div><div class="route-name">${r.route}</div>
-            <div class="route-sub">${r.trips} trips · ${r.incident_rate}% incidents</div></div>
-            <strong>${r.average_delay}m</strong>
-            <span class="pill pill-${r.status}">${r.status}</span>
+            <div><div class="rname">${r.route}</div><div class="rsub">${r.trips}tr · ${r.incident_rate}% inc · peak ${r.max_delay}m</div></div>
+            <strong style="color:#fff;font-family:'Share Tech Mono',monospace">${r.average_delay}m</strong>
+            <span class="tag t-${r.status}">${r.status}</span>
           </div>`).join('')}
       </div>
-      <div class="card">
-        <div class="card-header"><span class="card-title">Incident feed</span></div>
-        <div class="card-sub">Auto-summarized reports</div>
-        ${feed.slice(0,6).map(x=>`
+
+      <div class="card card-pad">
+        <div class="sec-head"><div><div class="sec-title">Incident feed</div><div class="sec-sub">Auto-summarised by Claude</div></div></div>
+        ${feed.slice(0,5).map(x => `
           <div class="feed-item">
             <div class="feed-type">${(x.type||'incident').replaceAll('_',' ')} · ${x.station||''}</div>
             <div class="feed-text">${x.summary||'No summary.'}</div>
-          </div>`).join('') || '<div style="color:var(--muted);font-size:12px;padding:8px 0">No incidents on record.</div>'}
+          </div>`).join() || '<div style="color:var(--muted);font-size:12px;padding:8px 0">No incidents recorded.</div>'}
       </div>
     </div>
+
     <div class="g3">
-      <div class="card">
-        <div class="card-title">ML model quality</div>
-        <div class="card-sub" style="margin-bottom:12px">GradientBoostingRegressor · held-out set</div>
-        <div style="font-size:11px;color:var(--muted)">R² score</div>
-        <div class="progress-wrap"><div class="progress-fill" style="width:${(ml.r2||0)*100}%;background:var(--ops)"></div></div>
-        <div style="font-size:12px"><strong>${fmt(ml.r2)}</strong></div>
-        <div style="font-size:11px;color:var(--muted);margin-top:8px">MAE ${fmt(ml.mae_minutes)} min · RMSE ${fmt(ml.rmse_minutes)} min</div>
+      <div class="card card-pad">
+        <div class="sec-title" style="margin-bottom:12px">ML model · GBR</div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:2px">R² score <strong style="color:#fff">${fmt(ml.r2)}</strong></div>
+        <div class="prog-wrap"><div class="prog-fill" style="width:${(ml.r2||0)*100}%;background:linear-gradient(90deg,#D97706,#FCD34D)"></div></div>
+        <div style="font-size:11px;color:var(--muted);margin-top:8px">MAE <strong style="color:var(--muted-hi)">${fmt(ml.mae_minutes)} min</strong></div>
+        <div style="font-size:11px;color:var(--muted)">RMSE <strong style="color:var(--muted-hi)">${fmt(ml.rmse_minutes)} min</strong></div>
       </div>
-      <div class="card">
-        <div class="card-title">NLP quality</div>
-        <div class="card-sub" style="margin-bottom:12px">Intent classification · F1</div>
-        <div style="font-size:11px;color:var(--muted)">Macro F1</div>
-        <div class="progress-wrap"><div class="progress-fill" style="width:${(nlp.macro_avg?.f1||0)*100}%;background:var(--ops)"></div></div>
-        <div style="font-size:12px"><strong>${fmt(nlp.macro_avg?.f1)}</strong></div>
-        <div style="font-size:11px;color:var(--muted);margin-top:8px">Out-of-template: ${fmt((opsData.robustness?.filter?.accuracy||opsData.robustness?.accuracy||0)*100)}%</div>
+      <div class="card card-pad">
+        <div class="sec-title" style="margin-bottom:12px">NLP classifier</div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:2px">Macro F1 <strong style="color:#fff">${fmt(nlp.macro_avg?.f1)}</strong></div>
+        <div class="prog-wrap"><div class="prog-fill" style="width:${(nlp.macro_avg?.f1||0)*100}%;background:linear-gradient(90deg,#D97706,#FCD34D)"></div></div>
+        <div style="font-size:11px;color:var(--muted);margin-top:8px">Out-of-template <strong style="color:var(--muted-hi)">${fmt((opsData.robustness?.filter?.accuracy||opsData.robustness?.accuracy||0)*100)}%</strong></div>
       </div>
-      <div class="card">
-        <div class="card-title">Agent bridge</div>
-        <div class="card-sub" style="margin-bottom:12px">Passenger → Hub → Operations</div>
-        <div style="font-size:26px;font-weight:800;color:${opsData.hub?.configured?'var(--ops)':'var(--muted)'}">
-          ${opsData.hub?.configured?'CONNECTED':'OFFLINE FALLBACK'}
-        </div>
-        <div style="font-size:11px;color:var(--muted);margin-top:8px">delay_check · delay_alert · incident_triage</div>
+      <div class="card card-pad">
+        <div class="sec-title" style="margin-bottom:12px">Hub bridge</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:20px;color:${opsData.hub?.configured?'var(--signal-g)':'var(--muted)'};margin-bottom:8px">${opsData.hub?.configured?'CONNECTED':'FALLBACK'}</div>
+        <div style="font-size:11px;color:var(--muted);font-family:'Share Tech Mono',monospace">delay_check<br>delay_alert<br>incident_triage</div>
       </div>
     </div>
   `;
 }
 
-// ── Maintenance data ──────────────────────────────────────────────────────
+// ── Maintenance page ──────────────────────────────────────────────────────
 async function renderMaintenance() {
-  if (!STATUS.maintenance) {
-    document.getElementById('maintenance-content').innerHTML =
-      offlineBox('🔧','Maintenance Agent Offline','Start the maintenance-agent on port 8004.','uvicorn main:app --port 8004');
-    return;
-  }
-  try {
-    const r = await fetch('/proxy/maintenance/health');
-    const info = await r.json();
-    document.getElementById('maintenance-content').innerHTML = `
-      <div class="g4">
-        ${metric('Agent status','ONLINE','maintenance-agent','--maintenance')}
-        ${metric('Port','8004','HTTP service','--maintenance')}
-        ${metric('Endpoints','3','log-ingest · status · manual-query','--maintenance')}
-        ${metric('RAG','ChromaDB','equipment manuals indexed','--maintenance')}
-      </div>
-      <div class="g2">
-        <div class="card">
-          <div class="card-header"><span class="card-title">Ask the manual</span>
-            <span class="badge badge-maintenance">RAG · ChromaDB</span></div>
-          <div class="card-sub">Query equipment manuals — answer is grounded in actual manual text</div>
-          <div style="display:flex;gap:8px;margin-bottom:14px">
-            <input id="mq-input" class="chat-input" placeholder="e.g. What is the brake pressure threshold?" style="flex:1">
-            <button class="btn btn-maintenance" onclick="runManualQuery()">Ask</button>
-          </div>
-          <div id="mq-result" style="display:none" class="result-box show"></div>
+  if (!ONLINE.maintenance) { $('maintenance-content').innerHTML = offlineBox('maintenance'); return; }
+  $('maintenance-content').innerHTML = `
+    <div class="g4">
+      <div class="metric m-maintenance"><div class="metric-label">Status</div><div class="metric-value" style="font-size:20px;font-family:'Share Tech Mono',monospace">ONLINE</div><div class="metric-sub">maintenance-agent · port 8004</div></div>
+      <div class="metric m-maintenance"><div class="metric-label">Manuals indexed</div><div class="metric-value">6</div><div class="metric-sub">ChromaDB RAG corpus</div></div>
+      <div class="metric m-maintenance"><div class="metric-label">Endpoints</div><div class="metric-value">3</div><div class="metric-sub">log-ingest · status · manual-query</div></div>
+      <div class="metric m-maintenance"><div class="metric-label">ML model</div><div class="metric-value" style="font-size:20px;font-family:'Share Tech Mono',monospace">RF</div><div class="metric-sub">RandomForest health predictor</div></div>
+    </div>
+
+    <div class="g2e">
+      <!-- RAG search -->
+      <div class="card card-pad">
+        <div class="sec-head">
+          <div><div class="sec-title">Equipment Manual RAG</div><div class="sec-sub">ChromaDB · all-MiniLM-L6-v2 · Claude Haiku</div></div>
+          <span class="badge badge-purple">RAG</span>
         </div>
-        <div class="card">
-          <div class="card-header"><span class="card-title">Log ingest</span>
-            <span class="badge badge-maintenance">POST /log-ingest</span></div>
-          <div class="card-sub">Submit sensor readings to get a health prediction</div>
-          <div class="form-group"><label>Train ID</label><input id="li-train" value="TR-001"></div>
-          <div class="form-group"><label>Component</label>
-            <select id="li-comp"><option>braking system</option><option>traction motor</option><option>bogie</option><option>compressor</option><option>pantograph</option><option>gearbox</option></select></div>
-          <div class="form-group"><label>Vibration level (mm/s²)</label><input id="li-vib" type="number" value="3.2" step="0.1"></div>
-          <div class="form-group"><label>Temperature (°C)</label><input id="li-temp" type="number" value="78"></div>
-          <div class="form-group"><label>Oil pressure (bar)</label><input id="li-oil" type="number" value="3.5" step="0.1"></div>
-          <button class="btn btn-maintenance" style="margin-top:8px" onclick="runLogIngest()">Ingest log</button>
-          <div id="li-result" style="display:none;margin-top:14px" class="result-box show"></div>
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+          <input id="mq-input" class="chat-input" placeholder="e.g. brake pressure threshold…" aria-label="Manual query" style="flex:1">
+          <button class="btn btn-purple" onclick="runManualQuery()" aria-label="Search">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            Ask
+          </button>
         </div>
+        <div class="result-box" id="mq-result" role="status" aria-live="polite"></div>
       </div>
-      <div class="card">
-        <div class="card-title">Maintenance components</div>
-        <div class="card-sub">Equipment covered by the manual RAG corpus</div>
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px">
-          ${['braking system','traction motor','bogie','compressor','pantograph','gearbox'].map(c=>`
-            <div style="background:#F5F3FF;border-radius:10px;padding:14px;font-size:13px;font-weight:600;color:var(--maintenance)">
-              ${c.charAt(0).toUpperCase()+c.slice(1)}
-            </div>`).join('')}
+
+      <!-- Log ingest -->
+      <div class="card card-pad">
+        <div class="sec-head"><div><div class="sec-title">Log Ingest</div><div class="sec-sub">POST /log-ingest · sensor analysis</div></div></div>
+        <div class="form-group" style="margin-bottom:8px"><label for="li-train">Train ID</label><input id="li-train" value="TR-001"></div>
+        <div class="form-group" style="margin-bottom:8px"><label for="li-comp">Component</label>
+          <select id="li-comp">
+            <option>braking system</option><option>traction motor</option><option>bogie</option>
+            <option>compressor</option><option>pantograph</option><option>gearbox</option>
+          </select></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px">
+          <div class="form-group"><label for="li-vib">Vibration</label><input id="li-vib" type="number" value="3.2" step="0.1" aria-label="Vibration mm/s²"></div>
+          <div class="form-group"><label for="li-temp">Temp °C</label><input id="li-temp" type="number" value="78" aria-label="Temperature"></div>
+          <div class="form-group"><label for="li-oil">Oil bar</label><input id="li-oil" type="number" value="3.5" step="0.1" aria-label="Oil pressure"></div>
         </div>
+        <button class="btn btn-purple" onclick="runLogIngest()" style="width:100%;justify-content:center">Analyse Asset</button>
+        <div class="result-box" id="li-result" style="margin-top:10px" role="status" aria-live="polite"></div>
       </div>
-    `;
-  } catch(e){
-    document.getElementById('maintenance-content').innerHTML =
-      offlineBox('🔧','Maintenance Agent Offline','Start the maintenance-agent on port 8004.','uvicorn main:app --port 8004');
-  }
+    </div>
+
+    <!-- Component tiles -->
+    <div class="card card-pad">
+      <div class="sec-head"><div><div class="sec-title">Tracked components</div><div class="sec-sub">Manual corpus coverage · 6 systems</div></div></div>
+      <div class="comp-grid" role="list">
+        ${[
+          ['Braking System','RSM-BRAKE-4.2'],
+          ['Traction Motor','RSM-TRMOT-6.1'],
+          ['Bogie','RSM-BOGIE-2.3'],
+          ['Compressor','RSM-COMP-5.7'],
+          ['Pantograph','RSM-PANTO-3.8'],
+          ['Gearbox','RSM-GRBX-7.4']
+        ].map(([n,c]) => `
+          <div class="comp-tile" role="listitem">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            <div><div>${n}</div><div style="font-size:9px;color:var(--muted);font-family:'Share Tech Mono',monospace;margin-top:2px">${c}</div></div>
+          </div>`).join('')}
+      </div>
+    </div>
+  `;
 }
 
 async function runManualQuery() {
-  const q = document.getElementById('mq-input').value.trim();
-  if (!q) return;
-  const box = document.getElementById('mq-result');
-  box.style.display='block'; box.innerHTML='<span style="color:var(--muted)">Searching manuals…</span>';
+  const q = $('mq-input').value.trim(); if (!q) return;
+  const box = $('mq-result'); box.className='result-box show'; box.innerHTML='<span style="color:var(--muted);font-family:\'Share Tech Mono\',monospace">QUERYING MANUALS…</span>';
   try {
-    const r = await fetch('/proxy/maintenance/manual-query',{
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({query:q})
-    });
-    const data = await r.json();
-    if (data.online===false) { box.innerHTML='<strong style="color:#DC2626">Agent offline</strong>'; return; }
-    box.innerHTML=`<strong>${data.answer||'No answer returned.'}</strong>
-      ${(data.sources||[]).map(s=>`<div style="font-size:11px;color:var(--muted);margin-top:8px;padding:8px;background:#F8FAFC;border-radius:6px">
-        📄 ${s.source} · chunk ${s.chunk_index}<br>${s.excerpt}…</div>`).join('')}`;
-  } catch(e){ box.innerHTML='<strong style="color:#DC2626">Query failed.</strong>'; }
+    const r = await fetch('/proxy/maintenance/manual-query',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:q})});
+    const d = await r.json();
+    if (d.online===false){box.innerHTML='<strong style="color:var(--signal-r)">Agent offline.</strong>';return;}
+    box.innerHTML = `<strong style="color:#fff;display:block;margin-bottom:8px">${d.answer||'No answer.'}</strong>
+      ${(d.sources||[]).map(s=>`<div style="font-size:11px;color:var(--muted);margin-top:8px;padding:9px;background:rgba(255,255,255,.025);border:1px solid var(--border);border-radius:7px">
+        <strong style="color:var(--maintenance);font-family:'Share Tech Mono',monospace">${s.source}</strong> · chunk ${s.chunk_index}<br>
+        <span style="margin-top:3px;display:block;line-height:1.5">${s.excerpt}…</span></div>`).join('')}`;
+  } catch { box.innerHTML='<strong style="color:var(--signal-r)">Query failed.</strong>'; }
 }
 
 async function runLogIngest() {
-  const box = document.getElementById('li-result');
-  box.style.display='block'; box.innerHTML='<span style="color:var(--muted)">Ingesting…</span>';
-  const payload = {
-    train_id: document.getElementById('li-train').value,
-    component: document.getElementById('li-comp').value,
-    sensor_readings: {
-      vibration_level: parseFloat(document.getElementById('li-vib').value),
-      temperature_celsius: parseFloat(document.getElementById('li-temp').value),
-      oil_pressure_bar: parseFloat(document.getElementById('li-oil').value),
-    },
-    technician_notes: ''
-  };
+  const box = $('li-result'); box.className='result-box show'; box.innerHTML='<span style="color:var(--muted);font-family:\'Share Tech Mono\',monospace">ANALYSING…</span>';
+  const payload={train_id:$('li-train').value,component:$('li-comp').value,sensor_readings:{vibration_level:parseFloat($('li-vib').value),temperature_celsius:parseFloat($('li-temp').value),oil_pressure_bar:parseFloat($('li-oil').value)},technician_notes:''};
   try {
-    const r = await fetch('/proxy/maintenance/log-ingest',{
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify(payload)
-    });
-    const data = await r.json();
-    if (data.online===false) { box.innerHTML='<strong style="color:#DC2626">Agent offline</strong>'; return; }
-    const hc = data.health==='RED'?'health-red':data.health==='AMBER'?'health-amber':'health-green';
-    box.innerHTML=`
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-        <strong>${data.train_id} · ${data.component}</strong>
-        <span class="${hc}">${data.health}</span>
-      </div>
-      <div style="font-size:13px">${data.recommendation||''}</div>
-      ${data.log_summary?`<div style="font-size:11px;color:var(--muted);margin-top:8px">${data.log_summary}</div>`:''}
-    `;
-  } catch(e){ box.innerHTML='<strong style="color:#DC2626">Ingest failed.</strong>'; }
+    const r = await fetch('/proxy/maintenance/log-ingest',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const d = await r.json();
+    if (d.online===false){box.innerHTML='<strong style="color:var(--signal-r)">Agent offline.</strong>';return;}
+    const hc = d.health==='RED'?'hs-red':d.health==='AMBER'?'hs-amber':'hs-green';
+    box.innerHTML=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+      <strong style="color:#fff;font-family:'Share Tech Mono',monospace">${d.train_id} · ${d.component}</strong>
+      <span class="hs ${hc}">${d.health}</span></div>
+      <div style="font-size:12px;color:var(--muted-hi)">${d.recommendation||''}</div>
+      ${d.log_summary?`<div style="font-size:11px;color:var(--muted);margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">${d.log_summary}</div>`:''}`;
+  } catch { box.innerHTML='<strong style="color:var(--signal-r)">Ingest failed.</strong>'; }
 }
 
-// ── Passenger placeholder ─────────────────────────────────────────────────
+// ── Passenger ──────────────────────────────────────────────────────────────
 function renderPassenger() {
-  if (!STATUS.passenger) {
-    document.getElementById('passenger-content').innerHTML =
-      offlineBox('🧑‍💼','Passenger Agent Offline','Start the passenger-agent on port 8001.','uvicorn main:app --port 8001');
-    return;
-  }
-  document.getElementById('passenger-content').innerHTML = `
+  if (!ONLINE.passenger) { $('passenger-content').innerHTML = offlineBox('passenger'); return; }
+  $('passenger-content').innerHTML = `
     <div class="g3">
-      ${metric('Status','ONLINE','passenger-agent','--passenger')}
-      ${metric('Port','8001','HTTP service','--passenger')}
-      ${metric('Languages','3','Sinhala · Tamil · English','--passenger')}
+      <div class="metric m-passenger"><div class="metric-label">Status</div><div class="metric-value" style="font-size:20px;font-family:'Share Tech Mono',monospace">ONLINE</div><div class="metric-sub">passenger-agent · port 8001</div></div>
+      <div class="metric m-passenger"><div class="metric-label">Languages</div><div class="metric-value">3</div><div class="metric-sub">Sinhala · Tamil · English</div></div>
+      <div class="metric m-passenger"><div class="metric-label">Model</div><div class="metric-value" style="font-size:18px;font-family:'Share Tech Mono',monospace">HAIKU</div><div class="metric-sub">claude-haiku-4-5</div></div>
     </div>
-    <div class="card" style="max-width:640px">
-      <div class="card-header"><span class="card-title">Passenger chat interface</span>
-        <span class="badge badge-passenger">RAG · NLU · Multilingual</span></div>
-      <div class="card-sub">Connected to passenger-agent · answers grounded in FAQ + live delay data</div>
-      <div class="chat-wrap">
-        <div class="chat-messages" id="chat-msgs">
-          <div class="chat-bubble agent">Hi! I can help with schedules, tickets, delays and complaints.<br>Ask me in Sinhala, Tamil, or English. 🙂
-            <div class="source">RailSense Passenger Assistant</div>
+    <div class="card" style="max-width:700px">
+      <div style="padding:16px 20px 0;border-bottom:1px solid var(--border)">
+        <div class="sec-head" style="margin-bottom:12px">
+          <div><div class="sec-title">Passenger Chat</div><div class="sec-sub">Ask about schedules, delays, fares, complaints</div></div>
+          <span class="badge badge-cyan">Live</span>
+        </div>
+      </div>
+      <div class="chat-area">
+        <div class="chat-msgs" id="chat-msgs" role="log" aria-live="polite" aria-label="Chat messages">
+          <div class="bubble agent">
+            Welcome to RailSense. I can help you with train schedules, current delays, ticket information and complaints — in Sinhala, Tamil, or English.
+            <div class="bubble-src">passenger-agent · multilingual</div>
           </div>
         </div>
         <div class="chat-input-row">
-          <input id="chat-in" class="chat-input" placeholder="Ask about schedules, delays, fares…" onkeydown="if(event.key==='Enter')sendChat()">
-          <button class="btn btn-passenger" onclick="sendChat()">Send</button>
+          <input id="chat-in" class="chat-input" placeholder="Ask about your journey…" aria-label="Chat message" onkeydown="if(event.key==='Enter')sendChat()">
+          <button class="btn btn-cyan" onclick="sendChat()" aria-label="Send">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            Send
+          </button>
         </div>
       </div>
     </div>`;
 }
 
 async function sendChat() {
-  const input = document.getElementById('chat-in');
-  const msgs  = document.getElementById('chat-msgs');
-  const text  = input.value.trim();
-  if (!text) return;
-  input.value = '';
-  msgs.insertAdjacentHTML('beforeend',`<div class="chat-bubble user">${text}</div>`);
+  const inp=$('chat-in'), msgs=$('chat-msgs'), text=inp.value.trim(); if (!text) return;
+  inp.value = '';
+  msgs.insertAdjacentHTML('beforeend',`<div class="bubble user">${text}</div>`);
   msgs.scrollTop = msgs.scrollHeight;
   try {
-    const r = await fetch('/proxy/passenger/chat',{
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({message:text})
-    });
-    const data = await r.json();
-    const reply = data.reply || data.response || data.answer || JSON.stringify(data);
-    msgs.insertAdjacentHTML('beforeend',`<div class="chat-bubble agent">${reply}<div class="source">${data.source||'passenger-agent'}</div></div>`);
-  } catch(e){
-    msgs.insertAdjacentHTML('beforeend',`<div class="chat-bubble agent" style="background:#FEE2E2">Agent offline or error.</div>`);
+    const r = await fetch('/proxy/passenger/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text})});
+    const d = await r.json();
+    msgs.insertAdjacentHTML('beforeend',`<div class="bubble agent">${d.reply||d.response||d.answer||JSON.stringify(d)}<div class="bubble-src">${d.source||'passenger-agent'}</div></div>`);
+  } catch {
+    msgs.insertAdjacentHTML('beforeend',`<div class="bubble agent" style="border-color:rgba(239,68,68,.3)">Connection error — agent may be offline.</div>`);
   }
   msgs.scrollTop = msgs.scrollHeight;
 }
 
-// ── Security placeholder ──────────────────────────────────────────────────
+// ── Security ──────────────────────────────────────────────────────────────
 async function renderSecurity() {
-  if (!STATUS.security) {
-    document.getElementById('security-content').innerHTML =
-      offlineBox('🛡️','Security Agent Offline','Start the security-agent on port 8003.','uvicorn main:app --port 8003');
-    return;
-  }
-  document.getElementById('security-content').innerHTML = `
+  if (!ONLINE.security) { $('security-content').innerHTML = offlineBox('security'); return; }
+  $('security-content').innerHTML = `
     <div class="g4">
-      ${metric('Status','ONLINE','security-agent','--security')}
-      ${metric('Port','8003','HTTP service','--security')}
-      ${metric('Auth','JWT','inter-agent tokens','--security')}
-      ${metric('Fraud','Isolation Forest','anomaly detection','--security')}
+      <div class="metric m-security"><div class="metric-label">Status</div><div class="metric-value" style="font-size:20px;font-family:'Share Tech Mono',monospace">ONLINE</div><div class="metric-sub">port 8003</div></div>
+      <div class="metric m-security"><div class="metric-label">Auth method</div><div class="metric-value" style="font-size:18px;font-family:'Share Tech Mono',monospace">JWT</div><div class="metric-sub">inter-agent tokens</div></div>
+      <div class="metric m-security"><div class="metric-label">Fraud model</div><div class="metric-value" style="font-size:16px;font-family:'Share Tech Mono',monospace">IsoForest</div><div class="metric-sub">anomaly detection</div></div>
+      <div class="metric m-security"><div class="metric-label">Encryption</div><div class="metric-value" style="font-size:18px;font-family:'Share Tech Mono',monospace">AES</div><div class="metric-sub">256-bit at rest</div></div>
     </div>
-    <div class="offline-box" style="background:#FFF1F2;border-color:#FECDD3">
-      <div style="font-size:28px">🛡️</div>
-      <h4 style="color:#E11D48;margin:8px 0">Security console loading…</h4>
-      <p>Fetching audit log, fraud alerts, and session data from security-agent.</p>
-    </div>
-  `;
+    <div class="offline-box" style="background:rgba(244,63,94,.03);border-color:rgba(244,63,94,.12)">
+      <div style="color:var(--security);font-family:'Share Tech Mono',monospace;font-size:14px;margin-bottom:8px">LOADING AUDIT LOG…</div>
+      <div style="font-size:12px;color:var(--muted)">Fetching fraud alerts and audit events from security-agent.</div>
+    </div>`;
   try {
-    const r = await fetch('/proxy/security/api/dashboard');
-    const data = await r.json();
-    if (data.online===false) return;
-    document.getElementById('security-content').innerHTML += `<pre style="font-size:11px;color:var(--muted);margin-top:16px">${JSON.stringify(data,null,2)}</pre>`;
-  } catch(e){}
+    const r = await fetch('/proxy/security/api/dashboard'); const d = await r.json();
+    if (d.online!==false) {
+      const el=document.createElement('div'); el.className='card card-pad'; el.style.marginTop='14px';
+      el.innerHTML=`<div class="sec-title" style="margin-bottom:10px;font-family:'Share Tech Mono',monospace;color:var(--security)">RAW DASHBOARD DATA</div><pre style="font-size:11px;color:var(--muted);overflow:auto;max-height:280px;font-family:'Share Tech Mono',monospace">${JSON.stringify(d,null,2)}</pre>`;
+      $('security-content').appendChild(el);
+    }
+  } catch {}
 }
 
-// ── Overview events ───────────────────────────────────────────────────────
+// ── Hub events (overview) ──────────────────────────────────────────────────
 function renderOverviewEvents(events) {
-  const container = document.getElementById('ov-events');
   if (!events.length) return;
-  container.innerHTML = events.slice(0,5).map(ev=>`
-    <div style="display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;padding:10px 14px;background:#F8FAFC;border-radius:10px;font-size:12px">
-      <span style="background:#EEF2FF;color:var(--brand);padding:3px 8px;border-radius:6px;font-size:10px;font-weight:700;white-space:nowrap">${(ev.event_type||ev.intent||'event').replaceAll('_',' ')}</span>
-      <span style="color:var(--muted)">${ev.route||ev.sender_agent||''}</span>
-      <span style="color:var(--muted);white-space:nowrap">${ev.train_id||''}</span>
-    </div>`).join('');
+  const colors={'delay_alert':'var(--ops)','maintenance_alert':'var(--maintenance)','delay_check':'var(--passenger)','incident_triage':'var(--security)'};
+  $('ov-events').innerHTML = events.slice(0,6).map(ev => {
+    const intent=(ev.event_type||ev.intent||'event').replaceAll('_',' ');
+    const color=colors[ev.event_type||ev.intent]||'var(--brand)';
+    return `<div class="hub-event">
+      <span class="he-intent" style="background:color-mix(in srgb,${color} 12%,transparent);color:${color};border:1px solid color-mix(in srgb,${color} 25%,transparent)">${intent}</span>
+      <span class="he-route">${ev.route||ev.sender_agent||''}</span>
+      <span class="he-train">${ev.train_id||''}</span>
+    </div>`;
+  }).join('');
 }
 
-// ── Prediction drawer ─────────────────────────────────────────────────────
-function setDrawerTime() {
-  const el = document.getElementById('d-time');
-  if (!el.value) {
-    const d = new Date(Date.now()+3600000);
-    el.value = new Date(d - d.getTimezoneOffset()*60000).toISOString().slice(0,16);
-  }
+// ── Prediction drawer ──────────────────────────────────────────────────────
+function openDrawer() {
+  $('drawer').classList.add('open');
+  if (!$('d-time').value) { const d=new Date(Date.now()+3600000); $('d-time').value=new Date(d-d.getTimezoneOffset()*60000).toISOString().slice(0,16); }
 }
+function closeDrawer() { $('drawer').classList.remove('open'); }
+$('drawer').addEventListener('click', e => { if (e.target===$('drawer')) closeDrawer(); });
+document.addEventListener('keydown', e => { if (e.key==='Escape') closeDrawer(); });
 
 async function runPrediction() {
-  const box = document.getElementById('d-result');
-  box.className = 'result-box show';
-  box.innerHTML = '<span style="color:var(--muted)">Running prediction…</span>';
+  const box=$('d-result'); box.className='result-box show'; box.innerHTML='<span style="color:var(--muted);font-family:\'Share Tech Mono\',monospace">RUNNING MODEL…</span>';
   try {
-    const r = await fetch('/proxy/operations/predict-delay',{
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        route:          document.getElementById('d-route').value,
-        train_id:       document.getElementById('d-train').value,
-        scheduled_time: new Date(document.getElementById('d-time').value).toISOString(),
-        weather:        document.getElementById('d-weather').value,
-        day_type:       'weekday',
-        station:        document.getElementById('d-station')?.value || 'Kandy',
-        incident_type:  document.getElementById('d-incident').value,
-      })
-    });
-    const data = await r.json();
-    if (data.online===false) { box.innerHTML='<strong style="color:#DC2626">Operations agent offline.</strong>'; return; }
-    box.innerHTML=`<strong>${data.predicted_delay_minutes} min expected · ${data.confidence} confidence</strong><br>${data.explanation}<br><span style="font-size:11px;color:var(--muted)">${data.model_version} · ${data.similar_past_incidents?.length||0} precedents</span>`;
+    const r=await fetch('/proxy/operations/predict-delay',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({route:$('d-route').value,train_id:$('d-train').value,scheduled_time:new Date($('d-time').value).toISOString(),weather:$('d-weather').value,day_type:'weekday',station:$('d-station')?.value||'Gampaha',incident_type:$('d-incident').value})});
+    const d=await r.json();
+    if(d.online===false){box.innerHTML='<strong style="color:var(--signal-r)">Operations agent offline.</strong>';return;}
+    box.innerHTML=`<div style="font-family:'Share Tech Mono',monospace;font-size:15px;color:#fff;margin-bottom:6px">+${d.predicted_delay_minutes}min · ${d.confidence}</div>${d.explanation}<div style="font-size:10px;color:var(--muted);margin-top:6px;font-family:'Share Tech Mono',monospace">${d.model_version||''} · ${d.similar_past_incidents?.length||0} precedents</div>`;
     fetchOps();
-  } catch(e){ box.innerHTML='<strong style="color:#DC2626">Prediction failed.</strong>'; }
+  } catch { box.innerHTML='<strong style="color:var(--signal-r)">Prediction failed.</strong>'; }
 }
 
 async function runTriage() {
-  const box = document.getElementById('d-triage');
-  box.className = 'result-box show';
-  box.innerHTML = '<span style="color:var(--muted)">Classifying…</span>';
+  const box=$('d-triage'); box.className='result-box show'; box.innerHTML='<span style="color:var(--muted);font-family:\'Share Tech Mono\',monospace">CLASSIFYING…</span>';
   try {
-    const r = await fetch('/proxy/operations/incident-report',{
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        train_id: document.getElementById('d-train').value,
-        station:  document.getElementById('d-station')?.value || 'Kandy',
-        raw_text: document.getElementById('d-raw').value,
-      })
-    });
-    const data = await r.json();
-    if (data.online===false) { box.innerHTML='<strong style="color:#DC2626">Operations agent offline.</strong>'; return; }
-    box.innerHTML=`<strong>${(data.classified_type||'').replaceAll('_',' ')}</strong><br>${data.summary}`;
-  } catch(e){ box.innerHTML='<strong style="color:#DC2626">Triage failed.</strong>'; }
+    const r=await fetch('/proxy/operations/incident-report',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({train_id:$('d-train').value,station:$('d-station')?.value||'Gampaha',raw_text:$('d-raw').value})});
+    const d=await r.json();
+    if(d.online===false){box.innerHTML='<strong style="color:var(--signal-r)">Operations agent offline.</strong>';return;}
+    box.innerHTML=`<strong style="color:#fff;font-family:'Share Tech Mono',monospace">${(d.classified_type||'').replaceAll('_',' ')}</strong><br>${d.summary}`;
+  } catch { box.innerHTML='<strong style="color:var(--signal-r)">Triage failed.</strong>'; }
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────
-const fmt = v => Number(v||0).toFixed(1);
-
-function metric(label, value, note, colorVar) {
-  return `<div class="metric-card">
-    <div class="metric-label">${label}</div>
-    <div class="metric-inner">
-      <div class="metric-accent" style="background:var(${colorVar})"></div>
-      <div class="metric-value">${value}</div>
-    </div>
-    <div class="metric-note">${note}</div>
-  </div>`;
-}
-
-function hourlyChart(hourly, colorVar) {
-  const filtered = hourly.filter(x => x.hour >= 5 && x.hour <= 22);
-  const max = Math.max(...filtered.map(x => x.average_delay), 1);
-  return `<div class="chart-wrap">
-    ${filtered.map(x=>`
-      <div class="bar" style="height:${Math.max(5, x.average_delay/max*100)}%;background:linear-gradient(to top, var(${colorVar}), color-mix(in srgb, var(${colorVar}) 60%, white))" title="${x.hour}:00 · ${x.average_delay} min">
-        <span class="bar-label">${x.hour}</span>
-      </div>`).join('')}
-  </div>`;
-}
-
-function offlineBox(icon, title, msg, cmd) {
-  return `<div class="offline-box">
-    <div class="offline-icon">${icon}</div>
-    <h4>${title}</h4>
-    <p style="margin-bottom:12px">${msg}</p>
-    <code style="font-size:11px;color:var(--muted);background:#F1F5F9;padding:6px 12px;border-radius:6px">${cmd}</code>
-  </div>`;
+// ── Offline helper ─────────────────────────────────────────────────────────
+const OFFLINE_CFG = {
+  passenger:   ['Passenger Agent', 'passenger-agent on port 8001.', 'uvicorn main:app --port 8001'],
+  ops:         ['Operations Agent','M2-operations-agent on port 8002.','uvicorn main:app --port 8002'],
+  security:    ['Security Agent',  'security-agent on port 8003.','uvicorn main:app --port 8003'],
+  maintenance: ['Maintenance Agent','maintenance-agent on port 8004.','uvicorn main:app --port 8004'],
+};
+function offlineBox(key) {
+  const [name, msg, cmd] = OFFLINE_CFG[key]||['Agent','...','uvicorn main:app'];
+  return `<div class="offline-box"><div class="offline-ico" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#4A6080" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div><div class="offline-title">${name} Offline</div><div class="offline-sub">Start ${msg}</div><div class="offline-cmd">${cmd}</div></div>`;
 }
 
 // ── Boot ──────────────────────────────────────────────────────────────────
@@ -896,6 +1273,7 @@ checkStatus();
 fetchOps();
 setInterval(checkStatus, 10000);
 setInterval(fetchOps,    15000);
+updateSignal(0);
 </script>
 </body>
 </html>
