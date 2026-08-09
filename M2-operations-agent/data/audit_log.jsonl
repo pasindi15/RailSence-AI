@@ -1,0 +1,13 @@
+{"timestamp": "2026-08-08T09:35:20.549266+00:00", "action": "prediction", "client": "127.0.0.1", "route": "Colombo Fort - Kandy", "train_id": "PM-4082", "delay": 18.9, "model": "phase2-gbr-v1"}
+{"timestamp": "2026-08-08T09:35:20.550128+00:00", "action": "hub_delay_check", "client": "127.0.0.1", "sender_agent": "passenger-agent", "route": "Colombo Fort - Kandy", "train_id": "PM-4082"}
+{"timestamp": "2026-08-08T09:35:34.387379+00:00", "action": "prediction", "client": "127.0.0.1", "route": "Colombo Fort - Kandy", "train_id": "PM-4082", "delay": 25.3, "model": "phase2-gbr-v1"}
+{"timestamp": "2026-08-08T09:37:37.304069+00:00", "action": "prediction", "client": "127.0.0.1", "route": "Colombo Fort - Batticaloa", "train_id": "PM-4082", "delay": 25.0, "model": "phase2-gbr-v1"}
+{"timestamp": "2026-08-08T09:43:09.693136+00:00", "action": "prediction", "client": "127.0.0.1", "route": "Colombo Fort - Batticaloa", "train_id": "PM-4082", "delay": 25.0, "model": "phase2-gbr-v1"}
+{"timestamp": "2026-08-08T09:43:11.917766+00:00", "action": "prediction", "client": "127.0.0.1", "route": "Colombo Fort - Batticaloa", "train_id": "PM-4082", "delay": 25.0, "model": "phase2-gbr-v1"}
+{"timestamp": "2026-08-09T07:16:10.371237+00:00", "action": "prediction", "client": "127.0.0.1", "route": "Colombo Fort - Trincomalee", "train_id": "PM-4082", "delay": 14.2, "model": "phase2-gbr-v1"}
+{"timestamp": "2026-08-09T07:16:12.019535+00:00", "action": "prediction", "client": "127.0.0.1", "route": "Colombo Fort - Trincomalee", "train_id": "PM-4082", "delay": 14.2, "model": "phase2-gbr-v1"}
+{"timestamp": "2026-08-09T07:16:12.653752+00:00", "action": "prediction", "client": "127.0.0.1", "route": "Colombo Fort - Trincomalee", "train_id": "PM-4082", "delay": 14.2, "model": "phase2-gbr-v1"}
+{"timestamp": "2026-08-09T07:17:08.380969+00:00", "action": "prediction", "client": "127.0.0.1", "route": "Colombo Fort - Badulla", "train_id": "PM-4082", "delay": 15.3, "model": "phase2-gbr-v1"}
+{"timestamp": "2026-08-09T07:17:26.881640+00:00", "action": "prediction", "client": "127.0.0.1", "route": "Colombo Fort - Badulla", "train_id": "PM-4082", "delay": 16.6, "model": "phase2-gbr-v1"}
+{"timestamp": "2026-08-09T07:17:34.193882+00:00", "action": "prediction", "client": "127.0.0.1", "route": "Colombo Fort - Badulla", "train_id": "PM-4082", "delay": 18.9, "model": "phase2-gbr-v1"}
+{"timestamp": "2026-08-09T07:17:42.353913+00:00", "action": "prediction", "client": "127.0.0.1", "route": "Colombo Fort - Badulla", "train_id": "PM-4082", "delay": 21.2, "model": "phase2-gbr-v1"}

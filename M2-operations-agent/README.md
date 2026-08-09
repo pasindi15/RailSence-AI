@@ -3,7 +3,7 @@
 **Owner:** Member B (M2)
 **Part of:** RailSense AI — 4-agent system (IT3041)
 
-## Status: Phase 1 ✅ · Phase 2 ✅ · Phase 3 ✅
+## Status: Phase 1 ✅ · Phase 2 ✅ · Phase 3 ✅ · Phase 4 ✅ · Phase 5 ✅
 
 Phase 1 delivers a runnable, standalone FastAPI service with a stable API
 contract and a realistic synthetic dataset, so later phases (ML, NLP, RAG,
@@ -40,11 +40,15 @@ python -m uvicorn main:app --reload --port 8001
 
 Then visit `http://localhost:8001/docs` for interactive Swagger UI.
 
-The operations dashboard is available at `http://localhost:8001/`. It submits
-incident reports to `/incident-report`, displays the generated summary and
-category, and checks `/health` for service status. Prediction responses now
-include grounded historical precedent from the local TF-IDF index or
-Supabase pgvector when configured.
+The operations control room is available at `http://localhost:8001/`. It
+displays real route and hourly delay aggregates, incident mix, model and NLP
+evaluation evidence, live event state, and an auto-refreshed incident feed.
+The operator drawer can run audited predictions and classify incidents.
+
+Phase 5 APIs include `/api/dashboard`, `/api/events`, `/hub/message`, and the
+data-backed `/route-status/{route_id}`. Configure `HUB_BASE_URL` and the
+Upstash variables for external agent registration and `delay_alert` delivery;
+the local dashboard remains fully demoable without cloud services.
 
 ## Endpoints (Phase 1 contracts — stable going forward)
 
@@ -151,6 +155,7 @@ service is always runnable.
 | `rag/embed_documents.py` | Embeds incident notes with `all-MiniLM-L6-v2` and uploads them to Supabase |
 | `rag/supabase_schema.sql` | Creates the pgvector table, index, and `match_incidents` RPC |
 | `rag/explanation.py` | Composes a grounded template or optional Anthropic explanation |
+| `evaluation/rag/evaluate_retrieval.py` | Measures P@1/P@3/P@5 and runs a paraphrased-query stress test |
 
 `/predict-delay` now returns `similar_past_incidents`, `retrieval_method`, and
 `explanation_method`. Without cloud variables it is fully demoable offline
@@ -158,6 +163,34 @@ using the CSV corpus and TF-IDF. With `SUPABASE_URL` and `SUPABASE_KEY`, the
 retriever uses the pgvector RPC. With `ANTHROPIC_API_KEY`, it also asks Claude
 to compose the final explanation from only the prediction, model signals,
 and retrieved evidence.
+
+### Retrieval evaluation evidence
+
+Run the evaluation from the repository root:
+
+```powershell
+python M2-operations-agent/evaluation/rag/evaluate_retrieval.py
+```
+
+The generated-template evaluation uses same-`incident_type` agreement as an
+explicit relevance proxy. On 150 held-out incident-note queries, the local
+TF-IDF backend measured:
+
+| Metric | Result |
+|---|---:|
+| Precision@1 | 1.0000 |
+| Precision@3 | 1.0000 |
+| Precision@5 | 1.0000 |
+
+The same command evaluates six hand-written paraphrases outside the dataset
+templates. Top-1 accuracy was **0.6667** and top-3 recall was **0.6667**.
+This is a small stress test, not a representative labelled benchmark; the
+gap shows that lexical retrieval can miss unfamiliar phrasing.
+
+Results are written to:
+
+- `evaluation/rag/retrieval_metrics.json`
+- `evaluation/rag/paraphrased_query_robustness.json`
 
 To enable Supabase retrieval, run `rag/supabase_schema.sql` in the Supabase
 SQL editor, then execute:
