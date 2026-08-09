@@ -25,3 +25,4 @@ bleach==6.1.0
 
 # --- Data layer ---
 supabase==2.7.4
+python-multipart==0.0.9

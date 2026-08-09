@@ -5,20 +5,23 @@
 
 ## Status: Phase 1 ✅ · Phase 2 ✅ · Phase 3 ✅ · Phase 4 ✅ · Phase 5 ✅
 
-Phase 1 delivers a runnable, standalone FastAPI service with a stable API
-contract and a realistic synthetic dataset, so later phases (ML, NLP, RAG,
-Hub integration) can be built and demoed incrementally without ever
-breaking the endpoints other agents will integrate against.
+M2 is a runnable FastAPI operations service with a browser dashboard, stable
+agent-to-agent APIs, a trained delay model, incident NLP, retrieval-grounded
+explanations, Supabase persistence, audit logging, rate limiting, and optional
+Hub/Upstash integrations. It remains demoable without cloud services through
+the local CSV, TF-IDF, JSONL, and in-memory fallbacks described below.
 
 ## What's in this phase
 
 | File | Purpose |
 |---|---|
-| `main.py` | FastAPI app — `/health`, `/predict-delay`, `/route-status/{route_id}`, `/incident-report` |
+| `main.py` | FastAPI app, dashboard API, prediction, incident, and Hub endpoints |
 | `data/generate_dataset.py` | Generates `operations_history.csv` — 3000 synthetic rows (route, station, weather, day_type, incident_type, delay_minutes, incident_note) |
 | `data/operations_history.csv` | The generated dataset — feeds Phase 2 (ML) and Phase 4 (RAG corpus) |
-| `hub_client.py` | Stub for Phase 5 Hub integration (register, send, publish `delay_alert`) |
-| `ml/`, `nlp/`, `rag/`, `evaluation/` | Empty scaffolds for Phases 2–5 |
+| `hub_client.py` | Best-effort Hub and Upstash adapters |
+| `supabase_store.py` | Supabase persistence and read adapters |
+| `ui/index.html` | Operations control-center frontend served at `/` with Home plus six live screens |
+| `ml/`, `nlp/`, `rag/`, `evaluation/` | Model, NLP, retrieval, and evaluation code/artifacts |
 | `requirements.txt` | All dependencies needed across all 5 phases |
 | `.env.example` | Required environment variables (Supabase, Upstash, JWT, Anthropic key) |
 
@@ -45,24 +48,110 @@ displays real route and hourly delay aggregates, incident mix, model and NLP
 evaluation evidence, live event state, and an auto-refreshed incident feed.
 The operator drawer can run audited predictions and classify incidents.
 
-Phase 5 APIs include `/api/dashboard`, `/api/events`, `/hub/message`, and the
-data-backed `/route-status/{route_id}`. Configure `HUB_BASE_URL` and the
+Phase 5 APIs include `/api/dashboard`, `/api/operations`, `/api/events`,
+`/hub/message`, and the data-backed `/route-status/{route_id}`. Configure `HUB_BASE_URL` and the
 Upstash variables for external agent registration and `delay_alert` delivery;
 the local dashboard remains fully demoable without cloud services.
+
+### Run the frontend and backend
+
+M2 does not have a separate React or npm frontend. FastAPI serves
+`ui/index.html` at `/` and the page fetches its live data from
+`/api/dashboard`, so one command runs both parts:
+
+```powershell
+python -m uvicorn main:app --app-dir M2-operations-agent --reload --port 8001
+```
+
+Open `http://127.0.0.1:8001/` for the dashboard, `/docs` for Swagger UI, and
+`/health` for the liveness check. The dashboard renders network delay,
+on-time performance, alerts, audit count, hourly pressure, route statistics,
+incident mix, model/NLP metrics, and the incident feed from the API response.
 
 ## Endpoints (Phase 1 contracts — stable going forward)
 
 - `GET /health` — liveness check
-- `POST /predict-delay` — currently returns a **placeholder heuristic**
-  (weather/day-type based), clearly labelled `model_version: "phase1-heuristic-v0"`.
-  Phase 2 swaps this for the trained ML model; Phase 4 adds the LLM
-  explanation + retrieved similar incidents.
-- `GET /route-status/{route_id}` — currently returns a static placeholder.
-  Phase 5 backs this with live aggregation.
-- `POST /incident-report` — currently echoes a naive summary with
-  `classified_type: "unclassified"`. Phase 3 replaces this with real
-  summarization + classification. Input sanitization (control chars,
-  `<script>` tags, length limits) is already enforced via Pydantic validators.
+- `GET /` — serves the operations control-room frontend.
+- `GET /api/dashboard` — returns dashboard aggregates, evaluation metrics,
+  feature importance, incident feed, events, and Hub status.
+- `GET /api/events` — returns recent events held by the running process.
+- `GET /api/operations` — returns trains, incidents, risk zones, level
+  crossings, alerts, and dispatch actions for the six operational screens.
+- `POST/PATCH/DELETE /api/operations/{entity_type}[/{entity_id}]` — CRUD for
+  those operational entities. Supabase is used when configured; otherwise the
+  seeded Sri Lankan railway demo records provide a complete local fallback.
+- `POST /predict-delay` — predicts delay, retrieves similar incidents, writes
+  an audit record, and publishes a `delay_alert` when the threshold is met.
+- `GET /route-status/{route_id}` — returns live aggregation for an exact route.
+- `POST /incident-report` — sanitizes, summarizes, classifies, and audits a
+  staff report. Control characters, HTML markup, and invalid lengths are
+  rejected by Pydantic validation.
+- `POST /hub/message` — receives a Hub `delay_check` and returns a
+  `delay_check_response`.
+
+The complete request and response schemas are available at `/docs`.
+
+## Data sources and fallback behavior
+
+The dashboard is data-backed, but different cards use different sources:
+
+| Dashboard data | Primary source | Local fallback |
+|---|---|---|
+| Historical trips, routes, delays, hourly aggregates, incident mix | Supabase `operations_history` | `data/operations_history.csv` |
+| Audit count | Supabase `audit_events` | `data/audit_log.jsonl` |
+| Operational events and alert count | Supabase `operational_events` | In-memory events for the current process |
+| Live trains, incidents, risk zones, crossings, alerts, dispatch actions | Supabase `operation_entities` | Seeded local demo records |
+| Model and NLP cards | Local JSON evaluation artifacts | Empty/zero values if artifacts are missing |
+| Incident feed | Live in-memory reports plus local historical records | Local historical records |
+| Headings, labels, and dropdown options | `ui/index.html` | Not database content |
+
+The frontend does not connect directly to Supabase. It calls the FastAPI API,
+and the backend chooses Supabase or a local fallback. A successful local demo
+therefore does not by itself prove that Supabase is configured.
+
+## Supabase setup
+
+1. Create a repository-root `.env` file from `.env.example`.
+2. Set `SUPABASE_URL`.
+3. Set `SUPABASE_SECRET_KEY` or `SUPABASE_SERVICE_ROLE_KEY` for backend reads
+   and writes.
+4. Run `supabase_phase5_schema.sql` in the Supabase SQL editor.
+5. Import the 3,000 historical rows:
+
+```powershell
+python M2-operations-agent/data/import_to_supabase.py
+```
+
+The schema creates `operations_history`, `incident_embeddings`,
+`audit_events`, `operational_events`, and the extensible `operation_entities`
+table, plus the `match_incidents` pgvector
+function. Cloud failures are intentionally non-fatal so the local dashboard
+continues to work.
+
+Verify connectivity without printing credentials:
+
+```powershell
+python -c "import sys; sys.path.insert(0, 'M2-operations-agent'); import supabase_store; c=supabase_store.get_client(); print('client:', bool(c)); print('history:', len(supabase_store.fetch_history() or []))"
+```
+
+## Environment variables
+
+The backend loads a repository-root `.env` when started directly. Important
+variables are:
+
+| Variable | Purpose |
+|---|---|
+| `SUPABASE_URL` | Supabase project URL |
+| `SUPABASE_SECRET_KEY` or `SUPABASE_SERVICE_ROLE_KEY` | Backend persistence |
+| `SUPABASE_PUBLISHABLE_KEY` or `SUPABASE_KEY` | pgvector retrieval client |
+| `UPSTASH_REDIS_URL`, `UPSTASH_REDIS_TOKEN` | Publish `delay_alert` events |
+| `ANTHROPIC_API_KEY` | Optional LLM explanations/classification |
+| `HUB_BASE_URL` | Shared agent Hub; defaults to `http://localhost:8000` |
+| `HUB_AUTH_TOKEN` or `JWT_TOKEN` | Hub authorization |
+| `OPERATIONS_AGENT_URL` | Callback URL used during Hub registration |
+
+Do not commit `.env` or secret keys. The checked-in `.env.example` is only a
+template.
 
 ## Dataset
 
@@ -275,7 +364,84 @@ function is called. It enforces field length limits and rejects control
 characters or any HTML markup after checking it with `bleach`, returning a
 422 for malicious input.
 
-## Next: Phase 5
+## Hub and event integration
 
-Hub integration, rate limiting, audit logging, live operational statistics,
-and the complete multi-agent dashboard remain for Phase 5.
+At startup, M2 attempts to register with `HUB_BASE_URL`. If the Hub is not
+running, startup continues and the dashboard reports the offline fallback.
+Predictions over five minutes create a `delay_alert` event. The event is sent
+to Upstash Redis and/or the Hub when configured, then persisted to
+`operational_events` when Supabase is available.
+
+The `/hub/message` endpoint currently accepts the `delay_check` intent. It
+validates the embedded prediction payload, runs the same prediction pipeline
+as the dashboard, and returns a `delay_check_response` envelope.
+
+## Evaluation and maintenance commands
+
+Regenerate the deterministic synthetic dataset:
+
+```powershell
+Set-Location M2-operations-agent\data; python generate_dataset.py
+```
+
+Retrain the delay model:
+
+```powershell
+Set-Location M2-operations-agent\ml; python train_delay_model.py
+```
+
+Run NLP evaluation:
+
+```powershell
+python M2-operations-agent/nlp/evaluate_nlp.py
+```
+
+Run retrieval evaluation:
+
+```powershell
+python M2-operations-agent/evaluation/rag/evaluate_retrieval.py
+```
+
+Embed incident notes into Supabase pgvector after applying the schema:
+
+```powershell
+python M2-operations-agent/rag/embed_documents.py
+```
+
+The evaluation commands update JSON artifacts under `evaluation/`. Metrics
+shown in the dashboard are therefore local evidence files, not live database
+queries.
+
+## Known limitations
+
+- The dataset is synthetic and Sri Lanka Railways-flavoured; it is not a live
+  railway telemetry feed.
+- The default incident classifier is deterministic keyword matching. Its
+  templated-data accuracy is high, but paraphrased-text accuracy is lower.
+- Supabase retrieval requires the pgvector schema, embeddings, and a usable
+  publishable key; otherwise retrieval uses local TF-IDF.
+- The incident feed combines historical local records with live reports, so
+  not every feed item is a row read from Supabase.
+- The Hub and Upstash integrations are optional best-effort integrations.
+- In-memory events and reports are lost when the process restarts; persisted
+  Supabase audit and event rows are retained when cloud configuration works.
+
+## Project structure
+
+```text
+M2-operations-agent/
+|-- main.py                         FastAPI application and API routes
+|-- hub_client.py                   Hub and Upstash adapters
+|-- supabase_store.py               Supabase persistence/read adapters
+|-- requirements.txt                Python dependencies
+|-- .env.example                    Environment variable template
+|-- ui/index.html                   Browser dashboard
+|-- data/operations_history.csv     Synthetic operations corpus
+|-- data/generate_dataset.py        Dataset generator
+|-- data/import_to_supabase.py      Supabase history importer
+|-- ml/                             Delay model and prediction wrapper
+|-- nlp/                            Incident classification and summarization
+|-- rag/                            Retrieval, embeddings, and explanations
+|-- evaluation/                     ML, NLP, and RAG evidence JSON files
+|-- supabase_phase5_schema.sql      Supabase tables, policies, and indexes
+```
