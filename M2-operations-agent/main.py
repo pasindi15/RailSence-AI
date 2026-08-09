@@ -17,6 +17,7 @@ import json
 import logging
 import os
 import uuid
+import asyncio
 from pathlib import Path
 from typing import Optional
 
@@ -35,6 +36,7 @@ from nlp import summarize_incident as incident_summarizer
 from rag import explanation as explanation_layer
 from rag import incident_retriever
 import hub_client
+import supabase_store
 
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
 logger = logging.getLogger("railsense.operations")
@@ -92,6 +94,14 @@ def _audit(action: str, request: Request, details: dict) -> None:
             handle.write(json.dumps(record) + "\n")
     except OSError as exc:
         logger.warning("Could not write audit record: %s", exc)
+    if not supabase_store.insert_audit(action, get_remote_address(request), details):
+        logger.info("Supabase audit unavailable; retained local audit record")
+
+
+def _record_event(event: dict, destinations: list[str]) -> None:
+    _events.append(event | {"published": bool(destinations), "destinations": destinations})
+    if not supabase_store.insert_event(event, destinations):
+        logger.info("Supabase events unavailable; retained in-memory event")
 
 
 def _metric_file(path: Path) -> dict:
@@ -221,9 +231,10 @@ def _read_audit_count() -> int:
         return 0
 
 
-def _history_route_stats() -> list[dict]:
+def _history_route_stats(history: list[dict] | None = None) -> list[dict]:
+    history = HISTORY if history is None else history
     grouped: dict[str, list[dict]] = {}
-    for row in HISTORY:
+    for row in history:
         grouped.setdefault(row.get("route", "Unknown"), []).append(row)
     result = []
     for route, rows in grouped.items():
@@ -260,11 +271,12 @@ def health():
 
 @app.get("/api/dashboard")
 def dashboard_data():
-    route_stats = _history_route_stats()
-    delays = [float(row.get("delay_minutes", 0)) for row in HISTORY]
-    incident_counts = Counter(row.get("incident_type", "other") for row in HISTORY if row.get("incident_type") != "none")
+    history = supabase_store.fetch_history() or HISTORY
+    route_stats = _history_route_stats(history)
+    delays = [float(row.get("delay_minutes", 0)) for row in history]
+    incident_counts = Counter(row.get("incident_type", "other") for row in history if row.get("incident_type") != "none")
     hour_groups: dict[int, list[float]] = {hour: [] for hour in range(24)}
-    for row in HISTORY:
+    for row in history:
         try:
             hour = datetime.fromisoformat(row["scheduled_time"]).hour
             hour_groups[hour].append(float(row.get("delay_minutes", 0)))
@@ -276,7 +288,7 @@ def dashboard_data():
     robustness = _metric_file(Path(__file__).parent / "evaluation" / "nlp" / "out_of_template_robustness_check.json")
     return {
         "generated_at": datetime.now(timezone.utc).isoformat(),
-        "overview": {"trips": len(HISTORY), "average_delay": round(sum(delays) / len(delays), 1) if delays else 0, "on_time_rate": round(sum(delay <= 5 for delay in delays) / len(delays) * 100, 1) if delays else 0, "active_alerts": len([event for event in _events if event.get("event_type") == "delay_alert"]), "audit_events": _read_audit_count()},
+        "overview": {"trips": len(history), "average_delay": round(sum(delays) / len(delays), 1) if delays else 0, "on_time_rate": round(sum(delay <= 5 for delay in delays) / len(delays) * 100, 1) if delays else 0, "active_alerts": len([event for event in (supabase_store.fetch_recent_events(50) or _events) if event.get("event_type") == "delay_alert"]), "audit_events": supabase_store.count_rows("audit_events") or _read_audit_count()},
         "routes": route_stats,
         "hourly": hourly,
         "incident_mix": [{"type": key, "count": value} for key, value in incident_counts.most_common()],
@@ -285,7 +297,7 @@ def dashboard_data():
         "nlp_metrics": nlp_metrics,
         "robustness": robustness,
         "feed": _recent_feed(),
-        "events": list(reversed(_events[-12:])),
+        "events": (supabase_store.fetch_recent_events(12) or list(reversed(_events[-12:]))),
         "hub": {"configured": bool(os.getenv("HUB_BASE_URL")), "endpoint": hub_client.HUB_BASE_URL, "alert_threshold_minutes": hub_client.DELAY_ALERT_THRESHOLD_MINUTES},
     }
 
@@ -354,8 +366,8 @@ async def predict_delay(request: Request, req: DelayPredictionRequest):
         _predictions.append(response.model_dump())
         alert = await hub_client.publish_delay_alert(req.route, req.train_id, response.predicted_delay_minutes)
         if alert.get("event"):
-            _events.append(alert["event"] | {"published": alert.get("published"), "destinations": alert.get("destinations", [])})
-        _audit("prediction", request, {"route": req.route, "train_id": req.train_id, "delay": response.predicted_delay_minutes, "model": response.model_version})
+            await asyncio.to_thread(_record_event, alert["event"], alert.get("destinations", []))
+        await asyncio.to_thread(_audit, "prediction", request, {"route": req.route, "train_id": req.train_id, "delay": response.predicted_delay_minutes, "model": response.model_version})
         return response
 
     result = delay_model.predict_delay(
@@ -393,8 +405,8 @@ async def predict_delay(request: Request, req: DelayPredictionRequest):
     _predictions.append(response.model_dump())
     alert = await hub_client.publish_delay_alert(req.route, req.train_id, response.predicted_delay_minutes)
     if alert.get("event"):
-        _events.append(alert["event"] | {"published": alert.get("published"), "destinations": alert.get("destinations", [])})
-    _audit("prediction", request, {"route": req.route, "train_id": req.train_id, "delay": response.predicted_delay_minutes, "model": response.model_version})
+        await asyncio.to_thread(_record_event, alert["event"], alert.get("destinations", []))
+    await asyncio.to_thread(_audit, "prediction", request, {"route": req.route, "train_id": req.train_id, "delay": response.predicted_delay_minutes, "model": response.model_version})
     return response
 
 
