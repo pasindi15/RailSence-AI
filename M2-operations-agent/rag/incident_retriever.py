@@ -80,6 +80,7 @@ def retrieve_similar_incidents(
     route: Optional[str] = None,
     station: Optional[str] = None,
     incident_type: Optional[str] = None,
+    exclude_record_id: Optional[str] = None,
 ) -> dict:
     """Return top historical incidents and the retrieval method used."""
     top_k = max(1, min(top_k, 5))
@@ -97,6 +98,8 @@ def retrieve_similar_incidents(
     results = []
     for index, score in candidates:
         record = _records[index]
+        if exclude_record_id and record["record_id"] == exclude_record_id:
+            continue
         if route and record["route"] == route:
             score += 0.08
         if station and record["station"] == station:

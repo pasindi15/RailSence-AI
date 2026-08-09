@@ -553,6 +553,16 @@ RailSense-AI/
 * Relevant document retrieval
 * Phase 4 evidence: `/predict-delay` returns three retrieved incident citations
       plus the `retrieval_method` used (`local_tfidf` or `supabase_pgvector`)
+* Measured local TF-IDF proxy on 150 held-out queries: P@1 = 1.0000,
+      P@3 = 1.0000, P@5 = 1.0000
+* Six-query paraphrase stress test: top-1 accuracy = 0.6667 and top-3 recall
+      = 0.6667; this is a small robustness check, not a representative benchmark
+
+Regenerate the retrieval evidence with:
+
+```powershell
+python M2-operations-agent/evaluation/rag/evaluate_retrieval.py
+```
 
 ## ML Evaluation
 
