@@ -135,9 +135,11 @@ body::after{
 .track-sleepers-h{position:absolute;bottom:7px;left:0;right:0;height:8px;pointer-events:none;
   background:repeating-linear-gradient(90deg,transparent 0px,transparent 18px,rgba(148,163,184,.12) 18px,rgba(148,163,184,.12) 22px)}
 
-/* Animated train on track */
+/* Animated trains on track */
 .train-anim-wrap{position:absolute;bottom:2px;animation:trainRide 32s linear infinite}
-@keyframes trainRide{from{transform:translateX(-700px)}to{transform:translateX(calc(100vw + 200px))}}
+.train-anim-wrap-fast{position:absolute;bottom:2px;animation:trainRideFast 9s linear infinite;animation-delay:-3s}
+@keyframes trainRide    {from{transform:translateX(-700px)}to{transform:translateX(calc(100vw + 700px))}}
+@keyframes trainRideFast{from{transform:translateX(-700px)}to{transform:translateX(calc(100vw + 700px))}}
 
 /* Topbar */
 .topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 28px;border-bottom:1px solid var(--border);background:rgba(4,12,24,.7);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);position:sticky;top:0;z-index:20}
@@ -611,10 +613,15 @@ html[data-theme="light"] .bar-col .bar-tick{color:#64748B}
   <div class="track-banner" aria-hidden="true">
     <div class="track-sleepers-h"></div>
     <div class="track-rails"></div>
-    <!-- Animated mini train -->
+    <!-- Steam train — slow -->
     <div class="train-anim-wrap">
       <img src="/Src/Trains/train1.png" alt="" aria-hidden="true"
            style="height:42px;width:auto;display:block;transform:scaleX(-1);image-rendering:auto">
+    </div>
+    <!-- Bullet train — fast, overtakes -->
+    <div class="train-anim-wrap-fast">
+      <img src="/Src/Trains/train2.png" alt="" aria-hidden="true"
+           style="height:36px;width:auto;display:block;transform:scaleX(-1);image-rendering:auto">
     </div>
   </div>
 
