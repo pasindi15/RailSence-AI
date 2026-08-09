@@ -17,6 +17,7 @@ import json
 import logging
 import os
 import uuid
+import asyncio
 from pathlib import Path
 from typing import Optional
 
@@ -365,8 +366,8 @@ async def predict_delay(request: Request, req: DelayPredictionRequest):
         _predictions.append(response.model_dump())
         alert = await hub_client.publish_delay_alert(req.route, req.train_id, response.predicted_delay_minutes)
         if alert.get("event"):
-            _record_event(alert["event"], alert.get("destinations", []))
-        _audit("prediction", request, {"route": req.route, "train_id": req.train_id, "delay": response.predicted_delay_minutes, "model": response.model_version})
+            await asyncio.to_thread(_record_event, alert["event"], alert.get("destinations", []))
+        await asyncio.to_thread(_audit, "prediction", request, {"route": req.route, "train_id": req.train_id, "delay": response.predicted_delay_minutes, "model": response.model_version})
         return response
 
     result = delay_model.predict_delay(
@@ -404,8 +405,8 @@ async def predict_delay(request: Request, req: DelayPredictionRequest):
     _predictions.append(response.model_dump())
     alert = await hub_client.publish_delay_alert(req.route, req.train_id, response.predicted_delay_minutes)
     if alert.get("event"):
-        _record_event(alert["event"], alert.get("destinations", []))
-    _audit("prediction", request, {"route": req.route, "train_id": req.train_id, "delay": response.predicted_delay_minutes, "model": response.model_version})
+        await asyncio.to_thread(_record_event, alert["event"], alert.get("destinations", []))
+    await asyncio.to_thread(_audit, "prediction", request, {"route": req.route, "train_id": req.train_id, "delay": response.predicted_delay_minutes, "model": response.model_version})
     return response
 
 
