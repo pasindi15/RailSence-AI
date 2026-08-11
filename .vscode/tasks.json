@@ -1,0 +1,118 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Run maintenance-agent",
+			"type": "shell",
+			"command": "cd maintenance-agent; python -m uvicorn main:app --host 0.0.0.0 --port 8004",
+			"isBackground": true,
+			"problemMatcher": [
+				"$python"
+			]
+		},
+		{
+			"label": "Install maintenance-agent deps",
+			"type": "shell",
+			"command": "cd maintenance-agent; python -m pip install -r requirements.txt",
+			"isBackground": false,
+			"problemMatcher": [
+				"$python"
+			]
+		},
+		{
+			"label": "Check Python version",
+			"type": "shell",
+			"command": "python --version",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Install build tools",
+			"type": "shell",
+			"command": "cd maintenance-agent; python -m pip install --user --upgrade pip setuptools wheel Cython",
+			"isBackground": false,
+			"problemMatcher": [
+				"$python"
+			]
+		},
+		{
+			"label": "Install maintenance-agent deps retry",
+			"type": "shell",
+			"command": "cd maintenance-agent; python -m pip install -r requirements.txt",
+			"isBackground": false,
+			"problemMatcher": [
+				"$python"
+			]
+		},
+		{
+			"label": "Check py 3.11",
+			"type": "shell",
+			"command": "py -3.11 --version",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Check Docker version",
+			"type": "shell",
+			"command": "docker --version",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Docker compose config check",
+			"type": "shell",
+			"command": "docker compose -f docker-compose.yml config",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Build maintenance-agent image",
+			"type": "shell",
+			"command": "docker build -t railsense-maintenance maintenance-agent",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Check Docker daemon status",
+			"type": "shell",
+			"command": "docker info",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Retry build maintenance-agent image",
+			"type": "shell",
+			"command": "docker build -t railsense-maintenance maintenance-agent",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Run maintenance-agent container",
+			"type": "shell",
+			"command": "docker run --rm -p 8004:8004 railsense-maintenance",
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
+			"label": "List Docker images",
+			"type": "shell",
+			"command": "docker images --format \"{{.Repository}}:{{.Tag}}  {{.ID}}  {{.Size}}\" | findstr railsense",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "List maintenance images",
+			"type": "shell",
+			"command": "docker images | Select-String railsense",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "List maintenance image",
+			"type": "shell",
+			"command": "docker images --format \"{{.Repository}}:{{.Tag}}\" | findstr railsense",
+			"isBackground": false,
+			"problemMatcher": []
+		}
+	]
+}
