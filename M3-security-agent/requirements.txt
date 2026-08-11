@@ -1,0 +1,28 @@
+# RailSense M3 — Security Agent & Agent Communication Hub
+# requirements.txt — all dependencies across all 5 phases
+#
+# Phase 1 (Hub scaffolding)
+fastapi==0.111.0
+uvicorn[standard]==0.30.1
+pydantic==1.10.17
+python-dotenv==1.0.1
+httpx==0.27.0
+
+# Phase 2 (JWT + AES-256 auth)
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+bcrypt==4.0.1
+cryptography==42.0.8
+bleach==6.1.0
+
+# Phase 3 (Isolation Forest fraud detection)
+scikit-learn==1.5.0
+pandas==2.2.2
+numpy==1.26.4
+joblib==1.4.2
+
+# Phase 4 (Audit logging + rate limiting)
+sqlalchemy==2.0.30
+aiosqlite==0.20.0
+slowapi==0.1.9
+supabase==2.5.0
