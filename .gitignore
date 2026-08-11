@@ -1,0 +1,12 @@
+@"
+venv/
+venv311/
+__pycache__/
+*.pyc
+.env
+.env.*
+!.env.example
+.vscode/
+.idea/
+.DS_Store
+"@ | Set-Content .gitignore
