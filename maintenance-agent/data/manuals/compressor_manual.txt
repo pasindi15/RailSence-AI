@@ -1,0 +1,171 @@
+RAILSENSE ROLLING STOCK MAINTENANCE MANUAL
+Component: Air Compressor
+Document Reference: RSM-COMP-5.7
+Revision: 2.2 | Effective Date: 2025-01-01
+
+================================================================================
+SECTION 1 — OVERVIEW
+================================================================================
+
+The air compressor provides compressed air for the braking system, door
+actuation, suspension levelling, horn, and auxiliary pneumatic systems.
+Each locomotive is fitted with a twin-cylinder reciprocating compressor
+(part number CP-MAIN-1100) driven by the auxiliary power supply. Key
+sub-components include the air dryer unit (CP-DRYER-2200), unloader valve
+(CP-UNLDR-3300), safety relief valve (CP-SRV-4400), oil separator
+(CP-OILSEP-5500), compressor oil pump (CP-PUMP-6600), and delivery check
+valve (CP-CHK-7700).
+
+Compressor failure results in loss of braking air pressure and is a
+safety-critical service-affecting fault.
+
+================================================================================
+SECTION 2 — INSPECTION INTERVALS
+================================================================================
+
+2.1 Routine Inspection
+Full compressor inspection every 90 days or 15,000 km, whichever is first.
+
+2.2 Oil Level and Quality Check
+Check compressor oil level and clarity every 30 days.
+Oil change interval: every 90 days regardless of appearance.
+
+2.3 Air Dryer Inspection
+Inspect air dryer desiccant cartridge (CP-DRYER-2200) every 90 days.
+Replace desiccant if moisture saturation indicator has turned pink.
+
+2.4 Belt / Drive Inspection (if belt-driven)
+Inspect drive belt tension and condition every 45 days.
+
+================================================================================
+SECTION 3 — INSPECTION PROCEDURES
+================================================================================
+
+3.1 Delivery Pressure Check
+Connect a calibrated pressure gauge to the main reservoir delivery port.
+The compressor must achieve and maintain the following pressures:
+- Cut-in pressure: 6.5 bar (compressor starts).
+- Cut-out pressure: 8.5 bar (compressor stops via unloader valve).
+- Minimum system pressure for brake release: 4.5 bar.
+- Low pressure alarm threshold (AMBER): below 3.5 bar.
+- Critical low pressure (RED): below 1.5 bar — loss of braking air.
+  Remove from service immediately if main reservoir pressure falls below
+  1.5 bar. The vehicle cannot safely operate without adequate brake pressure.
+
+3.2 Operating Temperature
+Compressor head temperature is measured with an IR thermometer on the
+cylinder head immediately after a loading cycle.
+- Normal: 60–85°C.
+- Advisory (AMBER): 85–95°C — check oil level and cooling air path.
+- Critical (RED): above 95°C — shut down compressor immediately. Over-
+  temperature indicates oil starvation, blocked cooling fins, or internal
+  mechanical fault. Continued operation risks piston seizure and cylinder
+  scoring.
+
+3.3 Vibration Measurement
+Measure vibration on the compressor mounting frame.
+- Normal: 0 to 3 mm/s² — serviceable.
+- Advisory (AMBER): 3 to 5 mm/s² — inspect mounting bolts and check for
+  loose drive coupling. Inspect cylinder valve plates (CP-VALVE-8800).
+- Critical (RED): above 5 mm/s² — indicates a broken valve plate, piston
+  knock, or bearing failure (CP-BRG-9900). Remove from service immediately.
+
+3.4 Oil Pressure Check (Lubricated Models)
+Compressor internal oil pressure must be verified during operation.
+- Normal oil pressure: 2.0 to 5.0 bar.
+- Low oil pressure (AMBER): 1.5 to 2.0 bar — top up oil and monitor.
+- Critical low (RED): below 1.5 bar — stop compressor. Likely oil pump
+  failure (CP-PUMP-6600) or severe oil loss. Do not restart until fault resolved.
+- Over-pressure (RED): above 6.0 bar — inspect pressure relief valve (CP-SRV-4400).
+
+3.5 Oil Quality and Level Check
+- Use the sight glass to verify oil is between MIN and MAX marks.
+- Acceptable: clear or light amber colour.
+- Discard if: milky (water contamination), dark brown (overheating), or
+  metallic particles visible (internal wear). Flush and refill with grade
+  CP-OIL-32 only.
+
+3.6 Air Dryer Check (CP-DRYER-2200)
+Moisture in the air system causes rust, frozen valves, and ice in brake
+pipework in cold conditions. Replace desiccant when indicator turns pink.
+Inspect the purge valve for correct operation — it must exhaust moisture
+at each cut-out cycle (audible "pfft" every 2–3 minutes during normal operation).
+
+================================================================================
+SECTION 4 — FAULT DIAGNOSIS
+================================================================================
+
+4.1 Symptom: Low System Air Pressure (below 1.5 bar)
+Cause 1: Compressor not building pressure — worn piston rings.
+Action: Conduct a cylinder compression test. If below 7 bar, replace rings.
+Cause 2: Large air leak in the main reservoir or pipework.
+Action: Apply soapy water to all joints. Fix all identified leaks.
+Cause 3: Unloader valve stuck open.
+Action: Inspect and replace unloader valve CP-UNLDR-3300.
+
+4.2 Symptom: Overheating (above 95°C)
+Cause 1: Oil starvation — oil level below MIN.
+Action: Top up with CP-OIL-32. Investigate source of oil loss.
+Cause 2: Blocked cooling fins.
+Action: Clean fins with compressed air. Do not use water jet.
+Cause 3: Continuous loading — demand exceeding compressor capacity.
+Action: Check for excessive air leaks causing the compressor to run continuously.
+
+4.3 Symptom: Vibration Above 5 mm/s²
+Cause 1: Broken cylinder valve plate (CP-VALVE-8800).
+Action: Replace valve plate set.
+Cause 2: Worn connecting rod bearing.
+Action: Workshop overhaul required. Replace bearing CP-BRG-9900.
+
+4.4 Symptom: Oil in Delivered Air
+Cause: Failed oil separator (CP-OILSEP-5500).
+Action: Replace oil separator cartridge. Check piston rings.
+
+================================================================================
+SECTION 5 — SERVICE PROCEDURES
+================================================================================
+
+5.1 Oil Change
+1. Run compressor for 5 minutes to warm oil.
+2. Drain via drain plug at base of crankcase.
+3. Fill with approved grade CP-OIL-32 to MAX line.
+4. Run for 2 minutes and recheck level.
+
+5.2 Valve Plate Replacement (CP-VALVE-8800)
+1. Depressurise system completely.
+2. Remove cylinder head (8x M10 bolts, 55 Nm on reassembly).
+3. Remove old valve plate assembly.
+4. Clean mating surfaces.
+5. Install new valve plate with new cylinder head gasket CP-GASK-1200.
+6. Torque cylinder head bolts in cross pattern to 55 Nm.
+7. Run and verify delivery pressure reaches cut-out pressure.
+
+5.3 Full Compressor Overhaul (Every 720 Days)
+Full disassembly: replace piston rings, valve plates, bearings, oil seals,
+and air dryer desiccant. Clean all internal surfaces. Reassemble and test.
+
+================================================================================
+SECTION 6 — PARTS REFERENCE
+================================================================================
+
+Part Number    | Description                    | Replace Interval
+CP-MAIN-1100   | Compressor assembly (main)     | On failure or 5-year overhaul
+CP-DRYER-2200  | Air dryer desiccant cartridge  | When indicator turns pink / 90 days
+CP-UNLDR-3300  | Unloader valve                 | Every 360 days
+CP-SRV-4400    | Safety relief valve            | Every 360 days (test every 90 days)
+CP-OILSEP-5500 | Oil separator cartridge        | Every 180 days
+CP-PUMP-6600   | Oil pump assembly              | On failure
+CP-CHK-7700    | Delivery check valve           | Every 360 days
+CP-VALVE-8800  | Cylinder valve plate set       | Every 180 days or on vibration
+CP-BRG-9900    | Connecting rod bearing         | Every 720 days (overhaul)
+CP-OIL-32      | Compressor lubricating oil     | Every 90 days
+
+================================================================================
+SECTION 7 — SAFETY WARNINGS
+================================================================================
+
+WARNING: Never operate with system pressure below 1.5 bar — loss of braking.
+WARNING: Compressor temperature above 95°C is an immediate shutdown condition.
+WARNING: Vibration above 5 mm/s² indicates mechanical failure — do not run.
+WARNING: Always fully depressurise before opening any compressor covers.
+WARNING: Relief valve must never be bypassed or set above factory pressure.
