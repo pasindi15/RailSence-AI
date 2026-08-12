@@ -1,0 +1,56 @@
+[
+  {
+    "ground_truth_type": "staffing",
+    "raw_text": "Delayed departure from Colombo Fort due to late arrival of relief crew for ND-3406.",
+    "summary": "Delayed departure from Colombo Fort due to late arrival of relief crew for ND-3406.",
+    "method": "rule_based"
+  },
+  {
+    "ground_truth_type": "mechanical",
+    "raw_text": "Brake system fault detected on UD-7512, inspected and cleared at Matara before continuing.",
+    "summary": "Brake system fault detected on UD-7512, inspected and cleared at Matara before continuing.",
+    "method": "rule_based"
+  },
+  {
+    "ground_truth_type": "weather",
+    "raw_text": "Heavy rain near Polonnaruwa reduced visibility and required speed restrictions on the approach.",
+    "summary": "Heavy rain near Polonnaruwa reduced visibility and required speed restrictions on the approach.",
+    "method": "rule_based"
+  },
+  {
+    "ground_truth_type": "track_obstruction",
+    "raw_text": "Fallen tree on the line near Peradeniya required manual clearance before UD-9315 could proceed.",
+    "summary": "Fallen tree on the line near Peradeniya required manual clearance before UD-9315 could proceed.",
+    "method": "rule_based"
+  },
+  {
+    "ground_truth_type": "staffing",
+    "raw_text": "Platform staff shortage at Colombo Fort slowed boarding and dispatch.",
+    "summary": "Platform staff shortage at Colombo Fort slowed boarding and dispatch.",
+    "method": "rule_based"
+  },
+  {
+    "ground_truth_type": "weather",
+    "raw_text": "Flooding risk reported on the track bed near Colombo Fort, service ran at reduced speed as a precaution.",
+    "summary": "Flooding risk reported on the track bed near Colombo Fort, service ran at reduced speed as a precaution.",
+    "method": "rule_based"
+  },
+  {
+    "ground_truth_type": "staffing",
+    "raw_text": "Platform staff shortage at Jaffna slowed boarding and dispatch.",
+    "summary": "Platform staff shortage at Jaffna slowed boarding and dispatch.",
+    "method": "rule_based"
+  },
+  {
+    "ground_truth_type": "weather",
+    "raw_text": "Heavy rain near Anuradhapura reduced visibility and required speed restrictions on the approach.",
+    "summary": "Heavy rain near Anuradhapura reduced visibility and required speed restrictions on the approach.",
+    "method": "rule_based"
+  },
+  {
+    "ground_truth_type": "mechanical (synthetic multi-sentence log)",
+    "raw_text": "At approximately 09:15 the driver reported unusual vibration from the rear bogie while approaching the station. The train was brought to a controlled stop at the platform for inspection. Maintenance staff examined the wheel assembly and found a worn brake pad. A replacement part was sourced from the depot and fitted within 40 minutes. The train resumed service after a final safety check by the duty engineer.",
+    "summary": "Maintenance staff examined the wheel assembly and found a worn brake pad. The train resumed service after a final safety check by the duty engineer.",
+    "method": "rule_based"
+  }
+]

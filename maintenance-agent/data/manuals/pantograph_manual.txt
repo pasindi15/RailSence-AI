@@ -1,0 +1,169 @@
+RAILSENSE ROLLING STOCK MAINTENANCE MANUAL
+Component: Pantograph
+Document Reference: RSM-PANTO-3.8
+Revision: 3.3 | Effective Date: 2025-01-01
+
+================================================================================
+SECTION 1 — OVERVIEW
+================================================================================
+
+The pantograph is the current-collection device mounted on the roof of electric
+multiple units (EMUs) and electric locomotives. It maintains sliding contact
+with the overhead contact wire (OCW) to supply traction power to the vehicle.
+The pantograph assembly (part number PG-MAIN-1100) includes the collector head
+(PG-HEAD-2200), carbon contact strips (PG-STRIP-3300), upper and lower arms
+(PG-ARM-4400), air cylinder and pneumatic raising mechanism (PG-CYL-5500),
+contact-force spring (PG-SPRING-6600), and base insulator (PG-INS-7700).
+
+Pantograph faults cause power collection failures and can damage overhead
+infrastructure, leading to widespread service disruption.
+
+================================================================================
+SECTION 2 — INSPECTION INTERVALS
+================================================================================
+
+2.1 Routine Inspection
+Full pantograph inspection every 90 days or 15,000 km, whichever is first.
+Inspect from the roof or on a pantograph inspection pit.
+
+2.2 Carbon Strip Inspection
+Inspect carbon contact strips (PG-STRIP-3300) every 30 days.
+Measure strip thickness and inspect for cracks or uneven wear.
+
+2.3 Contact Force Measurement
+Measure static contact force every 90 days using a calibrated pull gauge.
+
+2.4 Post-Dewirement Inspection
+After any unplanned pantograph lowering, contact wire strike, or dewirement,
+a full inspection is mandatory before re-raising and returning to service.
+
+================================================================================
+SECTION 3 — INSPECTION PROCEDURES
+================================================================================
+
+3.1 Carbon Contact Strip Inspection (PG-STRIP-3300)
+The carbon strips are the primary wear element. They must be inspected and
+replaced to prevent metal-on-metal contact with the overhead wire, which
+causes wire and pantograph damage.
+- Normal strip thickness: 12–22 mm.
+- Advisory (AMBER): 8–12 mm — plan replacement at next maintenance window.
+- Critical (RED): below 8 mm — replace before raising pantograph.
+Inspect for longitudinal cracks along the strip length. A cracked strip can
+snag the overhead wire. Replace any strip showing visible cracks regardless
+of thickness.
+
+3.2 Contact Force Check
+Pantograph contact force must be within specification to ensure reliable
+current collection without bouncing (low force) or wire damage (high force).
+- Normal contact force: 60–90 N at 25 km/h to 160 km/h operating speed.
+- Low force (AMBER): below 60 N — inspect contact spring (PG-SPRING-6600).
+  Low contact force causes current interruptions and radio-frequency interference.
+- High force (RED): above 120 N — inspect for foreign object or jammed
+  raising mechanism. High force damages the overhead contact wire.
+Measure static contact force with pantograph raised at rest (no movement).
+Normal static force: 70 ± 10 N.
+
+3.3 Temperature Monitoring
+Measure pantograph collector head temperature using an IR thermometer after
+a high-current run (e.g., after ascending a gradient).
+- Normal: 40–80°C.
+- Advisory (AMBER): 80–95°C — inspect carbon strip contact surface and
+  verify uniform contact across the full strip width.
+- Critical (RED): above 95°C — indicates a high-resistance contact joint
+  (arc burn on strip or collector head), inadequate contact force, or badly
+  worn strip. Remove pantograph from service. Inspect head assembly for arc
+  damage. Overheating at the contact point can weld the strip to the wire
+  or cause an electrical fire.
+
+3.4 Vibration Level
+Measure vibration on the pantograph base frame during low-speed run (40 km/h).
+- Normal: 0 to 3 mm/s².
+- Advisory (AMBER): 3 to 5 mm/s² — inspect arm pivot bearings and dampers.
+- Critical (RED): above 5 mm/s² — indicates worn pivot bearings, loose arm
+  assembly, or broken damper (PG-DAMP-8800). Do not raise pantograph above
+  slow-speed limit until fault is rectified.
+
+3.5 Air Cylinder and Pneumatic Circuit (PG-CYL-5500)
+- Raising pressure: 3.5 to 5.5 bar applied to raise the pantograph.
+- Check for leaks on air supply hose and cylinder rod seal.
+- Oil pressure / air pressure normal range: 1.5 to 6.0 bar in supply circuit.
+- Below 1.5 bar: pantograph may not raise reliably. Inspect air supply valve.
+- Above 6.0 bar: excessive raising force — inspect pressure regulator.
+
+3.6 Insulator Inspection (PG-INS-7700)
+- Inspect insulator for cracks, chips, surface contamination (dust, salt, oil).
+- Clean insulator surface with approved insulator cleaner every 90 days.
+- A contaminated or cracked insulator can cause a trackable earth fault.
+  Replace cracked insulators immediately.
+
+================================================================================
+SECTION 4 — FAULT DIAGNOSIS
+================================================================================
+
+4.1 Symptom: Pantograph Temperature Above 95°C
+Cause 1: Worn carbon strip reducing contact area.
+Action: Measure strip thickness. If below 12 mm, replace PG-STRIP-3300.
+Cause 2: Low contact force causing arcing.
+Action: Check contact spring tension (PG-SPRING-6600). Adjust or replace.
+Cause 3: Arc burn on collector head creating high-resistance joint.
+Action: Inspect collector head (PG-HEAD-2200). Replace if arc damage found.
+
+4.2 Symptom: Vibration Above 5 mm/s²
+Cause: Worn pivot bearings or broken damper.
+Action: Replace arm bearings and damper assembly PG-DAMP-8800.
+
+4.3 Symptom: Pantograph Will Not Raise
+Cause 1: Insufficient air pressure (below 3.5 bar).
+Action: Check air supply. Inspect supply valve and hose.
+Cause 2: Jammed raising mechanism.
+Action: Inspect arm assembly for foreign object obstruction. Do not force raise.
+
+4.4 Symptom: Cracked Carbon Strip
+Cause: Impact with overhead wire anomaly or end-of-life wear.
+Action: Replace PG-STRIP-3300 immediately. Inspect for wire damage.
+
+================================================================================
+SECTION 5 — SERVICE PROCEDURES
+================================================================================
+
+5.1 Carbon Strip Replacement (PG-STRIP-3300)
+1. Lower pantograph fully and isolate power supply.
+2. Lock out pantograph raising circuit.
+3. Remove strip retaining clips (4x per strip).
+4. Slide out worn strip and discard.
+5. Inspect collector head for arc burns.
+6. Insert new strip — ensure correct alignment in receiver channel.
+7. Refit retaining clips. Check clip seating.
+8. Record strip thickness in maintenance log.
+
+5.2 Contact Spring Replacement (PG-SPRING-6600)
+Full pantograph disassembly required. Replace spring and re-measure
+static contact force to verify 70 ± 10 N before returning to service.
+
+5.3 Full Pantograph Overhaul (Every 360 Days)
+Replace carbon strips, arm bearings, damper, air cylinder seals, and
+insulators. Clean all metalwork and reapply anti-corrosion treatment.
+
+================================================================================
+SECTION 6 — PARTS REFERENCE
+================================================================================
+
+Part Number    | Description                    | Replace Interval
+PG-MAIN-1100   | Pantograph assembly            | 5-year overhaul or on damage
+PG-HEAD-2200   | Collector head assembly        | Every 360 days or on arc damage
+PG-STRIP-3300  | Carbon contact strip (pair)    | When < 8 mm or every 30 days (check)
+PG-ARM-4400    | Pantograph arm assembly        | Every 720 days or on impact
+PG-CYL-5500    | Pneumatic raising cylinder     | Every 360 days (seals)
+PG-SPRING-6600 | Contact force spring           | When force outside 60–90 N
+PG-INS-7700    | Base insulator                 | Every 360 days or when cracked
+PG-DAMP-8800   | Arm vibration damper           | Every 360 days or on vibration flag
+
+================================================================================
+SECTION 7 — SAFETY WARNINGS
+================================================================================
+
+WARNING: Never raise pantograph without verifying air pressure is 3.5 bar minimum.
+WARNING: Temperature above 95°C at collector head is an immediate service withdrawal.
+WARNING: Always lock out raising circuit before working on pantograph.
+WARNING: Do not operate with carbon strip below 8 mm — overhead wire damage risk.
+WARNING: Cracked insulators must be replaced before next raise — earth fault risk.
