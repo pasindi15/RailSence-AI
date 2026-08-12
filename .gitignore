@@ -1,22 +1,27 @@
-@"
-venv/
-venv311/
-__pycache__/
-*.pyc
+# Environment variables
 .env
 .env.*
 !.env.example
-.vscode/
-.idea/
-.DS_Store
-"@ | Set-Content .gitignore
-.env
-.env.*
-!.env.example
+
+# Python cache
 __pycache__/
 *.py[cod]
+
+# Virtual environments
 .venv/
 venv/
+venv311/
+
+# Logs
 *.log
 
+# Data / vector store
+data/chroma_store/
 
+# Editor / IDE
+.vscode/
+.idea/
+
+# OS-specific
+.DS_Store
+"@ | Set-Content .gitignore
