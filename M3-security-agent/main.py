@@ -17,8 +17,10 @@ Phase 2 activates:
                               encryption on encrypt_payload=True messages
   POST /hub/register        — optional AGENT_REGISTRATION_SECRET enforcement
 
+Phase 3 activates:
+  POST /security/fraud-check — Isolation Forest anomaly detection on booking events
+
 Later phases add to this file:
-  Phase 3  — POST /security/fraud-check
   Phase 4  — GET  /security/audit-log
              GET  /security/sessions
              POST /security/vulnerability-check
@@ -44,7 +46,8 @@ from auth.crypto import encrypt_payload as aes_encrypt
 from auth.hashing import hash_secret, verify_secret
 from auth.jwt_handler import decode_token, issue_token, revoke_token, verify_token
 from auth.sanitize import run_vulnerability_check
-from schema import AgentRegistration, HubMessage, LoginRequest, RevokeRequest, VerifyRequest
+from fraud.fraud_check import score_booking
+from schema import AgentRegistration, BookingEvent, HubMessage, LoginRequest, RevokeRequest, VerifyRequest
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -61,7 +64,7 @@ app = FastAPI(
         "Handles authentication, fraud detection, audit logging, and rate limiting "
         "across Phases 1–5."
     ),
-    version="phase2-v0",
+    version="phase3-v0",
     docs_url="/docs",
     redoc_url="/redoc",
 )
@@ -105,8 +108,20 @@ _REGISTRATION_SECRET: Optional[str] = os.getenv("AGENT_REGISTRATION_SECRET", "")
 
 
 # ---------------------------------------------------------------------------
-# Health check
+# Root route & Health check
 # ---------------------------------------------------------------------------
+
+
+@app.get(
+    "/",
+    summary="Hub root endpoint",
+    tags=["Hub"],
+    include_in_schema=False,
+)
+def root():
+    """Redirect root path to interactive Swagger API documentation."""
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/docs")
 
 
 @app.get(
@@ -480,9 +495,78 @@ def auth_revoke(body: RevokeRequest) -> Dict[str, Any]:
 
 
 # ---------------------------------------------------------------------------
-# Phase 3 placeholder — POST /security/fraud-check
-# Implemented in Phase 3 using fraud/fraud_check.py
 # ---------------------------------------------------------------------------
+# Phase 3 — POST /security/fraud-check
+# ---------------------------------------------------------------------------
+
+
+@app.post(
+    "/security/fraud-check",
+    summary="Score a booking event for fraud risk",
+    tags=["Security"],
+)
+def fraud_check(event: BookingEvent) -> Dict[str, Any]:
+    """
+    Score a booking event using the Isolation Forest anomaly detection model.
+
+    Called by the Passenger Agent before confirming a ticket. Returns a risk
+    level (LOW / MEDIUM / HIGH), an anomaly score, the top contributing features,
+    and a plain-English reason for the flag.
+
+    Requires a valid JWT in the `auth_token` field.
+
+    **High-risk booking example:**
+    ```json
+    {
+      "user_id": "usr_4421",
+      "event_id": "evt_9921",
+      "anomaly_score": -0.41,
+      "risk_level": "HIGH",
+      "top_features": {"bookings_last_60s": 5, "time_since_last_booking": 4},
+      "reason": "5 bookings detected within 60 seconds — pattern matches rapid automated purchasing.",
+      "model_version": "phase3-iforest-v1",
+      "threshold": -0.15
+    }
+    ```
+
+    If `fraud_model.pkl` has not been trained yet, the endpoint falls back to
+    a rule-based heuristic so the service is always demoable.
+    """
+    # ── JWT verification ────────────────────────────────────────────────────
+    try:
+        verify_token(event.auth_token)
+    except JWTError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={
+                "detail": f"Token verification failed: {exc}",
+                "status": "rejected",
+            },
+        ) from exc
+
+    # ── Score the event ─────────────────────────────────────────────────────
+    event_dict = event.dict(exclude={"auth_token"})
+    result = score_booking(event_dict)
+
+    # ── Audit log — flag HIGH risk events ────────────────────────────────────
+    risk_flag = result["risk_level"] == "HIGH"
+    log_message(
+        message_id=event.event_id,
+        sender="fraud-check",
+        receiver="security-agent",
+        intent="fraud_check",
+        status=result["risk_level"].lower(),
+        risk_flag=risk_flag,
+    )
+
+    if risk_flag:
+        logger.warning(
+            "HIGH risk booking flagged: user=%s event=%s score=%.4f reason=%s",
+            event.user_id, event.event_id,
+            result["anomaly_score"], result["reason"],
+        )
+
+    return result
 
 
 # ---------------------------------------------------------------------------
