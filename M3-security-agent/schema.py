@@ -197,3 +197,79 @@ class RevokeRequest(BaseModel):
         example="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
         min_length=1,
     )
+
+
+class BookingEvent(BaseModel):
+    """
+    Booking event sent to POST /security/fraud-check (Phase 3).
+
+    The Passenger Agent calls this before confirming a ticket.
+    The Hub scores the event with the Isolation Forest model and returns
+    a risk level (LOW / MEDIUM / HIGH) with a plain-English reason.
+
+    auth_token must be a valid JWT obtained from POST /auth/login.
+    """
+
+    user_id: str = Field(
+        ...,
+        description="Hashed passenger identifier.",
+        example="usr_4421",
+        max_length=64,
+    )
+    event_id: str = Field(
+        default_factory=lambda: f"evt_{__import__('uuid').uuid4().hex[:8]}",
+        description="Unique booking event identifier. Auto-generated if omitted.",
+        example="evt_9921",
+        max_length=64,
+    )
+    route_id: int = Field(
+        ...,
+        description="Encoded route index 0–6 (7 Sri Lanka Railways routes).",
+        example=2,
+        ge=0,
+        le=6,
+    )
+    ticket_price: float = Field(
+        ...,
+        description="Ticket price in Sri Lankan Rupees.",
+        example=480.0,
+        gt=0,
+    )
+    bookings_last_60s: int = Field(
+        ...,
+        description="Number of bookings made by this user in the last 60 seconds.",
+        example=1,
+        ge=0,
+    )
+    travel_distance_km: float = Field(
+        ...,
+        description="Distance of the booked route in kilometres.",
+        example=116.0,
+        gt=0,
+    )
+    time_since_last_booking: float = Field(
+        ...,
+        description="Seconds elapsed since this user's previous booking.",
+        example=3600.0,
+        ge=0,
+    )
+    auth_token: str = Field(
+        ...,
+        description="Valid JWT from POST /auth/login — required to call this endpoint.",
+        example="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+        min_length=1,
+    )
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "user_id": "usr_4421",
+                "event_id": "evt_9921",
+                "route_id": 2,
+                "ticket_price": 480.0,
+                "bookings_last_60s": 1,
+                "travel_distance_km": 116.0,
+                "time_since_last_booking": 3600.0,
+                "auth_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+            }
+        }
