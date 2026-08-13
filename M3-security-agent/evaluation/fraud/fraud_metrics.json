@@ -1,0 +1,35 @@
+{
+  "model_version": "phase3-iforest-v1",
+  "dataset_rows": 5000,
+  "test_rows": 1000,
+  "actual_anomalies": 80,
+  "actual_normals": 920,
+  "threshold_high": 0.04,
+  "threshold_medium": 0.07,
+  "detection_rate_HIGH_MEDIUM": 0.9875,
+  "false_positive_rate_HIGH_MEDIUM": 0.187,
+  "precision_HIGH_MEDIUM": 0.3147,
+  "recall_HIGH_MEDIUM": 0.9875,
+  "detection_rate_HIGH_only": 0.8375,
+  "false_positive_rate_HIGH_only": 0.0707,
+  "precision_HIGH_only": 0.5076,
+  "confusion_matrix_HIGH_MEDIUM": {
+    "TP": 79,
+    "FN": 1,
+    "FP": 172,
+    "TN": 748
+  },
+  "score_distribution": {
+    "min": -0.1055,
+    "max": 0.1586,
+    "mean": 0.0898,
+    "median": 0.1024,
+    "p25": 0.0698,
+    "p75": 0.1255
+  },
+  "risk_level_distribution_test": {
+    "HIGH": 132,
+    "MEDIUM": 119,
+    "LOW": 749
+  }
+}
