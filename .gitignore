@@ -24,4 +24,8 @@ data/chroma_store/
 
 # OS-specific
 .DS_Store
-"@ | Set-Content .gitignore
+
+# SQLite / Local DBs
+*.db
+*.sqlite
+*.sqlite3
