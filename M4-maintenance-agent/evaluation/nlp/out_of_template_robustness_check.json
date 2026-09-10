@@ -1,0 +1,38 @@
+[
+  {
+    "text": "Oil coming out from underneath the engine, left stains on the platform.",
+    "expected": "oil_leak",
+    "predicted": "none",
+    "correct": false
+  },
+  {
+    "text": "The engine ran hot and shut down automatically near Kandy station.",
+    "expected": "overheating",
+    "predicted": "none",
+    "correct": false
+  },
+  {
+    "text": "Could not get the engine running this morning, took 4 attempts.",
+    "expected": "starter_failure",
+    "predicted": "none",
+    "correct": false
+  },
+  {
+    "text": "Wheels making a flat thumping sound when moving slowly.",
+    "expected": "wheel_flat",
+    "predicted": "none",
+    "correct": false
+  },
+  {
+    "text": "Train stopping distance seems longer than usual, feel like brakes not gripping.",
+    "expected": "brake_fade",
+    "predicted": "none",
+    "correct": false
+  },
+  {
+    "text": "Signal showing wrong aspect intermittently, may be internal fault.",
+    "expected": "relay_fault",
+    "predicted": "none",
+    "correct": false
+  }
+]

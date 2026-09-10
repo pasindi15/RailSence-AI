@@ -29,7 +29,7 @@ services:
   operations-agent:
     build: ./M2-operations-agent
     ports:
-      - "8002:8002"
+      - "8001:8001"
     env_file: .env
     depends_on:
       agent-hub:
@@ -45,9 +45,9 @@ services:
         condition: service_healthy
 
   maintenance-agent:
-    build: ./maintenance-agent
+    build: ./M4-maintenance-agent
     ports:
-      - "8004:8004"
+      - "8002:8002"
     env_file: .env
     depends_on:
       agent-hub:

@@ -1,0 +1,9 @@
+{
+  "model": "GradientBoostingRegressor",
+  "version": "phase2-gbr-v1",
+  "train_samples": 480,
+  "test_samples": 120,
+  "mae": 3.757,
+  "rmse": 5.3052,
+  "r2": 0.8814
+}
