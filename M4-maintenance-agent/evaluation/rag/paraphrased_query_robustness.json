@@ -1,0 +1,7 @@
+{
+  "label": "paraphrased_robustness",
+  "n_queries": 6,
+  "precision_at_1": 0.6667,
+  "precision_at_3": 0.6667,
+  "precision_at_5": 0.6
+}

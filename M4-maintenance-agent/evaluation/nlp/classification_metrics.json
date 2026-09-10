@@ -1,0 +1,140 @@
+{
+  "total_samples": 118,
+  "correct": 106,
+  "accuracy": 0.8983,
+  "macro_precision": 0.7966,
+  "macro_recall": 0.8103,
+  "macro_f1": 0.7919,
+  "per_class": {
+    "cylinder_leak": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "motor_worn": {
+      "precision": 1.0,
+      "recall": 0.4,
+      "f1": 0.5714
+    },
+    "barrier_worn": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0
+    },
+    "rail_crack": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0
+    },
+    "wheel_flat": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "door_jam": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "inverter_fault": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "bearing_noise": {
+      "precision": 0.7,
+      "recall": 1.0,
+      "f1": 0.8235
+    },
+    "axle_crack": {
+      "precision": 0.5455,
+      "recall": 1.0,
+      "f1": 0.7059
+    },
+    "suspension_worn": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "motor_overload": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0
+    },
+    "oil_leak": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "response_delay": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "fuel_pump_fault": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "relay_fault": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "overheating": {
+      "precision": 0.8,
+      "recall": 1.0,
+      "f1": 0.8889
+    },
+    "gate_jam": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0
+    },
+    "brake_fade": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "pad_worn": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "lamp_failure": {
+      "precision": 0.6667,
+      "recall": 1.0,
+      "f1": 0.8
+    },
+    "point_motor_jam": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "sleeper_rot": {
+      "precision": 1.0,
+      "recall": 0.6667,
+      "f1": 0.8
+    },
+    "starter_failure": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "pantograph_fault": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "ballast_shortage": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "sensor_fault": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    }
+  }
+}

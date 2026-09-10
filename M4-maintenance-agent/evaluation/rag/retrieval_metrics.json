@@ -1,0 +1,7 @@
+{
+  "label": "ground_truth_template_queries",
+  "n_queries": 10,
+  "precision_at_1": 1.0,
+  "precision_at_3": 1.0,
+  "precision_at_5": 1.0
+}
