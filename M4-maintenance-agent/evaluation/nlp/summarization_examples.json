@@ -1,0 +1,32 @@
+[
+  {
+    "asset_type": "track_section",
+    "fault_type": "none",
+    "raw_note": "Routine inspection completed. No issues found. All readings within normal range.",
+    "summary": "Routine inspection completed. All readings within normal range."
+  },
+  {
+    "asset_type": "diesel_engine",
+    "fault_type": "fuel_pump_fault",
+    "raw_note": "Fuel delivery pressure below spec at 180 bar. Pump replaced, pressure verified at 220 bar.",
+    "summary": "Fuel delivery pressure below spec at 180 bar. Pump replaced, pressure verified at 220 bar."
+  },
+  {
+    "asset_type": "signal_unit",
+    "fault_type": "none",
+    "raw_note": "Monthly service carried out. Fluid levels checked. All systems operating normally.",
+    "summary": "Monthly service carried out. Fluid levels checked."
+  },
+  {
+    "asset_type": "signal_unit",
+    "fault_type": "relay_fault",
+    "raw_note": "Relay coil resistance out of spec at 280 ohm. Replaced relay. Signal operates normally.",
+    "summary": "Relay coil resistance out of spec at 280 ohm. Replaced relay."
+  },
+  {
+    "asset_type": "track_section",
+    "fault_type": "none",
+    "raw_note": "Scheduled preventive maintenance carried out. Lubrication and cleaning completed.",
+    "summary": "Scheduled preventive maintenance carried out. Lubrication and cleaning completed."
+  }
+]

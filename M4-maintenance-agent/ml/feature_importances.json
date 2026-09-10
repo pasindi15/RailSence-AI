@@ -1,0 +1,82 @@
+[
+  {
+    "feature": "fault_count_30d",
+    "importance": 0.455558
+  },
+  {
+    "feature": "days_since_service",
+    "importance": 0.363566
+  },
+  {
+    "feature": "vibration_level",
+    "importance": 0.045791
+  },
+  {
+    "feature": "contact_resistance_ohm",
+    "importance": 0.02416
+  },
+  {
+    "feature": "stopping_distance_m",
+    "importance": 0.021891
+  },
+  {
+    "feature": "cycle_time_seconds",
+    "importance": 0.015913
+  },
+  {
+    "feature": "wheel_profile_mm",
+    "importance": 0.01163
+  },
+  {
+    "feature": "pad_thickness_mm",
+    "importance": 0.009278
+  },
+  {
+    "feature": "oil_pressure_bar",
+    "importance": 0.008186
+  },
+  {
+    "feature": "sensor_reliability_pct",
+    "importance": 0.005054
+  },
+  {
+    "feature": "ballast_void_pct",
+    "importance": 0.004843
+  },
+  {
+    "feature": "fuel_efficiency_pct",
+    "importance": 0.004698
+  },
+  {
+    "feature": "brake_cylinder_pressure_bar",
+    "importance": 0.004605
+  },
+  {
+    "feature": "voltage_output_v",
+    "importance": 0.003999
+  },
+  {
+    "feature": "temperature_celsius",
+    "importance": 0.003927
+  },
+  {
+    "feature": "motor_current_a",
+    "importance": 0.003855
+  },
+  {
+    "feature": "gauge_deviation_mm",
+    "importance": 0.003811
+  },
+  {
+    "feature": "rail_wear_mm",
+    "importance": 0.003407
+  },
+  {
+    "feature": "axle_temp_celsius",
+    "importance": 0.002931
+  },
+  {
+    "feature": "response_time_ms",
+    "importance": 0.001747
+  }
+]
