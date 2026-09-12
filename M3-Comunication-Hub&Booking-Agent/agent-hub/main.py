@@ -25,7 +25,7 @@ from contextlib import asynccontextmanager
 
 import httpx
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
@@ -48,6 +48,7 @@ from audit.service import write_audit_log  # noqa: E402
 from auth.jwt_utils import verify_agent_token  # noqa: E402
 from database.models import AuditStatus  # noqa: E402
 from hub_database import get_db, init_db  # noqa: E402
+from rate_limit import rate_limiter  # noqa: E402
 from router import RoutingError, get_http_client, route_message  # noqa: E402
 from shared.schemas import AgentMessage  # noqa: E402
 from validator import validate_receiver  # noqa: E402
@@ -141,6 +142,23 @@ async def receive_message(
             db=db,
         )
         raise exc
+
+    # Step 2.5: Per-Agent Rate Limiting & Flood Protection
+    if not rate_limiter.is_allowed(message.sender_agent):
+        write_audit_log(
+            message_id=message.message_id,
+            sender_agent=message.sender_agent,
+            receiver_agent=message.receiver_agent,
+            intent=message.intent,
+            status=AuditStatus.REJECTED,
+            timestamp=message.timestamp,
+            error_message="Rate limit exceeded",
+            db=db,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Rate limit exceeded",
+        )
 
     # Step 3: Verify receiver exists in central registry
     try:

@@ -354,6 +354,76 @@ def check_seat_availability(
     return available_seats
 
 
+def get_schedules_for_route(
+    db: Session,
+    from_station: str,
+    to_station: str,
+    travel_date: date,
+) -> list[dict]:
+    """
+    Retrieve active train schedules matching the route and travel date,
+    with dynamically derived available seat counts and fare information.
+    """
+    from .fare import get_fare_per_passenger
+
+    clean_from = from_station.strip()
+    clean_to = to_station.strip()
+
+    results = (
+        db.query(TrainSchedule, Train)
+        .join(Train, TrainSchedule.train_id == Train.id)
+        .filter(
+            Train.active == True,  # noqa: E712
+            func.lower(TrainSchedule.from_station) == clean_from.lower(),
+            func.lower(TrainSchedule.to_station) == clean_to.lower(),
+            TrainSchedule.travel_date == travel_date,
+        )
+        .all()
+    )
+
+    options: list[dict] = []
+    for schedule, train in results:
+        available_classes = []
+        for s_class in (SeatClass.FIRST_CLASS.value, SeatClass.SECOND_CLASS.value):
+            rem_seats = get_available_seats(db, schedule, s_class)
+            try:
+                base_fare = float(get_fare_per_passenger(clean_from, clean_to, s_class))
+            except Exception:
+                base_fare = 1500.0 if s_class == SeatClass.SECOND_CLASS.value else 2500.0
+
+            available_classes.append({
+                "seat_class": s_class,
+                "available_seats": rem_seats,
+                "base_fare": base_fare,
+            })
+
+        dep_str = (
+            schedule.departure_time.strftime("%H:%M:%S")
+            if hasattr(schedule.departure_time, "strftime")
+            else str(schedule.departure_time)
+        )
+        arr_str = (
+            schedule.arrival_time.strftime("%H:%M:%S")
+            if hasattr(schedule.arrival_time, "strftime")
+            else str(schedule.arrival_time)
+        )
+
+        options.append({
+            "schedule_id": schedule.id,
+            "train_id": train.train_id,
+            "train_name": train.train_name,
+            "from_station": schedule.from_station,
+            "to_station": schedule.to_station,
+            "travel_date": schedule.travel_date.isoformat(),
+            "departure_time": dep_str,
+            "arrival_time": arr_str,
+            "available_classes": available_classes,
+        })
+
+    return options
+
+
 # Convenience aliases adhering to existing naming conventions
 verify_train_exists = get_train_by_public_id
 get_schedule = get_schedule_for_trip
+

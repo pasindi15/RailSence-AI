@@ -1,0 +1,2743 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RailSense AI — Passenger Assistant & Booking Desk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Share+Tech+Mono&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── Design Tokens ─────────────────────────────────────────────────── */
+:root {
+  --bg:           #0B0704;
+  --rail-dark:    #120B05;
+  --card:         rgba(24, 15, 7, 0.90);
+  --card-hi:      rgba(36, 22, 11, 0.95);
+  --border:       rgba(180, 130, 40, 0.22);
+  --border-hi:    rgba(201, 162, 42, 0.48);
+  --ink:          #F2E3BC;
+  --ink-bright:   #FFF4D6;
+  --muted:        #8C7353;
+  --muted-hi:     #BAA077;
+  --brand:        #C9A22A;
+  --brand-glow:   rgba(201, 162, 42, 0.28);
+  --passenger:    #5B8FC9;
+  --passenger-glow: rgba(91, 143, 201, 0.25);
+  --signal-g:     #3A8A4A;
+  --signal-g-glow: rgba(58, 138, 74, 0.35);
+  --signal-r:     #B04030;
+  --steel:        #8B7355;
+  --r:            12px;
+  --shadow:       0 8px 32px rgba(0, 0, 0, 0.75);
+  --blur:         blur(20px);
+  --ease:         cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ── Global Reset ─────────────────────────────────────────────────── */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Inter', -apple-system, sans-serif;
+  font-size: 14px;
+  min-height: 100vh;
+  overflow-x: hidden;
+  line-height: 1.5;
+}
+
+/* Subtle Railway Grid Pattern */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    linear-gradient(rgba(180, 130, 40, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(180, 130, 40, 0.035) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* Ambient Warm Victorian Glow */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse 900px 600px at 15% 15%, rgba(180, 120, 20, 0.09) 0%, transparent 65%),
+    radial-gradient(ellipse 700px 450px at 85% 80%, rgba(91, 143, 201, 0.06) 0%, transparent 60%);
+}
+
+/* ── App Shell ─────────────────────────────────────────────────────── */
+.app-shell {
+  position: relative;
+  z-index: 1;
+  max-width: 1140px;
+  margin: 0 auto;
+  padding: 24px 20px 60px;
+}
+
+/* ── Top Header ────────────────────────────────────────────────────── */
+.top-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-radius: var(--r);
+  background: var(--card);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  margin-bottom: 24px;
+}
+
+.brand-area {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.brand-emblem {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(201, 162, 42, 0.22), rgba(120, 80, 20, 0.1));
+  border: 1px solid var(--border-hi);
+  display: grid;
+  place-items: center;
+  font-size: 20px;
+}
+
+.brand-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink-bright);
+  letter-spacing: 0.3px;
+}
+
+.brand-sub {
+  font-size: 11px;
+  color: var(--muted-hi);
+  font-family: 'Share Tech Mono', monospace;
+  letter-spacing: 0.8px;
+}
+
+.header-status {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.clock-display {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 13px;
+  color: var(--ink-bright);
+}
+
+.badge-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  border-radius: 20px;
+  background: rgba(58, 138, 74, 0.15);
+  border: 1px solid rgba(58, 138, 74, 0.4);
+  color: #79D28B;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.badge-live::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #4ADE80;
+  box-shadow: 0 0 8px #4ADE80;
+}
+
+/* ── View Switcher Tabs ────────────────────────────────────────────── */
+.nav-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--muted-hi);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s var(--ease);
+}
+
+.tab-btn:hover {
+  background: var(--card-hi);
+  color: var(--ink-bright);
+  border-color: var(--border-hi);
+}
+
+.tab-btn.active {
+  background: linear-gradient(135deg, rgba(201, 162, 42, 0.18), rgba(91, 143, 201, 0.12));
+  color: var(--ink-bright);
+  border-color: var(--brand);
+  box-shadow: 0 0 16px var(--brand-glow);
+}
+
+.tab-icon {
+  font-size: 16px;
+}
+
+/* ── Container Layouts ─────────────────────────────────────────────── */
+.view-panel {
+  display: none;
+  animation: fadeIn 0.3s var(--ease) forwards;
+}
+
+.view-panel.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   VIEW 1: PASSENGER CHAT
+   ══════════════════════════════════════════════════════════════════════ */
+.chat-container {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 20px;
+}
+
+@media (max-width: 860px) {
+  .chat-container { grid-template-columns: 1fr; }
+}
+
+.chat-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  height: 580px;
+  overflow: hidden;
+}
+
+.chat-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(16, 9, 3, 0.6);
+}
+
+.chat-title {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--ink-bright);
+}
+
+.chat-sub {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.chat-feed {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.msg-bubble {
+  max-width: 82%;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  animation: fadeIn 0.25s var(--ease);
+}
+
+.msg-bubble.user {
+  align-self: flex-end;
+  background: linear-gradient(135deg, rgba(91, 143, 201, 0.25), rgba(40, 70, 110, 0.35));
+  border: 1px solid rgba(91, 143, 201, 0.4);
+  color: #E6F0FC;
+  border-bottom-right-radius: 2px;
+}
+
+.msg-bubble.assistant {
+  align-self: flex-start;
+  background: var(--card-hi);
+  border: 1px solid var(--border);
+  color: var(--ink);
+  border-bottom-left-radius: 2px;
+}
+
+.msg-meta {
+  font-size: 10px;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--muted);
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* "Continue to Booking" Action Card in Chat */
+.booking-action-card {
+  margin-top: 10px;
+  padding: 12px 14px;
+  background: rgba(15, 9, 3, 0.85);
+  border: 1px solid var(--border-hi);
+  border-radius: 10px;
+}
+
+.booking-action-title {
+  font-size: 11px;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--brand);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 6px;
+}
+
+.booking-action-details {
+  font-size: 12px;
+  color: var(--ink);
+  margin-bottom: 10px;
+}
+
+.btn-continue-booking {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--brand), #A37E15);
+  color: #1A0F02;
+  font-weight: 700;
+  font-size: 12.5px;
+  text-decoration: none;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s var(--ease);
+  box-shadow: 0 4px 12px var(--brand-glow);
+}
+
+.btn-continue-booking:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.1);
+  box-shadow: 0 6px 18px rgba(201, 162, 42, 0.4);
+}
+
+.chat-input-bar {
+  padding: 14px 18px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 10px;
+  background: rgba(16, 9, 3, 0.8);
+}
+
+.chat-input {
+  flex: 1;
+  background: rgba(10, 5, 2, 0.9);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: var(--ink-bright);
+  font-size: 13.5px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.chat-input:focus {
+  border-color: var(--brand);
+  box-shadow: 0 0 8px var(--brand-glow);
+}
+
+.btn-send {
+  padding: 10px 18px;
+  border-radius: 8px;
+  background: var(--passenger);
+  color: #fff;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-send:hover {
+  filter: brightness(1.15);
+  box-shadow: 0 0 12px var(--passenger-glow);
+}
+
+/* Chat Sidebar Information */
+.chat-info-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.quick-prompts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.prompt-chip {
+  padding: 8px 12px;
+  background: rgba(201, 162, 42, 0.08);
+  border: 1px solid rgba(201, 162, 42, 0.2);
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--ink);
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+}
+
+.prompt-chip:hover {
+  background: rgba(201, 162, 42, 0.16);
+  border-color: var(--brand);
+  color: var(--ink-bright);
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   VIEW 2: BOOKING PAGE (RESERVATION DESK)
+   ══════════════════════════════════════════════════════════════════════ */
+.booking-grid {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 24px;
+}
+
+@media (max-width: 920px) {
+  .booking-grid { grid-template-columns: 1fr; }
+}
+
+.booking-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  box-shadow: var(--shadow);
+  padding: 28px;
+}
+
+.desk-header {
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.desk-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ink-bright);
+}
+
+.desk-sub {
+  font-size: 12.5px;
+  color: var(--muted-hi);
+  margin-top: 4px;
+}
+
+/* Form Styles */
+.form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 600px) {
+  .form-row { grid-template-columns: 1fr; }
+}
+
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.field-label {
+  font-size: 11px;
+  font-family: 'Share Tech Mono', monospace;
+  text-transform: uppercase;
+  color: var(--muted-hi);
+  letter-spacing: 0.8px;
+}
+
+.field-input, .field-select {
+  width: 100%;
+  padding: 11px 14px;
+  border-radius: 8px;
+  background: rgba(14, 8, 3, 0.9);
+  border: 1px solid var(--border);
+  color: var(--ink-bright);
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.field-input:focus, .field-select:focus {
+  border-color: var(--brand);
+  box-shadow: 0 0 10px var(--brand-glow);
+}
+
+.field-select option {
+  background: #180F07;
+  color: #F2E3BC;
+}
+
+/* Seat Class Radio Cards */
+.seat-class-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.seat-class-card {
+  padding: 14px;
+  border-radius: 10px;
+  background: rgba(12, 7, 2, 0.85);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.2s var(--ease);
+  position: relative;
+}
+
+.seat-class-card:hover {
+  border-color: var(--border-hi);
+  background: rgba(22, 13, 5, 0.95);
+}
+
+.seat-class-card.selected {
+  border-color: var(--brand);
+  background: linear-gradient(135deg, rgba(201, 162, 42, 0.18), rgba(120, 80, 20, 0.08));
+  box-shadow: 0 0 14px var(--brand-glow);
+}
+
+.seat-class-title {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--ink-bright);
+}
+
+.seat-class-badge {
+  font-size: 11px;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--brand);
+  margin-top: 4px;
+}
+
+.seat-class-fare {
+  font-size: 12px;
+  color: var(--muted-hi);
+  margin-top: 6px;
+}
+
+/* Alerts / Notification Banners */
+.alert-box {
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  display: none;
+  margin-bottom: 18px;
+  animation: fadeIn 0.25s var(--ease);
+}
+
+.alert-box.visible { display: flex; align-items: center; gap: 10px; }
+.alert-error {
+  background: rgba(176, 64, 48, 0.18);
+  border: 1px solid rgba(176, 64, 48, 0.45);
+  color: #FFA599;
+}
+.alert-warning {
+  background: rgba(201, 162, 42, 0.15);
+  border: 1px solid rgba(201, 162, 42, 0.4);
+  color: #F8D98C;
+}
+
+/* Order Summary Card */
+.summary-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  height: fit-content;
+}
+
+.summary-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ink-bright);
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.summary-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: var(--muted-hi);
+}
+
+.summary-line b {
+  color: var(--ink-bright);
+  font-weight: 600;
+}
+
+.fare-total-line {
+  margin-top: 8px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.fare-total-label {
+  font-size: 12px;
+  font-family: 'Share Tech Mono', monospace;
+  text-transform: uppercase;
+  color: var(--brand);
+}
+
+.fare-total-amount {
+  font-size: 24px;
+  font-family: 'Share Tech Mono', monospace;
+  font-weight: 700;
+  color: var(--ink-bright);
+}
+
+.btn-confirm-booking {
+  width: 100%;
+  padding: 14px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--brand), #9C7710);
+  color: #120901;
+  font-weight: 800;
+  font-size: 14px;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s var(--ease);
+  box-shadow: 0 4px 16px var(--brand-glow);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 9px;
+}
+
+.btn-confirm-booking:hover:not(:disabled) {
+  filter: brightness(1.12);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 22px rgba(201, 162, 42, 0.45);
+}
+
+.btn-confirm-booking:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  filter: grayscale(0.5);
+}
+
+/* Spinner */
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(0, 0, 0, 0.3);
+  border-top-color: #120901;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  display: none;
+}
+
+.loading .spinner { display: inline-block; }
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   VIEW 3: BOOKING CONFIRMED SCREEN
+   ══════════════════════════════════════════════════════════════════════ */
+.confirmation-wrapper {
+  max-width: 640px;
+  margin: 0 auto;
+  animation: fadeIn 0.4s var(--ease);
+}
+
+.ticket-card {
+  background: linear-gradient(180deg, rgba(32, 20, 9, 0.95), rgba(18, 11, 5, 0.98));
+  border: 2px solid var(--border-hi);
+  border-radius: 16px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.85), 0 0 24px var(--brand-glow);
+  overflow: hidden;
+  position: relative;
+}
+
+.ticket-header {
+  background: linear-gradient(135deg, rgba(201, 162, 42, 0.25), rgba(91, 143, 201, 0.15));
+  padding: 24px 28px;
+  border-bottom: 2px dashed rgba(180, 130, 40, 0.35);
+  text-align: center;
+  position: relative;
+}
+
+.ticket-check {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--signal-g);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-size: 24px;
+  margin: 0 auto 12px;
+  box-shadow: 0 0 16px var(--signal-g-glow);
+}
+
+.ticket-banner {
+  font-size: 11px;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--brand);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.ticket-ref-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--ink-bright);
+  margin-top: 4px;
+}
+
+.ticket-ref-num {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 22px;
+  color: var(--brand);
+  letter-spacing: 2px;
+  margin-top: 2px;
+}
+
+.ticket-body {
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ticket-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  padding: 16px 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.ticket-data-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.td-label {
+  font-size: 11px;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.td-value {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink-bright);
+}
+
+.ticket-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: rgba(58, 138, 74, 0.2);
+  border: 1px solid rgba(58, 138, 74, 0.5);
+  color: #6EE7B7;
+  font-size: 11px;
+  font-family: 'Share Tech Mono', monospace;
+  font-weight: 700;
+  width: fit-content;
+}
+
+.ticket-footer {
+  padding: 20px 28px;
+  background: rgba(10, 5, 2, 0.7);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.btn-book-another {
+  padding: 10px 20px;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid var(--border-hi);
+  color: var(--ink);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+/* Cancellation Confirm Card in Chat */
+.cancellation-confirm-card {
+  margin-top: 10px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: rgba(30, 15, 6, 0.95);
+  border: 1px solid rgba(201, 162, 42, 0.4);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.cancellation-confirm-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--ink-bright);
+}
+.badge-pending {
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(201, 162, 42, 0.2);
+  color: var(--brand);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  border: 1px solid rgba(201, 162, 42, 0.4);
+}
+.badge-code {
+  font-family: 'Share Tech Mono', monospace;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: #FBBF24;
+}
+.cancellation-notice {
+  font-size: 11px;
+  color: var(--muted-hi);
+  font-style: italic;
+  line-height: 1.4;
+}
+.btn-send-cancellation {
+  align-self: flex-start;
+  padding: 9px 18px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #B04030, #8A2B1D);
+  border: 1px solid rgba(176, 64, 48, 0.6);
+  color: #FFF;
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-send-cancellation:hover:not(:disabled) {
+  filter: brightness(1.2);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(176, 64, 48, 0.4);
+}
+
+/* Admin Desk Styles */
+.admin-desk-card {
+  padding: 24px;
+  border-radius: var(--r);
+  background: var(--card);
+  backdrop-filter: var(--blur);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+.admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+.btn-refresh-admin {
+  padding: 8px 16px;
+  border-radius: 6px;
+  background: rgba(201, 162, 42, 0.15);
+  border: 1px solid var(--border-hi);
+  color: var(--ink-bright);
+  font-weight: 600;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-refresh-admin:hover {
+  background: rgba(201, 162, 42, 0.25);
+}
+.admin-filter-bar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.filter-chip {
+  padding: 6px 14px;
+  border-radius: 20px;
+  background: rgba(14, 8, 3, 0.8);
+  border: 1px solid var(--border);
+  color: var(--muted-hi);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.filter-chip.active, .filter-chip:hover {
+  background: rgba(201, 162, 42, 0.2);
+  border-color: var(--brand);
+  color: var(--ink-bright);
+}
+.admin-cases-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.admin-case-card {
+  padding: 20px;
+  border-radius: 10px;
+  background: rgba(18, 11, 5, 0.92);
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transition: border-color 0.2s;
+}
+.admin-case-card:hover {
+  border-color: var(--border-hi);
+}
+.case-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.case-ref {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--brand);
+}
+.case-status-badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+}
+.status-pending { background: rgba(201, 162, 42, 0.2); color: #FBBF24; border: 1px solid rgba(201, 162, 42, 0.4); }
+.status-approved { background: rgba(58, 138, 74, 0.2); color: #34D399; border: 1px solid rgba(58, 138, 74, 0.5); }
+.status-rejected { background: rgba(176, 64, 48, 0.2); color: #F87171; border: 1px solid rgba(176, 64, 48, 0.5); }
+
+.case-grid-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  padding: 12px 14px;
+  background: rgba(8, 4, 1, 0.6);
+  border-radius: 8px;
+  font-size: 13px;
+}
+.case-ai-summary-box {
+  padding: 14px;
+  border-radius: 8px;
+  background: rgba(26, 17, 8, 0.7);
+  border-left: 3px solid var(--brand);
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-line;
+}
+.case-evidence-box {
+  font-size: 12px;
+  color: var(--muted-hi);
+  background: rgba(10, 5, 2, 0.5);
+  padding: 8px 12px;
+  border-radius: 6px;
+}
+.case-actions-row {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding-top: 10px;
+  border-top: 1px solid rgba(180, 130, 40, 0.15);
+}
+.btn-approve {
+  padding: 9px 20px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #2D6A4F, #1B4332);
+  border: 1px solid #40916C;
+  color: #D8F3DC;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-approve:hover:not(:disabled) {
+  filter: brightness(1.2);
+  transform: translateY(-1px);
+}
+.btn-reject {
+  padding: 9px 20px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #7F1D1D, #991B1B);
+  border: 1px solid #B91C1C;
+  color: #FEE2E2;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-reject:hover:not(:disabled) {
+  filter: brightness(1.2);
+  transform: translateY(-1px);
+}
+.admin-empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--muted);
+  font-size: 14px;
+  font-style: italic;
+}
+
+/* ── Admin Rejection Modal & NLP Preview ──────────────────────────── */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 16px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+.modal-backdrop.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+.rejection-modal-card {
+  background: #140C06;
+  border: 1px solid rgba(220, 160, 50, 0.35);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.9), 0 0 30px rgba(220, 160, 50, 0.15);
+  border-radius: 12px;
+  width: 100%;
+  max-width: 620px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  animation: modalPop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes modalPop {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+.rejection-chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+.rejection-chip {
+  background: rgba(30, 18, 10, 0.85);
+  border: 1px solid rgba(180, 130, 40, 0.3);
+  color: var(--muted-hi);
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.rejection-chip:hover {
+  background: rgba(220, 160, 50, 0.2);
+  color: var(--brand-hi);
+  border-color: var(--brand);
+}
+.nlp-preview-box {
+  background: rgba(20, 12, 5, 0.9);
+  border: 1px solid rgba(180, 130, 40, 0.25);
+  border-left: 3px solid #60A5FA;
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 12px;
+  line-height: 1.5;
+  display: none;
+}
+</style>
+</head>
+<body>
+
+<div class="app-shell">
+  <!-- Top Header -->
+  <header class="top-nav">
+    <div class="brand-area">
+      <div class="brand-emblem">🚂</div>
+      <div>
+        <div class="brand-title">RailSense AI</div>
+        <div class="brand-sub">PASSENGER & RESERVATION INTELLIGENCE</div>
+      </div>
+    </div>
+    <div class="header-status">
+      <div class="clock-display" id="clock">12:00:00</div>
+      <div class="badge-live">CENTRAL HUB CONNECTED</div>
+    </div>
+  </header>
+
+  <!-- Nav View Tabs -->
+  <nav class="nav-tabs" role="tablist">
+    <button class="tab-btn active" id="tab-chat" onclick="switchView('chat')">
+      <span class="tab-icon">💬</span> Passenger Assistant
+    </button>
+    <button class="tab-btn" id="tab-booking" onclick="switchView('booking')">
+      <span class="tab-icon">🎫</span> Booking Desk
+    </button>
+    <button class="tab-btn" id="tab-admin" onclick="switchView('admin')">
+      <span class="tab-icon">🛡️</span> Admin Review Queue
+    </button>
+  </nav>
+
+  <!-- ==================== VIEW 1: PASSENGER CHAT ==================== -->
+  <main id="view-chat" class="view-panel active">
+    <div class="chat-container">
+      <section class="chat-card">
+        <div class="chat-header">
+          <div>
+            <div class="chat-title">Passenger Assistant Chat</div>
+            <div class="chat-sub">Inquire about journeys, schedules, or request ticket booking</div>
+          </div>
+          <span class="badge-live" style="padding:3px 9px;font-size:10px;">AI Ready</span>
+        </div>
+
+        <div class="chat-feed" id="chat-feed" role="log" aria-live="polite">
+          <div class="msg-bubble assistant">
+            Welcome to RailSense AI. I can assist with train routes, schedules, seat availability, and ticket bookings across the Sri Lanka rail network.
+            <div class="msg-meta">passenger-agent · Assistant</div>
+          </div>
+        </div>
+
+        <div class="chat-input-bar">
+          <input
+            type="text"
+            id="chat-input"
+            class="chat-input"
+            placeholder="Type your journey inquiry (e.g. 'I need to book a train from Colombo to Kandy on 3rd December')..."
+            autocomplete="off"
+            onkeydown="if(event.key==='Enter') sendChatMessage()"
+          />
+          <button class="btn-send" id="btn-chat-send" onclick="sendChatMessage()">Send</button>
+        </div>
+      </section>
+
+      <!-- Chat Sidebar -->
+      <aside class="chat-info-card">
+        <div style="font-weight:700;font-size:14px;color:var(--ink-bright)">Quick Inquiries</div>
+        <div class="quick-prompts">
+          <button class="prompt-chip" onclick="fillAndSend('I need to book a train from Colombo to Kandy on 3rd December.')">
+            🚆 "I need to book a train from Colombo to Kandy on 3rd December."
+          </button>
+          <button class="prompt-chip" onclick="fillAndSend('I want to book a train to Kandy.')">
+            📍 "I want to book a train to Kandy."
+          </button>
+          <button class="prompt-chip" onclick="fillAndSend('Can I reserve seats from Colombo Fort to Galle?')">
+            🎟️ "Can I reserve seats from Colombo Fort to Galle?"
+          </button>
+          <button class="prompt-chip" onclick="fillAndSend('Cancel booking RS-84521 because I accidentally booked twice')">
+            🔄 "Cancel booking RS-84521 because I accidentally booked twice"
+          </button>
+        </div>
+
+        <div style="margin-top:auto;font-size:11px;color:var(--muted);font-family:'Share Tech Mono',monospace;line-height:1.6">
+          • Automatic intent recognition<br>
+          • Named entity prefill forwarding<br>
+          • Deterministic schedule validation
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <!-- ==================== VIEW 2: BOOKING PAGE ==================== -->
+  <main id="view-booking" class="view-panel">
+    <div class="booking-grid">
+      <!-- Form Panel -->
+      <section class="booking-card">
+        <div class="desk-header">
+          <h1 class="desk-title">Train Ticket Reservation</h1>
+          <p class="desk-sub">Complete journey details to query authoritative schedules and confirm your seats.</p>
+        </div>
+
+        <div id="booking-alert" class="alert-box"></div>
+
+        <form id="booking-form" onsubmit="event.preventDefault(); submitBooking();" class="form-section">
+          <!-- Route -->
+          <div class="form-row">
+            <div class="field-group">
+              <label class="field-label" for="from-station">From Station *</label>
+              <input
+                type="text"
+                id="from-station"
+                class="field-input"
+                placeholder="e.g. Colombo"
+                required
+                oninput="onRouteOrDateChanged()"
+              />
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="to-station">To Station *</label>
+              <input
+                type="text"
+                id="to-station"
+                class="field-input"
+                placeholder="e.g. Kandy"
+                required
+                oninput="onRouteOrDateChanged()"
+              />
+            </div>
+          </div>
+
+          <!-- Date & Train -->
+          <div class="form-row">
+            <div class="field-group">
+              <label class="field-label" for="travel-date">Travel Date *</label>
+              <input
+                type="date"
+                id="travel-date"
+                class="field-input"
+                required
+                onchange="onRouteOrDateChanged()"
+              />
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="train-select">Available Train *</label>
+              <select id="train-select" class="field-select" required onchange="onTrainSelected()">
+                <option value="">-- Enter route and date first --</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Class Selection -->
+          <div class="field-group">
+            <label class="field-label">Seat Class *</label>
+            <div class="seat-class-group">
+              <div class="seat-class-card" id="card-second-class" onclick="selectSeatClass('Second Class')">
+                <div class="seat-class-title">Second Class</div>
+                <div class="seat-class-badge" id="badge-second-class">Standard Comfort</div>
+                <div class="seat-class-fare" id="fare-second-class">Rs. 1,200.00 / seat</div>
+              </div>
+              <div class="seat-class-card" id="card-first-class" onclick="selectSeatClass('First Class')">
+                <div class="seat-class-title">First Class</div>
+                <div class="seat-class-badge" id="badge-first-class">Air Conditioned</div>
+                <div class="seat-class-fare" id="fare-first-class">Rs. 2,500.00 / seat</div>
+              </div>
+            </div>
+            <input type="hidden" id="seat-class" value="Second Class" required />
+          </div>
+
+          <!-- Passenger Count -->
+          <div class="field-group">
+            <label class="field-label" for="passenger-count">Passenger Count (1 to 10) *</label>
+            <input
+              type="number"
+              id="passenger-count"
+              class="field-input"
+              min="1"
+              max="10"
+              value="1"
+              required
+              oninput="onPassengerCountChanged()"
+            />
+          </div>
+
+          <!-- Mandatory Passenger Identities & NICs -->
+          <div class="field-group">
+            <label class="field-label">Passenger Identities & Mandatory Sri Lankan NIC *</label>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">
+              Every passenger ticket requires a verified Sri Lankan NIC (old: 9 digits + V/X, new: 12 digits). One NIC per passenger inside a booking.
+            </div>
+            <div id="passengers-container" style="display:flex;flex-direction:column;gap:12px;"></div>
+          </div>
+
+          <!-- Passenger Email -->
+          <div class="field-group">
+            <label class="field-label" for="passenger-email">Passenger Email Address *</label>
+            <input
+              type="email"
+              id="passenger-email"
+              class="field-input"
+              placeholder="e.g. passenger@example.com"
+              required
+              oninput="updateSummary()"
+            />
+          </div>
+        </form>
+      </section>
+
+      <!-- Summary & Submission Panel -->
+      <aside class="summary-card">
+        <h2 class="summary-title">Reservation Summary</h2>
+        <div class="summary-line">
+          <span>Route</span>
+          <b id="sum-route">—</b>
+        </div>
+        <div class="summary-line">
+          <span>Date</span>
+          <b id="sum-date">—</b>
+        </div>
+        <div class="summary-line">
+          <span>Selected Train</span>
+          <b id="sum-train">—</b>
+        </div>
+        <div class="summary-line">
+          <span>Seat Class</span>
+          <b id="sum-class">Second Class</b>
+        </div>
+        <div class="summary-line">
+          <span>Passengers</span>
+          <b id="sum-passengers">1</b>
+        </div>
+        <div class="summary-line">
+          <span>Email</span>
+          <b id="sum-email">—</b>
+        </div>
+
+        <div class="fare-total-line">
+          <div class="fare-total-label">Estimated Total Fare</div>
+          <div class="fare-total-amount" id="sum-fare">Rs. 0.00</div>
+        </div>
+
+        <button
+          type="button"
+          id="btn-confirm-booking"
+          class="btn-confirm-booking"
+          onclick="submitBooking()"
+        >
+          <span class="spinner" id="booking-spinner"></span>
+          <span id="btn-label">Confirm Booking ➔</span>
+        </button>
+
+        <div style="font-size:11px;color:var(--muted);text-align:center;font-family:'Share Tech Mono',monospace">
+          Secured by Communication Hub & Supabase
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <!-- ==================== VIEW 3: CONFIRMATION ==================== -->
+  <main id="view-confirmation" class="view-panel">
+    <div class="confirmation-wrapper">
+      <article class="ticket-card">
+        <header class="ticket-header">
+          <div class="ticket-check">✓</div>
+          <div class="ticket-banner">Booking Confirmed</div>
+          <h1 class="ticket-ref-title">Reservation Ticket</h1>
+          <div class="ticket-ref-num" id="conf-ref">RS-XXXXX</div>
+        </header>
+
+        <div class="ticket-body">
+          <div class="ticket-grid">
+            <div class="ticket-data-item">
+              <span class="td-label">Route</span>
+              <span class="td-value" id="conf-route">Colombo → Kandy</span>
+            </div>
+            <div class="ticket-data-item">
+              <span class="td-label">Travel Date</span>
+              <span class="td-value" id="conf-date">2026-12-03</span>
+            </div>
+            <div class="ticket-data-item">
+              <span class="td-label">Train Service</span>
+              <span class="td-value" id="conf-train">PM-4082 (Intercity Express)</span>
+            </div>
+            <div class="ticket-data-item">
+              <span class="td-label">Seat Class</span>
+              <span class="td-value" id="conf-class">Second Class</span>
+            </div>
+            <div class="ticket-data-item">
+              <span class="td-label">Passengers</span>
+              <span class="td-value" id="conf-passengers">2</span>
+            </div>
+            <div class="ticket-data-item">
+              <span class="td-label">Total Fare</span>
+              <span class="td-value" id="conf-fare">Rs. 5000.00</span>
+            </div>
+          </div>
+
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span class="ticket-status-pill">● CONFIRMED</span>
+            <span style="font-size:11px;color:var(--muted);font-family:'Share Tech Mono',monospace">Recorded in Supabase</span>
+          </div>
+        </div>
+
+        <footer class="ticket-footer">
+          <span style="font-size:12px;color:var(--muted-hi)">Please show reference code at the station.</span>
+          <button class="btn-book-another" onclick="resetToBooking()">Book Another Journey</button>
+        </footer>
+      </article>
+    </div>
+  </main>
+
+  <!-- ==================== VIEW 3B: PENDING FRAUD REVIEW ==================== -->
+  <main id="view-pending-review" class="view-panel">
+    <div class="confirmation-wrapper">
+      <article class="ticket-card" style="border-color:rgba(201,162,42,0.6);box-shadow:0 0 30px rgba(201,162,42,0.25);">
+        <header class="ticket-header" style="background:linear-gradient(180deg, rgba(36,22,8,0.9), rgba(18,10,4,0.95));">
+          <div class="ticket-check" style="background:rgba(201,162,42,0.2);color:#FBBF24;border-color:rgba(201,162,42,0.6);">⏳</div>
+          <div class="ticket-banner" style="color:#FBBF24;">Security Adjudication Required</div>
+          <h1 class="ticket-ref-title">Booking Under Review</h1>
+          <div class="ticket-ref-num" id="pending-case-ref" style="color:#FBBF24;">FR-XXXXX</div>
+        </header>
+
+        <div class="ticket-body">
+          <div style="background:rgba(201,162,42,0.1);border:1px solid rgba(201,162,42,0.3);border-radius:8px;padding:14px;margin-bottom:18px;font-size:13px;line-height:1.6;color:#FDE68A;">
+            <strong>Your booking request requires security review.</strong><br>
+            Our behavioral anomaly detection algorithms flagged this request for human administrative adjudication. No confirmed ticket has been issued yet.
+          </div>
+
+          <div class="ticket-grid">
+            <div class="ticket-data-item">
+              <span class="td-label">Case Reference</span>
+              <span class="td-value" id="pending-case-num">FR-XXXXX</span>
+            </div>
+            <div class="ticket-data-item">
+              <span class="td-label">Assessed Risk Level</span>
+              <span class="td-value" id="pending-risk-level" style="color:#FBBF24;font-weight:700;">MEDIUM</span>
+            </div>
+            <div class="ticket-data-item">
+              <span class="td-label">Route</span>
+              <span class="td-value" id="pending-route">—</span>
+            </div>
+            <div class="ticket-data-item">
+              <span class="td-label">Travel Date</span>
+              <span class="td-value" id="pending-date">—</span>
+            </div>
+            <div class="ticket-data-item" style="grid-column: 1 / -1;">
+              <span class="td-label">Behavioral Anomaly Reasons</span>
+              <span class="td-value" id="pending-reasons" style="font-size:12px;color:var(--muted-hi);">Security analysis flagged request for human review</span>
+            </div>
+          </div>
+
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;">
+            <span class="ticket-status-pill" style="background:rgba(201,162,42,0.2);border-color:rgba(201,162,42,0.5);color:#FBBF24;">● PENDING_REVIEW</span>
+            <span style="font-size:11px;color:var(--muted);font-family:'Share Tech Mono',monospace">Protected in Supabase</span>
+          </div>
+        </div>
+
+        <footer class="ticket-footer">
+          <span style="font-size:12px;color:var(--muted-hi)">Please retain your case reference for inquiries.</span>
+          <button class="btn-book-another" onclick="resetToBooking()">Return to Booking Desk</button>
+        </footer>
+      </article>
+    </div>
+  </main>
+
+  <!-- ==================== VIEW 4: ADMIN REVIEW DESK ==================== -->
+  <main id="view-admin" class="view-panel">
+    <section class="admin-desk-card">
+      <div class="admin-header">
+        <div>
+          <h1 class="desk-title">Security & Administrative Adjudication</h1>
+          <p class="desk-sub">Human-in-the-Loop review for suspicious bookings and passenger cancellation requests.</p>
+        </div>
+        <div class="admin-actions-bar">
+          <button class="btn-refresh-admin" onclick="refreshActiveAdminQueue()">⟳ Refresh Queue</button>
+        </div>
+      </div>
+
+      <div id="admin-alert" class="alert-box"></div>
+
+      <!-- Admin Sub-Navigation -->
+      <div style="display:flex;gap:10px;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:14px;">
+        <button class="filter-chip active" id="subtab-fraud" onclick="switchAdminSection('fraud')">
+          🛡️ Fraud Review Queue (ML Flagged)
+        </button>
+        <button class="filter-chip" id="subtab-cancellations" onclick="switchAdminSection('cancellations')">
+          🔄 Cancellation Queue
+        </button>
+      </div>
+
+      <!-- Section A: Fraud Review Queue -->
+      <div id="admin-fraud-section">
+        <div class="admin-filter-bar">
+          <button class="filter-chip active" id="filter-fraud-all" onclick="filterFraudCases('ALL')">All Cases</button>
+          <button class="filter-chip" id="filter-fraud-pending" onclick="filterFraudCases('PENDING_REVIEW')">Pending Review</button>
+          <button class="filter-chip" id="filter-fraud-approved" onclick="filterFraudCases('APPROVED')">Approved</button>
+          <button class="filter-chip" id="filter-fraud-rejected" onclick="filterFraudCases('REJECTED')">Rejected</button>
+        </div>
+
+        <div id="admin-fraud-cases-container" class="admin-cases-grid">
+          <div class="admin-empty-state">Loading fraud review cases from database...</div>
+        </div>
+      </div>
+
+      <!-- Section B: Cancellation Queue -->
+      <div id="admin-cancellation-section" style="display:none;">
+        <div class="admin-filter-bar">
+          <button class="filter-chip active" id="filter-all" onclick="filterAdminCases('all')">All Cases</button>
+          <button class="filter-chip" id="filter-pending" onclick="filterAdminCases('PENDING_ADMIN_REVIEW')">Pending Review</button>
+          <button class="filter-chip" id="filter-approved" onclick="filterAdminCases('APPROVED')">Approved</button>
+          <button class="filter-chip" id="filter-rejected" onclick="filterAdminCases('REJECTED')">Rejected</button>
+        </div>
+
+        <div id="admin-cases-container" class="admin-cases-grid">
+          <div class="admin-empty-state">Loading cancellation cases from database...</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal: Reject Fraud Review Request -->
+  <div id="modal-fraud-rejection" class="modal-backdrop" onclick="if(event.target===this) closeFraudRejectionModal()">
+    <div class="rejection-modal-card" role="dialog" aria-modal="true">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div>
+          <h2 style="font-size:18px;font-weight:700;color:#F87171;margin:0 0 4px 0;">Reject Flagged Booking</h2>
+          <p style="font-size:12px;color:var(--muted);margin:0;">
+            Case <span id="modal-fraud-reject-case-ref" style="font-weight:700;color:var(--ink-bright)"></span> — 
+            Masked NIC: <span id="modal-fraud-reject-nic" style="font-weight:700;color:var(--brand)"></span>
+          </p>
+        </div>
+        <button type="button" onclick="closeFraudRejectionModal()" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;line-height:1;">&times;</button>
+      </div>
+
+      <div>
+        <label for="modal-fraud-reject-reason-input" style="font-size:13px;font-weight:600;color:var(--ink-bright);display:block;margin-bottom:6px;">
+          Official Rejection Reason <span style="color:#F87171">*</span>
+        </label>
+        <textarea
+          id="modal-fraud-reject-reason-input"
+          class="chat-input"
+          rows="3"
+          style="width:100%;box-sizing:border-box;border-radius:8px;padding:10px;resize:vertical;font-family:inherit;font-size:13px;line-height:1.5;"
+          placeholder="Enter official reason for rejecting this flagged reservation (e.g. Behavioral bot pattern detected; inconsistent passenger credentials)..."
+        ></textarea>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px;">
+        <button type="button" onclick="closeFraudRejectionModal()" class="btn-book-another" style="padding:8px 16px;">Cancel</button>
+        <button type="button" id="btn-modal-confirm-fraud-reject" class="btn-send-cancellation" style="background:#B04030;" onclick="submitFraudRejectionDecision()">
+          Confirm Rejection & Block Ticket
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Reject Cancellation Request (Human-in-the-Loop Adjudication) -->
+  <div id="modal-rejection" class="modal-backdrop" onclick="if(event.target===this) closeRejectionModal()">
+    <div class="rejection-modal-card" role="dialog" aria-modal="true">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div>
+          <h2 style="font-size:18px;font-weight:700;color:#F87171;margin:0 0 4px 0;">Reject Cancellation Request</h2>
+          <p style="font-size:12px;color:var(--muted);margin:0;">
+            Case <span id="modal-reject-case-ref" style="font-weight:700;color:var(--ink-bright)"></span> — 
+            Booking <span id="modal-reject-book-ref" style="font-weight:700;color:var(--brand)"></span>
+          </p>
+        </div>
+        <button type="button" onclick="closeRejectionModal()" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;line-height:1;">&times;</button>
+      </div>
+
+      <div style="background:rgba(8,4,1,0.6);border-radius:8px;padding:10px 14px;font-size:12px;display:flex;flex-direction:column;gap:4px;">
+        <span style="color:var(--muted);font-weight:600;">Original Passenger Reason:</span>
+        <span id="modal-reject-passenger-reason" style="color:var(--ink-bright);font-style:italic"></span>
+      </div>
+
+      <div>
+        <label for="modal-reject-reason-input" style="font-size:13px;font-weight:600;color:var(--ink-bright);display:block;margin-bottom:6px;">
+          Official Rejection Explanation <span style="color:#F87171">*</span>
+        </label>
+        <textarea
+          id="modal-reject-reason-input"
+          class="chat-input"
+          rows="3"
+          style="width:100%;box-sizing:border-box;border-radius:8px;padding:10px;resize:vertical;font-family:inherit;font-size:13px;line-height:1.5;"
+          placeholder="Type the administrative explanation for this rejection (e.g., Cancellation requested within 24 hours of departure is non-refundable per Section 4.2)..."
+        ></textarea>
+
+        <div style="font-size:11px;color:var(--muted);margin-top:6px;">Quick Grounds (Click to insert):</div>
+        <div class="rejection-chips-row">
+          <button type="button" class="rejection-chip" onclick="applyQuickRejection('Cancellation requested within 24 hours of scheduled departure. Non-refundable per Section 4.2.')">⏰ Late Notice (&lt;24h)</button>
+          <button type="button" class="rejection-chip" onclick="applyQuickRejection('Audit of central reservation ledger confirms no matching duplicate booking exists.')">🔍 Duplicate Not Found</button>
+          <button type="button" class="rejection-chip" onclick="applyQuickRejection('Medical emergency exception requires official medical certificate or hospital records.')">📋 Missing Medical Proof</button>
+          <button type="button" class="rejection-chip" onclick="applyQuickRejection('Ticket purchased under non-refundable special promotional fare terms.')">🎟️ Non-Refundable Fare</button>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;align-items:center;">
+        <button type="button" id="btn-nlp-analyze" class="btn-refresh-admin" style="font-size:12px;" onclick="analyzeRejectionWithNLP()">
+          ✨ Analyze &amp; Polish with NLP
+        </button>
+        <span id="nlp-loading-indicator" style="display:none;font-size:12px;color:var(--brand);">Analyzing with NLP...</span>
+      </div>
+
+      <!-- Real-time NLP Analysis Box -->
+      <div id="modal-nlp-preview-box" class="nlp-preview-box">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+          <span style="font-weight:700;color:#93C5FD;" id="nlp-category-badge">● Category</span>
+          <span style="color:var(--muted-hi);font-size:11px;" id="nlp-tone-badge">Tone</span>
+        </div>
+        <div style="color:var(--ink-bright);font-size:12px;margin-bottom:8px;line-height:1.5;" id="nlp-polished-text"></div>
+        <button type="button" style="font-size:11px;background:rgba(96,165,250,0.15);border:1px solid #60A5FA;color:#BFDBFE;padding:4px 10px;border-radius:4px;cursor:pointer;" onclick="usePolishedExplanation()">
+          ✓ Use This Polished Phrasing
+        </button>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:8px;padding-top:12px;border-top:1px solid rgba(180,130,40,0.2);">
+        <button type="button" class="btn-secondary" onclick="closeRejectionModal()" style="padding:8px 16px;border-radius:6px;cursor:pointer;background:rgba(30,18,10,0.8);color:var(--muted-hi);border:1px solid rgba(180,130,40,0.3);">Cancel</button>
+        <button type="button" id="btn-modal-confirm-reject" class="btn-reject" onclick="submitRejectionDecision()">
+          Confirm Rejection &amp; Dispatch Notice
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Application Logic ───────────────────────────────────────────── -->
+<script>
+const $ = id => document.getElementById(id);
+
+let currentSchedules = [];
+let isSubmitting = false;
+
+// Set default min date to today
+window.addEventListener('DOMContentLoaded', () => {
+  const today = new Date().toISOString().split('T')[0];
+  $('travel-date').min = today;
+  
+  // Render passenger NIC fields based on initial count
+  renderPassengerInputs();
+
+  // Check URL query parameters for prefill
+  handleUrlRouting();
+
+  // Clock tick
+  setInterval(() => {
+    $('clock').textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  }, 1000);
+});
+
+// Handle URL query parameters or hash changes
+function handleUrlRouting() {
+  const url = new URL(window.location.href);
+  const from = url.searchParams.get('from');
+  const to = url.searchParams.get('to');
+  const dateVal = url.searchParams.get('date');
+
+  if (window.location.pathname.includes('/admin')) {
+    switchView('admin');
+  } else if (from || to || dateVal || window.location.pathname.includes('/booking')) {
+    switchView('booking');
+    applyPrefill({ from_station: from, to_station: to, travel_date: dateVal });
+  }
+}
+
+// Switch between Chat, Booking, Confirmation, Pending Review, and Admin views
+function switchView(viewName) {
+  document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+
+  if (viewName === 'chat') {
+    $('view-chat').classList.add('active');
+    $('tab-chat').classList.add('active');
+  } else if (viewName === 'booking') {
+    $('view-booking').classList.add('active');
+    $('tab-booking').classList.add('active');
+    updateSummary();
+  } else if (viewName === 'confirmation') {
+    $('view-confirmation').classList.add('active');
+  } else if (viewName === 'pending-review') {
+    $('view-pending-review').classList.add('active');
+  } else if (viewName === 'admin') {
+    $('view-admin').classList.add('active');
+    $('tab-admin').classList.add('active');
+    refreshActiveAdminQueue();
+  }
+}
+
+// ── Passenger Chat ──────────────────────────────────────────────────
+async function sendChatMessage() {
+  const input = $('chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+
+  input.value = '';
+  appendMessage('user', text);
+
+  try {
+    const resp = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: text })
+    });
+    const data = await resp.json();
+
+    appendMessage('assistant', data.reply, data.action, data.prefill);
+  } catch (err) {
+    appendMessage('assistant', 'Connection error — unable to reach passenger agent service.');
+  }
+}
+
+function fillAndSend(prompt) {
+  $('chat-input').value = prompt;
+  sendChatMessage();
+}
+
+function appendMessage(role, text, action = null, prefill = null) {
+  const feed = $('chat-feed');
+  const bubble = document.createElement('div');
+  bubble.className = `msg-bubble ${role}`;
+  
+  // Format basic bold markdown
+  const formatted = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  bubble.innerHTML = formatted;
+
+  const meta = document.createElement('div');
+  meta.className = 'msg-meta';
+  meta.textContent = role === 'user' ? 'Passenger · You' : 'passenger-agent · Assistant';
+  bubble.appendChild(meta);
+
+  // If booking intent was detected and action is provided
+  if (action && action.type === 'continue_to_booking') {
+    const card = document.createElement('div');
+    card.className = 'booking-action-card';
+    
+    let detailsHtml = '';
+    if (prefill) {
+      const parts = [];
+      if (prefill.from_station) parts.push(`From: <b>${prefill.from_station}</b>`);
+      if (prefill.to_station) parts.push(`To: <b>${prefill.to_station}</b>`);
+      if (prefill.travel_date) parts.push(`Date: <b>${prefill.travel_date}</b>`);
+      detailsHtml = `<div class="booking-action-details">${parts.join(' &nbsp;|&nbsp; ')}</div>`;
+    }
+
+    card.innerHTML = `
+      <div class="booking-action-title">Booking Intent Recognized</div>
+      ${detailsHtml}
+      <button class="btn-continue-booking" onclick="continueToBooking('${encodeURIComponent(JSON.stringify(prefill || {}))}')">
+        ${action.label || 'Continue to Booking ➔'}
+      </button>
+    `;
+    bubble.appendChild(card);
+  }
+
+  // If cancellation intent was detected and confirmation card is provided
+  if (action && action.type === 'cancellation_confirmation_card') {
+    const card = document.createElement('div');
+    card.className = 'cancellation-confirm-card';
+    const safeRef = escapeHtml(action.booking_reference || 'RS-UNKNOWN');
+    const safeReason = escapeHtml(action.reason || '');
+
+    card.innerHTML = `
+      <div class="cancellation-confirm-title">
+        <span>Cancellation Confirmation</span>
+        <span class="badge-pending">PENDING CONFIRMATION</span>
+      </div>
+      <div class="cancellation-confirm-details">
+        <div><strong>Booking Reference:</strong> <span class="badge-code">${safeRef}</span></div>
+        <div style="margin-top:4px;"><strong>Reason:</strong> <em>"${safeReason}"</em></div>
+      </div>
+      <div class="cancellation-notice">
+        Notice: AI does not cancel bookings automatically. Clicking below submits your request for administrative review.
+      </div>
+      <button class="btn-send-cancellation" onclick="submitCancellation('${safeRef}', '${safeReason.replace(/'/g, "\\'")}', this)">
+        ${action.label || 'Send Cancellation Request ➔'}
+      </button>
+    `;
+    bubble.appendChild(card);
+  }
+
+  feed.appendChild(bubble);
+  feed.scrollTop = feed.scrollHeight;
+}
+
+function continueToBooking(encodedPrefill) {
+  const prefill = JSON.parse(decodeURIComponent(encodedPrefill));
+  switchView('booking');
+  applyPrefill(prefill);
+}
+
+// ── Prefill Logic ───────────────────────────────────────────────────
+function applyPrefill(prefill) {
+  if (!prefill) return;
+
+  // Only populate fields actually provided — DO NOT INVENT missing values
+  if (prefill.from_station) $('from-station').value = prefill.from_station;
+  if (prefill.to_station) $('to-station').value = prefill.to_station;
+  if (prefill.travel_date) $('travel-date').value = prefill.travel_date;
+
+  onRouteOrDateChanged();
+}
+
+// ── Booking Desk Logic ──────────────────────────────────────────────
+function selectSeatClass(className) {
+  $('seat-class').value = className;
+  $('card-second-class').classList.toggle('selected', className === 'Second Class');
+  $('card-first-class').classList.toggle('selected', className === 'First Class');
+  updateSummary();
+}
+
+// Triggered when from, to, or date changes
+let searchDebounce = null;
+function onRouteOrDateChanged() {
+  clearTimeout(searchDebounce);
+  searchDebounce = setTimeout(fetchTrainOptions, 250);
+}
+
+async function fetchTrainOptions() {
+  const from = $('from-station').value.trim();
+  const to = $('to-station').value.trim();
+  const travelDate = $('travel-date').value.trim();
+
+  updateSummary();
+
+  const select = $('train-select');
+  hideAlert();
+
+  if (!from || !to || !travelDate) {
+    select.innerHTML = '<option value="">-- Complete route & date first --</option>';
+    return;
+  }
+
+  select.innerHTML = '<option value="">Loading schedules from Supabase...</option>';
+
+  try {
+    const resp = await fetch(`/api/booking-options?from_station=${encodeURIComponent(from)}&to_station=${encodeURIComponent(to)}&travel_date=${encodeURIComponent(travelDate)}`);
+    const data = await resp.json();
+
+    if (!Array.isArray(data) || data.length === 0) {
+      currentSchedules = [];
+      select.innerHTML = '<option value="">No trains found</option>';
+      showAlert("No trains available for the selected route and date.", "warning");
+      updateSummary();
+      return;
+    }
+
+    currentSchedules = data;
+    select.innerHTML = '<option value="">-- Select a train service --</option>';
+    
+    data.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s.train_id;
+      opt.textContent = `${s.train_id} — ${s.train_name} (${s.departure_time} → ${s.arrival_time})`;
+      select.appendChild(opt);
+    });
+
+    // Auto-select first train if only one exists
+    if (data.length === 1) {
+      select.value = data[0].train_id;
+      onTrainSelected();
+    }
+
+  } catch (err) {
+    select.innerHTML = '<option value="">Error loading schedules</option>';
+    showAlert("Booking service is temporarily unavailable.", "error");
+  }
+}
+
+function onTrainSelected() {
+  const trainId = $('train-select').value;
+  const schedule = currentSchedules.find(s => s.train_id === trainId);
+
+  if (schedule && schedule.available_classes) {
+    schedule.available_classes.forEach(c => {
+      if (c.seat_class === 'First Class') {
+        $('badge-first-class').textContent = `${c.available_seats} seats available`;
+        $('fare-first-class').textContent = `Rs. ${c.base_fare.toFixed(2)} / seat`;
+      } else if (c.seat_class === 'Second Class') {
+        $('badge-second-class').textContent = `${c.available_seats} seats available`;
+        $('fare-second-class').textContent = `Rs. ${c.base_fare.toFixed(2)} / seat`;
+      }
+    });
+  }
+  updateSummary();
+}
+
+function updateSummary() {
+  const from = $('from-station').value.trim() || '—';
+  const to = $('to-station').value.trim() || '—';
+  const dateVal = $('travel-date').value || '—';
+  const trainId = $('train-select').value;
+  const count = parseInt($('passenger-count').value, 10) || 1;
+  const seatClass = $('seat-class').value;
+
+  $('sum-route').textContent = `${from} → ${to}`;
+  $('sum-date').textContent = dateVal;
+  
+  const schedule = currentSchedules.find(s => s.train_id === trainId);
+  $('sum-train').textContent = schedule ? `${schedule.train_id} (${schedule.train_name})` : (trainId || '—');
+  $('sum-class').textContent = seatClass;
+  $('sum-passengers').textContent = count;
+  $('sum-email').textContent = $('passenger-email') ? ($('passenger-email').value.trim() || '—') : '—';
+
+  // Calculate fare
+  let unitFare = seatClass === 'First Class' ? 2500 : 1200;
+  if (schedule && schedule.available_classes) {
+    const cls = schedule.available_classes.find(c => c.seat_class === seatClass);
+    if (cls) unitFare = cls.base_fare;
+  }
+  const total = unitFare * count;
+  $('sum-fare').textContent = `Rs. ${total.toFixed(2)}`;
+}
+
+function onPassengerCountChanged() {
+  updateSummary();
+  renderPassengerInputs();
+}
+
+function renderPassengerInputs() {
+  const container = $('passengers-container');
+  if (!container) return;
+  const count = parseInt($('passenger-count').value, 10) || 1;
+  const clamped = Math.max(1, Math.min(10, count));
+
+  // Preserve existing values
+  const existing = [];
+  for (let i = 1; i <= 10; i++) {
+    const nameEl = $('passenger-name-' + i);
+    const nicEl = $('passenger-nic-' + i);
+    if (nicEl) {
+      existing.push({
+        name: nameEl ? nameEl.value : '',
+        nic: nicEl.value || ''
+      });
+    }
+  }
+
+  container.innerHTML = '';
+
+  for (let i = 1; i <= clamped; i++) {
+    const prev = existing[i - 1] || { name: '', nic: '' };
+    const card = document.createElement('div');
+    card.className = 'passenger-input-card';
+    card.style = 'padding:12px 14px;border-radius:8px;background:rgba(14,8,3,0.85);border:1px solid var(--border);';
+    card.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <span style="font-weight:700;font-size:12px;color:var(--brand)">Passenger ${i} Identity</span>
+        <span style="font-size:10px;font-family:'Share Tech Mono',monospace;color:var(--muted)">MANDATORY NIC</span>
+      </div>
+      <div class="form-row" style="margin-bottom:0;display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="field-group" style="margin-bottom:0;">
+          <label class="field-label" for="passenger-name-${i}">Full Name (Optional)</label>
+          <input
+            type="text"
+            id="passenger-name-${i}"
+            class="field-input"
+            placeholder="e.g. Passenger ${i}"
+            value="${escapeHtml(prev.name)}"
+          />
+        </div>
+        <div class="field-group" style="margin-bottom:0;">
+          <label class="field-label" for="passenger-nic-${i}">Sri Lankan NIC *</label>
+          <input
+            type="text"
+            id="passenger-nic-${i}"
+            class="field-input passenger-nic-input"
+            placeholder="e.g. 200312345678 or 941234567V"
+            required
+            value="${escapeHtml(prev.nic)}"
+            oninput="validatePassengerNics()"
+          />
+          <div id="nic-err-${i}" style="color:#F87171;font-size:11px;margin-top:4px;display:none;"></div>
+        </div>
+      </div>
+    `;
+    container.appendChild(card);
+  }
+}
+
+function validatePassengerNics() {
+  const count = parseInt($('passenger-count').value, 10) || 1;
+  const clamped = Math.max(1, Math.min(10, count));
+  const nicRegex = /^([0-9]{9}[vVxX]|[0-9]{12})$/;
+  const seenNics = new Set();
+  const passengers = [];
+  let isValid = true;
+  let errorMsg = '';
+
+  for (let i = 1; i <= clamped; i++) {
+    const nameEl = $('passenger-name-' + i);
+    const nicEl = $('passenger-nic-' + i);
+    const errEl = $('nic-err-' + i);
+    if (!nicEl) continue;
+
+    const rawNic = nicEl.value.trim();
+    const cleanNic = rawNic.toUpperCase();
+    const nameVal = nameEl ? nameEl.value.trim() : `Passenger ${i}`;
+
+    if (errEl) errEl.style.display = 'none';
+
+    if (!cleanNic) {
+      isValid = false;
+      if (!errorMsg) errorMsg = `Please provide a valid Sri Lankan NIC for Passenger ${i}.`;
+      if (errEl) {
+        errEl.textContent = 'NIC is mandatory.';
+        errEl.style.display = 'block';
+      }
+      continue;
+    }
+
+    if (!nicRegex.test(cleanNic)) {
+      isValid = false;
+      if (!errorMsg) errorMsg = `Passenger ${i}: Invalid NIC format. Must be 9 digits + V/X or 12 digits.`;
+      if (errEl) {
+        errEl.textContent = 'Invalid format (9 digits + V/X or 12 digits).';
+        errEl.style.display = 'block';
+      }
+      continue;
+    }
+
+    if (seenNics.has(cleanNic)) {
+      isValid = false;
+      if (!errorMsg) errorMsg = `Duplicate NIC '${cleanNic}' entered inside the same booking. Each passenger must provide a distinct NIC.`;
+      if (errEl) {
+        errEl.textContent = 'Duplicate NIC in this booking.';
+        errEl.style.display = 'block';
+      }
+      continue;
+    }
+
+    seenNics.add(cleanNic);
+    passengers.push({
+      name: nameVal || `Passenger ${i}`,
+      nic: cleanNic
+    });
+  }
+
+  return { valid: isValid, errorMsg, passengers };
+}
+
+// ── Submit Booking with Double-Click Protection ─────────────────────
+async function submitBooking() {
+  if (isSubmitting) return;
+
+  hideAlert();
+
+  const from = $('from-station').value.trim();
+  const to = $('to-station').value.trim();
+  const travelDate = $('travel-date').value.trim();
+  const trainId = $('train-select').value.trim();
+  const seatClass = $('seat-class').value.trim();
+  const count = parseInt($('passenger-count').value, 10);
+
+  // Frontend required field validation
+  const email = $('passenger-email').value.trim();
+  if (!from || !to || !travelDate || !trainId || !seatClass || isNaN(count) || count < 1) {
+    showAlert("Please complete all booking details.", "error");
+    return;
+  }
+  if (!email || !email.includes('@') || !email.includes('.')) {
+    showAlert("Please enter a valid passenger email address.", "error");
+    return;
+  }
+
+  // Validate passenger NICs
+  const nicValidation = validatePassengerNics();
+  if (!nicValidation.valid) {
+    showAlert(nicValidation.errorMsg, "error");
+    return;
+  }
+
+  // Prevent double booking & set loading state
+  setLoadingState(true);
+
+  try {
+    const resp = await fetch('/api/bookings/confirm', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from_station: from,
+        to_station: to,
+        travel_date: travelDate,
+        train_id: trainId,
+        seat_class: seatClass,
+        passenger_count: count,
+        passenger_email: email,
+        user_id: 'passenger_web_user',
+        passengers: nicValidation.passengers,
+      })
+    });
+
+    const data = await resp.json();
+
+    if (resp.ok && data.success) {
+      if (data.pending_review || data.status === 'PENDING_FRAUD_REVIEW') {
+        showPendingFraudReview(data);
+      } else if (data.booking) {
+        showConfirmation(data.booking);
+      }
+    } else {
+      const errMsg = data.error || data.detail || "Booking could not be processed.";
+      showAlert(errMsg, "error");
+    }
+  } catch (err) {
+    showAlert("Booking service is temporarily unavailable.", "error");
+  } finally {
+    setLoadingState(false);
+  }
+}
+
+function setLoadingState(loading) {
+  isSubmitting = loading;
+  const btn = $('btn-confirm-booking');
+  const label = $('btn-label');
+
+  btn.disabled = loading;
+  if (loading) {
+    btn.classList.add('loading');
+    label.textContent = "Processing Reservation...";
+  } else {
+    btn.classList.remove('loading');
+    label.textContent = "Confirm Booking ➔";
+  }
+}
+
+function showPendingFraudReview(data) {
+  switchView('pending-review');
+  const b = data.booking || {};
+  const caseRef = data.case_reference || b.case_reference || 'FR-PENDING';
+  const risk = data.risk_level || b.risk_level || 'REVIEW';
+  const reasons = data.reasons || b.reasons || ['Behavioral risk evaluation flagged request for security review.'];
+
+  $('pending-case-ref').textContent = caseRef;
+  $('pending-case-num').textContent = caseRef;
+  $('pending-risk-level').textContent = risk;
+  $('pending-risk-level').style.color = risk === 'HIGH' ? '#F87171' : '#FBBF24';
+  $('pending-route').textContent = `${b.from_station || $('from-station').value} → ${b.to_station || $('to-station').value}`;
+  $('pending-date').textContent = b.travel_date || $('travel-date').value;
+  $('pending-reasons').textContent = Array.isArray(reasons) ? reasons.join('; ') : String(reasons);
+}
+
+function showConfirmation(booking) {
+  switchView('confirmation');
+
+  $('conf-ref').textContent = booking.booking_reference;
+  $('conf-route').textContent = `${booking.from_station} → ${booking.to_station}`;
+  $('conf-date').textContent = booking.travel_date;
+  $('conf-train').textContent = booking.train_id;
+  $('conf-class').textContent = booking.seat_class;
+  $('conf-passengers').textContent = `${booking.passenger_count} Passenger${booking.passenger_count > 1 ? 's' : ''}`;
+  $('conf-fare').textContent = `Rs. ${booking.fare}`;
+}
+
+function resetToBooking() {
+  $('booking-form').reset();
+  $('seat-class').value = 'Second Class';
+  selectSeatClass('Second Class');
+  currentSchedules = [];
+  $('train-select').innerHTML = '<option value="">-- Complete route & date first --</option>';
+  switchView('booking');
+}
+
+function showAlert(message, type = "error") {
+  const box = $('booking-alert');
+  box.textContent = message;
+  box.className = `alert-box visible alert-${type}`;
+}
+
+function hideAlert() {
+  const box = $('booking-alert');
+  box.className = 'alert-box';
+}
+
+function escapeHtml(text) {
+  if (!text) return '';
+  return String(text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// ── Cancellation Processing ─────────────────────────────────────────
+async function submitCancellation(bookingRef, reason, btn) {
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "Transmitting to Agent Hub...";
+  }
+
+  try {
+    const resp = await fetch('/api/cancellations/confirm', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        booking_reference: bookingRef,
+        reason: reason
+      })
+    });
+
+    const data = await resp.json();
+
+    if (resp.ok && data.success && data.cancellation) {
+      const c = data.cancellation;
+      appendMessage('assistant', 
+        `✅ **Cancellation Request Lodged (Case: ${c.case_reference})**\n\n` +
+        `• **Booking Reference:** ${c.booking_reference}\n` +
+        `• **Reason Category:** ${c.reason_category}\n` +
+        `• **Eligibility Result:** ${c.eligibility}\n` +
+        `• **Suggested Refund:** Rs. ${c.suggested_refund}\n` +
+        `• **Case Status:** \`${c.cancellation_status}\`\n\n` +
+        `*Your request is securely recorded in Supabase and awaits human administrator review. The booking status remains CONFIRMED until reviewed.*`
+      );
+    } else {
+      const errMsg = data.error || data.detail || "Cancellation request could not be processed.";
+      appendMessage('assistant', `⚠️ **Cancellation Request Failed**: ${errMsg}`);
+    }
+  } catch (err) {
+    appendMessage('assistant', "⚠️ **Connection Error**: Unable to reach cancellation gateway.");
+  }
+}
+
+// ── Admin Review Queue Logic ────────────────────────────────────────
+let allAdminCases = [];
+let currentAdminFilter = 'all';
+
+function filterAdminCases(filter) {
+  currentAdminFilter = filter;
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  const activeChip = $(`filter-${filter.toLowerCase().replace('_', '-')}`) || $('filter-all');
+  if (activeChip) activeChip.classList.add('active');
+  renderAdminCases();
+}
+
+async function loadAdminCancellations() {
+  const container = $('admin-cases-container');
+  container.innerHTML = '<div class="admin-empty-state">Loading cancellation cases from database...</div>';
+
+  try {
+    const resp = await fetch('/api/admin/cancellations');
+    const cases = await resp.json();
+    if (Array.isArray(cases)) {
+      allAdminCases = cases;
+      renderAdminCases();
+    } else {
+      container.innerHTML = '<div class="admin-empty-state">Unable to load cases.</div>';
+    }
+  } catch (err) {
+    container.innerHTML = '<div class="admin-empty-state">Connection error loading admin cases.</div>';
+  }
+}
+
+function renderAdminCases() {
+  const container = $('admin-cases-container');
+  let filtered = allAdminCases;
+  if (currentAdminFilter !== 'all') {
+    filtered = allAdminCases.filter(c => c.status === currentAdminFilter);
+  }
+
+  if (filtered.length === 0) {
+    container.innerHTML = '<div class="admin-empty-state">No cancellation cases found matching filter.</div>';
+    return;
+  }
+
+  container.innerHTML = '';
+  filtered.forEach(c => {
+    const card = document.createElement('div');
+    card.className = 'admin-case-card';
+
+    const statusClass = c.status === 'PENDING_ADMIN_REVIEW' ? 'status-pending' : (c.status === 'APPROVED' ? 'status-approved' : 'status-rejected');
+
+    let actionsHtml = '';
+    if (c.status === 'PENDING_ADMIN_REVIEW') {
+      actionsHtml = `
+        <div class="case-actions-row">
+          <button class="btn-reject" onclick="reviewCancellationCase('${c.case_reference}', 'REJECT', this)">Reject Request</button>
+          <button class="btn-approve" onclick="reviewCancellationCase('${c.case_reference}', 'APPROVE', this)">Approve Cancellation</button>
+        </div>
+      `;
+    } else {
+      actionsHtml = `
+        <div style="font-size:12px;color:var(--muted-hi);text-align:right;padding-top:8px;border-top:1px solid rgba(180,130,40,0.15)">
+          Decision: <strong>${c.admin_decision || c.status}</strong> | Reviewed: ${c.reviewed_at ? new Date(c.reviewed_at).toLocaleString() : 'N/A'}<br>
+          <em>Reason: "${escapeHtml(c.admin_reason || 'None specified')}"</em>
+        </div>
+      `;
+    }
+
+    card.innerHTML = `
+      <div class="case-top-row">
+        <div>
+          <span class="case-ref">${c.case_reference}</span>
+          <span style="font-size:12px;color:var(--muted);margin-left:8px;">Booking: <strong style="color:var(--ink-bright)">${c.booking_reference}</strong></span>
+        </div>
+        <span class="case-status-badge ${statusClass}">● ${c.status}</span>
+      </div>
+
+      <div class="case-grid-details">
+        <div><span style="color:var(--muted)">Route:</span> <strong>${escapeHtml(c.route)}</strong></div>
+        <div><span style="color:var(--muted)">Travel Date:</span> <strong>${escapeHtml(c.travel_date)}</strong></div>
+        <div><span style="color:var(--muted)">Class / Seats:</span> <strong>${escapeHtml(c.seat_class)} (${c.passenger_count})</strong></div>
+        <div><span style="color:var(--muted)">Gross Fare:</span> <strong>Rs. ${c.fare}</strong></div>
+        <div><span style="color:var(--muted)">NLP Category:</span> <strong>${escapeHtml(c.reason_category)}</strong></div>
+        <div><span style="color:var(--muted)">Eligibility:</span> <strong style="color:#6EE7B7">${escapeHtml(c.eligibility)}</strong></div>
+        <div><span style="color:var(--muted)">Suggested Refund:</span> <strong style="color:var(--brand)">Rs. ${c.suggested_refund}</strong></div>
+        <div><span style="color:var(--muted)">Booking Status:</span> <strong>${escapeHtml(c.booking_status)}</strong></div>
+      </div>
+
+      <div style="font-size:13px;padding:8px 12px;background:rgba(12,7,3,0.7);border-radius:6px;">
+        <span style="color:var(--muted);font-weight:600;">Original Passenger Reason:</span><br>
+        <span style="color:var(--ink-bright);font-style:italic">"${escapeHtml(c.reason)}"</span>
+      </div>
+
+      ${c.ai_summary ? `<div class="case-ai-summary-box"><strong style="color:var(--brand);font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">Grounded AI Advisory Summary</strong><br>${escapeHtml(c.ai_summary)}</div>` : ''}
+
+      ${actionsHtml}
+    `;
+
+    container.appendChild(card);
+  });
+}
+
+let currentRejectionCase = null;
+let currentPolishedExplanation = '';
+
+function openRejectionModal(caseRef) {
+  const caseData = allAdminCases.find(c => c.case_reference === caseRef);
+  if (!caseData) return;
+  currentRejectionCase = caseData;
+  currentPolishedExplanation = '';
+
+  $('modal-reject-case-ref').textContent = caseData.case_reference;
+  $('modal-reject-book-ref').textContent = caseData.booking_reference;
+  $('modal-reject-passenger-reason').textContent = `"${caseData.reason}"`;
+  $('modal-reject-reason-input').value = '';
+  $('modal-nlp-preview-box').style.display = 'none';
+  $('modal-rejection').classList.add('active');
+  setTimeout(() => $('modal-reject-reason-input').focus(), 100);
+}
+
+function closeRejectionModal() {
+  $('modal-rejection').classList.remove('active');
+  currentRejectionCase = null;
+}
+
+function applyQuickRejection(text) {
+  const input = $('modal-reject-reason-input');
+  input.value = text;
+  input.focus();
+}
+
+async function analyzeRejectionWithNLP() {
+  const reasonText = $('modal-reject-reason-input').value.trim();
+  if (!reasonText) {
+    alert('Please type or select an explanation before analyzing with NLP.');
+    $('modal-reject-reason-input').focus();
+    return;
+  }
+
+  const btn = $('btn-nlp-analyze');
+  const indicator = $('nlp-loading-indicator');
+  btn.disabled = true;
+  indicator.style.display = 'inline';
+
+  try {
+    const resp = await fetch('/api/admin/cancellations/nlp-preview', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reason: reasonText })
+    });
+    const data = await resp.json();
+    if (resp.ok && data) {
+      $('nlp-category-badge').textContent = `● NLP Category: ${data.category_label || data.rejection_category}`;
+      $('nlp-tone-badge').textContent = `Tone: ${data.tone || 'Formal'}`;
+      $('nlp-polished-text').textContent = data.polished_explanation || data.raw_reason;
+      currentPolishedExplanation = data.polished_explanation || '';
+      $('modal-nlp-preview-box').style.display = 'block';
+    }
+  } catch (err) {
+    alert('NLP preview service unavailable.');
+  } finally {
+    btn.disabled = false;
+    indicator.style.display = 'none';
+  }
+}
+
+function usePolishedExplanation() {
+  if (currentPolishedExplanation) {
+    $('modal-reject-reason-input').value = currentPolishedExplanation;
+  }
+}
+
+async function submitRejectionDecision() {
+  if (!currentRejectionCase) return;
+  const reasonText = $('modal-reject-reason-input').value.trim();
+  if (!reasonText) {
+    alert('Please type an official explanation for rejecting this request.');
+    $('modal-reject-reason-input').focus();
+    return;
+  }
+
+  const btn = $('btn-modal-confirm-reject');
+  btn.disabled = true;
+  btn.textContent = 'Processing & Dispatching Notice...';
+
+  try {
+    const resp = await fetch(`/api/admin/cancellations/${currentRejectionCase.case_reference}/review`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        decision: 'REJECT',
+        admin_reason: reasonText
+      })
+    });
+
+    const data = await resp.json();
+    if (resp.ok && data.success) {
+      closeRejectionModal();
+      await loadAdminCancellations();
+      showAdminAlert(`✓ Cancellation case ${data.case_reference} rejected. Formal notice emailed to passenger and recorded in audit log.`);
+    } else {
+      alert(`Rejection failed: ${data.error || 'Server error'}`);
+    }
+  } catch (err) {
+    alert('Error communicating with admin adjudication service.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Confirm Rejection & Dispatch Notice';
+  }
+}
+
+function showAdminAlert(msg) {
+  const box = $('admin-alert');
+  if (box) {
+    box.textContent = msg;
+    box.className = 'alert-box alert-success active';
+    setTimeout(() => { box.className = 'alert-box'; }, 6000);
+  }
+}
+
+async function reviewCancellationCase(caseRef, decision, btn) {
+  if (decision === 'REJECT') {
+    openRejectionModal(caseRef);
+    return;
+  }
+
+  if (!confirm(`Are you sure you want to APPROVE cancellation for case ${caseRef}? This will authorize the refund and mark the booking as CANCELLED.`)) {
+    return;
+  }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Approving...';
+  }
+
+  const adminReason = 'Approved by station administrator following policy review.';
+
+  try {
+    const resp = await fetch(`/api/admin/cancellations/${caseRef}/review`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        decision: 'APPROVE',
+        admin_reason: adminReason
+      })
+    });
+
+    const data = await resp.json();
+    if (resp.ok && data.success) {
+      await loadAdminCancellations();
+      showAdminAlert(`✓ Cancellation request ${data.case_reference} approved. Refund authorized and notification dispatched.`);
+    } else {
+      alert(`Review action failed: ${data.error || 'Server error'}`);
+      if (btn) btn.disabled = false;
+    }
+  } catch (err) {
+    alert("Error communicating with admin adjudication service.");
+    if (btn) btn.disabled = false;
+  }
+}
+
+// ── Admin Fraud Review Queue Logic ─────────────────────────────────
+let allFraudCases = [];
+let currentFraudFilter = 'ALL';
+let currentFraudRejectionCase = null;
+
+function switchAdminSection(section) {
+  const fraudSec = $('admin-fraud-section');
+  const cancSec = $('admin-cancellation-section');
+  const subtabFraud = $('subtab-fraud');
+  const subtabCanc = $('subtab-cancellations');
+
+  if (section === 'fraud') {
+    fraudSec.style.display = 'block';
+    cancSec.style.display = 'none';
+    subtabFraud.classList.add('active');
+    subtabCanc.classList.remove('active');
+    loadAdminFraudReviews();
+  } else {
+    fraudSec.style.display = 'none';
+    cancSec.style.display = 'block';
+    subtabFraud.classList.remove('active');
+    subtabCanc.classList.add('active');
+    loadAdminCancellations();
+  }
+}
+
+function refreshActiveAdminQueue() {
+  const cancSec = $('admin-cancellation-section');
+  if (cancSec && cancSec.style.display !== 'none') {
+    loadAdminCancellations();
+  } else {
+    loadAdminFraudReviews();
+  }
+}
+
+function filterFraudCases(filter) {
+  currentFraudFilter = filter;
+  ['all', 'pending', 'approved', 'rejected'].forEach(key => {
+    const chip = $(`filter-fraud-${key}`);
+    if (chip) chip.classList.remove('active');
+  });
+  const activeChip = $(`filter-fraud-${filter.toLowerCase().replace('_', '-')}`) || $('filter-fraud-all');
+  if (activeChip) activeChip.classList.add('active');
+  renderFraudCases();
+}
+
+async function loadAdminFraudReviews() {
+  const container = $('admin-fraud-cases-container');
+  if (!container) return;
+  container.innerHTML = '<div class="admin-empty-state">Loading fraud review cases from database...</div>';
+
+  try {
+    const resp = await fetch('/api/admin/fraud-reviews');
+    const cases = await resp.json();
+    if (Array.isArray(cases)) {
+      allFraudCases = cases;
+      renderFraudCases();
+    } else {
+      container.innerHTML = '<div class="admin-empty-state">Unable to load fraud review cases.</div>';
+    }
+  } catch (err) {
+    container.innerHTML = '<div class="admin-empty-state">Connection error loading fraud review cases.</div>';
+  }
+}
+
+function renderFraudCases() {
+  const container = $('admin-fraud-cases-container');
+  if (!container) return;
+
+  let filtered = allFraudCases;
+  if (currentFraudFilter !== 'ALL') {
+    filtered = allFraudCases.filter(c => c.status === currentFraudFilter);
+  }
+
+  if (filtered.length === 0) {
+    container.innerHTML = '<div class="admin-empty-state">No fraud review cases found matching filter.</div>';
+    return;
+  }
+
+  container.innerHTML = '';
+  filtered.forEach(c => {
+    const card = document.createElement('div');
+    card.className = 'admin-case-card';
+
+    const statusClass = c.status === 'PENDING_REVIEW' ? 'status-pending' : (c.status === 'APPROVED' ? 'status-approved' : 'status-rejected');
+    const riskBadgeColor = c.risk_level === 'HIGH' ? '#F87171' : (c.risk_level === 'MEDIUM' ? '#FBBF24' : '#34D399');
+
+    let actionsHtml = '';
+    if (c.status === 'PENDING_REVIEW') {
+      actionsHtml = `
+        <div class="case-actions-row">
+          <button class="btn-reject" onclick="reviewFraudCase('${c.case_reference}', 'REJECT', this)">Reject (Block)</button>
+          <button class="btn-approve" onclick="reviewFraudCase('${c.case_reference}', 'APPROVE', this)">Approve &amp; Issue Ticket</button>
+        </div>
+      `;
+    } else {
+      actionsHtml = `
+        <div style="font-size:12px;color:var(--muted-hi);text-align:right;padding-top:8px;border-top:1px solid rgba(180,130,40,0.15)">
+          Decision: <strong>${c.admin_decision || c.status}</strong> | Reviewed: ${c.reviewed_at ? new Date(c.reviewed_at).toLocaleString() : 'N/A'}<br>
+          <em>Reason: "${escapeHtml(c.admin_reason || 'None specified')}"</em>
+          ${c.booking_reference ? `<br><span style="color:var(--brand)">Confirmed Booking: <strong>${c.booking_reference}</strong></span>` : ''}
+        </div>
+      `;
+    }
+
+    const reasonsList = Array.isArray(c.reasons) ? c.reasons.join(', ') : (c.reasons || 'Behavioral risk threshold reached');
+
+    card.innerHTML = `
+      <div class="case-top-row">
+        <div>
+          <span class="case-ref">${escapeHtml(c.case_reference)}</span>
+          <span style="font-size:12px;color:var(--muted);margin-left:8px;">NIC: <strong style="color:var(--brand)">${escapeHtml(c.primary_nic_masked || 'N/A')}</strong></span>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <span style="font-size:11px;padding:3px 8px;border-radius:4px;font-weight:700;background:rgba(255,255,255,0.06);color:${riskBadgeColor}">
+            ${escapeHtml(c.risk_level)} (${(Number(c.risk_score || 0) * 100).toFixed(0)}%)
+          </span>
+          <span class="case-status-badge ${statusClass}">● ${escapeHtml(c.status)}</span>
+        </div>
+      </div>
+
+      <div class="case-grid-details">
+        <div><span style="color:var(--muted)">Route:</span> <strong>${escapeHtml(c.from_station)} → ${escapeHtml(c.to_station)}</strong></div>
+        <div><span style="color:var(--muted)">Travel Date:</span> <strong>${escapeHtml(c.travel_date)}</strong></div>
+        <div><span style="color:var(--muted)">Train / Class:</span> <strong>${escapeHtml(c.train_id)} · ${escapeHtml(c.seat_class)}</strong></div>
+        <div><span style="color:var(--muted)">Passengers:</span> <strong>${escapeHtml(c.passenger_count)}</strong></div>
+        <div><span style="color:var(--muted)">Created:</span> <strong>${c.created_at ? new Date(c.created_at).toLocaleString() : 'N/A'}</strong></div>
+      </div>
+
+      <div style="font-size:12px;padding:8px 12px;background:rgba(12,7,3,0.7);border-radius:6px;margin-top:6px;">
+        <span style="color:var(--muted);font-weight:600;">Flag Reasons &amp; Behavior Notes:</span><br>
+        <span style="color:var(--ink-bright);font-style:italic">"${escapeHtml(reasonsList)}"</span>
+      </div>
+
+      ${actionsHtml}
+    `;
+
+    container.appendChild(card);
+  });
+}
+
+function openFraudRejectionModal(caseRef) {
+  const caseData = allFraudCases.find(c => c.case_reference === caseRef);
+  if (!caseData) return;
+  currentFraudRejectionCase = caseData;
+
+  $('modal-fraud-reject-case-ref').textContent = caseData.case_reference;
+  $('modal-fraud-reject-nic').textContent = caseData.primary_nic_masked || 'N/A';
+  $('modal-fraud-reject-reason-input').value = '';
+  $('modal-fraud-rejection').classList.add('active');
+  setTimeout(() => $('modal-fraud-reject-reason-input').focus(), 100);
+}
+
+function closeFraudRejectionModal() {
+  $('modal-fraud-rejection').classList.remove('active');
+  currentFraudRejectionCase = null;
+}
+
+async function submitFraudRejectionDecision() {
+  if (!currentFraudRejectionCase) return;
+  const reasonText = $('modal-fraud-reject-reason-input').value.trim();
+  if (!reasonText) {
+    alert('Please provide an administrative reason for rejecting this booking.');
+    $('modal-fraud-reject-reason-input').focus();
+    return;
+  }
+
+  const btn = $('btn-modal-confirm-fraud-reject');
+  btn.disabled = true;
+  btn.textContent = 'Rejecting Booking...';
+
+  try {
+    const resp = await fetch(`/api/admin/fraud-reviews/${currentFraudRejectionCase.case_reference}/review`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        decision: 'REJECT',
+        admin_reason: reasonText
+      })
+    });
+
+    const data = await resp.json();
+    if (resp.ok && data.success) {
+      closeFraudRejectionModal();
+      await loadAdminFraudReviews();
+      showAdminAlert(`✓ Case ${data.case_reference} rejected. Suspicious booking request was declined.`);
+    } else {
+      alert(`Rejection failed: ${data.detail || data.error || 'Server error'}`);
+    }
+  } catch (err) {
+    alert('Error communicating with fraud review adjudication service.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Confirm Rejection';
+  }
+}
+
+async function reviewFraudCase(caseRef, decision, btn) {
+  if (decision === 'REJECT') {
+    openFraudRejectionModal(caseRef);
+    return;
+  }
+
+  if (!confirm(`Are you sure you want to APPROVE booking for case ${caseRef}?\n\nThis will verify real-time seat availability, journey conflicts, and issue confirmed tickets.`)) {
+    return;
+  }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Approving & Issuing...';
+  }
+
+  const adminReason = 'Approved by security administrator after verification.';
+
+  try {
+    const resp = await fetch(`/api/admin/fraud-reviews/${caseRef}/review`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        decision: 'APPROVE',
+        admin_reason: adminReason
+      })
+    });
+
+    const data = await resp.json();
+    if (resp.ok && data.success) {
+      await loadAdminFraudReviews();
+      showAdminAlert(`✓ Booking approved! Confirmed reference: ${data.booking_reference}. Ticket issued.`);
+    } else {
+      const errMsg = data.detail || data.error || 'Review action failed';
+      alert(`Approval Failed: ${errMsg}`);
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = 'Approve & Issue Ticket';
+      }
+    }
+  } catch (err) {
+    alert('Error communicating with fraud review adjudication service.');
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Approve & Issue Ticket';
+    }
+  }
+}
+</script>
+
+</body>
+</html>
