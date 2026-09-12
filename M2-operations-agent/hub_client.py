@@ -30,8 +30,21 @@ async def _post_hub(path: str, payload: dict[str, Any]) -> dict:
 
 
 async def register_with_hub() -> None:
-    """Register this agent if a Hub is available."""
-    await _post_hub("/register", {"agent_name": AGENT_NAME, "capabilities": ["delay_check", "delay_alert", "incident_triage"], "callback_url": os.getenv("OPERATIONS_AGENT_URL", "http://localhost:8001"), "timestamp": datetime.now(timezone.utc).isoformat()})
+    """Register this agent if a dynamic Hub is available.
+
+    The RailSense hub used in this repo is configured via static registry entries,
+    so a missing /register endpoint is not a failure condition for M2. We keep
+    this method best-effort and silently ignore no-registration hubs.
+    """
+    try:
+        await _post_hub("/register", {
+            "agent_name": AGENT_NAME,
+            "capabilities": ["delay_check", "delay_alert", "incident_triage"],
+            "callback_url": os.getenv("OPERATIONS_AGENT_URL", "http://localhost:8001"),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        })
+    except Exception:
+        return
 
 
 async def send_to_hub(receiver_agent: str, intent: str, payload: dict[str, Any], auth_token: str) -> dict:
