@@ -36,7 +36,7 @@ if _MEMBER_C_ROOT not in sys.path:
 from registry import get_agent_url, AgentNotFoundError  # noqa: E402
 from shared.schemas import AgentMessage  # noqa: E402
 
-HTTP_TIMEOUT = float(os.getenv("HTTP_TIMEOUT", "5.0"))
+HTTP_TIMEOUT = float(os.getenv("HTTP_TIMEOUT", "30.0"))
 _DEFAULT_TEST_TRANSPORT: httpx.BaseTransport | None = None
 
 
@@ -139,9 +139,17 @@ async def route_message(
             detail=f"Destination agent '{message.receiver_agent}' returned a server error (HTTP {response.status_code}).",
         )
     elif response.status_code >= 400:
+        try:
+            err_data = response.json()
+            downstream_detail = err_data.get("detail", str(err_data))
+        except Exception:
+            downstream_detail = response.text or ""
+        msg = f"Destination agent '{message.receiver_agent}' returned an error (HTTP {response.status_code})"
+        if downstream_detail:
+            msg += f": {downstream_detail}"
         raise RoutingError(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"Destination agent '{message.receiver_agent}' returned an error (HTTP {response.status_code}).",
+            detail=msg,
         )
 
     # Parse response body
