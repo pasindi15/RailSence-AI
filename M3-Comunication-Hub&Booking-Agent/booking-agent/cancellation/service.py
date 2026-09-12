@@ -187,7 +187,12 @@ class CancellationService:
         """
         List cancellation cases with associated booking and train details for the Admin Dashboard.
         """
-        query = self.db.query(CancellationRequest).order_by(CancellationRequest.id.desc())
+        from sqlalchemy.orm import joinedload
+        query = (
+            self.db.query(CancellationRequest)
+            .options(joinedload(CancellationRequest.booking).joinedload(Booking.train))
+            .order_by(CancellationRequest.id.desc())
+        )
         if status_filter:
             try:
                 enum_val = CancellationStatus(status_filter.upper())
