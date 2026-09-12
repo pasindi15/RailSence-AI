@@ -60,6 +60,13 @@ class CancellationStatus(str, enum.Enum):
     REJECTED             = "REJECTED"
 
 
+class FraudReviewStatus(str, enum.Enum):
+    """Lifecycle states for a fraud review case."""
+    PENDING_REVIEW = "PENDING_REVIEW"
+    APPROVED       = "APPROVED"
+    REJECTED       = "REJECTED"
+
+
 class AuditStatus(str, enum.Enum):
     """Possible audit-log statuses for an inter-agent message."""
     RECEIVED      = "RECEIVED"
@@ -184,6 +191,7 @@ class Booking(Base):
     travel_date:       Mapped[date]           = mapped_column(Date, nullable=False)
     seat_class:        Mapped[str]            = mapped_column(String(50), nullable=False)
     passenger_count:   Mapped[int]            = mapped_column(Integer, nullable=False)
+    passenger_email:   Mapped[str | None]     = mapped_column(String(255), nullable=True)
     fare:              Mapped[Decimal]        = mapped_column(Numeric(10, 2), nullable=False)
     status:            Mapped[BookingStatus]  = mapped_column(
                            SAEnum(BookingStatus, name="booking_status"),
@@ -204,6 +212,9 @@ class Booking(Base):
     schedule: Mapped["TrainSchedule"] = relationship("TrainSchedule", back_populates="bookings")
     cancellation_request: Mapped["CancellationRequest | None"] = relationship(
         "CancellationRequest", back_populates="booking", uselist=False
+    )
+    booking_passengers: Mapped[list["BookingPassenger"]] = relationship(
+        "BookingPassenger", back_populates="booking", cascade="all, delete-orphan"
     )
 
     def __repr__(self) -> str:
@@ -304,3 +315,96 @@ class AuditLog(Base):
             f"<AuditLog id={self.id} message_id={self.message_id!r}"
             f" status={self.status}>"
         )
+
+
+# ===========================================================================
+# F. passengers
+# ===========================================================================
+
+class Passenger(Base):
+    """
+    Normalized passenger identity, uniquely identified by deterministic HMAC-SHA256 of NIC.
+    Allows the same passenger to book multiple legitimate journeys over time.
+    """
+    __tablename__ = "passengers"
+
+    id:         Mapped[int]               = mapped_column(Integer, primary_key=True, autoincrement=True)
+    nic_hash:   Mapped[str]               = mapped_column(String(64), nullable=False, unique=True, index=True)
+    nic_masked: Mapped[str]               = mapped_column(String(30), nullable=False)
+    full_name:  Mapped[str | None]        = mapped_column(String(150), nullable=True)
+    created_at: Mapped[datetime]          = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    booking_passengers: Mapped[list["BookingPassenger"]] = relationship(
+        "BookingPassenger", back_populates="passenger"
+    )
+
+    def __repr__(self) -> str:
+        return f"<Passenger id={self.id} masked={self.nic_masked!r}>"
+
+
+# ===========================================================================
+# G. booking_passengers
+# ===========================================================================
+
+class BookingPassenger(Base):
+    """
+    Association table linking a Booking to each individual Passenger.
+    Enforces one NIC per passenger within and across bookings.
+    """
+    __tablename__ = "booking_passengers"
+
+    id:           Mapped[int]             = mapped_column(Integer, primary_key=True, autoincrement=True)
+    booking_id:   Mapped[int]             = mapped_column(
+        Integer, ForeignKey("bookings.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    passenger_id: Mapped[int]             = mapped_column(
+        Integer, ForeignKey("passengers.id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    created_at:   Mapped[datetime]        = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    booking:   Mapped["Booking"]          = relationship("Booking", back_populates="booking_passengers")
+    passenger: Mapped["Passenger"]        = relationship("Passenger", back_populates="booking_passengers")
+
+    def __repr__(self) -> str:
+        return f"<BookingPassenger id={self.id} booking_id={self.booking_id} passenger_id={self.passenger_id}>"
+
+
+# ===========================================================================
+# H. fraud_reviews
+# ===========================================================================
+
+class FraudReview(Base):
+    """
+    Record of a booking request flagged for human administrative review by ML/anomaly detection.
+    """
+    __tablename__ = "fraud_reviews"
+
+    id:                  Mapped[int]               = mapped_column(Integer, primary_key=True, autoincrement=True)
+    case_reference:      Mapped[str]               = mapped_column(String(50), nullable=False, unique=True, index=True)
+    request_reference:   Mapped[str | None]        = mapped_column(String(100), nullable=True)
+    booking_payload:     Mapped[str]               = mapped_column(Text, nullable=False)
+    primary_nic_hash:    Mapped[str]               = mapped_column(String(64), nullable=False, index=True)
+    risk_score:          Mapped[Decimal]           = mapped_column(Numeric(5, 4), nullable=False)
+    risk_level:          Mapped[str]               = mapped_column(String(20), nullable=False)
+    recommended_action:  Mapped[str]               = mapped_column(String(50), nullable=False)
+    reasons:             Mapped[str]               = mapped_column(Text, nullable=False)
+    status:              Mapped[FraudReviewStatus] = mapped_column(
+        SAEnum(FraudReviewStatus, name="fraud_review_status"),
+        nullable=False,
+        default=FraudReviewStatus.PENDING_REVIEW,
+        server_default=FraudReviewStatus.PENDING_REVIEW.value,
+    )
+    admin_decision:      Mapped[str | None]        = mapped_column(String(50), nullable=True)
+    admin_reason:        Mapped[str | None]        = mapped_column(Text, nullable=True)
+    created_at:          Mapped[datetime]          = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    reviewed_at:         Mapped[datetime | None]   = mapped_column(DateTime(timezone=True), nullable=True)
+
+    def __repr__(self) -> str:
+        return f"<FraudReview id={self.id} case={self.case_reference!r} status={self.status}>"
+
