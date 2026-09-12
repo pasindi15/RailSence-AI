@@ -1,9 +1,9 @@
 {
-  "backend": "local_tfidf",
+  "backend": "supabase_pgvector",
   "relevance_proxy": "top-k retrieved incident has the hand-written expected_type",
   "n_queries": 6,
-  "top_1_accuracy": 0.6667,
-  "top_3_recall": 0.6667,
+  "top_1_accuracy": 0.8333,
+  "top_3_recall": 0.8333,
   "limitations": "These six queries are hand-written stress tests, not a statistically representative labelled test set.",
   "results": [
     {
@@ -19,31 +19,31 @@
       "top_3_match": true,
       "retrieved_incidents": [
         {
-          "record_id": "b50347f2-d8c0-4bf5-9d34-52f4b49b4e6c",
+          "record_id": "f47546bd-be64-4e35-a4ff-3c013628209e",
           "route": "Colombo Fort - Jaffna",
-          "station": "Colombo Fort",
+          "station": "Anuradhapura",
           "incident_type": "signal_fault",
           "delay_minutes": 11.9,
-          "incident_note": "Automatic signal at Colombo Fort stuck on red, manual override required, causing delays through the section.",
-          "similarity": 0.2092
+          "incident_note": "Signal failure reported near Anuradhapura, trains held for 11 minutes while technicians reset the interlocking system.",
+          "similarity": 0.579559410836733
         },
         {
-          "record_id": "f720e5aa-ab56-4a1c-a581-8b9c6c4da91a",
-          "route": "Colombo Fort - Kandy",
-          "station": "Colombo Fort",
-          "incident_type": "signal_fault",
-          "delay_minutes": 8.8,
-          "incident_note": "Automatic signal at Colombo Fort stuck on red, manual override required, causing delays through the section.",
-          "similarity": 0.2092
-        },
-        {
-          "record_id": "fb958020-9ca0-465e-8e62-442ffa7a696e",
+          "record_id": "80531abc-84b6-430e-b235-a87e7c8cafaf",
           "route": "Colombo Fort - Jaffna",
-          "station": "Colombo Fort",
+          "station": "Anuradhapura",
           "incident_type": "signal_fault",
-          "delay_minutes": 23.8,
-          "incident_note": "Automatic signal at Colombo Fort stuck on red, manual override required, causing delays through the section.",
-          "similarity": 0.2092
+          "delay_minutes": 22.8,
+          "incident_note": "Signal failure reported near Anuradhapura, trains held for 22 minutes while technicians reset the interlocking system.",
+          "similarity": 0.577219953868395
+        },
+        {
+          "record_id": "bffe089c-f132-4a64-a1ee-0702423cf173",
+          "route": "Colombo Fort - Jaffna",
+          "station": "Anuradhapura",
+          "incident_type": "signal_fault",
+          "delay_minutes": 12,
+          "incident_note": "Signal failure reported near Anuradhapura, trains held for 12 minutes while technicians reset the interlocking system.",
+          "similarity": 0.575431124788919
         }
       ]
     },
@@ -60,31 +60,31 @@
       "top_3_match": true,
       "retrieved_incidents": [
         {
-          "record_id": "09de6db9-c786-4168-a865-93f855c6f109",
+          "record_id": "e8008b23-2ffd-4558-96f5-c6759f25a1d7",
+          "route": "Colombo Fort - Kandy",
+          "station": "Kandy",
+          "incident_type": "mechanical",
+          "delay_minutes": 14.7,
+          "incident_note": "Brake system fault detected on YD-1960, inspected and cleared at Kandy before continuing.",
+          "similarity": 0.507853627204895
+        },
+        {
+          "record_id": "8492fd70-5cd5-4e12-b7a1-5d68559a73c0",
           "route": "Colombo Fort - Badulla",
-          "station": "Colombo Fort",
+          "station": "Ella",
           "incident_type": "mechanical",
-          "delay_minutes": 18.7,
-          "incident_note": "Brake system fault detected on PM-3292, inspected and cleared at Colombo Fort before continuing.",
-          "similarity": 0.1194
+          "delay_minutes": 21.2,
+          "incident_note": "Brake system fault detected on YD-7643, inspected and cleared at Ella before continuing.",
+          "similarity": 0.502736210823059
         },
         {
-          "record_id": "0bf7f89a-52a1-4fff-9a88-4db450ec4d37",
-          "route": "Colombo Fort - Galle",
-          "station": "Colombo Fort",
-          "incident_type": "mechanical",
-          "delay_minutes": 15.5,
-          "incident_note": "Brake system fault detected on PM-3292, inspected and cleared at Colombo Fort before continuing.",
-          "similarity": 0.1194
-        },
-        {
-          "record_id": "4e24fe8a-b8da-4138-a4ca-24f465c89571",
+          "record_id": "e59d6ee2-f7bb-429a-8095-c92897f39428",
           "route": "Colombo Fort - Matara",
-          "station": "Colombo Fort",
+          "station": "Matara",
           "incident_type": "mechanical",
-          "delay_minutes": 15.9,
-          "incident_note": "Brake system fault detected on ND-6427, inspected and cleared at Colombo Fort before continuing.",
-          "similarity": 0.1179
+          "delay_minutes": 24.8,
+          "incident_note": "Brake system fault detected on YD-8077, inspected and cleared at Matara before continuing.",
+          "similarity": 0.494043976778514
         }
       ]
     },
@@ -101,72 +101,72 @@
       "top_3_match": true,
       "retrieved_incidents": [
         {
-          "record_id": "986bef14-9838-4c64-b10f-b0dfa47ef0a8",
-          "route": "Colombo Fort - Batticaloa",
-          "station": "Colombo Fort",
+          "record_id": "0b48e7fa-0bff-4f20-8896-b5fa19dc2291",
+          "route": "Colombo Fort - Badulla",
+          "station": "Ella",
           "incident_type": "weather",
-          "delay_minutes": 12.3,
-          "incident_note": "Heavy rain near Colombo Fort reduced visibility and required speed restrictions on the approach.",
-          "similarity": 0.3067
+          "delay_minutes": 12.6,
+          "incident_note": "Flooding risk reported on the track bed near Ella, service ran at reduced speed as a precaution.",
+          "similarity": 0.548845529556274
         },
         {
-          "record_id": "e27ca40f-a7fb-4de4-b031-6f4b5973f819",
-          "route": "Colombo Fort - Galle",
-          "station": "Colombo Fort",
+          "record_id": "92558760-ed04-49a9-b3d6-4f92946dd4db",
+          "route": "Colombo Fort - Badulla",
+          "station": "Badulla",
           "incident_type": "weather",
-          "delay_minutes": 8.2,
-          "incident_note": "Heavy rain near Colombo Fort reduced visibility and required speed restrictions on the approach.",
-          "similarity": 0.3067
+          "delay_minutes": 10.4,
+          "incident_note": "Flooding risk reported on the track bed near Badulla, service ran at reduced speed as a precaution.",
+          "similarity": 0.530908942222595
         },
         {
-          "record_id": "54e29ce4-bcbf-49f1-83b0-cc8aeefa14d7",
-          "route": "Colombo Fort - Trincomalee",
-          "station": "Colombo Fort",
+          "record_id": "6f4ef987-02be-4a1b-b8fb-73e2a5d91fb2",
+          "route": "Colombo Fort - Badulla",
+          "station": "Badulla",
           "incident_type": "weather",
-          "delay_minutes": 7.3,
-          "incident_note": "Heavy rain near Colombo Fort reduced visibility and required speed restrictions on the approach.",
-          "similarity": 0.3067
+          "delay_minutes": 6.5,
+          "incident_note": "Flooding risk reported on the track bed near Badulla, service ran at reduced speed as a precaution.",
+          "similarity": 0.530908942222595
         }
       ]
     },
     {
       "query": "A tree fell across the track and blocked the next service.",
       "expected_type": "track_obstruction",
-      "top_1_type": "weather",
+      "top_1_type": "track_obstruction",
       "top_3_types": [
-        "weather",
-        "weather",
-        "weather"
+        "track_obstruction",
+        "track_obstruction",
+        "track_obstruction"
       ],
-      "top_1_match": false,
-      "top_3_match": false,
+      "top_1_match": true,
+      "top_3_match": true,
       "retrieved_incidents": [
         {
-          "record_id": "49e9d53e-60fb-46a0-9c9a-e96280f330ef",
-          "route": "Colombo Fort - Jaffna",
-          "station": "Colombo Fort",
-          "incident_type": "weather",
-          "delay_minutes": 9.1,
-          "incident_note": "Flooding risk reported on the track bed near Colombo Fort, service ran at reduced speed as a precaution.",
-          "similarity": 0.2254
-        },
-        {
-          "record_id": "834bc565-17f6-416d-92c4-8d6a7c16ad53",
+          "record_id": "bdef472c-aa69-41e5-8300-942400958e0d",
           "route": "Colombo Fort - Kandy",
-          "station": "Colombo Fort",
-          "incident_type": "weather",
-          "delay_minutes": 9.1,
-          "incident_note": "Flooding risk reported on the track bed near Colombo Fort, service ran at reduced speed as a precaution.",
-          "similarity": 0.2254
+          "station": "Kandy",
+          "incident_type": "track_obstruction",
+          "delay_minutes": 23.7,
+          "incident_note": "Livestock on the track near Kandy caused an unscheduled stop.",
+          "similarity": 0.4610950969997
         },
         {
-          "record_id": "435eb96c-1f9f-4a84-8fc5-0faa00b84d90",
-          "route": "Colombo Fort - Matara",
-          "station": "Colombo Fort",
-          "incident_type": "weather",
-          "delay_minutes": 12.9,
-          "incident_note": "Flooding risk reported on the track bed near Colombo Fort, service ran at reduced speed as a precaution.",
-          "similarity": 0.2254
+          "record_id": "aba575eb-5f56-41ba-ad43-05aabab4a84f",
+          "route": "Colombo Fort - Kandy",
+          "station": "Kandy",
+          "incident_type": "track_obstruction",
+          "delay_minutes": 13.4,
+          "incident_note": "Livestock on the track near Kandy caused an unscheduled stop.",
+          "similarity": 0.46109512680202
+        },
+        {
+          "record_id": "074e37dd-bb46-400d-b0d9-aa64027e6226",
+          "route": "Colombo Fort - Kandy",
+          "station": "Kandy",
+          "incident_type": "track_obstruction",
+          "delay_minutes": 15.7,
+          "incident_note": "Livestock on the track near Kandy caused an unscheduled stop.",
+          "similarity": 0.46109512680202
         }
       ]
     },
@@ -183,72 +183,72 @@
       "top_3_match": true,
       "retrieved_incidents": [
         {
-          "record_id": "964ac11c-268d-4bf1-b2cc-2ce84ef9a007",
-          "route": "Colombo Fort - Batticaloa",
-          "station": "Colombo Fort",
+          "record_id": "ba21a25f-0e19-4584-a4bb-b71768ac39a0",
+          "route": "Colombo Fort - Trincomalee",
+          "station": "Trincomalee",
           "incident_type": "staffing",
-          "delay_minutes": 7.5,
-          "incident_note": "Platform staff shortage at Colombo Fort slowed boarding and dispatch.",
-          "similarity": 0.2487
+          "delay_minutes": 5.1,
+          "incident_note": "Delayed departure from Trincomalee due to late arrival of relief crew for PM-6305.",
+          "similarity": 0.581673162629401
         },
         {
-          "record_id": "c6aa427f-13e8-4884-b8ea-f8c234344928",
-          "route": "Colombo Fort - Jaffna",
-          "station": "Colombo Fort",
+          "record_id": "3a619076-fcaf-490b-96b3-3cf1dad41715",
+          "route": "Colombo Fort - Trincomalee",
+          "station": "Trincomalee",
           "incident_type": "staffing",
-          "delay_minutes": 8.8,
-          "incident_note": "Platform staff shortage at Colombo Fort slowed boarding and dispatch.",
-          "similarity": 0.2487
+          "delay_minutes": 8.6,
+          "incident_note": "Delayed departure from Trincomalee due to late arrival of relief crew for ND-8935.",
+          "similarity": 0.571330887933647
         },
         {
-          "record_id": "666822a3-719f-40ab-9bda-2e5ba2f4e5fe",
-          "route": "Colombo Fort - Kandy",
-          "station": "Colombo Fort",
+          "record_id": "6b0cf0f4-cf6d-4527-a4e0-8178783b2c99",
+          "route": "Colombo Fort - Trincomalee",
+          "station": "Trincomalee",
           "incident_type": "staffing",
-          "delay_minutes": 7.5,
-          "incident_note": "Platform staff shortage at Colombo Fort slowed boarding and dispatch.",
-          "similarity": 0.2487
+          "delay_minutes": 5.7,
+          "incident_note": "Delayed departure from Trincomalee due to late arrival of relief crew for UD-2197.",
+          "similarity": 0.567933695552758
         }
       ]
     },
     {
       "query": "A technical problem interrupted the train service near the station.",
       "expected_type": "mechanical",
-      "top_1_type": "weather",
+      "top_1_type": "signal_fault",
       "top_3_types": [
-        "weather",
-        "weather",
-        "weather"
+        "signal_fault",
+        "signal_fault",
+        "signal_fault"
       ],
       "top_1_match": false,
       "top_3_match": false,
       "retrieved_incidents": [
         {
-          "record_id": "49e9d53e-60fb-46a0-9c9a-e96280f330ef",
-          "route": "Colombo Fort - Jaffna",
-          "station": "Colombo Fort",
-          "incident_type": "weather",
-          "delay_minutes": 9.1,
-          "incident_note": "Flooding risk reported on the track bed near Colombo Fort, service ran at reduced speed as a precaution.",
-          "similarity": 0.2382
+          "record_id": "71bdb484-b4a5-4be0-9bad-c6499feea292",
+          "route": "Colombo Fort - Badulla",
+          "station": "Ella",
+          "incident_type": "signal_fault",
+          "delay_minutes": 9.4,
+          "incident_note": "Signal failure reported near Ella, trains held for 9 minutes while technicians reset the interlocking system.",
+          "similarity": 0.63898903131485
         },
         {
-          "record_id": "834bc565-17f6-416d-92c4-8d6a7c16ad53",
-          "route": "Colombo Fort - Kandy",
-          "station": "Colombo Fort",
-          "incident_type": "weather",
-          "delay_minutes": 9.1,
-          "incident_note": "Flooding risk reported on the track bed near Colombo Fort, service ran at reduced speed as a precaution.",
-          "similarity": 0.2382
+          "record_id": "0cfc9c30-fd56-40d9-9837-fc10f5fd35b9",
+          "route": "Colombo Fort - Badulla",
+          "station": "Ella",
+          "incident_type": "signal_fault",
+          "delay_minutes": 20.3,
+          "incident_note": "Signal failure reported near Ella, trains held for 20 minutes while technicians reset the interlocking system.",
+          "similarity": 0.635787031901657
         },
         {
-          "record_id": "435eb96c-1f9f-4a84-8fc5-0faa00b84d90",
-          "route": "Colombo Fort - Matara",
-          "station": "Colombo Fort",
-          "incident_type": "weather",
-          "delay_minutes": 12.9,
-          "incident_note": "Flooding risk reported on the track bed near Colombo Fort, service ran at reduced speed as a precaution.",
-          "similarity": 0.2382
+          "record_id": "d58120ff-a75e-45c2-a597-a24fe73ef8af",
+          "route": "Colombo Fort - Badulla",
+          "station": "Ella",
+          "incident_type": "signal_fault",
+          "delay_minutes": 13.9,
+          "incident_note": "Signal failure reported near Ella, trains held for 13 minutes while technicians reset the interlocking system.",
+          "similarity": 0.633569500829608
         }
       ]
     }
