@@ -37,6 +37,17 @@ def default_mock_handler(request: httpx.Request) -> httpx.Response:
     )
 
 
+@pytest.fixture(autouse=True, scope="session")
+def setup_test_database():
+    """Ensure SQLite test database has schema and fresh seed data for test run."""
+    from database.database import Base, SessionLocal, engine
+    from database.seed import seed_test_train_data
+
+    Base.metadata.create_all(bind=engine)
+    with SessionLocal() as db:
+        seed_test_train_data(db)
+
+
 @pytest.fixture(autouse=True)
 def default_http_client_mock():
     """
@@ -47,3 +58,54 @@ def default_http_client_mock():
     set_default_transport(transport)
     yield
     set_default_transport(None)
+
+
+@pytest.fixture(autouse=True)
+def reset_rate_limiter():
+    """Ensure in-memory rate limiter is reset before and after every test."""
+    try:
+        from rate_limit import rate_limiter
+        rate_limiter.reset()
+    except ImportError:
+        pass
+    yield
+    try:
+        from rate_limit import rate_limiter
+        rate_limiter.reset()
+    except ImportError:
+        pass
+
+
+SECURITY_AGENT_DIR = os.path.join(os.path.dirname(MEMBER_C), "security-agent")
+def security_agent_sync_handler(request: httpx.Request) -> httpx.Response:
+    import json
+    path = request.url.path
+    if path == "/health":
+        return httpx.Response(200, json={"service": "security-agent", "status": "ok"})
+    if path.endswith("/internal/fraud-score"):
+        try:
+            body = json.loads(request.content.decode("utf-8"))
+        except Exception:
+            body = {}
+        if SECURITY_AGENT_DIR not in sys.path:
+            sys.path.insert(0, SECURITY_AGENT_DIR)
+        from fraud.model import fraud_detector
+        res = fraud_detector.score_features(body.get("features", {}))
+        return httpx.Response(200, json=res)
+    return httpx.Response(404, json={"detail": "Not found"})
+
+
+@pytest.fixture(autouse=True)
+def default_security_agent_transport():
+    """Wire real Security Agent (IsolationForest ML) via sync MockTransport during tests."""
+    from fraud.client import set_security_client_transport
+    try:
+        transport = httpx.MockTransport(security_agent_sync_handler)
+        set_security_client_transport(transport)
+    except Exception:
+        pass
+    yield
+    set_security_client_transport(None)
+
+
+
