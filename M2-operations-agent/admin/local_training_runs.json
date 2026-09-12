@@ -1,0 +1,32 @@
+[
+  {
+    "triggered_by": "admin",
+    "returncode": 0,
+    "metrics": {
+      "model": "GradientBoostingRegressor",
+      "n_train": 2400,
+      "n_test": 600,
+      "mae_minutes": 2.239,
+      "rmse_minutes": 2.876,
+      "r2": 0.8716
+    },
+    "stdout_tail": "Loading dataset from E:\\Y3 S2\\Information Retrieval and Web Analytics - IT3041\\Grp Assignment\\RailSenceAI\\RailSence-AI\\M2-operations-agent\\data\\operations_history.csv ...\nTraining GradientBoostingRegressor ...\n\nHeld-out test metrics:\n  model: GradientBoostingRegressor\n  n_train: 2400\n  n_test: 600\n  mae_minutes: 2.239\n  rmse_minutes: 2.876\n  r2: 0.8716\n\nTop feature importances:\n  incident_type_none: 0.7390\n  incident_type_mechanical: 0.0708\n  weather_clear: 0.0390\n  incident_type_staffing: 0.0341\n  weather_heavy_rain: 0.0320\n  day_type_public_holiday: 0.0205\n  incident_type_track_obstruction: 0.0178\n  incident_type_weather: 0.0122\n\nSaved model -> E:\\Y3 S2\\Information Retrieval and Web Analytics - IT3041\\Grp Assignment\\RailSenceAI\\RailSence-AI\\M2-operations-agent\\ml\\delay_model.pkl\nSaved feature importances -> E:\\Y3 S2\\Information Retrieval and Web Analytics - IT3041\\Grp Assignment\\RailSenceAI\\RailSence-AI\\M2-operations-agent\\ml\\feature_importances.json\nSaved metrics -> E:\\Y3 S2\\Information Retrieval and Web Analytics - IT3041\\Grp Assignment\\RailSenceAI\\RailSence-AI\\M2-operations-agent\\evaluation\\ml\\delay_model_metrics.json\n",
+    "stderr_tail": "",
+    "logged_at": 1789112990.6006517
+  },
+  {
+    "triggered_by": "admin",
+    "returncode": 0,
+    "metrics": {
+      "model": "GradientBoostingRegressor",
+      "n_train": 2400,
+      "n_test": 600,
+      "mae_minutes": 2.239,
+      "rmse_minutes": 2.876,
+      "r2": 0.8716
+    },
+    "stdout_tail": "Loading dataset from E:\\Y3 S2\\Information Retrieval and Web Analytics - IT3041\\Grp Assignment\\RailSenceAI\\RailSence-AI\\M2-operations-agent\\data\\operations_history.csv ...\nTraining GradientBoostingRegressor ...\n\nHeld-out test metrics:\n  model: GradientBoostingRegressor\n  n_train: 2400\n  n_test: 600\n  mae_minutes: 2.239\n  rmse_minutes: 2.876\n  r2: 0.8716\n\nTop feature importances:\n  incident_type_none: 0.7390\n  incident_type_mechanical: 0.0708\n  weather_clear: 0.0390\n  incident_type_staffing: 0.0341\n  weather_heavy_rain: 0.0320\n  day_type_public_holiday: 0.0205\n  incident_type_track_obstruction: 0.0178\n  incident_type_weather: 0.0122\n\nSaved model -> E:\\Y3 S2\\Information Retrieval and Web Analytics - IT3041\\Grp Assignment\\RailSenceAI\\RailSence-AI\\M2-operations-agent\\ml\\delay_model.pkl\nSaved feature importances -> E:\\Y3 S2\\Information Retrieval and Web Analytics - IT3041\\Grp Assignment\\RailSenceAI\\RailSence-AI\\M2-operations-agent\\ml\\feature_importances.json\nSaved metrics -> E:\\Y3 S2\\Information Retrieval and Web Analytics - IT3041\\Grp Assignment\\RailSenceAI\\RailSence-AI\\M2-operations-agent\\evaluation\\ml\\delay_model_metrics.json\n",
+    "stderr_tail": "",
+    "logged_at": 1789113005.5387766
+  }
+]
