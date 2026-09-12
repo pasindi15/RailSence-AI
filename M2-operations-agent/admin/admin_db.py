@@ -52,6 +52,24 @@ _client: Optional["Client"] = None
 _client_checked = False
 
 
+def _load_root_env() -> None:
+    """Load the shared workspace root .env so the backend uses the real project creds."""
+    root_dir = Path(__file__).resolve().parent.parent
+    env_candidates = [
+        root_dir / ".env",
+        root_dir.parent / ".env",
+    ]
+    for env_path in env_candidates:
+        if not env_path.exists():
+            continue
+        for line in env_path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
+
+
 def get_client() -> Optional["Client"]:
     """Lazily create and cache a Supabase client. Returns None if unconfigured."""
     global _client, _client_checked
@@ -62,6 +80,7 @@ def get_client() -> Optional["Client"]:
     if create_client is None:
         return None
 
+    _load_root_env()
     url = os.getenv("SUPABASE_URL")
     key = os.getenv("SUPABASE_SECRET_KEY") or os.getenv("SUPABASE_SERVICE_ROLE_KEY")
     if not url or not key:

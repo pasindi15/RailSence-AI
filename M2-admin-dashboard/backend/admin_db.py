@@ -39,17 +39,34 @@ except ImportError:  # pragma: no cover
     Client = None
 
 # ---------------------------------------------------------------------------
-# Paths — assumes this file lives at M2-operations-agent/admin/admin_db.py
-# after you drop it in. Adjust ROOT_DIR if you place it elsewhere.
+# Paths — the dashboard lives under M2-admin-dashboard/backend, so the project
+# root .env and shared data files live two levels above this file.
 # ---------------------------------------------------------------------------
-ROOT_DIR = Path(__file__).resolve().parent.parent
-CSV_FALLBACK_PATH = ROOT_DIR / "data" / "operations_history.csv"
-LOCAL_CONFIG_PATH = ROOT_DIR / "admin" / "local_admin_config.json"
-MODEL_VERSIONS_DIR = ROOT_DIR / "ml" / "model_versions"
-TRAINING_LOG_PATH = ROOT_DIR / "admin" / "local_training_runs.json"
+ROOT_DIR = Path(__file__).resolve().parents[2]
+CSV_FALLBACK_PATH = ROOT_DIR / "M2-operations-agent" / "data" / "operations_history.csv"
+LOCAL_CONFIG_PATH = ROOT_DIR / "M2-operations-agent" / "admin" / "local_admin_config.json"
+MODEL_VERSIONS_DIR = ROOT_DIR / "M2-operations-agent" / "ml" / "model_versions"
+TRAINING_LOG_PATH = ROOT_DIR / "M2-operations-agent" / "admin" / "local_training_runs.json"
 
 _client: Optional["Client"] = None
 _client_checked = False
+
+
+def _load_root_env() -> None:
+    """Load the workspace root .env if present so all modules share one config."""
+    env_candidates = [
+        ROOT_DIR / ".env",
+        ROOT_DIR / "M2-operations-agent" / ".env",
+        Path(__file__).resolve().parent.parent / ".env",
+    ]
+    for env_path in env_candidates:
+        if env_path.exists():
+            for line in env_path.read_text(encoding="utf-8").splitlines():
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                key, value = line.split("=", 1)
+                os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
 
 
 def get_client() -> Optional["Client"]:
@@ -62,6 +79,7 @@ def get_client() -> Optional["Client"]:
     if create_client is None:
         return None
 
+    _load_root_env()
     url = os.getenv("SUPABASE_URL")
     key = os.getenv("SUPABASE_SECRET_KEY") or os.getenv("SUPABASE_SERVICE_ROLE_KEY")
     if not url or not key:
