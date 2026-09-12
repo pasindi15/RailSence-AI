@@ -276,6 +276,37 @@ class HubMessage(BaseModel):
     timestamp: Optional[datetime] = None
 
 
+@app.post("/internal/messages")
+async def receive_internal_message(request: Request, message: HubMessage):
+    """Accept messages forwarded by the central hub.
+
+    This is the contract that the shared Agent Hub uses when it routes traffic to
+    a destination agent via {base_url}/internal/messages. M3 validates and
+    authenticates first, so this endpoint only needs to process the forwarded
+    payload and respond in the same shape the hub expects.
+    """
+    if message.receiver_agent not in (AGENT_NAME, "operations-agent"):
+        raise HTTPException(status_code=400, detail="unsupported receiver agent")
+
+    if message.intent == "delay_check":
+        return await hub_message(request, message)
+
+    if message.intent in {"booking_request", "cancel_booking"}:
+        return JSONResponse(
+            status_code=202,
+            content={
+                "message_id": message.message_id or uuid.uuid4().hex,
+                "sender_agent": AGENT_NAME,
+                "receiver_agent": message.sender_agent,
+                "intent": "ack",
+                "payload": {"status": "received", "accepted_intent": message.intent},
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            },
+        )
+
+    raise HTTPException(status_code=400, detail="unsupported hub intent")
+
+
 def _read_audit_count() -> int:
     try:
         return sum(1 for _ in AUDIT_PATH.open(encoding="utf-8"))
