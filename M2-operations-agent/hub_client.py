@@ -11,7 +11,7 @@ from typing import Any
 
 import httpx
 
-HUB_BASE_URL = os.getenv("HUB_BASE_URL", "http://localhost:8000")
+HUB_BASE_URL = os.getenv("HUB_BASE_URL", "http://localhost:8002")
 AGENT_NAME = "operations-agent"
 
 DELAY_ALERT_THRESHOLD_MINUTES = 5.0

@@ -572,4 +572,37 @@ async def hub_message(request: Request, payload: HubMessageRequest):
         })
         return response_envelope
 
+    if payload.intent == "issue_report":
+        ticket_id = f"MT-{uuid.uuid4().hex[:6].upper()}"
+        description = payload.payload.get("description", "Passenger reported issue")
+        client_ip = request.client.host if request.client else "unknown"
+        _write_audit("hub_issue_report", client_ip, {
+            "ticket_id": ticket_id, "sender": payload.sender_agent, "description": description
+        })
+        return {
+            "message_id": str(uuid.uuid4()),
+            "sender_agent": "maintenance-agent",
+            "receiver_agent": payload.sender_agent,
+            "intent": "issue_report_response",
+            "payload": {
+                "ticket_id": ticket_id,
+                "message": "Issue logged successfully. A maintenance technician will inspect within 48 hours.",
+                "status": "received",
+            },
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
+
     raise HTTPException(status_code=400, detail=f"Unsupported intent: {payload.intent}")
+
+
+@app.post("/internal/messages")
+async def receive_internal_message(request: Request, payload: HubMessageRequest):
+    """Accept messages routed by M3 Central Hub via {base_url}/internal/messages."""
+    return await hub_message(request, payload)
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    port = int(os.getenv("PORT", "8006"))
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)

@@ -11,7 +11,7 @@ from typing import Any
 
 import httpx
 
-HUB_BASE_URL = os.getenv("HUB_BASE_URL", "http://localhost:8000")
+HUB_BASE_URL = os.getenv("HUB_BASE_URL", "http://localhost:8002")
 AGENT_NAME = "maintenance-agent"
 
 MAINTENANCE_ALERT_THRESHOLD = "RED"
@@ -32,15 +32,18 @@ async def _post_hub(path: str, payload: dict[str, Any]) -> dict:
 
 
 async def register_with_hub() -> None:
-    await _post_hub(
-        "/register",
-        {
-            "agent_name": AGENT_NAME,
-            "capabilities": ["maintenance_check", "asset_health", "manual_search"],
-            "callback_url": os.getenv("MAINTENANCE_AGENT_URL", "http://localhost:8002"),
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-        },
-    )
+    try:
+        await _post_hub(
+            "/register",
+            {
+                "agent_name": AGENT_NAME,
+                "capabilities": ["maintenance_check", "asset_health", "manual_search"],
+                "callback_url": os.getenv("MAINTENANCE_AGENT_URL", "http://localhost:8006"),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            },
+        )
+    except Exception:
+        pass
 
 
 async def send_to_hub(
