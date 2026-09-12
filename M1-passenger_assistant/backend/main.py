@@ -14,7 +14,12 @@ import uuid
 from pathlib import Path
 from datetime import datetime, timezone
 
-import google.generativeai as genai
+try:
+    # pyrefly: ignore [missing-import]
+    import google.generativeai as genai
+except ImportError:
+    genai = None
+
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -40,7 +45,7 @@ SYSTEM_PROMPT = (Path(__file__).parent / "prompts" / "system_prompt.md").read_te
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 gemini_model = None
-if GEMINI_API_KEY:
+if GEMINI_API_KEY and genai is not None:
     genai.configure(api_key=GEMINI_API_KEY)
     gemini_model = genai.GenerativeModel("gemini-flash-latest", system_instruction=SYSTEM_PROMPT)
 
@@ -159,19 +164,35 @@ async def chat(req: ChatRequest):
         reply, source = compose_rag_answer(text, language, req.session_id)
 
     elif intent == "delay_check":
+        stations = entities.get("stations", [])
+        route = " - ".join(stations) if isinstance(stations, list) and len(stations) >= 2 else "Colombo Fort - Kandy"
         envelope = build_envelope(
             receiver_agent="operations-agent",
             intent="delay_check",
-            payload={"stations": entities["stations"], "time": entities["time"], "raw_text": text},
+            payload={
+                "stations": stations,
+                "time": entities.get("time"),
+                "raw_text": text,
+                "route": route,
+                "train_id": entities.get("train_id", "PM-4082"),
+            },
         )
         hub_response = await send_to_hub(envelope)
         if hub_response.get("status") == "ok":
-            p = hub_response["payload"]
+            p = hub_response.get("payload", {})
+            delay = p.get("predicted_delay_minutes", 0)
+            reason = p.get("reason") or p.get("explanation", "Operational congestion")
+            similar = p.get("similar_incident")
+            if not similar and p.get("similar_past_incidents"):
+                similar = p["similar_past_incidents"][0]
+            if not similar:
+                similar = "No similar historical incident recorded"
             reply = (
-                f"Expected delay: {p['predicted_delay_minutes']} minutes. "
-                f"Reason: {p['reason']}. Similar past incident: {p['similar_incident']}."
+                f"Expected delay: {delay} minutes. "
+                f"Reason: {reason}. "
+                f"Similar past incident: {similar}."
             )
-            source = "via Operations Agent"
+            source = "via Operations Agent (Hub)"
         else:
             reply = "I couldn't reach the Operations Agent right now."
 

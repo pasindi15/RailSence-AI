@@ -1,11 +1,11 @@
 {
-  "backend": "local_tfidf",
+  "backend": "supabase_pgvector",
   "relevance_proxy": "retrieved incident shares the query incident_type",
   "n_queries": 150,
   "precision_at_k": {
     "p@1": 1.0,
     "p@3": 1.0,
-    "p@5": 1.0
+    "p@5": 0.9987
   },
   "precision_at_5_by_category": {
     "mechanical": {
@@ -26,7 +26,7 @@
     },
     "weather": {
       "n_queries": 19,
-      "precision_at_5": 1.0
+      "precision_at_5": 0.9895
     }
   }
 }

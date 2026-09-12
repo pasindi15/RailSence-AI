@@ -6,9 +6,11 @@ Order of checks:
 
 Returns one of: "si" (Sinhala), "ta" (Tamil), "en" (English)
 """
-from langdetect import detect, DetectorFactory
-
-DetectorFactory.seed = 0  # make langdetect deterministic
+try:
+    from langdetect import detect, DetectorFactory
+    DetectorFactory.seed = 0
+except ImportError:
+    detect = None
 
 # Unicode block ranges
 SINHALA_RANGE = (0x0D80, 0x0DFF)
@@ -36,6 +38,8 @@ def detect_language(text: str) -> str:
 
     # Step 2: fallback to langdetect (mainly disambiguates English vs others)
     try:
+        if detect is None:
+            return "en"
         code = detect(text)
         if code == "en":
             return "en"
