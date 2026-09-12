@@ -25,3 +25,7 @@
 {"timestamp": "2026-08-09T10:19:23.646840+00:00", "action": "prediction", "client": "127.0.0.1", "route": "Colombo Fort - Trincomalee", "train_id": "PM-4082", "delay": 13.8, "model": "phase2-gbr-v1"}
 {"timestamp": "2026-08-09T10:19:23.677683+00:00", "action": "prediction", "client": "127.0.0.1", "route": "Colombo Fort - Trincomalee", "train_id": "PM-4082", "delay": 13.8, "model": "phase2-gbr-v1"}
 {"timestamp": "2026-08-09T10:19:23.818623+00:00", "action": "prediction", "client": "127.0.0.1", "route": "Colombo Fort - Trincomalee", "train_id": "PM-4082", "delay": 13.8, "model": "phase2-gbr-v1"}
+{"timestamp": "2026-09-12T07:06:26.593385+00:00", "action": "prediction", "client": "127.0.0.1", "route": "Colombo Fort - Kandy", "train_id": "PM-4082", "delay": 1.7, "model": "phase2-gbr-v1"}
+{"timestamp": "2026-09-12T07:06:29.835164+00:00", "action": "prediction", "client": "127.0.0.1", "route": "Colombo Fort - Kandy", "train_id": "PM-4082", "delay": 1.7, "model": "phase2-gbr-v1"}
+{"timestamp": "2026-09-12T07:06:29.841600+00:00", "action": "hub_delay_check", "client": "127.0.0.1", "sender_agent": "passenger-agent", "route": "Colombo Fort - Kandy", "train_id": "PM-4082"}
+{"timestamp": "2026-09-12T07:06:30.190013+00:00", "action": "hub_delay_check", "client": "127.0.0.1", "sender_agent": "passenger-agent", "route": "Colombo Fort - Kandy", "train_id": "PM-4082"}
