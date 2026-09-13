@@ -94,6 +94,9 @@ nav{flex:1;padding:12px 10px;overflow-y:auto}
 .refresh-info{font-size:0.7rem;color:var(--text-light);display:flex;align-items:center;gap:4px}
 .chat-btn{text-decoration:none;background:var(--primary);color:#fff;padding:7px 16px;border-radius:20px;font-size:0.78rem;font-weight:600;transition:all 0.15s;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(37,99,235,0.3)}
 .chat-btn:hover{background:var(--primary-dark);box-shadow:0 4px 12px rgba(37,99,235,0.4);transform:translateY(-1px)}
+.logout-btn{background:transparent;color:var(--text-muted);border:1px solid var(--border);padding:7px 14px;border-radius:20px;font-size:0.78rem;font-weight:600;cursor:pointer;transition:all 0.15s;display:inline-flex;align-items:center;gap:6px}
+.logout-btn:hover{background:#fef2f2;color:#dc2626;border-color:#fca5a5;transform:translateY(-1px)}
+body.dark .logout-btn:hover{background:#2d1515;color:#f87171;border-color:#7f1d1d}
 .content{flex:1;padding:0 28px 32px;max-width:1200px;width:100%}
 
 /* ── Hero ── */
@@ -320,7 +323,7 @@ tbody tr:hover td{background:#f8fafc}
 .cp-bubble{padding:8px 12px;border-radius:15px;font-size:0.8rem;line-height:1.6;max-width:275px;word-break:break-word}
 .cp-msg.user .cp-bubble{background:var(--primary);color:white;border-bottom-right-radius:4px}
 .cp-msg.bot .cp-bubble{background:var(--white);color:var(--text);border:1px solid var(--border);border-bottom-left-radius:4px;box-shadow:var(--shadow-sm)}
-.cp-bubble p{margin-bottom:4px}.cp-bubble p:last-child{margin-bottom:0}.cp-bubble strong{font-weight:600}.cp-bubble ul{padding-left:13px;margin:4px 0}.cp-bubble li{margin-bottom:3px}
+.cp-bubble p{margin:0 0 6px 0}.cp-bubble p:last-child{margin-bottom:0}.cp-bubble strong{font-weight:700}.cp-bubble ul{padding-left:14px;margin:2px 0 6px 0}.cp-bubble li{margin-bottom:4px;line-height:1.45}.cp-bubble p.cp-label{margin-bottom:2px}.cp-bubble p.cp-label+ul{margin-top:0}
 .cp-citations{margin-top:7px;padding-top:7px;border-top:1px solid var(--border)}
 .cp-cite-label{font-size:0.63rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-light);margin-bottom:4px}
 .cp-cite-chip{display:inline-flex;align-items:center;gap:3px;background:var(--blue-bg);border:1px solid #bfdbfe;border-radius:20px;padding:2px 8px;font-size:0.66rem;color:var(--primary);margin:2px 3px 2px 0;cursor:pointer;font-weight:600}
@@ -436,6 +439,10 @@ tbody tr:hover td{background:#f8fafc}
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
         Full Chatbot
       </a>
+      <button class="logout-btn" onclick="handleLogout()" title="Logout">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Logout
+      </button>
     </div>
   </div>
 
@@ -870,6 +877,7 @@ function renderTrains() {
 /* ═══ UTILITIES ═══ */
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
 function toast(msg,ms=2600){const e=document.getElementById('toast');e.textContent=msg;e.style.display='block';setTimeout(()=>e.style.display='none',ms)}
+function handleLogout(){if(confirm('Log out of RailSense AI?')){window.location.href='http://localhost:3002';}}
 function setBadge(id,ok,okL,failL){const e=document.getElementById(id);e.className='badge '+(ok?'badge-green':'badge-gray');e.innerHTML=(ok?'<span class="badge-dot"></span>':'')+esc(ok?okL:failL)}
 function setSbDot(id,vid,on,lbl){document.getElementById(id).className='sb-dot '+(on?'on':'off');if(vid)document.getElementById(vid).textContent=lbl||''}
 
@@ -990,7 +998,30 @@ function cpClear(){cpHist=[];const m=document.getElementById('cp-msgs');[...m.ch
 function cpUser(t){const m=document.getElementById('cp-msgs'),d=document.createElement('div');d.className='cp-msg user';d.innerHTML=`<div class="cp-av u">👷</div><div class="cp-bubble">${esc(t)}</div>`;m.appendChild(d);m.scrollTop=m.scrollHeight;const w=document.getElementById('cp-welcome');if(w)w.style.display='none'}
 function cpTypingOn(){const m=document.getElementById('cp-msgs'),d=document.createElement('div');d.className='cp-msg bot';d.id='cp-typing';d.innerHTML=`<div class="cp-av b">🔧</div><div class="cp-bubble"><div class="cp-typing"><span></span><span></span><span></span></div></div>`;m.appendChild(d);m.scrollTop=m.scrollHeight}
 function cpTypingOff(){const e=document.getElementById('cp-typing');if(e)e.remove()}
-function cpRender(t){let h=esc(t);h=h.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');h=h.replace(/((?:^[-*•] .+\n?)+)/gm,m=>{const i=m.trim().split('\n').map(l=>`<li>${l.replace(/^[-*•] /,'').trim()}</li>`).join('');return`<ul>${i}</ul>`});h=h.split(/\n\n+/).map(b=>{b=b.trim();if(!b||/^<(ul|ol)/.test(b))return b;return`<p>${b.replace(/\n/g,'<br>')}</p>`}).filter(Boolean).join('');return h}
+function cpRender(t){
+  // Split into blocks by blank lines
+  const blocks=t.split(/\n\n+/);
+  let html='';
+  for(let block of blocks){
+    block=block.trim();
+    if(!block)continue;
+    const lines=block.split('\n');
+    // Detect bullet list block
+    if(lines.every(l=>/^[-*•]\s/.test(l.trim()))){
+      const items=lines.map(l=>`<li>${esc(l.replace(/^[-*•]\s/,'').trim()).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')}</li>`).join('');
+      html+=`<ul>${items}</ul>`;
+    } else if(lines.length===1&&/^\*\*[^*]+:\*\*/.test(lines[0].trim())){
+      // Bold label line like **Status:** text — render as label paragraph
+      const rendered=esc(lines[0].trim()).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+      html+=`<p class="cp-label">${rendered}</p>`;
+    } else {
+      // Regular paragraph — apply bold inside
+      const rendered=lines.map(l=>esc(l).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')).join('<br>');
+      html+=`<p>${rendered}</p>`;
+    }
+  }
+  return html;
+}
 function cpBot(data){const m=document.getElementById('cp-msgs'),d=document.createElement('div');d.className='cp-msg bot';const cites=(data.citations||[]).map(c=>`<span class="cp-cite-chip">${esc(c.section_title||c.manual||'Manual')}</span>`).join('');const ch=cites?`<div class="cp-citations"><div class="cp-cite-label">Sources</div>${cites}</div>`:'';d.innerHTML=`<div class="cp-av b">🔧</div><div class="cp-bubble">${cpRender(data.answer)}${ch}</div>`;m.appendChild(d);m.scrollTop=m.scrollHeight;const l=data.answer_method==='llm_grounded';document.getElementById('cp-mdot').style.background=l?'var(--primary-light)':'var(--green)';document.getElementById('cp-mlbl').textContent=`${l?'LLM':'Template'} · ${data.retrieval_method==='supabase_pgvector'?'pgvector':'TF-IDF'}`}
 async function cpSendMsg(){const inp=document.getElementById('cp-input'),text=inp.value.trim();if(!text||cpBusy)return;inp.value='';inp.style.height='auto';document.getElementById('cp-send').disabled=true;cpBusy=true;cpUser(text);cpTypingOn();try{const res=await fetch('/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,asset_type:'',history:cpHist.slice(-10)})});if(!res.ok)throw new Error(`HTTP ${res.status}`);const data=await res.json();cpTypingOff();cpBot(data);cpHist.push({role:'user',content:text},{role:'assistant',content:data.answer})}catch(err){cpTypingOff();const m=document.getElementById('cp-msgs'),d=document.createElement('div');d.className='cp-msg bot';d.innerHTML=`<div class="cp-av b">🔧</div><div class="cp-bubble" style="color:var(--red)">Error: ${esc(err.message)}</div>`;m.appendChild(d);m.scrollTop=m.scrollHeight}finally{cpBusy=false;document.getElementById('cp-send').disabled=false}}
 function cpSend(t){document.getElementById('cp-input').value=t;cpSendMsg()}
