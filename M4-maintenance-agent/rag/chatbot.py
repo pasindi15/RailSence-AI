@@ -86,7 +86,7 @@ def _llm_chat(message: str, history: list[dict]) -> str:
             messages.append({"role": turn["role"], "content": turn["content"]})
         messages.append({"role": "user", "content": message})
         response = client.chat.completions.create(
-            model="groq/compound",
+            model="llama-3.3-70b-versatile",
             max_tokens=300,
             messages=messages,
         )
@@ -116,7 +116,7 @@ def _llm_answer(
         messages.append({"role": "user", "content": user_content})
 
         response = client.chat.completions.create(
-            model="groq/compound",
+            model="llama-3.3-70b-versatile",
             max_tokens=500,
             messages=messages,
         )
