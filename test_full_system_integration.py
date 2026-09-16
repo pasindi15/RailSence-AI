@@ -258,9 +258,11 @@ def main():
     # F. Booking schedule discovery query
     status, options = http_get("http://127.0.0.1:3000/api/booking-options?from_station=Colombo&to_station=Kandy&travel_date=2026-12-03")
     assert status == 200, f"Booking options query failed: {options}"
-    test_train = options["trains"][0]
+    trains_list = options if isinstance(options, list) else options.get("trains", [])
+    assert len(trains_list) > 0, f"No trains returned in options: {options}"
+    test_train = trains_list[0]
     train_display = test_train.get("train_name") or test_train.get("name") or "Express"
-    print(f"  [OK] Booking Agent Discovery -> Found {len(options['trains'])} trains (Sample: {test_train['train_id']} - {train_display})")
+    print(f"  [OK] Booking Agent Discovery -> Found {len(trains_list)} trains (Sample: {test_train['train_id']} - {train_display})")
 
     # G. Booking confirmation: Gateway -> JWT Sign -> M3 Hub -> M3 Booking Agent
     booking_payload = {

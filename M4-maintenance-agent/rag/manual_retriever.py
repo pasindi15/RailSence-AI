@@ -18,6 +18,7 @@ MANUALS_DIR = AGENT_DIR / "manuals"
 _tfidf_vectorizer = None
 _tfidf_matrix = None
 _tfidf_docs: list[dict] = []
+_st_model = None  # SentenceTransformer cached at module level
 
 
 def _load_manual_sections() -> list[dict]:
@@ -98,12 +99,29 @@ def _retrieve_tfidf(query: str, top_k: int = 3) -> list[dict]:
         return []
 
 
+def _ensure_st_model():
+    global _st_model
+    if _st_model is not None:
+        return _st_model
+    try:
+        import os
+        os.environ.setdefault("USE_TF", "0")
+        os.environ.setdefault("USE_JAX", "0")
+        from sentence_transformers import SentenceTransformer
+        _st_model = SentenceTransformer("all-MiniLM-L6-v2")
+        logger.info("SentenceTransformer model loaded and cached")
+    except Exception as exc:
+        logger.warning("SentenceTransformer load failed: %s", exc)
+    return _st_model
+
+
 def _retrieve_supabase(query: str, top_k: int = 3) -> list[dict]:
     try:
         sys.path.insert(0, str(AGENT_DIR))
         import supabase_store
-        from sentence_transformers import SentenceTransformer
-        model = SentenceTransformer("all-MiniLM-L6-v2")
+        model = _ensure_st_model()
+        if model is None:
+            return []
         embedding = model.encode(query, normalize_embeddings=True).tolist()
         results = supabase_store.match_manual_sections(embedding, match_count=top_k)
         return results or []
