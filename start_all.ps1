@@ -26,7 +26,11 @@ Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$root\M4-main
 # 7. Unified Frontend Gateway (Port 3000)
 Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$root\frontend'; Write-Host 'Starting RailSense Gateway on port 3000...' -ForegroundColor Magenta; python serve.py"
 
-Write-Host "`nAll 7 RailSense AI services launched in separate windows!" -ForegroundColor Green
-Write-Host "User Portal:  http://localhost:3000/user" -ForegroundColor Cyan
-Write-Host "Admin Portal: http://localhost:3000/admin" -ForegroundColor Yellow
+# 8. M1 React App (Port 5173)
+Start-Process cmd -ArgumentList "/k", "cd /d `"$root\M1-passenger_assistant\frontend`" && npm.cmd run dev"
+
+Write-Host "`nAll RailSense AI services launched in separate windows!" -ForegroundColor Green
+Write-Host "User Portal:       http://localhost:3000/user" -ForegroundColor Cyan
+Write-Host "Admin Portal:      http://localhost:3000/admin" -ForegroundColor Yellow
+Write-Host "M1 React Chat App: http://localhost:5173" -ForegroundColor Green
 
