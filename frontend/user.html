@@ -1,0 +1,1748 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RailSense AI — Passenger Assistant & User Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Share+Tech+Mono&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── Design Tokens ─────────────────────────────────────────────────── */
+:root {
+  --bg:           #0B0704;
+  --rail-dark:    #120B05;
+  --card:         rgba(24, 15, 7, 0.92);
+  --card-hi:      rgba(36, 22, 11, 0.96);
+  --border:       rgba(180, 130, 40, 0.22);
+  --border-hi:    rgba(201, 162, 42, 0.48);
+  --ink:          #F2E3BC;
+  --ink-bright:   #FFF4D6;
+  --muted:        #8C7353;
+  --muted-hi:     #BAA077;
+  --brand:        #C9A22A;
+  --brand-glow:   rgba(201, 162, 42, 0.28);
+  --passenger:    #5B8FC9;
+  --passenger-glow: rgba(91, 143, 201, 0.25);
+  --signal-g:     #3A8A4A;
+  --signal-g-glow: rgba(58, 138, 74, 0.35);
+  --signal-r:     #B04030;
+  --steel:        #8B7355;
+  --r:            12px;
+  --shadow:       0 8px 32px rgba(0, 0, 0, 0.75);
+  --blur:         blur(20px);
+  --ease:         cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ── Global Reset ─────────────────────────────────────────────────── */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Inter', -apple-system, sans-serif;
+  font-size: 14px;
+  min-height: 100vh;
+  overflow-x: hidden;
+  line-height: 1.5;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    linear-gradient(rgba(180, 130, 40, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(180, 130, 40, 0.035) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse 900px 600px at 15% 15%, rgba(180, 120, 20, 0.09) 0%, transparent 65%),
+    radial-gradient(ellipse 700px 450px at 85% 80%, rgba(91, 143, 201, 0.06) 0%, transparent 60%);
+}
+
+.app-shell {
+  position: relative;
+  z-index: 1;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 20px 20px 60px;
+}
+
+/* ── Top Header ────────────────────────────────────────────────────── */
+.top-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 22px;
+  border-radius: var(--r);
+  background: var(--card);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  margin-bottom: 20px;
+}
+
+.brand-area {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.brand-emblem {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(201, 162, 42, 0.25), rgba(120, 80, 20, 0.12));
+  border: 1px solid var(--border-hi);
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+}
+
+.brand-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--ink-bright);
+  letter-spacing: 0.3px;
+}
+
+.brand-subtitle {
+  font-size: 11px;
+  color: var(--brand);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.header-status {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.clock-display {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 13px;
+  color: var(--muted-hi);
+  letter-spacing: 1px;
+}
+
+.badge-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(58, 138, 74, 0.18);
+  color: #6EE7B7;
+  border: 1px solid rgba(58, 138, 74, 0.45);
+  font-family: 'Share Tech Mono', monospace;
+}
+
+.badge-live::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #34D399;
+  box-shadow: 0 0 6px #34D399;
+  animation: pulse-dot 2s infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.85); }
+}
+
+.btn-portal-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  background: rgba(36, 22, 11, 0.85);
+  border: 1px solid var(--border-hi);
+  color: var(--ink-bright);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.btn-portal-switch:hover {
+  background: rgba(201, 162, 42, 0.18);
+  border-color: var(--brand);
+  transform: translateY(-1px);
+}
+
+/* ── Navigation Tabs ───────────────────────────────────────────────── */
+.nav-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 22px;
+  background: rgba(20, 12, 6, 0.7);
+  padding: 6px;
+  border-radius: var(--r);
+  border: 1px solid var(--border);
+  backdrop-filter: var(--blur);
+}
+
+.tab-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 18px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted-hi);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s var(--ease);
+}
+
+.tab-btn:hover {
+  color: var(--ink-bright);
+  background: rgba(201, 162, 42, 0.08);
+}
+
+.tab-btn.active {
+  background: linear-gradient(135deg, rgba(201, 162, 42, 0.22), rgba(120, 80, 20, 0.12));
+  border-color: var(--border-hi);
+  color: var(--ink-bright);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.35);
+}
+
+/* ── View Panels ───────────────────────────────────────────────────── */
+.view-panel {
+  display: none;
+  animation: fadeIn 0.25s var(--ease);
+}
+
+.view-panel.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── View 1: Passenger Assistant Chat ──────────────────────────────── */
+.chat-container {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 20px;
+  min-height: 560px;
+}
+
+.chat-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  backdrop-filter: var(--blur);
+}
+
+.chat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(20, 12, 5, 0.6);
+}
+
+.chat-title {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--ink-bright);
+}
+
+.chat-sub {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.chat-mode-toggle {
+  display: flex;
+  gap: 6px;
+  background: rgba(10, 6, 2, 0.7);
+  padding: 4px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+
+.mode-btn {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.mode-btn.active {
+  background: var(--brand);
+  color: #000;
+}
+
+.chat-feed {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-height: 480px;
+}
+
+.msg-bubble {
+  max-width: 82%;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 13.5px;
+  line-height: 1.55;
+  position: relative;
+  word-wrap: break-word;
+}
+
+.msg-bubble.assistant {
+  align-self: flex-start;
+  background: rgba(30, 18, 9, 0.85);
+  border: 1px solid var(--border);
+  color: var(--ink);
+  border-bottom-left-radius: 3px;
+}
+
+.msg-bubble.user {
+  align-self: flex-end;
+  background: linear-gradient(135deg, rgba(201, 162, 42, 0.28), rgba(120, 80, 20, 0.18));
+  border: 1px solid var(--border-hi);
+  color: var(--ink-bright);
+  border-bottom-right-radius: 3px;
+}
+
+.msg-meta {
+  font-size: 10.5px;
+  color: var(--muted);
+  font-family: 'Share Tech Mono', monospace;
+  margin-top: 6px;
+}
+
+.msg-source {
+  display: inline-block;
+  font-size: 10px;
+  color: #93C5FD;
+  background: rgba(59, 130, 246, 0.12);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-top: 4px;
+}
+
+.booking-action-card, .cancellation-confirm-card {
+  margin-top: 10px;
+  padding: 12px 14px;
+  background: rgba(12, 7, 3, 0.85);
+  border: 1px solid var(--border-hi);
+  border-radius: 8px;
+}
+
+.booking-action-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--brand);
+  margin-bottom: 6px;
+}
+
+.booking-action-details {
+  font-size: 12px;
+  color: var(--ink);
+  margin-bottom: 10px;
+}
+
+.btn-continue-booking {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--brand);
+  color: #120B05;
+  border: none;
+  padding: 7px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-continue-booking:hover {
+  background: #E5B834;
+  transform: translateY(-1px);
+}
+
+.chat-input-bar {
+  display: flex;
+  gap: 10px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--border);
+  background: rgba(18, 10, 4, 0.7);
+}
+
+.chat-input {
+  flex: 1;
+  background: rgba(10, 6, 2, 0.75);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: var(--ink-bright);
+  font-family: inherit;
+  font-size: 13.5px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.chat-input:focus {
+  border-color: var(--brand);
+}
+
+.btn-send {
+  background: linear-gradient(135deg, var(--brand), #A77E18);
+  border: none;
+  border-radius: 8px;
+  color: #120B05;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 0 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-send:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.chat-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 20px;
+  backdrop-filter: var(--blur);
+}
+
+.sidebar-heading {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--brand);
+  margin-bottom: 8px;
+}
+
+.quick-prompts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.prompt-chip {
+  text-align: left;
+  background: rgba(14, 8, 3, 0.7);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 9px 12px;
+  color: var(--ink);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+  line-height: 1.4;
+}
+
+.prompt-chip:hover {
+  border-color: var(--border-hi);
+  background: rgba(201, 162, 42, 0.08);
+  color: var(--ink-bright);
+}
+
+/* Standalone React Embed Frame */
+#m1-react-container {
+  display: none;
+  width: 100%;
+  height: 560px;
+  border-radius: var(--r);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  background: #111;
+}
+
+#m1-react-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+/* ── View 2: Train Booking Desk ────────────────────────────────────── */
+.booking-grid {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 20px;
+}
+
+.booking-card, .summary-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 24px;
+  box-shadow: var(--shadow);
+  backdrop-filter: var(--blur);
+}
+
+.desk-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ink-bright);
+  margin-bottom: 4px;
+}
+
+.desk-sub {
+  font-size: 12.5px;
+  color: var(--muted);
+  margin-bottom: 20px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.field-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-bright);
+  letter-spacing: 0.3px;
+}
+
+.field-input, .field-select {
+  background: rgba(10, 6, 2, 0.75);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: var(--ink-bright);
+  font-family: inherit;
+  font-size: 13.5px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.field-input:focus, .field-select:focus {
+  border-color: var(--brand);
+}
+
+.seat-class-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.seat-class-card {
+  padding: 14px;
+  border-radius: 8px;
+  background: rgba(14, 8, 3, 0.7);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.seat-class-card:hover {
+  border-color: var(--border-hi);
+}
+
+.seat-class-card.selected {
+  border-color: var(--brand);
+  background: linear-gradient(135deg, rgba(201, 162, 42, 0.16), rgba(120, 80, 20, 0.08));
+}
+
+.seat-class-title {
+  font-weight: 700;
+  font-size: 13.5px;
+  color: var(--ink-bright);
+}
+
+.seat-class-badge {
+  font-size: 11px;
+  color: #6EE7B7;
+  margin: 3px 0;
+  font-family: 'Share Tech Mono', monospace;
+}
+
+.seat-class-fare {
+  font-size: 12px;
+  color: var(--brand);
+  font-weight: 600;
+}
+
+.summary-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink-bright);
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.summary-line {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  margin-bottom: 12px;
+  color: var(--muted-hi);
+}
+
+.summary-line b {
+  color: var(--ink-bright);
+}
+
+.fare-total-line {
+  margin: 20px 0 16px;
+  padding: 14px;
+  border-radius: 8px;
+  background: rgba(10, 6, 2, 0.8);
+  border: 1px solid var(--border-hi);
+}
+
+.fare-total-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--muted);
+}
+
+.fare-total-amount {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--brand);
+  margin-top: 4px;
+}
+
+.btn-confirm-booking {
+  width: 100%;
+  padding: 13px;
+  border-radius: 8px;
+  border: none;
+  background: linear-gradient(135deg, var(--brand), #A77E18);
+  color: #120B05;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 12px;
+}
+
+.btn-confirm-booking:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.btn-confirm-booking:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── View 3: Confirmation Ticket ───────────────────────────────────── */
+.confirmation-wrapper {
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.ticket-card {
+  background: var(--card);
+  border: 1px solid var(--border-hi);
+  border-radius: var(--r);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  backdrop-filter: var(--blur);
+}
+
+.ticket-header {
+  padding: 24px;
+  text-align: center;
+  background: linear-gradient(135deg, rgba(58, 138, 74, 0.2), rgba(20, 12, 5, 0.9));
+  border-bottom: 1px dashed var(--border);
+}
+
+.ticket-check {
+  width: 44px;
+  height: 44px;
+  margin: 0 auto 10px;
+  border-radius: 50%;
+  background: #3A8A4A;
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.ticket-banner {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #6EE7B7;
+}
+
+.ticket-ref-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px;
+  color: var(--ink-bright);
+  margin-top: 4px;
+}
+
+.ticket-ref-num {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--brand);
+  margin-top: 4px;
+}
+
+.ticket-body {
+  padding: 24px;
+}
+
+.ticket-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.ticket-data-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.td-label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.td-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-bright);
+}
+
+.ticket-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(14, 8, 3, 0.6);
+}
+
+.btn-book-another {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 7px 14px;
+  color: var(--ink);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-book-another:hover {
+  border-color: var(--brand);
+  color: var(--ink-bright);
+}
+
+.alert-box {
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-bottom: 16px;
+  display: none;
+}
+
+.alert-box.visible { display: block; }
+.alert-error { background: rgba(176, 64, 48, 0.2); border: 1px solid var(--signal-r); color: #FCA5A5; }
+.alert-warning { background: rgba(201, 162, 42, 0.2); border: 1px solid var(--brand); color: #FDE68A; }
+.alert-success { background: rgba(58, 138, 74, 0.2); border: 1px solid var(--signal-g); color: #86EFAC; }
+</style>
+</head>
+<body>
+
+<div class="app-shell">
+  <!-- Top Navigation Header -->
+  <header class="top-nav">
+    <div class="brand-area">
+      <div class="brand-emblem">🚆</div>
+      <div>
+        <div class="brand-title">RailSense AI</div>
+        <div class="brand-subtitle">Passenger Portal & Assistant</div>
+      </div>
+    </div>
+    <div class="header-status">
+      <div class="clock-display" id="clock">12:00:00</div>
+      <div class="badge-live">CENTRAL HUB CONNECTED</div>
+      <a href="/admin" class="btn-portal-switch">
+        <span>Staff & Admin Portal</span>
+        <span>➔</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- Navigation View Tabs -->
+  <nav class="nav-tabs" role="tablist">
+    <button class="tab-btn active" id="tab-chat" onclick="navigateTo('/user/chat')">
+      <span>💬</span> Passenger Assistant
+    </button>
+    <button class="tab-btn" id="tab-booking" onclick="navigateTo('/user/booking')">
+      <span>🎫</span> Train Booking Desk
+    </button>
+    <button class="tab-btn" id="tab-confirmation" onclick="navigateTo('/user/confirmation')">
+      <span>📋</span> Ticket Confirmation
+    </button>
+  </nav>
+
+  <!-- ==================== VIEW 1: PASSENGER CHAT ==================== -->
+  <main id="view-chat" class="view-panel active">
+    <!-- View Mode Bar (Integrated vs Standalone React UI) -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <div style="font-size:12px;color:var(--muted-hi);">
+        Powered by <strong>M1 Passenger Assistant</strong> (Multilingual NLU, ChromaDB FAQ RAG, delay & complaint dispatch)
+      </div>
+      <div class="chat-mode-toggle">
+        <button class="mode-btn active" id="btn-mode-integrated" onclick="switchChatMode('integrated')">Integrated Assistant</button>
+        <button class="mode-btn" id="btn-mode-react" onclick="switchChatMode('react')">M1 React App (Live)</button>
+      </div>
+    </div>
+
+    <!-- Integrated Assistant Container -->
+    <div id="integrated-chat-container" class="chat-container">
+      <section class="chat-card">
+        <div class="chat-header">
+          <div>
+            <div class="chat-title">Multilingual Passenger Assistant</div>
+            <div class="chat-sub">English · සිංහල · தமிழ் — Real-time schedules, fares, delays & complaints</div>
+          </div>
+          <span class="badge-live" style="padding:3px 9px;font-size:10px;">M1 Agent Ready</span>
+        </div>
+
+        <div class="chat-feed" id="chat-feed" role="log" aria-live="polite">
+          <div class="msg-bubble assistant">
+            Welcome to RailSense AI. I can assist with train routes, schedules, fares, delay predictions, and ticket bookings across the Sri Lanka railway network.
+            <div class="msg-meta">passenger-agent · Assistant</div>
+          </div>
+        </div>
+
+        <div class="chat-input-bar">
+          <input
+            type="text"
+            id="chat-input"
+            class="chat-input"
+            placeholder="Type your inquiry (e.g., 'What time does the next train to Kandy leave?' or 'Is PM-4082 delayed?')..."
+            autocomplete="off"
+            onkeydown="if(event.key==='Enter') sendChatMessage()"
+          />
+          <button class="btn-send" id="btn-chat-send" onclick="sendChatMessage()">Send</button>
+        </div>
+      </section>
+
+      <!-- Chat Sidebar -->
+      <aside class="chat-sidebar">
+        <div class="sidebar-heading">Quick Inquiries</div>
+        <div class="quick-prompts">
+          <button class="prompt-chip" onclick="fillAndSend('What time does the next train to Kandy leave?')">
+            ⏰ "What time does the next train to Kandy leave?"
+          </button>
+          <button class="prompt-chip" onclick="fillAndSend('How much is a ticket to Galle?')">
+            💰 "How much is a ticket to Galle?"
+          </button>
+          <button class="prompt-chip" onclick="fillAndSend('Is the 14:35 train from Colombo Fort to Kandy delayed?')">
+            🚦 "Is the 14:35 Colombo Fort to Kandy train delayed?"
+          </button>
+          <button class="prompt-chip" onclick="fillAndSend('I need to book a train from Colombo to Kandy on 3rd December.')">
+            🚆 "I need to book a train from Colombo to Kandy on 3rd December."
+          </button>
+          <button class="prompt-chip" onclick="fillAndSend('The AC is broken in my compartment')">
+            🔧 "The AC is broken in my compartment" (Issue report)
+          </button>
+          <button class="prompt-chip" onclick="fillAndSend('Cancel booking RS-84521 because I accidentally booked twice')">
+            🔄 "Cancel booking RS-84521 because I booked twice"
+          </button>
+        </div>
+
+        <div style="margin-top:auto;font-size:11px;color:var(--muted);font-family:'Share Tech Mono',monospace;line-height:1.6">
+          • Auto language & intent triage<br>
+          • Grounded RAG citations<br>
+          • Hub-routed delay & complaint checks
+        </div>
+      </aside>
+    </div>
+
+    <!-- Standalone M1 React UI Embed Container -->
+    <div id="m1-react-container">
+      <iframe id="m1-react-iframe" src="about:blank" title="M1 React/Vite UI"></iframe>
+    </div>
+  </main>
+
+  <!-- ==================== VIEW 2: BOOKING PAGE ==================== -->
+  <main id="view-booking" class="view-panel">
+    <div class="booking-grid">
+      <!-- Form Panel -->
+      <section class="booking-card">
+        <div class="desk-header">
+          <h1 class="desk-title">Train Ticket Reservation</h1>
+          <p class="desk-sub">Deterministic schedule discovery, live seat inventory, and secure ticket booking.</p>
+        </div>
+
+        <div id="booking-alert" class="alert-box"></div>
+
+        <form id="booking-form" onsubmit="event.preventDefault(); submitBooking();" class="form-section">
+          <!-- Route -->
+          <div class="form-row">
+            <div class="field-group">
+              <label class="field-label" for="from-station">From Station *</label>
+              <input
+                type="text"
+                id="from-station"
+                class="field-input"
+                placeholder="e.g. Colombo"
+                required
+                oninput="onRouteOrDateChanged()"
+              />
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="to-station">To Station *</label>
+              <input
+                type="text"
+                id="to-station"
+                class="field-input"
+                placeholder="e.g. Kandy"
+                required
+                oninput="onRouteOrDateChanged()"
+              />
+            </div>
+          </div>
+
+          <!-- Date & Train -->
+          <div class="form-row">
+            <div class="field-group">
+              <label class="field-label" for="travel-date">Travel Date *</label>
+              <input
+                type="date"
+                id="travel-date"
+                class="field-input"
+                required
+                onchange="onRouteOrDateChanged()"
+              />
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="train-select">Available Train *</label>
+              <select id="train-select" class="field-select" required onchange="onTrainSelected()">
+                <option value="">-- Enter route and date first --</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Class Selection -->
+          <div class="field-group">
+            <label class="field-label">Seat Class *</label>
+            <div class="seat-class-group">
+              <div class="seat-class-card selected" id="card-second-class" onclick="selectSeatClass('Second Class')">
+                <div class="seat-class-title">Second Class</div>
+                <div class="seat-class-badge" id="badge-second-class">Standard Comfort</div>
+                <div class="seat-class-fare" id="fare-second-class">Rs. 1,200.00 / seat</div>
+              </div>
+              <div class="seat-class-card" id="card-first-class" onclick="selectSeatClass('First Class')">
+                <div class="seat-class-title">First Class</div>
+                <div class="seat-class-badge" id="badge-first-class">Air Conditioned</div>
+                <div class="seat-class-fare" id="fare-first-class">Rs. 2,500.00 / seat</div>
+              </div>
+            </div>
+            <input type="hidden" id="seat-class" value="Second Class" required />
+          </div>
+
+          <!-- Passenger Count -->
+          <div class="field-group">
+            <label class="field-label" for="passenger-count">Passenger Count (1 to 10) *</label>
+            <input
+              type="number"
+              id="passenger-count"
+              class="field-input"
+              min="1"
+              max="10"
+              value="1"
+              required
+              oninput="onPassengerCountChanged()"
+            />
+          </div>
+
+          <!-- Passenger Identities & NICs -->
+          <div class="field-group">
+            <label class="field-label">Passenger Identities & Mandatory Sri Lankan NIC *</label>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">
+              Every passenger ticket requires a verified Sri Lankan NIC (old: 9 digits + V/X, new: 12 digits). One NIC per passenger inside a booking.
+            </div>
+            <div id="passengers-container" style="display:flex;flex-direction:column;gap:12px;"></div>
+          </div>
+
+          <!-- Passenger Email -->
+          <div class="field-group">
+            <label class="field-label" for="passenger-email">Passenger Email Address *</label>
+            <input
+              type="email"
+              id="passenger-email"
+              class="field-input"
+              placeholder="e.g. passenger@example.com"
+              required
+              oninput="updateSummary()"
+            />
+          </div>
+        </form>
+      </section>
+
+      <!-- Summary & Submission Panel -->
+      <aside class="summary-card">
+        <h2 class="summary-title">Reservation Summary</h2>
+        <div class="summary-line">
+          <span>Route</span>
+          <b id="sum-route">—</b>
+        </div>
+        <div class="summary-line">
+          <span>Date</span>
+          <b id="sum-date">—</b>
+        </div>
+        <div class="summary-line">
+          <span>Selected Train</span>
+          <b id="sum-train">—</b>
+        </div>
+        <div class="summary-line">
+          <span>Seat Class</span>
+          <b id="sum-class">Second Class</b>
+        </div>
+        <div class="summary-line">
+          <span>Passengers</span>
+          <b id="sum-passengers">1</b>
+        </div>
+        <div class="summary-line">
+          <span>Email</span>
+          <b id="sum-email">—</b>
+        </div>
+
+        <div class="fare-total-line">
+          <div class="fare-total-label">Estimated Total Fare</div>
+          <div class="fare-total-amount" id="sum-fare">Rs. 0.00</div>
+        </div>
+
+        <button
+          type="button"
+          id="btn-confirm-booking"
+          class="btn-confirm-booking"
+          onclick="submitBooking()"
+        >
+          <span id="btn-label">Confirm Booking ➔</span>
+        </button>
+
+        <div style="font-size:11px;color:var(--muted);text-align:center;font-family:'Share Tech Mono',monospace">
+          Secured by Central Communication Hub & Supabase
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <!-- ==================== VIEW 3: CONFIRMATION ==================== -->
+  <main id="view-confirmation" class="view-panel">
+    <div class="confirmation-wrapper">
+      <article class="ticket-card">
+        <header class="ticket-header">
+          <div class="ticket-check">✓</div>
+          <div class="ticket-banner">Booking Confirmed</div>
+          <h1 class="ticket-ref-title">Reservation Ticket</h1>
+          <div class="ticket-ref-num" id="conf-ref">RS-XXXXX</div>
+        </header>
+
+        <div class="ticket-body">
+          <div class="ticket-grid">
+            <div class="ticket-data-item">
+              <span class="td-label">Route</span>
+              <span class="td-value" id="conf-route">Colombo → Kandy</span>
+            </div>
+            <div class="ticket-data-item">
+              <span class="td-label">Travel Date</span>
+              <span class="td-value" id="conf-date">2026-12-03</span>
+            </div>
+            <div class="ticket-data-item">
+              <span class="td-label">Train Service</span>
+              <span class="td-value" id="conf-train">PM-4082 (Intercity Express)</span>
+            </div>
+            <div class="ticket-data-item">
+              <span class="td-label">Seat Class</span>
+              <span class="td-value" id="conf-class">Second Class</span>
+            </div>
+            <div class="ticket-data-item">
+              <span class="td-label">Passengers</span>
+              <span class="td-value" id="conf-passengers">1 Passenger</span>
+            </div>
+            <div class="ticket-data-item">
+              <span class="td-label">Total Fare Paid</span>
+              <span class="td-value" id="conf-fare" style="color:var(--brand)">Rs. 1,200.00</span>
+            </div>
+          </div>
+        </div>
+
+        <footer class="ticket-footer">
+          <span style="font-size:12px;color:var(--muted-hi)">Present reference number at station boarding counter.</span>
+          <button class="btn-book-another" onclick="resetToBooking()">Book Another Ticket</button>
+        </footer>
+      </article>
+    </div>
+  </main>
+
+  <!-- ==================== VIEW 4: PENDING REVIEW ==================== -->
+  <main id="view-pending-review" class="view-panel">
+    <div class="confirmation-wrapper">
+      <article class="ticket-card">
+        <header class="ticket-header" style="background:linear-gradient(135deg, rgba(201,162,42,0.22), rgba(20,12,5,0.9));">
+          <div class="ticket-check" style="background:#C9A22A;color:#120B05;">⏳</div>
+          <div class="ticket-banner" style="color:#FBBF24;">Security Review Pending</div>
+          <h1 class="ticket-ref-title">Booking Under Adjudication</h1>
+          <div class="ticket-ref-num" id="pending-case-num" style="font-size:22px;">FR-XXXXXX</div>
+        </header>
+
+        <div class="ticket-body">
+          <div class="ticket-grid">
+            <div class="ticket-data-item">
+              <span class="td-label">Case Reference</span>
+              <span class="td-value" id="pending-case-ref">—</span>
+            </div>
+            <div class="ticket-data-item">
+              <span class="td-label">Assessed Risk Level</span>
+              <span class="td-value" id="pending-risk-level" style="color:#FBBF24;font-weight:700;">MEDIUM</span>
+            </div>
+            <div class="ticket-data-item">
+              <span class="td-label">Route</span>
+              <span class="td-value" id="pending-route">—</span>
+            </div>
+            <div class="ticket-data-item">
+              <span class="td-label">Travel Date</span>
+              <span class="td-value" id="pending-date">—</span>
+            </div>
+            <div class="ticket-data-item" style="grid-column: 1 / -1;">
+              <span class="td-label">Behavioral Anomaly Reasons</span>
+              <span class="td-value" id="pending-reasons" style="font-size:12px;color:var(--muted-hi);">Security analysis flagged request for human review</span>
+            </div>
+          </div>
+        </div>
+
+        <footer class="ticket-footer">
+          <span style="font-size:12px;color:var(--muted-hi)">Please retain your case reference for inquiries.</span>
+          <button class="btn-book-another" onclick="resetToBooking()">Return to Booking Desk</button>
+        </footer>
+      </article>
+    </div>
+  </main>
+</div>
+
+<!-- ── Application Logic ───────────────────────────────────────────── -->
+<script>
+const $ = id => document.getElementById(id);
+let currentSchedules = [];
+let isSubmitting = false;
+
+window.addEventListener('DOMContentLoaded', () => {
+  const today = new Date().toISOString().split('T')[0];
+  if ($('travel-date')) $('travel-date').min = today;
+  
+  renderPassengerInputs();
+  handleUrlRouting();
+
+  setInterval(() => {
+    $('clock').textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  }, 1000);
+});
+
+window.addEventListener('popstate', handleUrlRouting);
+
+function navigateTo(path) {
+  history.pushState(null, '', path);
+  handleUrlRouting();
+}
+
+function handleUrlRouting() {
+  const path = window.location.pathname;
+  const url = new URL(window.location.href);
+  const from = url.searchParams.get('from');
+  const to = url.searchParams.get('to');
+  const dateVal = url.searchParams.get('date');
+
+  if (path.includes('/booking')) {
+    switchView('booking');
+    if (from || to || dateVal) {
+      applyPrefill({ from_station: from, to_station: to, travel_date: dateVal });
+    }
+  } else if (path.includes('/confirmation')) {
+    switchView('confirmation');
+  } else {
+    // Default to Passenger Chat (/user or /user/chat)
+    switchView('chat');
+  }
+}
+
+function switchView(viewName) {
+  document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+
+  if (viewName === 'chat') {
+    $('view-chat').classList.add('active');
+    $('tab-chat').classList.add('active');
+  } else if (viewName === 'booking') {
+    $('view-booking').classList.add('active');
+    $('tab-booking').classList.add('active');
+    updateSummary();
+  } else if (viewName === 'confirmation') {
+    $('view-confirmation').classList.add('active');
+    $('tab-confirmation').classList.add('active');
+  } else if (viewName === 'pending-review') {
+    $('view-pending-review').classList.add('active');
+  }
+}
+
+function switchChatMode(mode) {
+  const integratedCont = $('integrated-chat-container');
+  const reactCont = $('m1-react-container');
+  const btnInteg = $('btn-mode-integrated');
+  const btnReact = $('btn-mode-react');
+  const iframe = $('m1-react-iframe');
+
+  if (mode === 'react') {
+    integratedCont.style.display = 'none';
+    reactCont.style.display = 'block';
+    btnInteg.classList.remove('active');
+    btnReact.classList.add('active');
+    if (iframe.src === 'about:blank') {
+      iframe.src = 'http://localhost:8001';
+    }
+  } else {
+    integratedCont.style.display = 'grid';
+    reactCont.style.display = 'none';
+    btnInteg.classList.add('active');
+    btnReact.classList.remove('active');
+  }
+}
+
+// ── Passenger Chat ──────────────────────────────────────────────────
+async function sendChatMessage() {
+  const input = $('chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+
+  input.value = '';
+  appendMessage('user', text);
+
+  try {
+    const resp = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: text })
+    });
+    const data = await resp.json();
+    appendMessage('assistant', data.reply, data.action, data.prefill, data.source);
+  } catch (err) {
+    appendMessage('assistant', 'Connection error — unable to reach passenger agent service.');
+  }
+}
+
+function fillAndSend(prompt) {
+  $('chat-input').value = prompt;
+  sendChatMessage();
+}
+
+function appendMessage(role, text, action = null, prefill = null, source = null) {
+  const feed = $('chat-feed');
+  const bubble = document.createElement('div');
+  bubble.className = `msg-bubble ${role}`;
+  
+  const formatted = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  bubble.innerHTML = formatted;
+
+  const meta = document.createElement('div');
+  meta.className = 'msg-meta';
+  meta.textContent = role === 'user' ? 'Passenger · You' : 'passenger-agent · Assistant';
+  bubble.appendChild(meta);
+
+  if (source && role === 'assistant') {
+    const srcSpan = document.createElement('div');
+    srcSpan.className = 'msg-source';
+    srcSpan.textContent = `Source: ${source}`;
+    bubble.appendChild(srcSpan);
+  }
+
+  if (action && action.type === 'continue_to_booking') {
+    const card = document.createElement('div');
+    card.className = 'booking-action-card';
+    
+    let detailsHtml = '';
+    if (prefill) {
+      const parts = [];
+      if (prefill.from_station) parts.push(`From: <b>${prefill.from_station}</b>`);
+      if (prefill.to_station) parts.push(`To: <b>${prefill.to_station}</b>`);
+      if (prefill.travel_date) parts.push(`Date: <b>${prefill.travel_date}</b>`);
+      detailsHtml = `<div class="booking-action-details">${parts.join(' &nbsp;|&nbsp; ')}</div>`;
+    }
+
+    card.innerHTML = `
+      <div class="booking-action-title">Booking Intent Recognized</div>
+      ${detailsHtml}
+      <button class="btn-continue-booking" onclick="continueToBooking('${encodeURIComponent(JSON.stringify(prefill || {}))}')">
+        ${action.label || 'Continue to Booking ➔'}
+      </button>
+    `;
+    bubble.appendChild(card);
+  }
+
+  if (action && action.type === 'cancellation_confirmation_card') {
+    const card = document.createElement('div');
+    card.className = 'cancellation-confirm-card';
+    const safeRef = escapeHtml(action.booking_reference || 'RS-UNKNOWN');
+    const safeReason = escapeHtml(action.reason || '');
+
+    card.innerHTML = `
+      <div class="booking-action-title">Cancellation Request Prepared</div>
+      <div style="font-size:12px;margin:6px 0;"><strong>Ref:</strong> ${safeRef} | <strong>Reason:</strong> "${safeReason}"</div>
+      <button class="btn-continue-booking" style="background:#B04030;color:#fff;" onclick="submitCancellation('${safeRef}', '${safeReason.replace(/'/g, "\\'")}', this)">
+        ${action.label || 'Send Cancellation Request ➔'}
+      </button>
+    `;
+    bubble.appendChild(card);
+  }
+
+  feed.appendChild(bubble);
+  feed.scrollTop = feed.scrollHeight;
+}
+
+function continueToBooking(encodedPrefill) {
+  const prefill = JSON.parse(decodeURIComponent(encodedPrefill));
+  navigateTo('/user/booking');
+  applyPrefill(prefill);
+}
+
+function applyPrefill(prefill) {
+  if (!prefill) return;
+  if (prefill.from_station) $('from-station').value = prefill.from_station;
+  if (prefill.to_station) $('to-station').value = prefill.to_station;
+  if (prefill.travel_date) $('travel-date').value = prefill.travel_date;
+  onRouteOrDateChanged();
+}
+
+// ── Booking Desk Logic ──────────────────────────────────────
+function selectSeatClass(className) {
+  $('seat-class').value = className;
+  $('card-second-class').classList.toggle('selected', className === 'Second Class');
+  $('card-first-class').classList.toggle('selected', className === 'First Class');
+  updateSummary();
+}
+
+let searchDebounce = null;
+function onRouteOrDateChanged() {
+  clearTimeout(searchDebounce);
+  searchDebounce = setTimeout(fetchTrainOptions, 250);
+}
+
+async function fetchTrainOptions() {
+  const from = $('from-station').value.trim();
+  const to = $('to-station').value.trim();
+  const travelDate = $('travel-date').value.trim();
+
+  updateSummary();
+  const select = $('train-select');
+  hideAlert();
+
+  if (!from || !to || !travelDate) {
+    select.innerHTML = '<option value="">-- Complete route & date first --</option>';
+    return;
+  }
+
+  select.innerHTML = '<option value="">Loading schedules from Booking Agent...</option>';
+
+  try {
+    const resp = await fetch(`/api/booking-options?from_station=${encodeURIComponent(from)}&to_station=${encodeURIComponent(to)}&travel_date=${encodeURIComponent(travelDate)}`);
+    const data = await resp.json();
+
+    if (!Array.isArray(data) || data.length === 0) {
+      currentSchedules = [];
+      select.innerHTML = '<option value="">No trains found</option>';
+      showAlert("No trains available for the selected route and date.", "warning");
+      updateSummary();
+      return;
+    }
+
+    currentSchedules = data;
+    select.innerHTML = '<option value="">-- Select a train service --</option>';
+    data.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s.train_id;
+      opt.textContent = `${s.train_id} — ${s.train_name} (${s.departure_time} → ${s.arrival_time})`;
+      select.appendChild(opt);
+    });
+
+    if (data.length === 1) {
+      select.value = data[0].train_id;
+      onTrainSelected();
+    }
+  } catch (err) {
+    select.innerHTML = '<option value="">Error loading schedules</option>';
+    showAlert("Booking service is temporarily unavailable.", "error");
+  }
+}
+
+function onTrainSelected() {
+  const trainId = $('train-select').value;
+  const schedule = currentSchedules.find(s => s.train_id === trainId);
+
+  if (schedule && schedule.available_classes) {
+    schedule.available_classes.forEach(c => {
+      if (c.seat_class === 'First Class') {
+        $('badge-first-class').textContent = `${c.available_seats} seats available`;
+        $('fare-first-class').textContent = `Rs. ${c.base_fare.toFixed(2)} / seat`;
+      } else if (c.seat_class === 'Second Class') {
+        $('badge-second-class').textContent = `${c.available_seats} seats available`;
+        $('fare-second-class').textContent = `Rs. ${c.base_fare.toFixed(2)} / seat`;
+      }
+    });
+  }
+  updateSummary();
+}
+
+function updateSummary() {
+  const from = $('from-station').value.trim() || '—';
+  const to = $('to-station').value.trim() || '—';
+  const dateVal = $('travel-date').value || '—';
+  const trainId = $('train-select').value;
+  const count = parseInt($('passenger-count').value, 10) || 1;
+  const seatClass = $('seat-class').value;
+
+  $('sum-route').textContent = `${from} → ${to}`;
+  $('sum-date').textContent = dateVal;
+  
+  const schedule = currentSchedules.find(s => s.train_id === trainId);
+  $('sum-train').textContent = schedule ? `${schedule.train_id} (${schedule.train_name})` : (trainId || '—');
+  $('sum-class').textContent = seatClass;
+  $('sum-passengers').textContent = count;
+  $('sum-email').textContent = $('passenger-email') ? ($('passenger-email').value.trim() || '—') : '—';
+
+  let unitFare = seatClass === 'First Class' ? 2500 : 1200;
+  if (schedule && schedule.available_classes) {
+    const cls = schedule.available_classes.find(c => c.seat_class === seatClass);
+    if (cls) unitFare = cls.base_fare;
+  }
+  const total = unitFare * count;
+  $('sum-fare').textContent = `Rs. ${total.toFixed(2)}`;
+}
+
+function onPassengerCountChanged() {
+  updateSummary();
+  renderPassengerInputs();
+}
+
+function renderPassengerInputs() {
+  const container = $('passengers-container');
+  if (!container) return;
+  const count = parseInt($('passenger-count').value, 10) || 1;
+  const clamped = Math.max(1, Math.min(10, count));
+
+  const existing = [];
+  for (let i = 1; i <= 10; i++) {
+    const nameEl = $('passenger-name-' + i);
+    const nicEl = $('passenger-nic-' + i);
+    if (nicEl) {
+      existing.push({ name: nameEl ? nameEl.value : '', nic: nicEl.value || '' });
+    }
+  }
+
+  container.innerHTML = '';
+  for (let i = 1; i <= clamped; i++) {
+    const prev = existing[i - 1] || { name: '', nic: '' };
+    const card = document.createElement('div');
+    card.style = 'padding:12px 14px;border-radius:8px;background:rgba(14,8,3,0.85);border:1px solid var(--border);';
+    card.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <span style="font-weight:700;font-size:12px;color:var(--brand)">Passenger ${i} Identity</span>
+        <span style="font-size:10px;font-family:'Share Tech Mono',monospace;color:var(--muted)">MANDATORY NIC</span>
+      </div>
+      <div class="form-row" style="margin-bottom:0;display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="field-group" style="margin-bottom:0;">
+          <label class="field-label" for="passenger-name-${i}">Full Name (Optional)</label>
+          <input type="text" id="passenger-name-${i}" class="field-input" placeholder="e.g. Passenger ${i}" value="${escapeHtml(prev.name)}" />
+        </div>
+        <div class="field-group" style="margin-bottom:0;">
+          <label class="field-label" for="passenger-nic-${i}">Sri Lankan NIC *</label>
+          <input type="text" id="passenger-nic-${i}" class="field-input passenger-nic-input" placeholder="e.g. 200312345678 or 941234567V" required value="${escapeHtml(prev.nic)}" oninput="validatePassengerNics()" />
+          <div id="nic-err-${i}" style="color:#F87171;font-size:11px;margin-top:4px;display:none;"></div>
+        </div>
+      </div>
+    `;
+    container.appendChild(card);
+  }
+}
+
+function validatePassengerNics() {
+  const count = parseInt($('passenger-count').value, 10) || 1;
+  const clamped = Math.max(1, Math.min(10, count));
+  const nicRegex = /^([0-9]{9}[vVxX]|[0-9]{12})$/;
+  const seenNics = new Set();
+  const passengers = [];
+  let isValid = true;
+  let errorMsg = '';
+
+  for (let i = 1; i <= clamped; i++) {
+    const nameEl = $('passenger-name-' + i);
+    const nicEl = $('passenger-nic-' + i);
+    const errEl = $('nic-err-' + i);
+    if (!nicEl) continue;
+
+    const rawNic = nicEl.value.trim();
+    const cleanNic = rawNic.toUpperCase();
+    const nameVal = nameEl ? nameEl.value.trim() : `Passenger ${i}`;
+
+    if (errEl) errEl.style.display = 'none';
+
+    if (!cleanNic) {
+      isValid = false;
+      if (!errorMsg) errorMsg = `Please provide a valid Sri Lankan NIC for Passenger ${i}.`;
+      if (errEl) { errEl.textContent = 'NIC is mandatory.'; errEl.style.display = 'block'; }
+      continue;
+    }
+
+    if (!nicRegex.test(cleanNic)) {
+      isValid = false;
+      if (!errorMsg) errorMsg = `Passenger ${i}: Invalid NIC format. Must be 9 digits + V/X or 12 digits.`;
+      if (errEl) { errEl.textContent = 'Invalid format (9 digits + V/X or 12 digits).'; errEl.style.display = 'block'; }
+      continue;
+    }
+
+    if (seenNics.has(cleanNic)) {
+      isValid = false;
+      if (!errorMsg) errorMsg = `Duplicate NIC '${cleanNic}' entered. Each passenger must have a distinct NIC.`;
+      if (errEl) { errEl.textContent = 'Duplicate NIC in booking.'; errEl.style.display = 'block'; }
+      continue;
+    }
+
+    seenNics.add(cleanNic);
+    passengers.push({ name: nameVal || `Passenger ${i}`, nic: cleanNic });
+  }
+
+  return { valid: isValid, errorMsg, passengers };
+}
+
+async function submitBooking() {
+  if (isSubmitting) return;
+  hideAlert();
+
+  const from = $('from-station').value.trim();
+  const to = $('to-station').value.trim();
+  const travelDate = $('travel-date').value.trim();
+  const trainId = $('train-select').value.trim();
+  const seatClass = $('seat-class').value.trim();
+  const count = parseInt($('passenger-count').value, 10);
+  const email = $('passenger-email').value.trim();
+
+  if (!from || !to || !travelDate || !trainId || !seatClass || isNaN(count) || count < 1) {
+    showAlert("Please complete all booking details.", "error");
+    return;
+  }
+  if (!email || !email.includes('@') || !email.includes('.')) {
+    showAlert("Please enter a valid passenger email address.", "error");
+    return;
+  }
+
+  const nicValidation = validatePassengerNics();
+  if (!nicValidation.valid) {
+    showAlert(nicValidation.errorMsg, "error");
+    return;
+  }
+
+  setLoadingState(true);
+
+  try {
+    const resp = await fetch('/api/bookings/confirm', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from_station: from,
+        to_station: to,
+        travel_date: travelDate,
+        train_id: trainId,
+        seat_class: seatClass,
+        passenger_count: count,
+        passenger_email: email,
+        user_id: 'passenger_web_user',
+        passengers: nicValidation.passengers,
+      })
+    });
+
+    const data = await resp.json();
+
+    if (resp.ok && data.success) {
+      if (data.pending_review || data.status === 'PENDING_FRAUD_REVIEW') {
+        showPendingFraudReview(data);
+      } else if (data.booking) {
+        showConfirmation(data.booking);
+      }
+    } else {
+      const errMsg = data.error || data.detail || "Booking could not be processed.";
+      showAlert(errMsg, "error");
+    }
+  } catch (err) {
+    showAlert("Booking service is temporarily unavailable.", "error");
+  } finally {
+    setLoadingState(false);
+  }
+}
+
+function setLoadingState(loading) {
+  isSubmitting = loading;
+  const btn = $('btn-confirm-booking');
+  const label = $('btn-label');
+  btn.disabled = loading;
+  label.textContent = loading ? "Processing Reservation..." : "Confirm Booking ➔";
+}
+
+function showPendingFraudReview(data) {
+  navigateTo('/user/confirmation');
+  switchView('pending-review');
+  const b = data.booking || {};
+  const caseRef = data.case_reference || b.case_reference || 'FR-PENDING';
+  const risk = data.risk_level || b.risk_level || 'REVIEW';
+  const reasons = data.reasons || b.reasons || ['Security evaluation flagged request for human review.'];
+
+  $('pending-case-ref').textContent = caseRef;
+  $('pending-case-num').textContent = caseRef;
+  $('pending-risk-level').textContent = risk;
+  $('pending-risk-level').style.color = risk === 'HIGH' ? '#F87171' : '#FBBF24';
+  $('pending-route').textContent = `${b.from_station || $('from-station').value} → ${b.to_station || $('to-station').value}`;
+  $('pending-date').textContent = b.travel_date || $('travel-date').value;
+  $('pending-reasons').textContent = Array.isArray(reasons) ? reasons.join('; ') : String(reasons);
+}
+
+function showConfirmation(booking) {
+  navigateTo('/user/confirmation');
+  switchView('confirmation');
+  $('conf-ref').textContent = booking.booking_reference;
+  $('conf-route').textContent = `${booking.from_station} → ${booking.to_station}`;
+  $('conf-date').textContent = booking.travel_date;
+  $('conf-train').textContent = booking.train_id;
+  $('conf-class').textContent = booking.seat_class;
+  $('conf-passengers').textContent = `${booking.passenger_count} Passenger${booking.passenger_count > 1 ? 's' : ''}`;
+  $('conf-fare').textContent = `Rs. ${booking.fare}`;
+}
+
+function resetToBooking() {
+  $('booking-form').reset();
+  $('seat-class').value = 'Second Class';
+  selectSeatClass('Second Class');
+  currentSchedules = [];
+  $('train-select').innerHTML = '<option value="">-- Complete route & date first --</option>';
+  navigateTo('/user/booking');
+}
+
+function showAlert(message, type = "error") {
+  const box = $('booking-alert');
+  box.textContent = message;
+  box.className = `alert-box visible alert-${type}`;
+}
+
+function hideAlert() {
+  const box = $('booking-alert');
+  box.className = 'alert-box';
+}
+
+function escapeHtml(text) {
+  if (!text) return '';
+  return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+async function submitCancellation(bookingRef, reason, btn) {
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "Transmitting to Agent Hub...";
+  }
+
+  try {
+    const resp = await fetch('/api/cancellations/confirm', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ booking_reference: bookingRef, reason: reason })
+    });
+    const data = await resp.json();
+    if (resp.ok && data.success && data.cancellation) {
+      const c = data.cancellation;
+      appendMessage('assistant', 
+        `✅ **Cancellation Request Lodged (Case: ${c.case_reference})**\n\n` +
+        `• **Booking Reference:** ${c.booking_reference}\n` +
+        `• **Reason Category:** ${c.reason_category}\n` +
+        `• **Eligibility Result:** ${c.eligibility}\n` +
+        `• **Suggested Refund:** Rs. ${c.suggested_refund}\n` +
+        `• **Case Status:** \`${c.cancellation_status}\`\n\n` +
+        `*Your request is recorded and awaits human administrator review.*`
+      );
+    } else {
+      appendMessage('assistant', `⚠️ **Cancellation Failed**: ${data.error || data.detail || 'Could not process.'}`);
+    }
+  } catch (err) {
+    appendMessage('assistant', "⚠️ **Connection Error**: Unable to reach cancellation gateway.");
+  }
+}
+</script>
+
+</body>
+</html>

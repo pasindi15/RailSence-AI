@@ -46,7 +46,7 @@ from rag import chatbot as engineer_chatbot
 import hub_client
 import supabase_store
 
-logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
+logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO").upper())
 logger = logging.getLogger("railsense.maintenance")
 limiter = Limiter(key_func=get_remote_address, default_limits=["120/minute"])
 
@@ -89,6 +89,15 @@ app = FastAPI(
 )
 app.state.limiter = limiter
 app.add_middleware(SlowAPIMiddleware)
+
+from fastapi.middleware.cors import CORSMiddleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Serve train images — place images in ui/trains/<name>.jpg
 _trains_dir = UI_DIR / "trains"

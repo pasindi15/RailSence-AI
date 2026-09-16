@@ -41,7 +41,7 @@ import supabase_store
 from admin import admin_db
 from admin.admin_router import router as admin_router
 
-logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
+logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO").upper())
 logger = logging.getLogger("railsense.operations")
 limiter = Limiter(key_func=get_remote_address, default_limits=["120/minute"])
 
@@ -64,6 +64,15 @@ app = FastAPI(
 app.include_router(admin_router)
 app.mount("/admin", StaticFiles(directory=Path(__file__).parent / "admin_ui", html=True), name="admin_ui")
 app.state.limiter = limiter
+
+from fastapi.middleware.cors import CORSMiddleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 app.add_middleware(SlowAPIMiddleware)
 
 
