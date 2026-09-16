@@ -416,7 +416,7 @@ async def booking_options_proxy(
     Never invents mock train data.
     """
     try:
-        async with httpx.AsyncClient(timeout=6.0) as client:
+        async with httpx.AsyncClient(timeout=25.0) as client:
             resp = await client.get(
                 f"{BOOKING_AGENT_URL}/booking-options",
                 params={
@@ -426,27 +426,23 @@ async def booking_options_proxy(
                 },
             )
             if resp.status_code == 200:
-                data = resp.json()
-                if isinstance(data, list):
-                    return JSONResponse(status_code=200, content={"trains": data})
-                return JSONResponse(status_code=200, content=data)
-    except Exception:
-        pass
-
-    # Authoritative database query fallback
-    try:
-        sys.path.insert(0, str(_M3_ROOT / "booking-agent"))
-        from database.database import SessionLocal
-        from booking.availability import get_schedules_for_route
-        d = date.fromisoformat(travel_date)
-        with SessionLocal() as db:
-            options = get_schedules_for_route(db, from_station, to_station, d)
-            return JSONResponse(status_code=200, content={"trains": options})
-    except Exception:
-        return JSONResponse(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            content={"error": "Booking service is temporarily unavailable.", "trains": []},
-        )
+                return JSONResponse(status_code=200, content=resp.json())
+            return JSONResponse(status_code=resp.status_code, content=resp.json())
+    except (httpx.ConnectError, httpx.TimeoutException, Exception):
+        # Fallback to direct DB query if booking agent service is not running on separate port
+        try:
+            sys.path.insert(0, str(_M3_ROOT / "booking-agent"))
+            from database.database import SessionLocal
+            from booking.availability import get_schedules_for_route
+            d = date.fromisoformat(travel_date)
+            with SessionLocal() as db:
+                options = get_schedules_for_route(db, from_station, to_station, d)
+                return JSONResponse(status_code=200, content=options)
+        except Exception:
+            return JSONResponse(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                content={"error": "Booking service is temporarily unavailable."},
+            )
     except Exception as exc:
         return JSONResponse(
             status_code=status.HTTP_502_BAD_GATEWAY,
@@ -509,7 +505,7 @@ async def confirm_booking_endpoint(req: ConfirmBookingInput) -> JSONResponse:
 
     # 4. Dispatch through Communication Hub
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
+        async with httpx.AsyncClient(timeout=25.0) as client:
             resp = await client.post(
                 f"{HUB_URL}/messages",
                 json=envelope,
@@ -846,7 +842,7 @@ async def list_admin_cancellations(status: str | None = None) -> JSONResponse:
     List cancellation cases for Admin Dashboard review.
     """
     try:
-        async with httpx.AsyncClient(timeout=6.0) as client:
+        async with httpx.AsyncClient(timeout=25.0) as client:
             resp = await client.get(
                 f"{BOOKING_AGENT_URL}/cancellations",
                 params={"status": status} if status else {},
@@ -880,7 +876,7 @@ async def review_admin_cancellation(
     - REJECT: keeps Booking.status as CONFIRMED and transitions CancellationRequest.status -> REJECTED
     """
     try:
-        async with httpx.AsyncClient(timeout=6.0) as client:
+        async with httpx.AsyncClient(timeout=25.0) as client:
             resp = await client.post(
                 f"{BOOKING_AGENT_URL}/internal/cancellations/{case_reference}/review",
                 json={"decision": payload.decision, "admin_reason": payload.admin_reason},
@@ -920,7 +916,7 @@ async def preview_cancellation_nlp(payload: AdminNLPPreviewReq) -> JSONResponse:
     Analyze proposed rejection reason with NLP for real-time frontend feedback.
     """
     try:
-        async with httpx.AsyncClient(timeout=6.0) as client:
+        async with httpx.AsyncClient(timeout=25.0) as client:
             resp = await client.post(
                 f"{BOOKING_AGENT_URL}/internal/cancellations/nlp-preview",
                 json={"reason": payload.reason},
@@ -961,7 +957,7 @@ async def list_admin_fraud_reviews(status: str | None = None) -> JSONResponse:
     List fraud review cases for Admin Console adjudication.
     """
     try:
-        async with httpx.AsyncClient(timeout=6.0) as client:
+        async with httpx.AsyncClient(timeout=25.0) as client:
             resp = await client.get(
                 f"{BOOKING_AGENT_URL}/internal/fraud-reviews",
                 params={"status": status} if status else {},
@@ -996,7 +992,7 @@ async def review_admin_fraud_case(
     - REJECT: Updates FraudReview to REJECTED with reason; no ticket is created.
     """
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
+        async with httpx.AsyncClient(timeout=25.0) as client:
             resp = await client.post(
                 f"{BOOKING_AGENT_URL}/internal/fraud-reviews/{case_reference}/review",
                 json={
