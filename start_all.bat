@@ -16,8 +16,11 @@ start "M4 Maintenance Agent (Port 8006)" cmd /k "cd /d "%~dp0M4-maintenance-agen
 
 start "Frontend Gateway (Port 3000)" cmd /k "cd /d "%~dp0frontend" && python serve.py"
 
-echo All 7 RailSense services launched!
-echo User Portal:  http://localhost:3000/user
-echo Admin Portal: http://localhost:3000/admin
+start "M1 React App (Port 5173)" cmd /k "cd /d "%~dp0M1-passenger_assistant\frontend" && npm.cmd run dev"
+
+echo All RailSense services launched!
+echo User Portal:       http://localhost:3000/user
+echo Admin Portal:      http://localhost:3000/admin
+echo M1 React App:      http://localhost:5173
 pause
 
