@@ -17,9 +17,12 @@ import subprocess
 import sys
 import time
 import urllib.request
-import urllib.parse
-import json
 from pathlib import Path
+
+try:
+    import psutil
+except ImportError:
+    psutil = None
 
 ROOT_DIR = Path(__file__).resolve().parent
 
