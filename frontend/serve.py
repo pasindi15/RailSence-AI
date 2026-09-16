@@ -428,7 +428,7 @@ async def booking_options_proxy(
             if resp.status_code == 200:
                 return JSONResponse(status_code=200, content=resp.json())
             return JSONResponse(status_code=resp.status_code, content=resp.json())
-    except (httpx.ConnectError, httpx.TimeoutException, Exception):
+    except (httpx.ConnectError, httpx.TimeoutException):
         # Fallback to direct DB query if booking agent service is not running on separate port
         try:
             sys.path.insert(0, str(_M3_ROOT / "booking-agent"))
