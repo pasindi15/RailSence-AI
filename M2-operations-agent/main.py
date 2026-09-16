@@ -41,7 +41,7 @@ import supabase_store
 from admin import admin_db
 from admin.admin_router import router as admin_router
 
-logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
+logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO").upper())
 logger = logging.getLogger("railsense.operations")
 limiter = Limiter(key_func=get_remote_address, default_limits=["120/minute"])
 
