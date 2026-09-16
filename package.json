@@ -1,0 +1,26 @@
+{
+  "name": "railsense-ai",
+  "version": "1.0.0",
+  "description": "RailSense AI — Unified Multi-Agent Railway Intelligence System",
+  "scripts": {
+    "backend": "python run_backend.py",
+    "frontend": "python run_frontend.py",
+    "start": "python run_backend.py",
+    "dev": "python run_backend.py",
+    "test:portals": "python test_portals.py"
+  },
+  "keywords": [
+    "railsense",
+    "railway",
+    "multi-agent",
+    "fastapi",
+    "m1-passenger",
+    "m2-operations",
+    "m3-hub",
+    "m3-booking",
+    "m4-maintenance",
+    "security"
+  ],
+  "author": "RailSense AI Team",
+  "license": "MIT"
+}

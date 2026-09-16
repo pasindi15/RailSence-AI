@@ -282,3 +282,10 @@ def feedback(req: FeedbackRequest):
     except Exception as e:
         print(f"Supabase feedback failed: {e}")
         return {"status": "received", "session_id": req.session_id, "saved": False, "error": str(e)}
+
+
+# Mount pre-built React/Vite UI if available
+from fastapi.staticfiles import StaticFiles
+_frontend_dist = Path(__file__).resolve().parent.parent / "frontend" / "dist"
+if _frontend_dist.exists() and (_frontend_dist / "index.html").exists():
+    app.mount("/", StaticFiles(directory=str(_frontend_dist), html=True), name="frontend")

@@ -78,6 +78,15 @@ app = FastAPI(
 app.state.limiter = limiter
 app.add_middleware(SlowAPIMiddleware)
 
+from fastapi.middleware.cors import CORSMiddleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # Serve train images — place images in ui/trains/<name>.jpg
 _trains_dir = UI_DIR / "trains"
 _trains_dir.mkdir(exist_ok=True)

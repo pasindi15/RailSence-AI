@@ -1,0 +1,1515 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RailSense AI — Operations & Administrative Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Share+Tech+Mono&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:           #080C14;
+  --panel-dark:   #0D121F;
+  --card:         rgba(17, 24, 39, 0.88);
+  --card-hi:      rgba(27, 36, 56, 0.95);
+  --border:       rgba(59, 130, 246, 0.22);
+  --border-hi:    rgba(96, 165, 250, 0.45);
+  --ink:          #E2E8F0;
+  --ink-bright:   #FFFFFF;
+  --muted:        #64748B;
+  --muted-hi:     #94A3B8;
+  --brand:        #3B82F6;
+  --brand-gold:   #C9A22A;
+  --signal-g:     #10B981;
+  --signal-a:     #F59E0B;
+  --signal-r:     #EF4444;
+  --r:            10px;
+  --shadow:       0 8px 32px rgba(0, 0, 0, 0.85);
+  --blur:         blur(20px);
+  --ease:         cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Inter', -apple-system, sans-serif;
+  font-size: 13.5px;
+  min-height: 100vh;
+  overflow-x: hidden;
+  line-height: 1.5;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    linear-gradient(rgba(59, 130, 246, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(59, 130, 246, 0.03) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse 900px 600px at 15% 10%, rgba(37, 99, 235, 0.08) 0%, transparent 65%),
+    radial-gradient(ellipse 700px 500px at 85% 85%, rgba(201, 162, 42, 0.05) 0%, transparent 60%);
+}
+
+.app-shell {
+  position: relative;
+  z-index: 1;
+  max-width: 1340px;
+  margin: 0 auto;
+  padding: 16px 20px 60px;
+}
+
+/* ── Top Header ────────────────────────────────────────────────────── */
+.top-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  border-radius: var(--r);
+  background: var(--card);
+  backdrop-filter: var(--blur);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  margin-bottom: 16px;
+}
+
+.brand-area {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-emblem {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.3), rgba(30, 58, 138, 0.4));
+  border: 1px solid var(--border-hi);
+  display: grid;
+  place-items: center;
+  font-size: 20px;
+}
+
+.brand-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink-bright);
+  letter-spacing: 0.3px;
+}
+
+.brand-subtitle {
+  font-size: 10.5px;
+  color: #60A5FA;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  font-family: 'Share Tech Mono', monospace;
+}
+
+.header-status-grid {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.service-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 10.5px;
+  font-family: 'Share Tech Mono', monospace;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid var(--border);
+  color: var(--muted-hi);
+}
+
+.service-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #64748B;
+}
+
+.service-dot.online { background: #10B981; box-shadow: 0 0 5px #10B981; }
+.service-dot.offline { background: #EF4444; }
+
+.btn-portal-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 6px;
+  background: rgba(201, 162, 42, 0.15);
+  border: 1px solid rgba(201, 162, 42, 0.4);
+  color: #FDE68A;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.btn-portal-switch:hover {
+  background: rgba(201, 162, 42, 0.28);
+  border-color: #FBBF24;
+  transform: translateY(-1px);
+}
+
+/* ── Main Navigation Bar ───────────────────────────────────────────── */
+.admin-nav-bar {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 20px;
+  background: rgba(13, 18, 31, 0.8);
+  padding: 6px;
+  border-radius: var(--r);
+  border: 1px solid var(--border);
+  backdrop-filter: var(--blur);
+}
+
+.admin-nav-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 14px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted-hi);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+
+.admin-nav-tab:hover {
+  color: var(--ink-bright);
+  background: rgba(59, 130, 246, 0.09);
+}
+
+.admin-nav-tab.active {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.25), rgba(30, 58, 138, 0.15));
+  border-color: var(--border-hi);
+  color: var(--ink-bright);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+}
+
+/* ── Sub Navigation ────────────────────────────────────────────────── */
+.sub-nav {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sub-chip {
+  padding: 6px 14px;
+  border-radius: 20px;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid var(--border);
+  color: var(--muted-hi);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.sub-chip:hover {
+  color: var(--ink-bright);
+  border-color: var(--border-hi);
+}
+
+.sub-chip.active {
+  background: #2563EB;
+  border-color: #60A5FA;
+  color: #fff;
+}
+
+/* ── View Panels ───────────────────────────────────────────────────── */
+.view-panel {
+  display: none;
+  animation: fadeIn 0.22s var(--ease);
+}
+
+.view-panel.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── KPI Grid ──────────────────────────────────────────────────────── */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.kpi-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 16px 18px;
+  box-shadow: var(--shadow);
+  backdrop-filter: var(--blur);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.kpi-title {
+  font-size: 11px;
+  color: var(--muted-hi);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  font-weight: 600;
+}
+
+.kpi-val {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--ink-bright);
+  font-family: 'Share Tech Mono', monospace;
+}
+
+.kpi-note {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* ── Service Matrix Table ──────────────────────────────────────────── */
+.card-section {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+  backdrop-filter: var(--blur);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink-bright);
+}
+
+.btn-refresh {
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--ink);
+  padding: 6px 12px;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-refresh:hover {
+  border-color: var(--brand);
+  color: var(--ink-bright);
+}
+
+.status-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+
+.status-table th {
+  text-align: left;
+  padding: 10px 12px;
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--border);
+}
+
+.status-table td {
+  padding: 11px 12px;
+  border-bottom: 1px solid rgba(59, 130, 246, 0.1);
+  color: var(--ink);
+}
+
+.badge-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: 'Share Tech Mono', monospace;
+}
+
+.badge-green { background: rgba(16, 185, 129, 0.15); color: #34D399; border: 1px solid rgba(16, 185, 129, 0.35); }
+.badge-red { background: rgba(239, 68, 68, 0.15); color: #F87171; border: 1px solid rgba(239, 68, 68, 0.35); }
+.badge-yellow { background: rgba(245, 158, 11, 0.15); color: #FBBF24; border: 1px solid rgba(245, 158, 11, 0.35); }
+
+/* ── Embedded Frame Views ──────────────────────────────────────────── */
+.embedded-frame-container {
+  width: 100%;
+  height: 820px;
+  border-radius: var(--r);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  background: #0D1117;
+  position: relative;
+}
+
+.embedded-frame {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.frame-top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 16px;
+  background: #090D16;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+}
+
+/* ── Admin Adjudication Cards (Fraud & Cancellations) ──────────────── */
+.admin-cases-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.admin-case-card {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.case-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.case-ref {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 15px;
+  font-weight: 700;
+  color: #60A5FA;
+}
+
+.case-grid-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 8px 16px;
+  font-size: 12.5px;
+  padding: 10px 12px;
+  background: rgba(10, 14, 26, 0.7);
+  border-radius: 6px;
+}
+
+.case-actions-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 6px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(59, 130, 246, 0.15);
+}
+
+.btn-approve {
+  background: #059669;
+  border: none;
+  color: #fff;
+  padding: 7px 16px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-approve:hover { background: #10B981; }
+
+.btn-reject {
+  background: rgba(220, 38, 38, 0.85);
+  border: none;
+  color: #fff;
+  padding: 7px 16px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-reject:hover { background: #EF4444; }
+
+/* ── Modals ────────────────────────────────────────────────────────── */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(8px);
+  z-index: 999;
+  display: none;
+  place-items: center;
+  padding: 20px;
+}
+
+.modal-backdrop.active { display: grid; }
+
+.modal-card {
+  width: 100%;
+  max-width: 540px;
+  background: var(--card-hi);
+  border: 1px solid var(--border-hi);
+  border-radius: var(--r);
+  padding: 24px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.modal-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  background: rgba(10, 15, 26, 0.8);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--ink-bright);
+  font-family: inherit;
+  font-size: 13px;
+  outline: none;
+  resize: vertical;
+}
+
+.modal-textarea:focus { border-color: var(--brand); }
+
+.quick-chips-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.chip-btn {
+  background: rgba(30, 41, 59, 0.7);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--muted-hi);
+  padding: 4px 8px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.chip-btn:hover { color: var(--ink-bright); border-color: var(--brand); }
+
+.nlp-preview-card {
+  padding: 10px 14px;
+  border-radius: 6px;
+  background: rgba(37, 99, 235, 0.12);
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  font-size: 12px;
+}
+</style>
+</head>
+<body>
+
+<div class="app-shell">
+  <!-- Top Navigation Header -->
+  <header class="top-nav">
+    <div class="brand-area">
+      <div class="brand-emblem">🛡️</div>
+      <div>
+        <div class="brand-title">RailSense AI</div>
+        <div class="brand-subtitle">Central Operations &amp; Admin Suite</div>
+      </div>
+    </div>
+
+    <!-- Real-time Agent Status Pills -->
+    <div class="header-status-grid" id="agent-status-pills">
+      <span class="service-pill"><span class="service-dot" id="dot-8002"></span> Hub 8002</span>
+      <span class="service-pill"><span class="service-dot" id="dot-8003"></span> Booking 8003</span>
+      <span class="service-pill"><span class="service-dot" id="dot-8004"></span> Security 8004</span>
+      <span class="service-pill"><span class="service-dot" id="dot-8005"></span> Ops 8005</span>
+      <span class="service-pill"><span class="service-dot" id="dot-8006"></span> Maint 8006</span>
+      <span class="service-pill"><span class="service-dot" id="dot-8001"></span> Passenger 8001</span>
+    </div>
+
+    <div>
+      <a href="/user" class="btn-portal-switch">
+        <span>Passenger Portal</span>
+        <span>➔</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- Main Navigation Tabs -->
+  <nav class="admin-nav-bar" role="tablist">
+    <button class="admin-nav-tab active" id="nav-dashboard" onclick="navigateTo('/admin')">
+      <span>📊</span> Dashboard
+    </button>
+    <button class="admin-nav-tab" id="nav-operations" onclick="navigateTo('/admin/operations')">
+      <span>🚦</span> Operations
+    </button>
+    <button class="admin-nav-tab" id="nav-bookings" onclick="navigateTo('/admin/bookings')">
+      <span>🎫</span> Bookings &amp; Revenue
+    </button>
+    <button class="admin-nav-tab" id="nav-maintenance" onclick="navigateTo('/admin/maintenance')">
+      <span>🔧</span> Maintenance &amp; Assets
+    </button>
+    <button class="admin-nav-tab" id="nav-security" onclick="navigateTo('/admin/security')">
+      <span>🛡️</span> Security &amp; System
+    </button>
+  </nav>
+
+  <!-- ==================== SECTION 1: DASHBOARD ==================== -->
+  <main id="view-dashboard" class="view-panel active">
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-title">Network Delay Status</div>
+        <div class="kpi-val" id="kpi-avg-delay">3.2m</div>
+        <div class="kpi-note">M2 ML model average prediction</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-title">Fleet Health Score</div>
+        <div class="kpi-val" id="kpi-fleet-health" style="color:#10B981;">84.5</div>
+        <div class="kpi-note">M4 asset tracking telemetry</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-title">Pending Fraud Reviews</div>
+        <div class="kpi-val" id="kpi-fraud-pending" style="color:#FBBF24;">0</div>
+        <div class="kpi-note">IsolationForest anomaly queue</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-title">Pending Cancellations</div>
+        <div class="kpi-val" id="kpi-canc-pending" style="color:#60A5FA;">0</div>
+        <div class="kpi-note">Human-in-the-Loop review queue</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-title">Active Multi-Agent Services</div>
+        <div class="kpi-val" id="kpi-online-services" style="color:#34D399;">6 / 6</div>
+        <div class="kpi-note">Hub-mediated microservices</div>
+      </div>
+    </div>
+
+    <!-- Agent Service Health Matrix -->
+    <div class="card-section">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Multi-Agent Service Health &amp; Topology Matrix</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px;">Real-time heartbeat polling across all RailSense AI port bindings</div>
+        </div>
+        <button class="btn-refresh" onclick="pollSystemHealth()">⟳ Poll Health Now</button>
+      </div>
+
+      <table class="status-table">
+        <thead>
+          <tr>
+            <th>Logical Agent Name</th>
+            <th>Module</th>
+            <th>Designated Port</th>
+            <th>Endpoint Target</th>
+            <th>Live Status</th>
+            <th>Latency</th>
+          </tr>
+        </thead>
+        <tbody id="health-matrix-body">
+          <tr><td colspan="6" style="text-align:center;color:var(--muted)">Checking agent services...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Operational Shortcuts -->
+    <div class="card-section">
+      <div class="card-title" style="margin-bottom:12px;">Quick Action Dispatch Desks</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));gap:12px;">
+        <button class="btn-refresh" style="padding:12px;text-align:left;" onclick="navigateTo('/admin/operations'); switchSubSection('operations', 'control-room');">
+          <strong style="color:var(--ink-bright);display:block;">🚦 Operations Control Room</strong>
+          <span style="font-size:11.5px;color:var(--muted);">Live route delay heatmap &amp; crossing monitors</span>
+        </button>
+        <button class="btn-refresh" style="padding:12px;text-align:left;" onclick="navigateTo('/admin/bookings'); switchSubSection('bookings', 'fraud');">
+          <strong style="color:var(--ink-bright);display:block;">🛡️ Fraud Review Adjudication</strong>
+          <span style="font-size:11.5px;color:var(--muted);">Review flagged bookings &amp; authorize tickets</span>
+        </button>
+        <button class="btn-refresh" style="padding:12px;text-align:left;" onclick="navigateTo('/admin/maintenance'); switchSubSection('maintenance', 'fleet');">
+          <strong style="color:var(--ink-bright);display:block;">🔧 Asset Intelligence Dashboard</strong>
+          <span style="font-size:11.5px;color:var(--muted);">Fleet telemetry gauges &amp; RED status alerts</span>
+        </button>
+        <button class="btn-refresh" style="padding:12px;text-align:left;" onclick="navigateTo('/admin/operations'); switchSubSection('operations', 'admin-console');">
+          <strong style="color:var(--ink-bright);display:block;">⚙️ M2 Model Retraining &amp; CRUD</strong>
+          <span style="font-size:11.5px;color:var(--muted);">Data quality check &amp; delay regressor rollback</span>
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <!-- ==================== SECTION 2: OPERATIONS ==================== -->
+  <main id="view-operations" class="view-panel">
+    <div class="sub-nav">
+      <button class="sub-chip active" id="chip-ops-control" onclick="switchSubSection('operations', 'control-room')">🚦 Control Room Dashboard (Port 8005)</button>
+      <button class="sub-chip" id="chip-ops-admin" onclick="switchSubSection('operations', 'admin-console')">⚙️ M2 Admin Console (Port 8005/admin)</button>
+      <button class="sub-chip" id="chip-ops-predict" onclick="switchSubSection('operations', 'predict-tool')">🔮 Interactive Delay Prediction &amp; Triage</button>
+    </div>
+
+    <!-- View A: Operations Control Room Live View -->
+    <div id="subview-ops-control">
+      <div class="embedded-frame-container">
+        <div class="frame-top-bar">
+          <span>Connected to: <code>http://localhost:8005/</code> (M2 Operations Control Room)</span>
+          <a href="http://localhost:8005" target="_blank" class="btn-portal-switch" style="font-size:11px;padding:3px 8px;">Open Standalone ↗</a>
+        </div>
+        <iframe class="embedded-frame" id="frame-ops-control" src="about:blank"></iframe>
+      </div>
+    </div>
+
+    <!-- View B: M2 Admin Console Live View -->
+    <div id="subview-ops-admin" style="display:none;">
+      <div class="embedded-frame-container">
+        <div class="frame-top-bar">
+          <span>Connected to: <code>http://localhost:8005/admin</code> (M2 Operations Admin Suite)</span>
+          <a href="http://localhost:8005/admin" target="_blank" class="btn-portal-switch" style="font-size:11px;padding:3px 8px;">Open Standalone ↗</a>
+        </div>
+        <iframe class="embedded-frame" id="frame-ops-admin" src="about:blank"></iframe>
+      </div>
+    </div>
+
+    <!-- View C: Interactive Delay Prediction & Incident Triage -->
+    <div id="subview-ops-predict" style="display:none;">
+      <div class="card-section">
+        <div class="card-title">Live Delay Prediction Regressor (M2)</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:14px;">Direct evaluation of trained GradientBoostingRegressor with Supabase pgvector incident retrieval</div>
+        
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+          <div>
+            <label style="font-size:11.5px;color:var(--muted-hi);display:block;margin-bottom:4px;">Route</label>
+            <input type="text" id="test-pred-route" value="Colombo Fort - Kandy" style="width:100%;padding:8px 12px;background:rgba(10,15,26,0.8);border:1px solid var(--border);border-radius:6px;color:#fff;outline:none;" />
+          </div>
+          <div>
+            <label style="font-size:11.5px;color:var(--muted-hi);display:block;margin-bottom:4px;">Train ID</label>
+            <input type="text" id="test-pred-train" value="PM-4082" style="width:100%;padding:8px 12px;background:rgba(10,15,26,0.8);border:1px solid var(--border);border-radius:6px;color:#fff;outline:none;" />
+          </div>
+        </div>
+
+        <button class="btn-approve" onclick="testDelayPrediction()">Run Prediction</button>
+        <div id="test-pred-result" style="margin-top:14px;padding:12px;border-radius:6px;background:rgba(10,14,26,0.8);border:1px solid var(--border);font-family:'Share Tech Mono',monospace;display:none;font-size:12px;"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ==================== SECTION 3: BOOKINGS ==================== -->
+  <main id="view-bookings" class="view-panel">
+    <div class="sub-nav">
+      <button class="sub-chip active" id="chip-book-fraud" onclick="switchSubSection('bookings', 'fraud')">🛡️ Fraud Review Queue (ML Flagged)</button>
+      <button class="sub-chip" id="chip-book-canc" onclick="switchSubSection('bookings', 'canc')">🔄 Cancellation Queue (Human-in-the-Loop)</button>
+      <button class="sub-chip" id="chip-book-schedules" onclick="switchSubSection('bookings', 'schedules')">📋 Schedules &amp; Seat Inventory</button>
+    </div>
+
+    <!-- View A: Fraud Review Queue -->
+    <div id="subview-book-fraud">
+      <div class="card-section">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Security &amp; Fraud Review Queue</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px;">IsolationForest anomaly-detected booking cases awaiting human administrator adjudication</div>
+          </div>
+          <div style="display:flex;gap:6px;">
+            <button class="chip-btn" id="filter-fraud-all" onclick="filterFraudCases('ALL')">All</button>
+            <button class="chip-btn" id="filter-fraud-pending" onclick="filterFraudCases('PENDING_REVIEW')">Pending Review</button>
+            <button class="chip-btn" id="filter-fraud-approved" onclick="filterFraudCases('APPROVED')">Approved</button>
+            <button class="chip-btn" id="filter-fraud-rejected" onclick="filterFraudCases('REJECTED')">Rejected</button>
+            <button class="btn-refresh" onclick="loadAdminFraudReviews()">⟳ Refresh</button>
+          </div>
+        </div>
+
+        <div id="admin-fraud-cases-container" class="admin-cases-grid">
+          <div style="padding:20px;text-align:center;color:var(--muted)">Loading fraud review cases...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- View B: Cancellation Review Queue -->
+    <div id="subview-book-canc" style="display:none;">
+      <div class="card-section">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Passenger Cancellation Adjudication Queue</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px;">Human-in-the-Loop review for ticket refund and cancellation requests</div>
+          </div>
+          <div style="display:flex;gap:6px;">
+            <button class="chip-btn" id="filter-canc-all" onclick="filterAdminCases('all')">All</button>
+            <button class="chip-btn" id="filter-canc-pending" onclick="filterAdminCases('PENDING_ADMIN_REVIEW')">Pending Review</button>
+            <button class="chip-btn" id="filter-canc-approved" onclick="filterAdminCases('APPROVED')">Approved</button>
+            <button class="chip-btn" id="filter-canc-rejected" onclick="filterAdminCases('REJECTED')">Rejected</button>
+            <button class="btn-refresh" onclick="loadAdminCancellations()">⟳ Refresh</button>
+          </div>
+        </div>
+
+        <div id="admin-cases-container" class="admin-cases-grid">
+          <div style="padding:20px;text-align:center;color:var(--muted)">Loading cancellation cases...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- View C: Schedules & Seats Inspector -->
+    <div id="subview-book-schedules" style="display:none;">
+      <div class="card-section">
+        <div class="card-title">Live Schedule &amp; Dynamic Seat Inventory</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:14px;">Direct query through M3 Booking Agent (Port 8003)</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:flex-end;">
+          <div>
+            <label style="font-size:11.5px;color:var(--muted-hi);display:block;margin-bottom:4px;">From</label>
+            <input type="text" id="insp-from" value="Colombo" style="width:100%;padding:8px 12px;background:rgba(10,15,26,0.8);border:1px solid var(--border);border-radius:6px;color:#fff;outline:none;" />
+          </div>
+          <div>
+            <label style="font-size:11.5px;color:var(--muted-hi);display:block;margin-bottom:4px;">To</label>
+            <input type="text" id="insp-to" value="Kandy" style="width:100%;padding:8px 12px;background:rgba(10,15,26,0.8);border:1px solid var(--border);border-radius:6px;color:#fff;outline:none;" />
+          </div>
+          <div>
+            <label style="font-size:11.5px;color:var(--muted-hi);display:block;margin-bottom:4px;">Date</label>
+            <input type="date" id="insp-date" style="width:100%;padding:8px 12px;background:rgba(10,15,26,0.8);border:1px solid var(--border);border-radius:6px;color:#fff;outline:none;" />
+          </div>
+          <button class="btn-approve" onclick="inspectSchedules()">Query Trains</button>
+        </div>
+        <div id="insp-results" style="margin-top:14px;"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ==================== SECTION 4: MAINTENANCE ==================== -->
+  <main id="view-maintenance" class="view-panel">
+    <div class="sub-nav">
+      <button class="sub-chip active" id="chip-maint-fleet" onclick="switchSubSection('maintenance', 'fleet')">🚂 Asset Intelligence Dashboard (Port 8006)</button>
+      <button class="sub-chip" id="chip-maint-chat" onclick="switchSubSection('maintenance', 'chat')">💬 Maintenance Engineer Chatbot (Port 8006/chat-ui)</button>
+    </div>
+
+    <!-- View A: Asset Intelligence Dashboard -->
+    <div id="subview-maint-fleet">
+      <div class="embedded-frame-container">
+        <div class="frame-top-bar">
+          <span>Connected to: <code>http://localhost:8006/</code> (M4 Asset Intelligence Dashboard)</span>
+          <a href="http://localhost:8006" target="_blank" class="btn-portal-switch" style="font-size:11px;padding:3px 8px;">Open Standalone ↗</a>
+        </div>
+        <iframe class="embedded-frame" id="frame-maint-fleet" src="about:blank"></iframe>
+      </div>
+    </div>
+
+    <!-- View B: Engineer Chatbot -->
+    <div id="subview-maint-chat" style="display:none;">
+      <div class="embedded-frame-container">
+        <div class="frame-top-bar">
+          <span>Connected to: <code>http://localhost:8006/chat-ui</code> (M4 Equipment Manual Chatbot)</span>
+          <a href="http://localhost:8006/chat-ui" target="_blank" class="btn-portal-switch" style="font-size:11px;padding:3px 8px;">Open Standalone ↗</a>
+        </div>
+        <iframe class="embedded-frame" id="frame-maint-chat" src="about:blank"></iframe>
+      </div>
+    </div>
+  </main>
+
+  <!-- ==================== SECTION 5: SECURITY ==================== -->
+  <main id="view-security" class="view-panel">
+    <div class="card-section">
+      <div class="card-title">Security &amp; Fraud Agent (Port 8004)</div>
+      <div style="font-size:12.5px;color:var(--muted);margin:4px 0 16px;">IsolationForest anomaly detection scoring passenger behavioral patterns</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:12px;">
+        <div style="padding:14px;background:rgba(10,14,26,0.7);border:1px solid var(--border);border-radius:6px;">
+          <div style="font-size:11px;color:var(--muted);">ML Model Architecture</div>
+          <div style="font-size:16px;font-weight:700;color:var(--ink-bright);margin-top:4px;">IsolationForest</div>
+          <div style="font-size:11px;color:#34D399;margin-top:2px;">scikit-learn · 100 estimators</div>
+        </div>
+        <div style="padding:14px;background:rgba(10,14,26,0.7);border:1px solid var(--border);border-radius:6px;">
+          <div style="font-size:11px;color:var(--muted);">Feature Dimensions</div>
+          <div style="font-size:16px;font-weight:700;color:var(--ink-bright);margin-top:4px;">Behavioral Vectors</div>
+          <div style="font-size:11px;color:var(--muted-hi);margin-top:2px;">velocity, burst, conflict, time</div>
+        </div>
+        <div style="padding:14px;background:rgba(10,14,26,0.7);border:1px solid var(--border);border-radius:6px;">
+          <div style="font-size:11px;color:var(--muted);">Adjudication Policy</div>
+          <div style="font-size:16px;font-weight:700;color:var(--ink-bright);margin-top:4px;">Human-in-the-Loop</div>
+          <div style="font-size:11px;color:#FBBF24;margin-top:2px;">ALLOW · REVIEW · REJECT</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Communication Hub Audit Database Status -->
+    <div class="card-section">
+      <div class="card-title">Agent Communication Hub (Port 8002) &amp; Audit Trail</div>
+      <div style="font-size:12.5px;color:var(--muted);margin:4px 0 16px;">Central MCP-style message router, JWT verification, and audit ledger</div>
+      <div style="padding:14px;background:rgba(10,14,26,0.7);border:1px solid var(--border);border-radius:6px;font-family:'Share Tech Mono',monospace;font-size:12px;line-height:1.7;">
+        • Central Routing Target: <code>http://localhost:8002/messages</code><br>
+        • Database Store: <code>railsense_hub_audit.db</code> (SQLite) / Supabase <code>audit_logs</code><br>
+        • Message Lifecycle Statuses: <code>AUTHENTICATED</code> ➔ <code>ROUTED</code> ➔ <code>FAILED</code> ➔ <code>REJECTED</code><br>
+        • Rate Limiting: Per-agent token bucket flood protection active
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Modal: Fraud Case Rejection -->
+<div id="modal-fraud-rejection" class="modal-backdrop" onclick="if(event.target===this) closeFraudRejectionModal()">
+  <div class="modal-card">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+      <div>
+        <h2 style="font-size:17px;font-weight:700;color:#F87171;">Reject Flagged Booking Request</h2>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px;">Case: <strong id="modal-fraud-reject-case-ref" style="color:#fff;"></strong> · Masked NIC: <strong id="modal-fraud-reject-nic" style="color:#60A5FA;"></strong></div>
+      </div>
+      <button type="button" onclick="closeFraudRejectionModal()" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;">&times;</button>
+    </div>
+
+    <div>
+      <label style="font-size:12px;font-weight:600;color:var(--ink-bright);display:block;margin-bottom:6px;">Official Administrative Reason *</label>
+      <textarea id="modal-fraud-reject-reason-input" class="modal-textarea" rows="3" placeholder="Enter reason for rejecting this flagged reservation (e.g. Inconsistent passenger credentials; automated request pattern detected)..."></textarea>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:10px;">
+      <button class="btn-refresh" onclick="closeFraudRejectionModal()">Cancel</button>
+      <button id="btn-modal-confirm-fraud-reject" class="btn-reject" onclick="submitFraudRejectionDecision()">Confirm Rejection &amp; Decline Ticket</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Cancellation Case Rejection -->
+<div id="modal-rejection" class="modal-backdrop" onclick="if(event.target===this) closeRejectionModal()">
+  <div class="modal-card">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+      <div>
+        <h2 style="font-size:17px;font-weight:700;color:#F87171;">Reject Passenger Cancellation Request</h2>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px;">Case: <strong id="modal-reject-case-ref" style="color:#fff;"></strong> · Booking: <strong id="modal-reject-book-ref" style="color:#60A5FA;"></strong></div>
+      </div>
+      <button type="button" onclick="closeRejectionModal()" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;">&times;</button>
+    </div>
+
+    <div style="background:rgba(10,14,26,0.8);border-radius:6px;padding:10px 12px;font-size:12px;">
+      <span style="color:var(--muted);font-weight:600;">Original Passenger Reason:</span><br>
+      <span id="modal-reject-passenger-reason" style="color:#fff;font-style:italic"></span>
+    </div>
+
+    <div>
+      <label style="font-size:12px;font-weight:600;color:var(--ink-bright);display:block;margin-bottom:6px;">Official Rejection Explanation *</label>
+      <textarea id="modal-reject-reason-input" class="modal-textarea" rows="3" placeholder="Enter policy grounds for rejection..."></textarea>
+      <div style="font-size:11px;color:var(--muted);margin-top:6px;">Quick Grounds:</div>
+      <div class="quick-chips-row" style="margin-top:4px;">
+        <button type="button" class="chip-btn" onclick="applyQuickRejection('Cancellation requested within 24 hours of departure. Non-refundable per Section 4.2.')">⏰ Late Notice (&lt;24h)</button>
+        <button type="button" class="chip-btn" onclick="applyQuickRejection('Ticket purchased under non-refundable special promotional fare terms.')">🎟️ Promotional Fare</button>
+        <button type="button" class="chip-btn" onclick="applyQuickRejection('Medical emergency claim requires valid official medical certification.')">📋 Missing Medical Proof</button>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;align-items:center;">
+      <button type="button" class="btn-refresh" id="btn-nlp-analyze" onclick="analyzeRejectionWithNLP()">✨ Analyze &amp; Polish with NLP</button>
+      <span id="nlp-loading-indicator" style="display:none;font-size:12px;color:#60A5FA;">Analyzing...</span>
+    </div>
+
+    <div id="modal-nlp-preview-box" class="nlp-preview-card" style="display:none;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+        <strong id="nlp-category-badge" style="color:#93C5FD;">Category</strong>
+        <span id="nlp-tone-badge" style="color:var(--muted-hi);font-size:11px;">Tone</span>
+      </div>
+      <div id="nlp-polished-text" style="color:#fff;font-size:12px;margin-bottom:6px;line-height:1.4;"></div>
+      <button type="button" class="chip-btn" style="color:#93C5FD;" onclick="usePolishedExplanation()">✓ Use This Polished Phrasing</button>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:8px;">
+      <button class="btn-refresh" onclick="closeRejectionModal()">Cancel</button>
+      <button id="btn-modal-confirm-reject" class="btn-reject" onclick="submitRejectionDecision()">Confirm Rejection &amp; Dispatch Notice</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+window.addEventListener('DOMContentLoaded', () => {
+  const today = new Date().toISOString().split('T')[0];
+  if ($('insp-date')) $('insp-date').value = today;
+  
+  handleUrlRouting();
+  pollSystemHealth();
+  setInterval(pollSystemHealth, 30000);
+});
+
+window.addEventListener('popstate', handleUrlRouting);
+
+function navigateTo(path) {
+  history.pushState(null, '', path);
+  handleUrlRouting();
+}
+
+function handleUrlRouting() {
+  const path = window.location.pathname;
+
+  if (path.includes('/operations')) {
+    switchSection('operations');
+  } else if (path.includes('/bookings')) {
+    switchSection('bookings');
+  } else if (path.includes('/maintenance')) {
+    switchSection('maintenance');
+  } else if (path.includes('/security')) {
+    switchSection('security');
+  } else {
+    switchSection('dashboard');
+  }
+}
+
+function switchSection(secName) {
+  document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.admin-nav-tab').forEach(t => t.classList.remove('active'));
+
+  const viewEl = $(`view-${secName}`);
+  const navEl = $(`nav-${secName}`);
+  if (viewEl) viewEl.classList.add('active');
+  if (navEl) navEl.classList.add('active');
+
+  if (secName === 'operations') {
+    const f = $('frame-ops-control');
+    if (f && f.src === 'about:blank') f.src = 'http://localhost:8005';
+  } else if (secName === 'maintenance') {
+    const f = $('frame-maint-fleet');
+    if (f && f.src === 'about:blank') f.src = 'http://localhost:8006';
+  } else if (secName === 'bookings') {
+    loadAdminFraudReviews();
+    loadAdminCancellations();
+  }
+}
+
+function switchSubSection(parent, sub) {
+  if (parent === 'operations') {
+    $('subview-ops-control').style.display = sub === 'control-room' ? 'block' : 'none';
+    $('subview-ops-admin').style.display = sub === 'admin-console' ? 'block' : 'none';
+    $('subview-ops-predict').style.display = sub === 'predict-tool' ? 'block' : 'none';
+
+    $('chip-ops-control').classList.toggle('active', sub === 'control-room');
+    $('chip-ops-admin').classList.toggle('active', sub === 'admin-console');
+    $('chip-ops-predict').classList.toggle('active', sub === 'predict-tool');
+
+    if (sub === 'control-room') {
+      const f = $('frame-ops-control');
+      if (f.src === 'about:blank') f.src = 'http://localhost:8005';
+    } else if (sub === 'admin-console') {
+      const f = $('frame-ops-admin');
+      if (f.src === 'about:blank') f.src = 'http://localhost:8005/admin';
+    }
+  } else if (parent === 'bookings') {
+    $('subview-book-fraud').style.display = sub === 'fraud' ? 'block' : 'none';
+    $('subview-book-canc').style.display = sub === 'canc' ? 'block' : 'none';
+    $('subview-book-schedules').style.display = sub === 'schedules' ? 'block' : 'none';
+
+    $('chip-book-fraud').classList.toggle('active', sub === 'fraud');
+    $('chip-book-canc').classList.toggle('active', sub === 'canc');
+    $('chip-book-schedules').classList.toggle('active', sub === 'schedules');
+
+    if (sub === 'fraud') loadAdminFraudReviews();
+    if (sub === 'canc') loadAdminCancellations();
+  } else if (parent === 'maintenance') {
+    $('subview-maint-fleet').style.display = sub === 'fleet' ? 'block' : 'none';
+    $('subview-maint-chat').style.display = sub === 'chat' ? 'block' : 'none';
+
+    $('chip-maint-fleet').classList.toggle('active', sub === 'fleet');
+    $('chip-maint-chat').classList.toggle('active', sub === 'chat');
+
+    if (sub === 'fleet') {
+      const f = $('frame-maint-fleet');
+      if (f.src === 'about:blank') f.src = 'http://localhost:8006';
+    } else if (sub === 'chat') {
+      const f = $('frame-maint-chat');
+      if (f.src === 'about:blank') f.src = 'http://localhost:8006/chat-ui';
+    }
+  }
+}
+
+// ── Real-time Multi-Agent Health Polling ─────────────────────────────
+async function pollSystemHealth() {
+  const tbody = $('health-matrix-body');
+  try {
+    const resp = await fetch('/api/admin/system-health');
+    const data = await resp.json();
+
+    if (data && data.services) {
+      $('kpi-online-services').textContent = `${data.online_services} / ${data.total_services}`;
+      $('kpi-online-services').style.color = data.online_services === data.total_services ? '#34D399' : '#FBBF24';
+
+      let rowsHtml = '';
+      data.services.forEach(s => {
+        const isOk = s.status === 'online';
+        const dot = $(`dot-${s.port}`);
+        if (dot) {
+          dot.className = isOk ? 'service-dot online' : 'service-dot offline';
+        }
+
+        const badgeClass = isOk ? 'badge-green' : 'badge-red';
+        rowsHtml += `
+          <tr>
+            <td><strong>${escapeHtml(s.name)}</strong></td>
+            <td><code>${escapeHtml(s.agent_id)}</code></td>
+            <td><strong style="color:var(--brand);font-family:'Share Tech Mono',monospace;">${s.port}</strong></td>
+            <td><span style="font-family:'Share Tech Mono',monospace;color:var(--muted-hi);">${escapeHtml(s.url)}</span></td>
+            <td><span class="badge-tag ${badgeClass}">● ${s.status.toUpperCase()}</span></td>
+            <td><span style="font-family:'Share Tech Mono',monospace;">${s.latency_ms > 0 ? s.latency_ms + ' ms' : '—'}</span></td>
+          </tr>
+        `;
+      });
+      tbody.innerHTML = rowsHtml;
+    }
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="6" style="color:#F87171">Error checking system health.</td></tr>`;
+  }
+}
+
+// ── Fraud Adjudication Logic ────────────────────────────────────────
+let allFraudCases = [];
+let currentFraudFilter = 'ALL';
+let currentFraudRejectionCase = null;
+
+async function loadAdminFraudReviews() {
+  const container = $('admin-fraud-cases-container');
+  if (!container) return;
+
+  try {
+    const resp = await fetch('/api/admin/fraud-reviews');
+    const cases = await resp.json();
+    if (Array.isArray(cases)) {
+      allFraudCases = cases;
+      const pendingCount = cases.filter(c => c.status === 'PENDING_REVIEW').length;
+      $('kpi-fraud-pending').textContent = pendingCount;
+      renderFraudCases();
+    }
+  } catch (err) {
+    container.innerHTML = '<div style="padding:16px;color:#F87171">Error loading fraud reviews.</div>';
+  }
+}
+
+function filterFraudCases(filter) {
+  currentFraudFilter = filter;
+  renderFraudCases();
+}
+
+function renderFraudCases() {
+  const container = $('admin-fraud-cases-container');
+  if (!container) return;
+
+  let filtered = allFraudCases;
+  if (currentFraudFilter !== 'ALL') {
+    filtered = allFraudCases.filter(c => c.status === currentFraudFilter);
+  }
+
+  if (filtered.length === 0) {
+    container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted)">No fraud review cases found matching filter.</div>';
+    return;
+  }
+
+  container.innerHTML = '';
+  filtered.forEach(c => {
+    const card = document.createElement('div');
+    card.className = 'admin-case-card';
+
+    const isPending = c.status === 'PENDING_REVIEW';
+    const riskBadge = c.risk_level === 'HIGH' ? 'badge-red' : (c.risk_level === 'MEDIUM' ? 'badge-yellow' : 'badge-green');
+
+    let actionsHtml = '';
+    if (isPending) {
+      actionsHtml = `
+        <div class="case-actions-row">
+          <button class="btn-reject" onclick="openFraudRejectionModal('${c.case_reference}')">Reject (Block)</button>
+          <button class="btn-approve" onclick="reviewFraudCase('${c.case_reference}', 'APPROVE')">Approve &amp; Issue Ticket</button>
+        </div>
+      `;
+    } else {
+      actionsHtml = `
+        <div style="font-size:12px;color:var(--muted-hi);text-align:right;padding-top:6px;border-top:1px solid rgba(59,130,246,0.1)">
+          Decision: <strong>${c.admin_decision || c.status}</strong> | Reviewed: ${c.reviewed_at ? new Date(c.reviewed_at).toLocaleString() : 'N/A'}<br>
+          <em>Reason: "${escapeHtml(c.admin_reason || 'None specified')}"</em>
+          ${c.booking_reference ? `<br><strong style="color:#60A5FA">Issued Ticket: ${c.booking_reference}</strong>` : ''}
+        </div>
+      `;
+    }
+
+    const reasonsList = Array.isArray(c.reasons) ? c.reasons.join(', ') : (c.reasons || 'Behavioral risk threshold triggered');
+
+    card.innerHTML = `
+      <div class="case-top-row">
+        <div>
+          <span class="case-ref">${escapeHtml(c.case_reference)}</span>
+          <span style="font-size:12px;color:var(--muted);margin-left:8px;">NIC: <strong style="color:#FDE68A">${escapeHtml(c.primary_nic_masked || 'N/A')}</strong></span>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <span class="badge-tag ${riskBadge}">${escapeHtml(c.risk_level)} (${(Number(c.risk_score || 0) * 100).toFixed(0)}%)</span>
+          <span class="badge-tag" style="background:rgba(255,255,255,0.06);">● ${escapeHtml(c.status)}</span>
+        </div>
+      </div>
+
+      <div class="case-grid-details">
+        <div><span style="color:var(--muted)">Route:</span> <strong>${escapeHtml(c.from_station)} → ${escapeHtml(c.to_station)}</strong></div>
+        <div><span style="color:var(--muted)">Date:</span> <strong>${escapeHtml(c.travel_date)}</strong></div>
+        <div><span style="color:var(--muted)">Train/Class:</span> <strong>${escapeHtml(c.train_id)} · ${escapeHtml(c.seat_class)}</strong></div>
+        <div><span style="color:var(--muted)">Passengers:</span> <strong>${escapeHtml(c.passenger_count)}</strong></div>
+      </div>
+
+      <div style="font-size:12px;padding:8px 10px;background:rgba(10,14,26,0.6);border-radius:6px;">
+        <span style="color:var(--muted);font-weight:600;">Flag Reasons:</span> <em>${escapeHtml(reasonsList)}</em>
+      </div>
+
+      ${actionsHtml}
+    `;
+    container.appendChild(card);
+  });
+}
+
+function openFraudRejectionModal(caseRef) {
+  const caseData = allFraudCases.find(c => c.case_reference === caseRef);
+  if (!caseData) return;
+  currentFraudRejectionCase = caseData;
+  $('modal-fraud-reject-case-ref').textContent = caseData.case_reference;
+  $('modal-fraud-reject-nic').textContent = caseData.primary_nic_masked || 'N/A';
+  $('modal-fraud-reject-reason-input').value = '';
+  $('modal-fraud-rejection').classList.add('active');
+}
+
+function closeFraudRejectionModal() {
+  $('modal-fraud-rejection').classList.remove('active');
+  currentFraudRejectionCase = null;
+}
+
+async function submitFraudRejectionDecision() {
+  if (!currentFraudRejectionCase) return;
+  const reasonText = $('modal-fraud-reject-reason-input').value.trim();
+  if (!reasonText) {
+    alert('Please enter an official reason.');
+    return;
+  }
+
+  try {
+    const resp = await fetch(`/api/admin/fraud-reviews/${currentFraudRejectionCase.case_reference}/review`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ decision: 'REJECT', admin_reason: reasonText })
+    });
+    const data = await resp.json();
+    if (resp.ok && data.success) {
+      closeFraudRejectionModal();
+      await loadAdminFraudReviews();
+    } else {
+      alert(`Rejection failed: ${data.detail || data.error || 'Server error'}`);
+    }
+  } catch (err) {
+    alert('Error communicating with fraud review service.');
+  }
+}
+
+async function reviewFraudCase(caseRef, decision) {
+  if (!confirm(`Are you sure you want to APPROVE booking for case ${caseRef}? This will confirm real-time seats and issue the ticket.`)) return;
+
+  try {
+    const resp = await fetch(`/api/admin/fraud-reviews/${caseRef}/review`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ decision: 'APPROVE', admin_reason: 'Approved by security administrator.' })
+    });
+    const data = await resp.json();
+    if (resp.ok && data.success) {
+      await loadAdminFraudReviews();
+    } else {
+      alert(`Approval Failed: ${data.detail || data.error || 'Failed'}`);
+    }
+  } catch (err) {
+    alert('Error connecting to adjudication service.');
+  }
+}
+
+// ── Cancellation Queue Logic ────────────────────────────────────────
+let allAdminCases = [];
+let currentAdminFilter = 'all';
+let currentRejectionCase = null;
+let currentPolishedExplanation = '';
+
+async function loadAdminCancellations() {
+  const container = $('admin-cases-container');
+  if (!container) return;
+
+  try {
+    const resp = await fetch('/api/admin/cancellations');
+    const cases = await resp.json();
+    if (Array.isArray(cases)) {
+      allAdminCases = cases;
+      const pending = cases.filter(c => c.status === 'PENDING_ADMIN_REVIEW').length;
+      $('kpi-canc-pending').textContent = pending;
+      renderAdminCases();
+    }
+  } catch (err) {
+    container.innerHTML = '<div style="padding:16px;color:#F87171">Error loading cancellations.</div>';
+  }
+}
+
+function filterAdminCases(filter) {
+  currentAdminFilter = filter;
+  renderAdminCases();
+}
+
+function renderAdminCases() {
+  const container = $('admin-cases-container');
+  if (!container) return;
+
+  let filtered = allAdminCases;
+  if (currentAdminFilter !== 'all') {
+    filtered = allAdminCases.filter(c => c.status === currentAdminFilter);
+  }
+
+  if (filtered.length === 0) {
+    container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted)">No cancellation cases found.</div>';
+    return;
+  }
+
+  container.innerHTML = '';
+  filtered.forEach(c => {
+    const card = document.createElement('div');
+    card.className = 'admin-case-card';
+
+    const isPending = c.status === 'PENDING_ADMIN_REVIEW';
+    let actionsHtml = '';
+
+    if (isPending) {
+      actionsHtml = `
+        <div class="case-actions-row">
+          <button class="btn-reject" onclick="openRejectionModal('${c.case_reference}')">Reject Request</button>
+          <button class="btn-approve" onclick="reviewCancellationCase('${c.case_reference}', 'APPROVE')">Approve Cancellation</button>
+        </div>
+      `;
+    } else {
+      actionsHtml = `
+        <div style="font-size:12px;color:var(--muted-hi);text-align:right;padding-top:6px;border-top:1px solid rgba(59,130,246,0.1)">
+          Decision: <strong>${c.admin_decision || c.status}</strong> | Reviewed: ${c.reviewed_at ? new Date(c.reviewed_at).toLocaleString() : 'N/A'}<br>
+          <em>Reason: "${escapeHtml(c.admin_reason || 'None specified')}"</em>
+        </div>
+      `;
+    }
+
+    card.innerHTML = `
+      <div class="case-top-row">
+        <div>
+          <span class="case-ref">${escapeHtml(c.case_reference)}</span>
+          <span style="font-size:12px;color:var(--muted);margin-left:8px;">Booking: <strong style="color:#fff;">${escapeHtml(c.booking_reference)}</strong></span>
+        </div>
+        <span class="badge-tag" style="background:rgba(255,255,255,0.06);">● ${escapeHtml(c.status)}</span>
+      </div>
+
+      <div class="case-grid-details">
+        <div><span style="color:var(--muted)">Route:</span> <strong>${escapeHtml(c.route)}</strong></div>
+        <div><span style="color:var(--muted)">Date:</span> <strong>${escapeHtml(c.travel_date)}</strong></div>
+        <div><span style="color:var(--muted)">Gross Fare:</span> <strong>Rs. ${c.fare}</strong></div>
+        <div><span style="color:var(--muted)">NLP Category:</span> <strong>${escapeHtml(c.reason_category)}</strong></div>
+        <div><span style="color:var(--muted)">Eligibility:</span> <strong style="color:#34D399">${escapeHtml(c.eligibility)}</strong></div>
+        <div><span style="color:var(--muted)">Suggested Refund:</span> <strong style="color:#FDE68A">Rs. ${c.suggested_refund}</strong></div>
+      </div>
+
+      <div style="font-size:12px;padding:8px 10px;background:rgba(10,14,26,0.6);border-radius:6px;">
+        <span style="color:var(--muted);font-weight:600;">Passenger Reason:</span> <em>"${escapeHtml(c.reason)}"</em>
+      </div>
+
+      ${c.ai_summary ? `<div style="font-size:12px;padding:8px 10px;background:rgba(37,99,235,0.08);border:1px solid rgba(59,130,246,0.25);border-radius:6px;"><strong style="color:#60A5FA;font-size:10.5px;text-transform:uppercase;">AI Grounded Advisory:</strong><br>${escapeHtml(c.ai_summary)}</div>` : ''}
+
+      ${actionsHtml}
+    `;
+    container.appendChild(card);
+  });
+}
+
+function openRejectionModal(caseRef) {
+  const caseData = allAdminCases.find(c => c.case_reference === caseRef);
+  if (!caseData) return;
+  currentRejectionCase = caseData;
+  currentPolishedExplanation = '';
+
+  $('modal-reject-case-ref').textContent = caseData.case_reference;
+  $('modal-reject-book-ref').textContent = caseData.booking_reference;
+  $('modal-reject-passenger-reason').textContent = `"${caseData.reason}"`;
+  $('modal-reject-reason-input').value = '';
+  $('modal-nlp-preview-box').style.display = 'none';
+  $('modal-rejection').classList.add('active');
+}
+
+function closeRejectionModal() {
+  $('modal-rejection').classList.remove('active');
+  currentRejectionCase = null;
+}
+
+function applyQuickRejection(text) {
+  $('modal-reject-reason-input').value = text;
+}
+
+async function analyzeRejectionWithNLP() {
+  const reasonText = $('modal-reject-reason-input').value.trim();
+  if (!reasonText) return;
+
+  $('nlp-loading-indicator').style.display = 'inline';
+  try {
+    const resp = await fetch('/api/admin/cancellations/nlp-preview', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reason: reasonText })
+    });
+    const data = await resp.json();
+    if (resp.ok && data) {
+      $('nlp-category-badge').textContent = `● Category: ${data.category_label || data.rejection_category}`;
+      $('nlp-tone-badge').textContent = `Tone: ${data.tone || 'Formal'}`;
+      $('nlp-polished-text').textContent = data.polished_explanation || data.raw_reason;
+      currentPolishedExplanation = data.polished_explanation || '';
+      $('modal-nlp-preview-box').style.display = 'block';
+    }
+  } catch (err) {
+    alert('NLP preview error');
+  } finally {
+    $('nlp-loading-indicator').style.display = 'none';
+  }
+}
+
+function usePolishedExplanation() {
+  if (currentPolishedExplanation) {
+    $('modal-reject-reason-input').value = currentPolishedExplanation;
+  }
+}
+
+async function submitRejectionDecision() {
+  if (!currentRejectionCase) return;
+  const reasonText = $('modal-reject-reason-input').value.trim();
+  if (!reasonText) return;
+
+  try {
+    const resp = await fetch(`/api/admin/cancellations/${currentRejectionCase.case_reference}/review`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ decision: 'REJECT', admin_reason: reasonText })
+    });
+    const data = await resp.json();
+    if (resp.ok && data.success) {
+      closeRejectionModal();
+      await loadAdminCancellations();
+    }
+  } catch (err) {
+    alert('Rejection error');
+  }
+}
+
+async function reviewCancellationCase(caseRef, decision) {
+  if (!confirm(`Confirm ${decision} for cancellation ${caseRef}?`)) return;
+
+  try {
+    const resp = await fetch(`/api/admin/cancellations/${caseRef}/review`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ decision: 'APPROVE', admin_reason: 'Approved following administrator policy review.' })
+    });
+    const data = await resp.json();
+    if (resp.ok && data.success) {
+      await loadAdminCancellations();
+    }
+  } catch (err) {
+    alert('Adjudication communication error');
+  }
+}
+
+// ── Interactive Schedule & Operations Tools ─────────────────────────
+async function testDelayPrediction() {
+  const route = $('test-pred-route').value;
+  const train = $('test-pred-train').value;
+  const resEl = $('test-pred-result');
+
+  resEl.style.display = 'block';
+  resEl.textContent = 'Calling M2 Operations Agent at http://localhost:8005/predict-delay...';
+
+  try {
+    const resp = await fetch('http://localhost:8005/predict-delay', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        route: route,
+        train_id: train,
+        scheduled_time: new Date().toISOString()
+      })
+    });
+    const data = await resp.json();
+    resEl.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+  } catch (err) {
+    resEl.textContent = 'Failed to reach M2 Operations Agent on port 8005. Make sure the agent is running.';
+  }
+}
+
+async function inspectSchedules() {
+  const from = $('insp-from').value.trim();
+  const to = $('insp-to').value.trim();
+  const dateVal = $('insp-date').value;
+  const container = $('insp-results');
+
+  container.innerHTML = '<div style="color:var(--muted)">Loading schedules from Booking Agent...</div>';
+
+  try {
+    const resp = await fetch(`/api/booking-options?from_station=${encodeURIComponent(from)}&to_station=${encodeURIComponent(to)}&travel_date=${encodeURIComponent(dateVal)}`);
+    const data = await resp.json();
+
+    if (Array.isArray(data) && data.length > 0) {
+      let html = '<table class="status-table"><thead><tr><th>Train</th><th>Service</th><th>Times</th><th>First Class</th><th>Second Class</th></tr></thead><tbody>';
+      data.forEach(s => {
+        const fc = s.available_classes ? s.available_classes.find(c => c.seat_class === 'First Class') : null;
+        const sc = s.available_classes ? s.available_classes.find(c => c.seat_class === 'Second Class') : null;
+        html += `
+          <tr>
+            <td><strong>${escapeHtml(s.train_id)}</strong></td>
+            <td>${escapeHtml(s.train_name)}</td>
+            <td>${escapeHtml(s.departure_time)} → ${escapeHtml(s.arrival_time)}</td>
+            <td>${fc ? `${fc.available_seats} seats (Rs. ${fc.base_fare})` : 'N/A'}</td>
+            <td>${sc ? `${sc.available_seats} seats (Rs. ${sc.base_fare})` : 'N/A'}</td>
+          </tr>
+        `;
+      });
+      html += '</tbody></table>';
+      container.innerHTML = html;
+    } else {
+      container.innerHTML = '<div style="color:var(--muted)">No trains found for this route and date.</div>';
+    }
+  } catch (err) {
+    container.innerHTML = '<div style="color:#F87171">Error querying schedules.</div>';
+  }
+}
+
+function escapeHtml(text) {
+  if (!text) return '';
+  return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+</script>
+
+</body>
+</html>
