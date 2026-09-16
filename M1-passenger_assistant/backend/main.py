@@ -211,7 +211,10 @@ async def chat(req: ChatRequest):
             reply = "I couldn't reach the Booking Agent right now."
 
     else:
-        reply = "I can help with schedules, fares, delays, bookings, or reporting an issue. Could you rephrase your question?"
+        # Keyword classifier missed this one - try the FAQ docs before giving up.
+        reply, source = compose_rag_answer(text, language, req.session_id)
+        if not source:
+            reply = "I can help with schedules, fares, delays, bookings, or reporting an issue. Could you rephrase your question?"
 
     save_message(req.session_id, "user", text)
     save_message(req.session_id, "assistant", reply)

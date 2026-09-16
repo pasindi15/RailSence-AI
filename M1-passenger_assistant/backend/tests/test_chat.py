@@ -59,7 +59,21 @@ def test_sinhala_language_detection():
     assert body["language"] == "si"
 
 
-def test_fare_query_uses_rag_and_llm_composition():
+def test_fare_query_uses_rag_and_llm_composition(monkeypatch):
+    import main
+
+    class _FakeResponse:
+        text = (
+            "A one-way fare from Colombo Fort to Kandy ranges from LKR 130 "
+            "(3rd class) up to LKR 1500 (1st class observation saloon)."
+        )
+
+    class _FakeGeminiModel:
+        def generate_content(self, prompt):
+            return _FakeResponse()
+
+    monkeypatch.setattr(main, "gemini_model", _FakeGeminiModel())
+
     r = client.post("/chat", json={"message": "How much is a ticket to Kandy?"})
     assert r.status_code == 200
     body = r.json()
