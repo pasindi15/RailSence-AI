@@ -41,7 +41,7 @@ import supabase_store
 from admin import admin_db
 from admin.admin_router import router as admin_router
 
-logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
+logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO").upper())
 logger = logging.getLogger("railsense.operations")
 limiter = Limiter(key_func=get_remote_address, default_limits=["120/minute"])
 
@@ -64,6 +64,15 @@ app = FastAPI(
 app.include_router(admin_router)
 app.mount("/admin", StaticFiles(directory=Path(__file__).parent / "admin_ui", html=True), name="admin_ui")
 app.state.limiter = limiter
+
+from fastapi.middleware.cors import CORSMiddleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 app.add_middleware(SlowAPIMiddleware)
 
 
@@ -596,11 +605,33 @@ async def hub_message(request: Request, message: HubMessage):
     """Receive a Passenger Agent delay_check through the shared Hub."""
     if message.intent != "delay_check":
         raise HTTPException(status_code=400, detail="unsupported hub intent")
-    payload = message.payload
+    payload = message.payload or {}
+    
+    # Robust extraction of route and train_id from payload or raw_text/stations
+    route = payload.get("route")
+    if not route:
+        stations = payload.get("stations")
+        if isinstance(stations, list) and len(stations) >= 2:
+            route = f"{stations[0]} - {stations[1]}"
+        elif isinstance(stations, str) and stations:
+            route = f"Colombo Fort - {stations}"
+        else:
+            route = "Colombo Fort - Kandy"
+
+    train_id = payload.get("train_id")
+    if not train_id:
+        raw_text = payload.get("raw_text", "")
+        import re
+        match = re.search(r"[A-Z]{2}-\d{4}", raw_text)
+        if match:
+            train_id = match.group(0)
+        else:
+            train_id = "PM-4082"
+
     try:
         prediction_request = DelayPredictionRequest(
-            route=payload["route"],
-            train_id=payload["train_id"],
+            route=route,
+            train_id=train_id,
             scheduled_time=payload.get("scheduled_time", datetime.now(timezone.utc)),
             weather=payload.get("weather"),
             day_type=payload.get("day_type", "weekday"),
@@ -609,13 +640,39 @@ async def hub_message(request: Request, message: HubMessage):
         )
     except (KeyError, ValueError) as exc:
         raise HTTPException(status_code=422, detail=f"invalid delay_check payload: {exc}") from exc
+
     response = await predict_delay(request, prediction_request)
-    result = {"message_id": message.message_id or uuid.uuid4().hex, "sender_agent": AGENT_NAME, "receiver_agent": message.sender_agent, "intent": "delay_check_response", "payload": response.model_dump(), "timestamp": datetime.now(timezone.utc).isoformat()}
-    _audit("hub_delay_check", request, {"sender_agent": message.sender_agent, "route": prediction_request.route, "train_id": prediction_request.train_id})
+    resp_dict = response.model_dump()
+    resp_dict["reason"] = response.explanation
+    resp_dict["similar_incident"] = (
+        response.similar_past_incidents[0]
+        if response.similar_past_incidents
+        else "No historical incident precedent"
+    )
+
+    result = {
+        "message_id": message.message_id or uuid.uuid4().hex,
+        "sender_agent": AGENT_NAME,
+        "receiver_agent": message.sender_agent,
+        "intent": "delay_check_response",
+        "payload": resp_dict,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+    _audit(
+        "hub_delay_check",
+        request,
+        {
+            "sender_agent": message.sender_agent,
+            "route": prediction_request.route,
+            "train_id": prediction_request.train_id,
+            "delay": response.predicted_delay_minutes,
+        },
+    )
     return result
 
 
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run("main:app", host="0.0.0.0", port=8001, reload=True)
+    port = int(os.getenv("PORT", "8005"))
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)

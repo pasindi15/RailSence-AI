@@ -28,10 +28,16 @@ from pydantic import BaseModel, Field
 # ---------------------------------------------------------------------------
 
 class MemberCIntent(str, Enum):
-    """Supported intents handled by Member C agents."""
+    """Supported intents handled by RailSense AI agents."""
 
-    booking_request = "booking_request"
-    cancel_booking  = "cancel_booking"
+    booking_request      = "booking_request"
+    cancel_booking       = "cancel_booking"
+    delay_check          = "delay_check"
+    delay_check_response = "delay_check_response"
+    delay_alert          = "delay_alert"
+    issue_report         = "issue_report"
+    incident_report      = "incident_report"
+    ack                  = "ack"
 
 
 # Architectural alias for external and pipeline references

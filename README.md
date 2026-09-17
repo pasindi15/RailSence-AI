@@ -1,715 +1,322 @@
-# 🚆 RailSense AI
-## Agentic AI System for Intelligent Railway Operations
+# 🚆 RailSense AI — Agentic AI Platform for Railway Operations
 
 > **IT3041 – Information Retrieval & Web Analytics**  
-> Multi-Agent AI System integrating LLMs, NLP, Information Retrieval, Security, and Agent Communication Protocols.
+> Comprehensive Multi-Agent Railway Intelligence System integrating Large Language Models (LLMs), Natural Language Processing (NLP), Information Retrieval (IR/RAG), Machine Learning, Security, and MCP-Style Agent Communication Protocols.
 
 ---
 
-# 📌 Overview
+## 📌 Executive Summary
 
-**RailSense AI** is an agentic artificial intelligence platform designed to transform railway operations through a network of cooperating AI agents.
+**RailSense AI** is an enterprise-grade agentic artificial intelligence platform designed to revolutionize railway network management, passenger experience, predictive maintenance, ticket booking, and operational reliability.
 
-The system consists of **four autonomous AI agents** coordinated through a centralized **MCP-style Agent Communication Hub**.
+The platform comprises **four autonomous, specialized AI agents** coordinated through a centralized **Agent Communication Hub**:
 
-Each agent independently provides specialized intelligence while collaborating with other agents to solve complex railway problems.
+1. 🧑‍💼 **Module 1 (M1) — Passenger Assistant Agent**: Multilingual conversational AI (Sinhala / Tamil / English), RAG FAQ retrieval, schedule/fare intelligence, delay checking, booking dispatch, and complaint escalation.
+2. 🚦 **Module 2 (M2) — Operations & Delay-Prediction Agent**: Machine learning delay regressor, historical incident pgvector/TF-IDF RAG, plain-language grounded prediction explanations, incident NLP triage, and live Operations Control Room dashboard.
+3. 🛡️ **Module 3 (M3) — Central Communication Hub & Booking Agent**: Centralized JWT authentication, schema validation, audit trail, MCP envelope routing, deterministic ticket reservation engine, and human-in-the-loop cancellation workflow.
+4. 🔧 **Module 4 (M4) — Maintenance & Asset Intelligence Agent**: Predictive asset health scoring, sensor telemetry analysis, technician note NLP extraction, technical manual RAG search, and maintenance engineer chatbot.
 
-### Operations Agent Progress
+---
 
-The Operations Agent has completed Phases 1–4:
+## 🏗️ System Architecture & Inter-Agent Communication
 
-- Phase 1: FastAPI service, synthetic operations dataset, and stable API contract
-- Phase 2: Gradient Boosting delay model with held-out evaluation metrics
-- Phase 3: Sanitized incident summarization and classification
-- Phase 4: Historical incident retrieval and grounded prediction explanations
+All inter-agent traffic is **hub-mediated** using standard MCP-style JSON envelopes (`AgentMessage`). No agent directly invokes another agent's private endpoints.
 
-Phase 5 covers Hub integration, rate limiting, audit logging, and the complete
-multi-agent production dashboard.
+```
+                                  Passenger User
+                                         │
+                                         ▼
+                             [ M1 Passenger Assistant ]
+                                    (Port 8001)
+                                         │
+                                         │  POST /messages (AgentMessage Envelope)
+                                         ▼
+                        [ M3 Agent Communication Hub ]
+                                    (Port 8002)
+                                         │
+          ┌──────────────────────────────┼──────────────────────────────┐
+          │                              │                              │
+          ▼                              ▼                              ▼
+[ M2 Operations Agent ]      [ M3 Booking Agent ]       [ M4 Maintenance Agent ]
+     (Port 8005)                    (Port 8003)                    (Port 8006)
+ ├─ ML Delay Regressor           ├─ Ticket Reservation          ├─ Predictive Health Model
+ ├─ Historical Incident RAG      ├─ Seat Inventory              ├─ Technical Manual RAG
+ ├─ NLP Incident Triage          ├─ Cancellation Workflow       ├─ Technician Note NLP
+ └─ Control Room UI              └─ Audit & Admin DB            └─ Maintenance & Chat UI
+```
 
-### 🚉 Core AI Agents
+---
 
-| Agent | Responsibility |
+## 🌐 Agent Port & Service Registry
+
+| Module | Logical Service Name | Port | Description | Primary Frontend UI |
+|---|---|---|---|---|
+| **M1** | `passenger-agent` | `8001` | Conversational Passenger Assistant | `http://localhost:8001` (React Chat UI) |
+| **M3** | `agent-hub` | `8002` | Central Communication Hub & Router | `http://localhost:8002/docs` (Swagger UI) |
+| **M3** | `booking-agent` | `8003` | Ticket Booking & Cancellation Agent | `http://localhost:8003/docs` (Swagger UI) |
+| **M2** | `operations-agent` | `8005` | Operations & Delay Prediction Agent | `http://localhost:8005` (Control Room Dashboard) |
+| **M4** | `maintenance-agent` | `8006` | Maintenance & Asset Intelligence Agent | `http://localhost:8006` (Asset Dashboard) & `/chat-ui` |
+
+---
+
+## 🧩 Comprehensive Module Breakdown
+
+---
+
+### 🧑‍💼 Module 1 (M1) — Passenger Assistant Agent
+
+#### Purpose
+Provides intelligent, multi-script conversational assistance for passengers across web and mobile interfaces.
+
+#### Backend Implementation (`M1-passenger_assistant/backend/`)
+- **FastAPI Service (`main.py`)**: Runs on port `8001`. Endpoints: `/chat`, `/chat/{session_id}/history`, `/feedback`, `/health`.
+- **Language Detection (`nlu/lang_detect.py`)**: Unicode script scanning for Sinhala (`si`) and Tamil (`ta`), with `langdetect` fallback for English (`en`).
+- **Intent Classification (`nlu/intent_classifier.py`)**: spaCy/pattern classifier detecting `schedule_query`, `fare_query`, `delay_check`, `booking_request`, `complaint`, and `general`.
+- **Named Entity Extraction (`nlu/ner_extractor.py`)**: Extracts origin/destination stations, departure/arrival times, train IDs, seat classes, and passenger counts.
+- **RAG FAQ Retriever (`rag/retriever.py`)**: ChromaDB vector index over railway FAQ documents (`schedules.md`, `fares.md`, `rules.md`).
+- **Hub Dispatcher (`hub_client.py`)**: Constructs JWT-signed `AgentMessage` envelopes and dispatches queries to M3 Hub (`http://localhost:8002/messages`).
+
+#### Frontend Implementation (`M1-passenger_assistant/frontend/`)
+- Modern glassmorphism React + Vite application (`http://localhost:8001`).
+- Dynamic chat bubble stream, quick action buttons, language indicators, session history sidebar, feedback rating modal, and grounded source citations.
+
+---
+
+### 🚦 Module 2 (M2) — Operations & Delay-Prediction Agent
+
+#### Purpose
+Provides real-time train delay predictions, incident analysis, historical precedent retrieval, delay alerting, and operational monitoring.
+
+#### Backend Implementation (`M2-operations-agent/`)
+- **FastAPI Service (`main.py`)**: Runs on port `8005`. Endpoints: `/predict-delay`, `/route-status/{id}`, `/incident-report`, `/internal/messages`, `/hub/message`, `/api/dashboard`, `/api/operations`, `/api/events`, `/health`.
+- **ML Delay Regressor (`ml/predict.py` & `ml/train_delay_model.py`)**: Trained `GradientBoostingRegressor` on historical operations data (`MAE = 2.239 min`, `RMSE = 2.876 min`, `R² = 0.8716`). Feature importances exported to `feature_importances.json`.
+- **Incident NLP Triage (`nlp/classify_incident.py` & `nlp/summarize_incident.py`)**: HTML/Script sanitization via Bleach/Pydantic, 100% accuracy rule-based and LLM incident classifier (`mechanical`, `signal_fault`, `staffing`, `track_obstruction`, `weather`), and condensed 1-2 sentence operator briefs.
+- **IR/RAG Historical Retrieval (`rag/incident_retriever.py`)**: Sentence-Transformers `all-MiniLM-L6-v2` embeddings stored in Supabase pgvector (`match_incidents` RPC) with local TF-IDF fallback.
+- **Grounded Explanation Layer (`rag/explanation.py`)**: Combines numerical delay prediction + top model feature importances + top 3 retrieved historical incidents intoplain-language operator explanations.
+- **Alert & Event Publisher (`hub_client.py`)**: Automatically publishes `delay_alert` events to M3 Hub and Upstash Redis whenever predicted delay is $\ge 5.0$ minutes.
+- **Audit Logging (`data/audit_log.jsonl` & `supabase_store.py`)**: Audit trail for all predictions, triage actions, and Hub requests.
+- **Admin Dashboard Backend (`admin/admin_router.py` & `admin_db.py`)**: Admin CRUD routes for incident reports and model retraining logs.
+
+#### Frontend Dashboards (`M2-operations-agent/ui/` & `admin_ui/`)
+- **Operations Control Room (`ui/index.html`)**: Served at `http://localhost:8005`. Features live route heatmaps, hourly delay pressure graphs, active risk zones, level crossing monitors, interactive prediction drawer, incident triage modal, evaluation panels, and live event feed.
+- **Admin Console (`admin_ui/index.html`)**: Served at `http://localhost:8005/admin`. Provides incident review queues and model version management.
+
+---
+
+### 🛡️ Module 3 (M3) — Central Communication Hub & Booking Agent
+
+#### Purpose
+Acts as the security gateway, message router, audit logger, and ticket reservation authority for the entire RailSense platform.
+
+#### Backend Implementation (`M3-Comunication-Hub&Booking-Agent/`)
+
+##### 1. Central Agent Hub (`agent-hub/`)
+- **FastAPI Service (`main.py`)**: Runs on port `8002`. Endpoints: `POST /messages`, `GET /health`.
+- **JWT Verification (`auth/jwt_utils.py`)**: Verifies signature, expiration (`exp`), and subject matching (`sub`) using PyJWT.
+- **Agent Registry (`registry.py`)**: Maintains logical name to base URL mapping (`passenger-agent`, `booking-agent`, `security-agent`, `operations-agent`, `maintenance-agent`).
+- **Asynchronous Router (`router.py`)**: Forwards validated `AgentMessage` envelopes to `{base_url}/internal/messages` via `httpx.AsyncClient` with timeout handling and status code mapping.
+- **Audit Trail (`audit/service.py` & `hub_database.py`)**: Records pre-routing (`AUTHENTICATED`), success (`ROUTED`), or failure (`REJECTED`/`FAILED`) records to SQLite/PostgreSQL.
+- **Shared Schemas (`shared/schemas.py`)**: Pydantic v2 `AgentMessage` envelope and `MemberCIntent` enum supporting all system intents (`booking_request`, `cancel_booking`, `delay_check`, `delay_check_response`, `delay_alert`, `issue_report`, `incident_report`, `ack`).
+
+##### 2. Booking & Reservation Agent (`booking-agent/`)
+- **FastAPI Service (`main.py`)**: Runs on port `8003`. Endpoints: `POST /internal/messages`, `GET /bookings/{ref}`, `GET /cancellations`, `GET /health`.
+- **Deterministic Booking Engine (`services/booking_service.py`)**: Processes `booking_request` intents. Checks seat availability and calculates fares using database rules (never LLM hallucinated).
+- **Cancellation Approval Pipeline (`services/cancellation_service.py`)**: Receives `cancel_booking` requests, generates NLP eligibility recommendations, and queues cases for human admin final approval.
+
+---
+
+### 🔧 Module 4 (M4) — Maintenance & Asset Intelligence Agent
+
+#### Purpose
+Monitors rolling stock and track assets, predicts equipment failure risks, analyzes technician notes, and searches technical manuals.
+
+#### Backend Implementation (`M4-maintenance-agent/`)
+- **FastAPI Service (`main.py`)**: Runs on port `8006`. Endpoints: `/asset-health`, `/asset-status/{id}`, `/maintenance-report`, `/manual-search`, `/chat`, `/internal/messages`, `/hub/message`, `/api/dashboard`, `/api/assets`, `/health`.
+- **Predictive Health Model (`ml/predict.py`)**: Evaluates asset telemetry (days since service, 30-day fault count, sensor vibration/temperature/pressure) to output a health score (0–100) and status (`GREEN`, `AMBER`, `RED`).
+- **Technician Note NLP (`nlp/extract_notes.py` & `nlp/summarize_report.py`)**: Extracts fault types, affected components, measurements, and actions taken from raw technician logs.
+- **Equipment Manual RAG (`rag/manual_retriever.py`)**: Searches indexed equipment manuals (`diesel_engine_manual.md`, `bogie_manual.md`, `signalling_manual.md`) using MiniLM embeddings / pgvector with local TF-IDF fallback.
+- **Engineer RAG Chatbot (`rag/chatbot.py`)**: Conversational Q&A interface for maintenance technicians to query technical manuals.
+- **Alert Publishing (`hub_client.py`)**: Publishes `maintenance_alert` events for `RED` status assets to Hub and Upstash Redis.
+
+#### Frontend Dashboards (`M4-maintenance-agent/ui/`)
+- **Asset Intelligence Dashboard (`ui/index.html`)**: Served at `http://localhost:8006`. Displays fleet health distribution, asset risk cards, telemetry gauges, and recent maintenance logs.
+- **Maintenance Engineer Chatbot (`ui/chat.html`)**: Served at `http://localhost:8006/chat-ui`. Interactive manual search and troubleshooting assistant for field engineers.
+
+---
+
+## 🔄 End-to-End Inter-Agent Message Envelopes
+
+### 1. Passenger Delay Query (`M1 -> M3 Hub -> M2 -> M3 Hub -> M1`)
+
+#### Request Envelope (`POST http://localhost:8002/messages`)
+```json
+{
+  "message_id": "MSG-2001",
+  "sender_agent": "passenger-agent",
+  "receiver_agent": "operations-agent",
+  "intent": "delay_check",
+  "payload": {
+    "route": "Colombo Fort - Kandy",
+    "train_id": "PM-4082",
+    "stations": ["Colombo Fort", "Kandy"],
+    "raw_text": "Is the 14:35 train from Colombo Fort to Kandy delayed?"
+  },
+  "auth_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "timestamp": "2026-09-12T14:35:00Z"
+}
+```
+
+#### Response Payload (`delay_check_response`)
+```json
+{
+  "message_id": "MSG-2001",
+  "sender_agent": "operations-agent",
+  "receiver_agent": "passenger-agent",
+  "intent": "delay_check_response",
+  "payload": {
+    "predicted_delay_minutes": 9.0,
+    "confidence": "medium",
+    "explanation": "Expect approximately 9.0 minutes of delay on Colombo Fort - Kandy. Historical congestion and light rain are forecast. A similar signal fault was recorded at Kandy with a 9.4-minute delay.",
+    "reason": "Expect approximately 9.0 minutes of delay on Colombo Fort - Kandy. Historical congestion and light rain are forecast.",
+    "similar_incident": "Signal failure reported near Kandy, historical delay 9.4 min",
+    "similar_past_incidents": [
+      "Signal failure reported near Kandy, historical delay 9.4 min"
+    ],
+    "top_contributing_features": [
+      {"feature": "incident_type_none", "importance": 0.7390},
+      {"feature": "weather_light_rain", "importance": 0.0390}
+    ],
+    "model_version": "phase2-gbr-v1",
+    "retrieval_method": "supabase_pgvector",
+    "explanation_method": "template_grounded"
+  },
+  "timestamp": "2026-09-12T14:35:02Z"
+}
+```
+
+---
+
+### 2. Ticket Booking Request (`M1 -> M3 Hub -> M3 Booking Agent`)
+
+#### Request Envelope (`POST http://localhost:8002/messages`)
+```json
+{
+  "message_id": "MSG-2002",
+  "sender_agent": "passenger-agent",
+  "receiver_agent": "booking-agent",
+  "intent": "booking_request",
+  "payload": {
+    "from_station": "Colombo Fort",
+    "to_station": "Kandy",
+    "travel_date": "2026-10-15",
+    "train_id": "PM-4082",
+    "seat_class": "Second Class",
+    "passenger_count": 2
+  },
+  "auth_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "timestamp": "2026-09-12T14:36:00Z"
+}
+```
+
+---
+
+## 🛠️ Technology Stack
+
+| Domain | Technologies |
 |---|---|
-| 🧑‍💼 Passenger Assistant Agent | Passenger conversations, multilingual NLP, RAG-based assistance |
-| 🚦 Operations Agent | Delay prediction, incident intelligence, operational analytics |
-| 🛡️ Security Agent | Authentication, fraud detection, encryption, system security |
-| 🔧 Maintenance Agent | Predictive maintenance, equipment intelligence, manual-based RAG |
+| **Core Backend** | Python 3.11+, FastAPI, Uvicorn, Pydantic v2, Starlette |
+| **Machine Learning** | Scikit-Learn, Pandas, NumPy, Joblib |
+| **NLP & LLM** | spaCy, Bleach, Anthropic Claude API, Google Gemini Flash, Sentence Transformers |
+| **Vector DB & RAG** | Supabase PostgreSQL + `pgvector`, ChromaDB, TF-IDF (Local Fallback) |
+| **Messaging & Cache** | Upstash Redis, HTTPX Async Client, JWT Authentication (PyJWT) |
+| **Frontend UI** | Vanilla CSS3, HTML5, React, Vite, Glassmorphism Design System, Chart.js |
+| **Deployment** | Docker, Docker Compose, PowerShell |
 
 ---
 
-# 🎯 Project Objective
+## 🚀 Installation & Setup Guide
 
-RailSense AI aims to demonstrate how **agentic AI systems** can improve railway services by combining:
+### 1. Prerequisites
+- Python 3.11+
+- Node.js 18+ (for M1 React frontend)
+- Git & Docker Compose (optional)
 
-- Large Language Models (LLMs)
-- Natural Language Processing (NLP)
-- Information Retrieval (IR)
-- Retrieval Augmented Generation (RAG)
-- Machine Learning Prediction Models
-- Secure Agent Communication
-- Responsible AI Practices
-
-The system behaves like a real AI-powered railway management platform rather than a simple chatbot.
-
----
-
-# 🏗️ System Architecture
-
-
+### 2. Clone Repository
+```bash
+git clone https://github.com/pasindi15/RailSence-AI.git
+cd RailSence-AI
 ```
 
-```
-                Passenger User
-                     |
-                     |
-             Passenger Agent
-                     |
-                     |
-            Agent Communication Hub
-                     |
-    ---------------------------------------
-    |                  |                  |
-    |                  |                  |
-```
+### 3. Environment Configuration
+Create a `.env` file in the root directory (or copy `.env.example`):
+```ini
+JWT_SECRET_KEY=railsense-super-secret-jwt-key
+JWT_ALGORITHM=HS256
 
-Operations Agent   Security Agent   Maintenance Agent
+SUPABASE_URL=https://your-supabase-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-key
 
-```
-    |
-    |
-```
-
-Delay Prediction
-Incident Analysis
-Maintenance Correlation
-
+ANTHROPIC_API_KEY=your-anthropic-key
+GEMINI_API_KEY=your-gemini-key
 ```
 
 ---
 
-# 🤖 Agent Architecture
+## ⚡ Running Services Locally
 
-## 🧑‍💼 Passenger Assistant Agent
+You can launch each agent in separate terminal windows:
 
-### Purpose
-
-Provides intelligent passenger interaction through conversational AI.
-
-### Responsibilities
-
-- Multilingual chatbot (Sinhala / Tamil / English)
-- Intent classification
-- Named Entity Recognition
-- Railway FAQ retrieval
-- Schedule and fare information
-- Delay checking through Operations Agent
-- Complaint forwarding to Maintenance Agent
-
-### AI Components
-
-| Component | Technology |
-|-|-|
-| NLP | spaCy / LLM Function Calling |
-| Language Detection | langdetect |
-| Retrieval | ChromaDB |
-| Embeddings | Sentence Transformers |
-| Generation | LLM + RAG |
-
----
-
-## 🚦 Operations & Delay Prediction Agent
-
-### Purpose
-
-Provides intelligent railway operation monitoring.
-
-### Responsibilities
-
-- Train delay prediction
-- Incident analysis
-- Historical incident retrieval
-- Operational dashboard
-- Delay alert publishing
-
-### AI Components
-
-| Component | Technology |
-|-|-|
-| ML Model | Random Forest / Gradient Boosting |
-| Explainability | Feature Importance |
-| NLP | Incident Summarization |
-| IR / RAG | MiniLM embeddings, Supabase pgvector, local TF-IDF fallback |
-| Explanation | Grounded template or optional Claude API |
-
-### Operations Agent Phase 4 Flow
-
-The `/predict-delay` workflow combines the Phase 2 model with historical
-evidence:
-
-1. Build a retrieval query from route, station, weather, and incident type.
-2. Retrieve the top three similar historical incident records.
-3. Combine the prediction, top model features, and retrieved incidents.
-4. Return a plain-language explanation with cited precedent.
-
-The local TF-IDF index works without cloud credentials, which keeps local
-demos reproducible. When `SUPABASE_URL` and `SUPABASE_KEY` are configured,
-the API uses the Supabase pgvector `match_incidents` function. When
-`ANTHROPIC_API_KEY` is configured, Claude composes the explanation using only
-the supplied prediction and retrieved evidence.
-
-Example `/predict-delay` response:
-
-```json
-{
-      "route": "Colombo Fort - Kandy",
-      "train_id": "PM-4082",
-      "predicted_delay_minutes": 14.2,
-      "confidence": "medium",
-      "explanation": "Expect approximately 14.2 minutes of delay on Colombo Fort - Kandy. A similar signal fault was recorded at Kandy with a 14.1-minute delay.",
-      "top_contributing_features": [
-            {"feature": "incident_type_none", "importance": 0.7390},
-            {"feature": "incident_type_mechanical", "importance": 0.0708},
-            {"feature": "weather_clear", "importance": 0.0390}
-      ],
-      "similar_past_incidents": [
-            "signal fault at Kandy on Colombo Fort - Kandy ... historical delay 14.1 min"
-      ],
-      "model_version": "phase2-gbr-v1",
-      "retrieval_method": "local_tfidf",
-      "explanation_method": "template_grounded"
-}
-```
-
-Example:
-
-```
-
-Prediction:
-
-Train:
-Colombo Fort → Kandy
-
-Expected Delay:
-9 minutes
-
-Reason:
-Historical congestion + weather conditions
-
-Similar Incident:
-Signal failure occurred on same route previously
-
-```
-
----
-
-# 🛡️ Security & Fraud Agent
-
-## Purpose
-
-Provides secure communication and intelligent threat detection.
-
-### Responsibilities
-
-- Central Agent Hub ownership
-- JWT authentication
-- Encryption management
-- Fraud detection
-- Audit logging
-- Security monitoring
-
-### Security Features
-
-✅ JWT authentication  
-✅ AES encryption  
-✅ Password hashing  
-✅ Input sanitization  
-✅ API validation  
-✅ Audit trail  
-✅ Vulnerability checking  
-
-
-### Fraud Detection
-
-Model:
-
-```
-
-Isolation Forest
-
-```
-
-Detects:
-
-- Unusual ticket purchases
-- Multiple bookings within seconds
-- Impossible travel patterns
-- Suspicious user behaviour
-
----
-
-# 🔧 Maintenance & Asset Intelligence Agent
-
-## Purpose
-
-Provides AI-powered railway asset monitoring.
-
-### Responsibilities
-
-- Predictive maintenance
-- Sensor analysis
-- Equipment health scoring
-- Maintenance recommendation
-- Technical manual RAG search
-
-
-### AI Components
-
-| Component | Technology |
-|-|-|
-| Prediction | Health scoring model |
-| NLP | Technician note extraction |
-| RAG | Equipment manuals |
-| LLM | Maintenance reports |
-
-
-Example:
-
-```
-
-Asset:
-
-Train Engine #204
-
-Health:
-
-AMBER
-
-Recommendation:
-
-Inspect braking system within 14 days.
-
-Source:
-Maintenance Manual Section 4.2
-
-````
-
----
-
-# 🔄 Agent Communication Hub
-
-The Hub acts as the central communication layer.
-
-Every agent communicates through the Hub using a lightweight MCP-style JSON protocol.
-
----
-
-## Message Structure
-
-Example:
-
-```json
-{
- "message_id":"b7e1-uuid",
- "sender_agent":"passenger-agent",
- "receiver_agent":"operations-agent",
- "intent":"delay_check",
-
- "payload":{
-    "route":"Colombo Fort - Kandy",
-    "train_id":"PM-4082"
- },
-
- "auth_token":"JWT_TOKEN",
-
- "timestamp":"2026-09-10T13:58:12"
-}
-````
-
----
-
-# 🔁 Agent Interaction Example
-
-## Passenger asks:
-
-> "Is the 14:35 Colombo-Kandy train delayed?"
-
-### Workflow:
-
-```
-1. Passenger Agent
-      |
-      | NLP extracts:
-      | route + time + intent
-      |
-      ↓
-
-2. Agent Hub
-
-      |
-      | JWT verification
-      |
-      ↓
-
-3. Operations Agent
-
-      |
-      | ML Prediction
-      | Incident Retrieval
-      | LLM Explanation
-      |
-      ↓
-
-4. Response returned
-
-      |
-      ↓
-
-Passenger receives:
-
-"The train is expected to delay by 9 minutes due to historical congestion."
-```
-
----
-
-# 🎨 User Interface Design
-
-RailSense follows a unified **Light Rail Design System**.
-
-## Theme
-
-* Light glassmorphism
-* High contrast accent colors
-* Modern enterprise dashboard style
-
-## Agent Colors
-
-| Agent       | Color  |
-| ----------- | ------ |
-| Passenger   | Blue   |
-| Operations  | Amber  |
-| Security    | Rose   |
-| Maintenance | Purple |
-
----
-
-# 🖥️ Dashboards
-
-## Passenger Assistant
-
-Features:
-
-* Chat interface
-* Quick actions
-* Multilingual support
-* Source citations
-
-## Operations Dashboard
-
-Features:
-
-* Active trains
-* Delay statistics
-* Route heatmaps
-* Incident timeline
-* Prediction confidence
-
-The current Operations Agent dashboard is served by FastAPI at
-`http://localhost:8001/`. It already supports incident processing and
-grounded delay prediction with historical precedent. Route heatmaps, live
-statistics, and Hub events are Phase 5 additions.
-
-## Security Console
-
-Features:
-
-* User sessions
-* Fraud alerts
-* Audit logs
-* Risk explanation
-
-## Maintenance Console
-
-Features:
-
-* Asset health cards
-* Maintenance schedule
-* Manual search
-* AI recommendations
-
----
-
-# 📂 Repository Structure
-
-```
-RailSense-AI/
-
-│
-├── agent-hub/
-│   ├── main.py
-│   ├── auth/
-│   ├── schema.py
-│   └── audit_log.py
-│
-├── passenger-agent/
-│   ├── main.py
-│   ├── nlu/
-│   ├── rag/
-│   ├── prompts/
-│   └── frontend/
-│
-├── operations-agent/
-│   ├── main.py
-│   ├── ml/
-│   ├── nlp/
-│   ├── rag/
-│   └── frontend/
-│
-├── security-agent/
-│   ├── main.py
-│   ├── fraud/
-│   ├── crypto/
-│   └── frontend/
-│
-├── maintenance-agent/
-│   ├── main.py
-│   ├── predictive/
-│   ├── rag/
-│   └── frontend/
-│
-├── docker-compose.yml
-│
-├── docs/
-│
-└── README.md
-
-```
-
----
-
-# 🧰 Technology Stack
-
-## Backend
-
-* Python
-* FastAPI
-* REST APIs
-
-## AI / ML
-
-* Large Language Models
-* LangChain
-* Sentence Transformers
-* Scikit-learn
-* spaCy
-
-## Vector Database
-
-* Supabase Postgres + pgvector for shared incident retrieval
-* Local TF-IDF fallback for offline Operations Agent demos
-* ChromaDB remains available for Passenger Agent retrieval where appropriate
-
-## Frontend
-
-* React / Next.js
-* Tailwind CSS
-
-## Security
-
-* JWT
-* AES Encryption
-* bcrypt
-
-## Deployment
-
-* Docker
-* Docker Compose
-
----
-
-# 🔐 Responsible AI Implementation
-
-| Principle       | Implementation                |
-| --------------- | ----------------------------- |
-| Fairness        | Sinhala/Tamil/English testing |
-| Explainability  | Prediction reasons            |
-| Transparency    | AI disclosure                 |
-| Privacy         | Encryption & access control   |
-| Human Oversight | Escalation paths              |
-| Bias Analysis   | Dataset evaluation            |
-
----
-
-# 📊 Evaluation Metrics
-
-## NLP Evaluation
-
-* Intent classification accuracy
-* NER accuracy
-* Language detection accuracy
-
-## Retrieval Evaluation
-
-* Precision@3
-* Relevant document retrieval
-* Phase 4 evidence: `/predict-delay` returns three retrieved incident citations
-      plus the `retrieval_method` used (`local_tfidf` or `supabase_pgvector`)
-* Measured local TF-IDF proxy on 150 held-out queries: P@1 = 1.0000,
-      P@3 = 1.0000, P@5 = 1.0000
-* Six-query paraphrase stress test: top-1 accuracy = 0.6667 and top-3 recall
-      = 0.6667; this is a small robustness check, not a representative benchmark
-
-Regenerate the retrieval evidence with:
-
+### 1. Launch M3 Central Communication Hub (Port 8002)
 ```powershell
+python -m uvicorn main:app --app-dir "M3-Comunication-Hub&Booking-Agent/agent-hub" --reload --port 8002
+```
+
+### 2. Launch M3 Booking & Reservation Agent (Port 8003)
+```powershell
+python -m uvicorn main:app --app-dir "M3-Comunication-Hub&Booking-Agent/booking-agent" --reload --port 8003
+```
+
+### 3. Launch M2 Operations Agent (Port 8005)
+```powershell
+python -m uvicorn main:app --app-dir M2-operations-agent --reload --port 8005
+```
+
+### 4. Launch M4 Maintenance Agent (Port 8006)
+```powershell
+python -m uvicorn main:app --app-dir M4-maintenance-agent --reload --port 8006
+```
+
+### 5. Launch M1 Passenger Assistant Backend (Port 8001)
+```powershell
+python -m uvicorn main:app --app-dir M1-passenger_assistant/backend --reload --port 8001
+```
+
+---
+
+## 📊 Model Training & Evaluation Execution
+
+To train ML models and regenerate committed evaluation metrics:
+
+### Train M2 Operations Delay Model
+```powershell
+python M2-operations-agent/ml/train_delay_model.py
+```
+
+### Evaluate M2 NLP & RAG Performance
+```powershell
+python M2-operations-agent/nlp/evaluate_nlp.py
 python M2-operations-agent/evaluation/rag/evaluate_retrieval.py
 ```
 
-## ML Evaluation
-
-Delay Prediction:
-
-* MAE
-* RMSE
-
-Fraud Detection:
-
-* Detection rate
-* False positive analysis
-
----
-
-# 🚀 Running the Project
-
-## Clone Repository
-
-```bash
-git clone https://github.com/yourusername/RailSense-AI.git
-
-cd RailSense-AI
-```
-
----
-
-## Start All Services
-
-```bash
-docker-compose up
-```
-
-This launches:
-
-```
-✓ Agent Hub
-✓ Passenger Agent
-✓ Operations Agent
-✓ Security Agent
-✓ Maintenance Agent
-```
-
-### Run the Operations Agent locally
-
+### Run End-to-End Multi-Agent Integration Tests
 ```powershell
-python -m uvicorn main:app --app-dir M2-operations-agent --reload --port 8001
-```
-
-Open the dashboard at `http://localhost:8001/` or the API documentation at
-`http://localhost:8001/docs`.
-
-To enable Supabase Phase 4 retrieval, run
-`M2-operations-agent/rag/supabase_schema.sql` in the Supabase SQL editor,
-configure `SUPABASE_URL` and `SUPABASE_KEY`, and index the corpus:
-
-```powershell
-python M2-operations-agent/rag/embed_documents.py
+python test_integration.py
 ```
 
 ---
 
-# 📅 Development Timeline
+## 📜 Academic Attribution & License
 
-| Week | Milestone                        |
-| ---- | -------------------------------- |
-| 1    | Topic selection and architecture |
-| 2    | Dataset preparation              |
-| 3    | Agent scaffolding                |
-| 4    | LLM integration                  |
-| 5    | NLP implementation               |
-| 6    | Mid Evaluation                   |
-| 7    | RAG implementation and grounded Operations predictions |
-| 8    | Security hardening               |
-| 9    | Full integration                 |
-| 10   | Final submission                 |
-| 11   | Viva presentation                |
-
----
-
-# 💼 Commercialization Vision
-
-## Product
-
-**RailSense AI**
-
-AI-powered railway intelligence platform.
-
-## Target Customers
-
-* Railway authorities
-* Transport ministries
-* Metro operators
-* Freight companies
-
-## Business Model
-
-### Starter
-
-Passenger chatbot + basic delay prediction
-
-### Professional
-
-Operations analytics + maintenance intelligence
-
-### Enterprise
-
-Complete AI railway management suite
-
----
-
-# 👥 Team Roles
-
-| Member   | Role                            |
-| -------- | ------------------------------- |
-| Member A | Passenger AI Agent              |
-| Member B | Operations AI Agent             |
-| Member C | Security Agent + Hub            |
-| Member D | Maintenance Agent + Integration |
-
----
-
-# 🌟 Key Innovation
-
-RailSense AI demonstrates:
-
-✅ True multi-agent collaboration
-✅ LLM-powered decision support
-✅ Secure AI communication
-✅ RAG-grounded answers
-✅ Explainable predictions
-✅ Real-world railway commercialization potential
-
----
-
-# 📜 License
-
-Academic Project
-IT3041 – Information Retrieval & Web Analytics
-
----
-
-# 🚆 RailSense AI
-
-**Intelligent Railway Operations Powered by Agentic Artificial Intelligence**
-
-```
-
-This version is suitable for a **GitHub repository front page** and looks closer to an industry AI product documentation style rather than an assignment document........................
-```
+- **Course**: IT3041 – Information Retrieval & Web Analytics  
+- **Institution**: Sri Lanka Institute of Information Technology (SLIIT)  
+- **License**: Academic Educational Project  

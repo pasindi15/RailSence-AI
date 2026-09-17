@@ -28,10 +28,14 @@ _feature_importances: list[dict] = []
 def _load_model_if_needed():
     global _model, _feature_importances
     if _model is None and MODEL_PATH.exists():
-        _model = joblib.load(MODEL_PATH)
-        if IMPORTANCES_PATH.exists():
-            with open(IMPORTANCES_PATH) as f:
-                _feature_importances = json.load(f)
+        try:
+            _model = joblib.load(MODEL_PATH)
+            if IMPORTANCES_PATH.exists():
+                with open(IMPORTANCES_PATH) as f:
+                    _feature_importances = json.load(f)
+        except Exception:
+            _model = None
+            _feature_importances = []
     return _model
 
 
