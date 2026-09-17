@@ -162,6 +162,7 @@ class FraudReviewService:
         case_reference: str,
         decision: str,
         admin_reason: str | None = None,
+        admin_user: str | None = None,
     ) -> dict[str, Any]:
         """
         Adjudicate a fraud review case (APPROVE or REJECT).
@@ -192,6 +193,40 @@ class FraudReviewService:
             case.admin_decision = "REJECT"
             case.admin_reason = admin_reason or "Rejected by railway security administration."
             case.reviewed_at = now
+
+            # Release linked hold if any
+            try:
+                payload_obj = json.loads(case.booking_payload) if case.booking_payload else {}
+                h_token = payload_obj.get("hold_token")
+                if h_token:
+                    from database.models import SeatHold, HoldStatus
+                    from booking.waiting_list import evaluate_waiting_list_for_schedule
+                    hold_row = self.db.query(SeatHold).filter(SeatHold.hold_token == h_token).first()
+                    if hold_row and hold_row.status == HoldStatus.ACTIVE:
+                        hold_row.status = HoldStatus.CANCELLED
+                        self.db.flush()
+                        evaluate_waiting_list_for_schedule(
+                            db=self.db,
+                            schedule_id=hold_row.schedule_id,
+                            seat_class=hold_row.seat_class,
+                        )
+            except Exception:
+                pass
+
+            # Record human review feedback label
+            try:
+                from database.models import FraudInvestigationLabel, InvestigationLabel
+                label_entry = FraudInvestigationLabel(
+                    case_reference=case.case_reference,
+                    primary_nic_hash=case.primary_nic_hash,
+                    label=InvestigationLabel.CONFIRMED_FRAUD,
+                    evidence_notes=case.admin_reason,
+                    reviewer_id=admin_user or "admin",
+                )
+                self.db.add(label_entry)
+            except Exception as e:
+                pass
+
             self.db.commit()
             return {
                 "success": True,
@@ -251,17 +286,32 @@ class FraudReviewService:
         )
 
         # 5. Re-verify seat availability (critical: seats may have been booked while pending)
-        check_seat_availability(
-            db=self.db,
-            schedule=schedule,
-            seat_class=seat_class,
-            requested_seats=passenger_count,
-        )
+        from booking.qr_service import generate_opaque_ticket_token
+        from database.models import FraudInvestigationLabel, InvestigationLabel, SeatHold, HoldStatus
+        
+        hold_token = payload.get("hold_token")
+        active_hold = None
+        if hold_token:
+            active_hold = self.db.query(SeatHold).filter(
+                SeatHold.hold_token == hold_token,
+                SeatHold.status == HoldStatus.ACTIVE,
+            ).first()
 
-        # 6. Generate booking reference & persist confirmed booking
+        if not active_hold:
+            check_seat_availability(
+                db=self.db,
+                schedule=schedule,
+                seat_class=seat_class,
+                requested_seats=passenger_count,
+            )
+
+        # 6. Generate booking reference & opaque ticket token, then persist confirmed booking
         booking_ref = generate_booking_reference()
+        ticket_token = generate_opaque_ticket_token()
         booking = Booking(
             booking_reference=booking_ref,
+            ticket_token=ticket_token,
+            hold_id=active_hold.id if active_hold else None,
             user_id=user_id,
             train_id=train.id,
             schedule_id=schedule.id,
@@ -276,6 +326,10 @@ class FraudReviewService:
         )
         self.db.add(booking)
         self.db.flush()
+
+        if active_hold:
+            active_hold.status = HoldStatus.CONFIRMED
+            self.db.flush()
 
         # 7. Create/link passengers and association records
         for p_info in passengers_data:
@@ -299,11 +353,23 @@ class FraudReviewService:
             )
             self.db.add(bp)
 
-        # 8. Update FraudReview status to APPROVED
+        # 8. Update FraudReview status to APPROVED and record investigation feedback
         case.status = FraudReviewStatus.APPROVED
         case.admin_decision = "APPROVE"
         case.admin_reason = admin_reason or "Approved after administrative verification."
         case.reviewed_at = now
+
+        try:
+            label_entry = FraudInvestigationLabel(
+                case_reference=case.case_reference,
+                primary_nic_hash=case.primary_nic_hash,
+                true_label=InvestigationLabel.FALSE_POSITIVE,
+                reviewer_notes=case.admin_reason,
+                created_at=now,
+            )
+            self.db.add(label_entry)
+        except Exception:
+            pass
 
         self.db.commit()
         self.db.refresh(booking)
@@ -333,8 +399,10 @@ class FraudReviewService:
             "case_reference": case.case_reference,
             "status": "APPROVED",
             "booking_reference": booking.booking_reference,
+            "ticket_token": booking.ticket_token,
             "booking": {
                 "booking_reference": booking.booking_reference,
+                "ticket_token": booking.ticket_token,
                 "from_station": booking.from_station,
                 "to_station": booking.to_station,
                 "travel_date": booking.travel_date.isoformat(),
