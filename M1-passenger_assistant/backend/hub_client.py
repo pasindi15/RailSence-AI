@@ -62,6 +62,16 @@ async def send_to_hub(envelope: dict) -> dict:
                         "payload": dest_resp.get("payload", dest_resp),
                     }
                 return {"status": "ok", "payload": data}
+            if response.status_code >= 400:
+                try:
+                    error = response.json()
+                except Exception:
+                    error = {"detail": response.text}
+                return {
+                    "status": "error",
+                    "status_code": response.status_code,
+                    "message": error.get("detail", "Hub request failed"),
+                }
     except Exception as exc:
         print(f"[M1 Hub Client] Hub communication error ({exc}), using fallback stub.")
 

@@ -11,8 +11,14 @@ Phase 1 scope:
 """
 import os
 import uuid
+import asyncio
+import sys
 from pathlib import Path
 from datetime import datetime, timezone
+
+ROOT_DIR = Path(__file__).resolve().parents[2]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
 
 try:
     # pyrefly: ignore [missing-import]
@@ -31,11 +37,12 @@ from nlu.intent_classifier import classify_intent
 from nlu.ner_extractor import extract_entities
 from hub_client import build_envelope, send_to_hub
 from rag.retriever import retrieve_faq_chunks
+from shared.train_repository import TrainRepositoryUnavailable, get_train, get_train_schedule
 
 load_dotenv()
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+SUPABASE_KEY = os.getenv("SUPABASE_SECRET_KEY", os.getenv("SUPABASE_SERVICE_ROLE_KEY"))
 
 supabase: Client | None = None
 if SUPABASE_URL and SUPABASE_KEY:
@@ -156,6 +163,8 @@ async def chat(req: ChatRequest):
     language = detect_language(text)
     intent = classify_intent(text)
     entities = extract_entities(text)
+    if entities.get("train_id") and intent == "schedule_query":
+        intent = "train_info"
 
     source = "local"
     reply = ""
@@ -163,9 +172,47 @@ async def chat(req: ChatRequest):
     if intent in ("schedule_query", "fare_query"):
         reply, source = compose_rag_answer(text, language, req.session_id)
 
+    elif intent == "train_info":
+        train_id = entities.get("train_id")
+        if not train_id:
+            reply = "Please provide a train ID so I can check the canonical train registry."
+            source = "via Shared Train Registry"
+        else:
+            try:
+                train = await asyncio.to_thread(get_train, train_id)
+                if train is None:
+                    reply = f"TRAIN_NOT_FOUND: {train_id} is not registered in the canonical train registry."
+                else:
+                    schedules = await asyncio.to_thread(get_train_schedule, train_id)
+                    route = train.get("route") or "route not recorded"
+                    active = "active" if train.get("active") else "inactive"
+                    reply = (
+                        f"{train.get('train_name') or train_id} ({train_id}) is {active}. "
+                        f"Route: {route}. "
+                        f"Maintenance status: {train.get('maintenance_status', 'UNKNOWN')}."
+                    )
+                    if schedules:
+                        first = schedules[0]
+                        reply += (
+                            f" Next recorded service: {first.get('from_station')} to "
+                            f"{first.get('to_station')} on {first.get('travel_date')} "
+                            f"at {first.get('departure_time')}."
+                        )
+                source = "via Shared Train Registry"
+            except TrainRepositoryUnavailable:
+                reply = "The canonical train registry is temporarily unavailable."
+                source = "via Shared Train Registry"
+
     elif intent == "delay_check":
         stations = entities.get("stations", [])
         route = " - ".join(stations) if isinstance(stations, list) and len(stations) >= 2 else "Colombo Fort - Kandy"
+        train_id = entities.get("train_id")
+        if not train_id:
+            reply = "TRAIN_NOT_FOUND: provide a train ID so Operations can validate it."
+            source = "via Operations Agent (Hub)"
+            save_message(req.session_id, "user", text)
+            save_message(req.session_id, "assistant", reply)
+            return ChatResponse(session_id=req.session_id, reply=reply, intent=intent, language=language, entities=entities, source=source)
         envelope = build_envelope(
             receiver_agent="operations-agent",
             intent="delay_check",
@@ -174,7 +221,7 @@ async def chat(req: ChatRequest):
                 "time": entities.get("time"),
                 "raw_text": text,
                 "route": route,
-                "train_id": entities.get("train_id", "PM-4082"),
+                "train_id": train_id,
             },
         )
         hub_response = await send_to_hub(envelope)
@@ -194,7 +241,9 @@ async def chat(req: ChatRequest):
             )
             source = "via Operations Agent (Hub)"
         else:
-            reply = "I couldn't reach the Operations Agent right now."
+            message = hub_response.get("message", "I couldn't reach the Operations Agent right now.")
+            reply = message if "TRAIN_NOT_FOUND" in message else "I couldn't reach the Operations Agent right now."
+            source = "via Operations Agent (Hub)"
 
     elif intent == "complaint":
         envelope = build_envelope(
