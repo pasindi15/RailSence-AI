@@ -144,6 +144,16 @@ def save_message(session_id: str, role: str, message: str):
         print(f"Supabase save failed: {e}")
 
 
+def _extract_train_id(text: str) -> str:
+    """Extract a train ID or number from free text (e.g. 'train 501', 'TRN-501')."""
+    import re
+    match = re.search(r"\b(?:TRN-?\d+|train\s*#?\s*(\d+))\b", text, re.IGNORECASE)
+    if match:
+        num = match.group(1) or match.group(0)
+        return f"TRN-{num.strip()}" if num.isdigit() else num.upper()
+    return ""
+
+
 @app.get("/health")
 def health():
     return {"status": "ok", "time": datetime.now(timezone.utc).isoformat()}
@@ -196,11 +206,26 @@ async def chat(req: ChatRequest):
         else:
             reply = "I couldn't reach the Operations Agent right now."
 
+    elif intent == "train_status":
+        train_id = entities.get("train_id") or _extract_train_id(text)
+        envelope = build_envelope(
+            receiver_agent="maintenance-agent",
+            intent="train_status_query",
+            payload={"train_id": train_id or "", "raw_text": text},
+        )
+        hub_response = await send_to_hub(envelope)
+        if hub_response.get("status") == "ok":
+            p = hub_response.get("payload", {})
+            reply = p.get("message", "I could not retrieve the train status right now.")
+            source = "via Maintenance Agent"
+        else:
+            reply = "I couldn't check the train status right now. Please try again shortly."
+
     elif intent == "complaint":
         envelope = build_envelope(
             receiver_agent="maintenance-agent",
             intent="issue_report",
-            payload={"description": text},
+            payload={"description": text, "train_id": entities.get("train_id", "")},
         )
         hub_response = await send_to_hub(envelope)
         if hub_response.get("status") == "ok":

@@ -7,10 +7,18 @@ Intents:
  - delay_check     : asking whether a specific train is delayed  -> routed to Hub (Operations)
  - complaint       : reporting a broken/faulty issue              -> routed to Hub (Maintenance)
  - booking_request : requesting a train booking                    -> routed to Hub (Booking)
+ - train_status    : asking if a specific train is running/available -> routed to Hub (Maintenance)
  - unknown         : fallback, handled locally with a clarifying reply
 """
 
 INTENT_KEYWORDS = {
+    "train_status": [
+        "is train", "train running", "train available", "train cancelled", "train service",
+        "is the train", "will train", "train operating", "out of service", "under maintenance",
+        "train working", "train today", "service today", "train status",
+        "දුම්රිය ධාවනය", "දුම්රිය ක්‍රියාත්මකද",
+        "ரயில் இயங்குகிறதா", "ரயில் நிலை",
+    ],
     "delay_check": [
         "delay", "late", "on time", "on-time", "postpone",
         "ප්‍රමාද", "ප්‍රමාදයි", "ප්‍රමාදද",
