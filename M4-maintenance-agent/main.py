@@ -9,9 +9,13 @@ Endpoints:
     GET  /asset-status/{asset_id}   -> current status of a specific asset
     POST /maintenance-report        -> NLP processing of technician free-text report
     GET  /manual-search             -> RAG search through equipment manuals
-    POST /hub/message               -> receive maintenance_check from the Agent Hub
+    POST /hub/message               -> receive maintenance_check / issue_report / train_status_query from Hub
     GET  /api/dashboard             -> aggregated dashboard data
     GET  /api/assets                -> all assets with health status
+    POST /api/flag-train            -> engineer flags a train as under maintenance
+    DELETE /api/flag-train/{id}     -> engineer clears a maintenance flag
+    GET  /api/train-status/{id}     -> real-time maintenance status of a train (public)
+    GET  /api/trains-under-maintenance -> list all trains currently flagged
 """
 
 from contextlib import asynccontextmanager
@@ -57,6 +61,7 @@ UI_DIR = AGENT_DIR / "ui"
 
 _in_memory_events: list[dict] = []
 _in_memory_reports: list[dict] = []
+_train_flags: dict[str, dict] = {}  # train_id -> maintenance flag record
 
 # Simple cache — avoids hitting Supabase on every request
 _asset_cache: list[dict] = []
@@ -179,6 +184,14 @@ class HubMessageRequest(BaseModel):
     payload: dict[str, Any] = Field(default_factory=dict)
     auth_token: str = ""
     timestamp: str = ""
+
+
+class TrainFlagRequest(BaseModel):
+    train_id: str = Field(..., min_length=1, max_length=50)
+    reason: str = Field(..., min_length=5, max_length=500)
+    severity: str = Field("RED", pattern="^(AMBER|RED)$")
+    flagged_by: Optional[str] = Field(None, max_length=50)
+    estimated_clear: Optional[str] = Field(None, max_length=50)  # e.g. "18:00" or ISO datetime
 
 
 # ---------------------------------------------------------------------------
@@ -549,6 +562,75 @@ async def chat(request: Request, payload: ChatRequest):
     return result
 
 
+@app.post("/api/flag-train")
+@limiter.limit("30/minute")
+async def flag_train(request: Request, payload: TrainFlagRequest):
+    """Engineer flags a train as under maintenance — visible to passengers via Hub."""
+    record = {
+        "train_id": payload.train_id,
+        "under_maintenance": True,
+        "reason": payload.reason,
+        "severity": payload.severity,
+        "flagged_by": payload.flagged_by or "engineer",
+        "estimated_clear": payload.estimated_clear,
+        "flagged_at": datetime.now(timezone.utc).isoformat(),
+    }
+    _train_flags[payload.train_id] = record
+    client_ip = request.client.host if request.client else "unknown"
+    _write_audit("train_flagged_for_maintenance", client_ip, {
+        "train_id": payload.train_id,
+        "reason": payload.reason,
+        "severity": payload.severity,
+        "flagged_by": payload.flagged_by,
+    })
+    return {"status": "flagged", "record": record}
+
+
+@app.delete("/api/flag-train/{train_id}")
+@limiter.limit("30/minute")
+async def clear_train_flag(request: Request, train_id: str):
+    """Engineer clears maintenance flag — train returns to service."""
+    if train_id not in _train_flags:
+        raise HTTPException(status_code=404, detail=f"No maintenance flag found for train '{train_id}'.")
+    record = _train_flags.pop(train_id)
+    client_ip = request.client.host if request.client else "unknown"
+    _write_audit("train_maintenance_cleared", client_ip, {"train_id": train_id})
+    return {"status": "cleared", "previous_record": record}
+
+
+@app.get("/api/train-status/{train_id}")
+@limiter.limit("60/minute")
+async def get_train_status(request: Request, train_id: str):
+    """Return current maintenance status of a specific train."""
+    if train_id in _train_flags:
+        flag = _train_flags[train_id]
+        eta = f" Expected back in service by {flag['estimated_clear']}." if flag.get("estimated_clear") else ""
+        return {
+            "train_id": train_id,
+            "under_maintenance": True,
+            "severity": flag["severity"],
+            "reason": flag["reason"],
+            "flagged_at": flag["flagged_at"],
+            "estimated_clear": flag.get("estimated_clear"),
+            "message": f"Train {train_id} is currently under maintenance. Reason: {flag['reason']}.{eta}",
+        }
+    return {
+        "train_id": train_id,
+        "under_maintenance": False,
+        "message": f"Train {train_id} has no active maintenance flags and is cleared for service.",
+    }
+
+
+@app.get("/api/trains-under-maintenance")
+@limiter.limit("60/minute")
+async def get_trains_under_maintenance(request: Request):
+    """List all trains currently flagged for maintenance."""
+    return {
+        "count": len(_train_flags),
+        "trains": list(_train_flags.values()),
+    }
+
+
 @app.post("/hub/message")
 async def hub_message(request: Request, payload: HubMessageRequest):
     if payload.intent == "maintenance_check":
@@ -602,6 +684,7 @@ async def hub_message(request: Request, payload: HubMessageRequest):
     if payload.intent == "issue_report":
         ticket_id = f"MT-{uuid.uuid4().hex[:6].upper()}"
         description = payload.payload.get("description", "Passenger reported issue")
+        train_id = payload.payload.get("train_id")
         client_ip = request.client.host if request.client else "unknown"
         _write_audit("hub_issue_report", client_ip, {
             "ticket_id": ticket_id, "sender": payload.sender_agent, "description": description
@@ -616,6 +699,47 @@ async def hub_message(request: Request, payload: HubMessageRequest):
                 "message": "Issue logged successfully. A maintenance technician will inspect within 48 hours.",
                 "status": "received",
             },
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
+
+    if payload.intent == "train_status_query":
+        train_id = payload.payload.get("train_id", "")
+        client_ip = request.client.host if request.client else "unknown"
+        _write_audit("hub_train_status_query", client_ip, {
+            "train_id": train_id, "sender": payload.sender_agent
+        })
+        if not train_id:
+            status_payload = {
+                "under_maintenance": False,
+                "message": "No train ID provided. Please specify a train.",
+            }
+        elif train_id in _train_flags:
+            flag = _train_flags[train_id]
+            eta = f" Expected back in service by {flag['estimated_clear']}." if flag.get("estimated_clear") else ""
+            status_payload = {
+                "train_id": train_id,
+                "under_maintenance": True,
+                "severity": flag["severity"],
+                "reason": flag["reason"],
+                "flagged_at": flag["flagged_at"],
+                "estimated_clear": flag.get("estimated_clear"),
+                "message": (
+                    f"Train {train_id} is currently under maintenance and may not be in service. "
+                    f"Reason: {flag['reason']}.{eta} We apologise for the inconvenience."
+                ),
+            }
+        else:
+            status_payload = {
+                "train_id": train_id,
+                "under_maintenance": False,
+                "message": f"Train {train_id} has no active maintenance issues and is cleared for service.",
+            }
+        return {
+            "message_id": str(uuid.uuid4()),
+            "sender_agent": "maintenance-agent",
+            "receiver_agent": payload.sender_agent,
+            "intent": "train_status_response",
+            "payload": status_payload,
             "timestamp": datetime.now(timezone.utc).isoformat(),
         }
 
