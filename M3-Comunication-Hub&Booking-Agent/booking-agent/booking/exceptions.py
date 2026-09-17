@@ -126,3 +126,30 @@ class HoldExpiredOrInvalidError(InvalidBookingError):
         self.message = msg
         self.status_code = status_code
 
+
+class TrainUnderMaintenanceError(BookingError):
+    """Raised when a train is under maintenance and cannot accept new bookings."""
+
+    def __init__(self, train_id: str, maintenance_status: str = "OUT_OF_SERVICE", message: str | None = None):
+        msg = message or (
+            f"TRAIN_UNDER_MAINTENANCE: Train '{train_id}' is currently under maintenance "
+            f"(status: {maintenance_status}) and cannot accept new bookings."
+        )
+        super().__init__(msg)
+        self.train_id = train_id
+        self.maintenance_status = maintenance_status
+
+
+class RouteMismatchError(BookingError):
+    """Raised when the requested from/to stations do not match the train's canonical route."""
+
+    def __init__(self, train_id: str, requested_route: str, canonical_route: str, message: str | None = None):
+        msg = message or (
+            f"ROUTE_MISMATCH: Train '{train_id}' operates '{canonical_route}', "
+            f"not '{requested_route}'."
+        )
+        super().__init__(msg)
+        self.train_id = train_id
+        self.requested_route = requested_route
+        self.canonical_route = canonical_route
+

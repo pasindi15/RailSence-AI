@@ -19,7 +19,7 @@ STATION_ALIASES = {
 
 TIME_PATTERN = re.compile(r"\b([01]?\d|2[0-3]):[0-5]\d\b")
 DATE_PATTERN = re.compile(r"\b\d{4}-\d{2}-\d{2}\b")
-TRAIN_ID_PATTERN = re.compile(r"\b[A-Z]{2}-\d{3,4}\b")
+TRAIN_ID_PATTERN = re.compile(r"\b[A-Z]{2,12}-\d{3,5}\b", re.IGNORECASE)
 SEAT_CLASS_KEYWORDS = ["first class", "second class", "third class"]
 PASSENGER_COUNT_PATTERN = re.compile(
     r"\b(\d+)\s*(passenger|passengers|people|seat|seats)\b", re.IGNORECASE

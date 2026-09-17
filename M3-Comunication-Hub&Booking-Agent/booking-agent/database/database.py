@@ -144,6 +144,12 @@ def init_db(seed: bool = False) -> None:
             import sqlalchemy as sa
             insp = sa.inspect(conn)
             table_names = insp.get_table_names()
+            if "trains" in table_names:
+                cols = [c["name"] for c in insp.get_columns("trains")]
+                if "maintenance_status" not in cols:
+                    conn.execute(sa.text("ALTER TABLE trains ADD COLUMN maintenance_status VARCHAR(100)"))
+                if "route" not in cols:
+                    conn.execute(sa.text("ALTER TABLE trains ADD COLUMN route VARCHAR(500)"))
             if "bookings" in table_names:
                 cols = [c["name"] for c in insp.get_columns("bookings")]
                 if "ticket_token" not in cols:

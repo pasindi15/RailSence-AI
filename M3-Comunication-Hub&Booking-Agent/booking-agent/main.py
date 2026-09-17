@@ -47,9 +47,11 @@ from booking.exceptions import (
     DuplicateNICInBookingError,
     FareNotFoundError,
     InvalidBookingError,
+    RouteMismatchError,
     ScheduleNotFoundError,
     SeatsUnavailableError,
     TrainNotFoundError,
+    TrainUnderMaintenanceError,
 )
 from booking.service import BookingService
 from cancellation.service import (
@@ -196,6 +198,16 @@ async def receive_internal_message(
         except (TrainNotFoundError, ScheduleNotFoundError, FareNotFoundError) as exc:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
+                detail=str(exc),
+            )
+        except TrainUnderMaintenanceError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=str(exc),
+            )
+        except RouteMismatchError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail=str(exc),
             )
         except SeatsUnavailableError as exc:
