@@ -38,3 +38,4 @@
 {"ts": "2026-09-14T19:18:41.843169+00:00", "action": "engineer_chat", "agent": "maintenance-agent", "client": "127.0.0.1", "detected_asset_type": "brake_system", "answer_method": "template_grounded", "retrieval_method": "local_tfidf"}
 {"ts": "2026-09-14T19:20:22.081774+00:00", "action": "hub_issue_report", "agent": "maintenance-agent", "client": "127.0.0.1", "ticket_id": "MT-6CE64B", "sender": "passenger-agent", "description": "The air conditioning in carriage 3 is broken and not working"}
 {"ts": "2026-09-14T19:20:33.099631+00:00", "action": "engineer_chat", "agent": "maintenance-agent", "client": "127.0.0.1", "detected_asset_type": "brake_system", "answer_method": "template_grounded", "retrieval_method": "local_tfidf"}
+{"ts": "2026-09-17T08:44:20.663018+00:00", "action": "hub_issue_report", "agent": "maintenance-agent", "client": "127.0.0.1", "ticket_id": "MT-380841", "sender": "passenger-agent", "description": "The AC is broken in my compartment"}
