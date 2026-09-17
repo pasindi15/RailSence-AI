@@ -40,7 +40,7 @@ async def register_with_hub() -> None:
         await _post_hub("/register", {
             "agent_name": AGENT_NAME,
             "capabilities": ["delay_check", "delay_alert", "incident_triage"],
-            "callback_url": os.getenv("OPERATIONS_AGENT_URL", "http://localhost:8001"),
+            "callback_url": os.getenv("OPERATIONS_AGENT_URL", "http://localhost:8005"),
             "timestamp": datetime.now(timezone.utc).isoformat(),
         })
     except Exception:
