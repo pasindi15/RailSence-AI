@@ -23,20 +23,28 @@ def seed_test_train_data(db: Session) -> dict[str, Any]:
     Seed standard development/test trains and schedules.
 
     Entities seeded:
-    - Train 'PM-4082': Active (Intercity Express)
+    - Train 'PM-4082': Active, route 'Colombo - Kandy' (Intercity Express)
     - Train 'INACT-9999': Inactive (Decommissioned Railcar)
+    - Train 'MAINT-1111': Active but OUT_OF_SERVICE maintenance status
     - Schedule for PM-4082: Colombo -> Kandy on 2026-12-03
     - Schedule for PM-4082: Colombo -> Kandy on future date (today + 30 days)
     """
-    # 1. Active Train
+    # 1. Active Train — canonical route populated for route-validation tests
     train_pm4082 = db.query(Train).filter(Train.train_id == "PM-4082").first()
     if not train_pm4082:
         train_pm4082 = Train(
             train_id="PM-4082",
             train_name="Intercity Express",
             active=True,
+            route="Colombo - Kandy",
+            maintenance_status=None,
         )
         db.add(train_pm4082)
+        db.flush()
+    else:
+        # Back-fill canonical fields for existing rows
+        if not train_pm4082.route:
+            train_pm4082.route = "Colombo - Kandy"
         db.flush()
 
     # 2. Inactive Train
@@ -48,6 +56,19 @@ def seed_test_train_data(db: Session) -> dict[str, Any]:
             active=False,
         )
         db.add(train_inact)
+        db.flush()
+
+    # 3. Active train under maintenance — active=True but maintenance_status=OUT_OF_SERVICE
+    train_maint = db.query(Train).filter(Train.train_id == "MAINT-1111").first()
+    if not train_maint:
+        train_maint = Train(
+            train_id="MAINT-1111",
+            train_name="Express (Under Maintenance)",
+            active=True,
+            route="Colombo - Galle",
+            maintenance_status="OUT_OF_SERVICE",
+        )
+        db.add(train_maint)
         db.flush()
 
     # 3. Schedule for PM-4082 (fixed target date 2026-12-03)
@@ -109,6 +130,7 @@ def seed_test_train_data(db: Session) -> dict[str, Any]:
     return {
         "active_train": train_pm4082,
         "inactive_train": train_inact,
+        "maintenance_train": train_maint,
         "schedule": schedule_colombo_kandy,
         "schedule_future": schedule_future,
     }

@@ -33,9 +33,11 @@ from sqlalchemy.orm import Session
 from database.models import Booking, BookingStatus, Train, TrainSchedule
 from .exceptions import (
     InvalidBookingError,
+    RouteMismatchError,
     ScheduleNotFoundError,
     SeatsUnavailableError,
     TrainNotFoundError,
+    TrainUnderMaintenanceError,
 )
 
 if TYPE_CHECKING:
@@ -162,6 +164,15 @@ def get_train_by_public_id(db: Session, train_id: str) -> Train:
             message=f"Train service '{clean_id}' is currently inactive or decommissioned.",
         )
 
+    # Maintenance restriction — separate concept from active/inactive.
+    # OUT_OF_SERVICE trains cannot accept new bookings regardless of schedule existence.
+    ms = (getattr(train, "maintenance_status", None) or "").strip().upper()
+    if ms == "OUT_OF_SERVICE":
+        raise TrainUnderMaintenanceError(
+            train_id=clean_id,
+            maintenance_status=ms,
+        )
+
     return train
 
 
@@ -196,6 +207,23 @@ def get_schedule_for_trip(
 
     clean_from = from_station.strip()
     clean_to = to_station.strip()
+
+    # Route validation against the canonical route stored on the train record.
+    # Only enforced when the route field is populated (nullable for backward compat).
+    canonical_route = (getattr(train, "route", None) or "").strip()
+    if canonical_route:
+        # Route format: "Origin Station - Destination Station"
+        parts = [p.strip() for p in canonical_route.split(" - ", 1)]
+        if len(parts) == 2:
+            c_origin, c_dest = parts[0].lower(), parts[1].lower()
+            from_ok = clean_from.lower() in c_origin or c_origin in clean_from.lower()
+            to_ok = clean_to.lower() in c_dest or c_dest in clean_to.lower()
+            if not (from_ok and to_ok):
+                raise RouteMismatchError(
+                    train_id=train.train_id,
+                    requested_route=f"{clean_from} - {clean_to}",
+                    canonical_route=canonical_route,
+                )
 
     schedule = (
         db.query(TrainSchedule)
