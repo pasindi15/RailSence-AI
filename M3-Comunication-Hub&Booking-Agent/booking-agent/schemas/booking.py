@@ -84,6 +84,14 @@ class BookingRequest(BaseModel):
             "the real authenticated user_id."
         ),
     )
+    idempotency_key: str | None       = Field(
+        default=None,
+        description="Client idempotency key for deterministic mutation deduplication",
+    )
+    hold_token:      str | None       = Field(
+        default=None,
+        description="Opaque seat hold token if seats were reserved via temporary hold",
+    )
 
     model_config = {"str_strip_whitespace": True}
 
@@ -164,6 +172,7 @@ class BookingResult(BaseModel):
     Attributes
     ----------
     booking_reference: Unique reference code generated for the reservation or case reference.
+    ticket_token:      Opaque token for QR e-ticket server-side verification.
     train_id:          Unique identifier of the reserved train service.
     from_station:      Departure station name.
     to_station:        Arrival station name.
@@ -172,12 +181,15 @@ class BookingResult(BaseModel):
     passenger_count:   Number of reserved passengers.
     fare:              Deterministic total fare calculated for this booking (Decimal/Numeric).
     status:            Reservation status ("CONFIRMED" or "PENDING_FRAUD_REVIEW").
+    passenger_email:   Passenger contact email address.
     case_reference:    Case reference if flagged for fraud review.
     risk_level:        ML assessed risk level.
     reasons:           Explanatory risk reasons if flagged.
+    hold_token:        Seat hold token if held.
     """
 
     booking_reference: str | None = Field(default=None,       description="Unique booking reference code or case reference")
+    ticket_token:      str | None = Field(default=None,       description="Opaque ticket token for QR verification")
     train_id:          str        = Field(..., min_length=1,  description="Train service identifier")
     from_station:      str        = Field(..., min_length=1,  description="Departure station name")
     to_station:        str        = Field(..., min_length=1,  description="Arrival station name")
@@ -190,7 +202,68 @@ class BookingResult(BaseModel):
     case_reference:    str | None = Field(default=None,       description="Fraud review case reference if flagged")
     risk_level:        str | None = Field(default=None,       description="ML assessed risk level")
     reasons:           list[str] | None = Field(default=None, description="Explanatory risk reasons if flagged")
+    hold_token:        str | None = Field(default=None,       description="Seat hold token if held")
 
     model_config = {
         "str_strip_whitespace": True,
     }
+
+
+class SeatHoldRequest(BaseModel):
+    train_id:        str        = Field(..., min_length=1, description="Train identifier")
+    from_station:    str        = Field(..., min_length=1, description="Departure station")
+    to_station:      str        = Field(..., min_length=1, description="Arrival station")
+    travel_date:     date       = Field(..., description="Date of travel")
+    seat_class:      str        = Field(..., min_length=1, description="Class")
+    passenger_count: int        = Field(..., ge=1, le=10, description="Seats requested")
+    user_id:         str | None = Field(default=None, description="User identifier")
+
+    model_config = {"str_strip_whitespace": True}
+
+
+class SeatHoldResponse(BaseModel):
+    hold_token:     str
+    expires_at:     str
+    duration_seconds: int
+    train_id:       str
+    seat_class:     str
+    seat_count:     int
+    status:         str = "ACTIVE"
+
+
+class WaitingListRequest(BaseModel):
+    train_id:        str        = Field(..., min_length=1)
+    from_station:    str        = Field(..., min_length=1)
+    to_station:      str        = Field(..., min_length=1)
+    travel_date:     date       = Field(...)
+    seat_class:      str        = Field(..., min_length=1)
+    passenger_count: int        = Field(..., ge=1, le=10)
+    user_id:         str | None = Field(default=None)
+    passenger_email: str | None = Field(default=None)
+
+    model_config = {"str_strip_whitespace": True}
+
+
+class WaitingListResponse(BaseModel):
+    queue_id:       str
+    position:       int
+    status:         str
+    train_id:       str
+    travel_date:    str
+    seat_class:     str
+    seat_count:     int
+
+
+class TicketVerificationResponse(BaseModel):
+    valid:             bool
+    booking_reference: str | None = None
+    train_id:          str | None = None
+    from_station:      str | None = None
+    to_station:        str | None = None
+    travel_date:       str | None = None
+    seat_class:        str | None = None
+    passenger_count:   int | None = None
+    status:            str | None = None
+    qr_svg:            str | None = None
+    message:           str | None = None
+

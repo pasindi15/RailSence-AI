@@ -33,7 +33,9 @@ _MEMBER_C_ROOT = os.path.abspath(os.path.join(_CURRENT_DIR, ".."))
 if _MEMBER_C_ROOT not in sys.path:
     sys.path.insert(0, _MEMBER_C_ROOT)
 
+from auth.jwt_utils import mint_delegation_token  # noqa: E402
 from registry import get_agent_url, AgentNotFoundError  # noqa: E402
+from resilience import hub_resilience  # noqa: E402
 from shared.schemas import AgentMessage  # noqa: E402
 
 HTTP_TIMEOUT = float(os.getenv("HTTP_TIMEOUT", "30.0"))
@@ -73,28 +75,8 @@ async def route_message(
     """
     Forward an AgentMessage to the registered destination agent.
 
-    Parameters
-    ----------
-    message : AgentMessage
-        The validated and authenticated message envelope.
-    client : httpx.AsyncClient | None, optional
-        Active asynchronous HTTP client. If None, creates a standalone client.
-
-    Returns
-    -------
-    tuple[int, dict[str, Any]]
-        A tuple of (destination_status_code, destination_response_data).
-
-    Raises
-    ------
-    RoutingError (404)
-        If receiver_agent is not registered.
-    RoutingError (503)
-        If the destination agent cannot be reached (connection refused).
-    RoutingError (504)
-        If the destination agent request times out.
-    RoutingError (502)
-        If the destination agent returns a 4xx or 5xx error.
+    Applies per-receiver circuit breaker checks, bounded retry on transient network errors,
+    attaches trusted Hub delegation token, and preserves typed downstream domain errors.
     """
     try:
         base_url = get_agent_url(message.receiver_agent)
@@ -104,41 +86,96 @@ async def route_message(
             detail=f"Receiver agent '{message.receiver_agent}' is not registered in the agent registry.",
         )
 
-    destination_url = f"{base_url}/internal/messages"
-    payload = message.model_dump(mode="json")
+    # Circuit Breaker Check
+    breaker = hub_resilience.get_breaker(message.receiver_agent)
+    if not breaker.allow_request():
+        time_rem = breaker.get_time_until_probe()
+        raise RoutingError(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"Circuit breaker for '{message.receiver_agent}' is OPEN ({time_rem:.1f}s remaining). Downstream agent temporarily unavailable.",
+        )
 
-    async def _send(c: httpx.AsyncClient) -> httpx.Response:
+    # Target endpoint
+    destination_url = f"{base_url}/internal/messages"
+
+    # Mint delegation token asserting Hub verified the sender
+    original_user = message.payload.get("user_id") if isinstance(message.payload, dict) else None
+    delegation_jwt = mint_delegation_token(
+        original_sender=message.sender_agent,
+        receiver_agent=message.receiver_agent,
+        user_id=original_user,
+    )
+
+    headers = {
+        "X-Delegation-Token": delegation_jwt,
+        "X-Correlation-ID": message.get_correlation_id(),
+        "X-Sender-Agent": message.sender_agent,
+    }
+
+    payload = message.model_dump(mode="json")
+    # Propagate correlation_id and increment hop_count for loop defense
+    payload["correlation_id"] = message.get_correlation_id()
+    payload["hop_count"] = message.hop_count + 1
+
+    max_retries = 2
+    retry_delays = [0.05, 0.1]
+    response: httpx.Response | None = None
+
+    async def _attempt_send(c: httpx.AsyncClient) -> httpx.Response:
+        return await c.post(destination_url, json=payload, headers=headers)
+
+    for attempt in range(max_retries + 1):
         try:
-            return await c.post(destination_url, json=payload)
-        except (httpx.ConnectError, httpx.NetworkError):
+            if client is not None:
+                response = await _attempt_send(client)
+            else:
+                async with httpx.AsyncClient(timeout=HTTP_TIMEOUT) as local_client:
+                    response = await _attempt_send(local_client)
+            break
+        except (httpx.ConnectError, httpx.NetworkError) as exc:
+            if attempt < max_retries:
+                import asyncio
+                await asyncio.sleep(retry_delays[attempt])
+                continue
+            breaker.record_failure()
             raise RoutingError(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail=f"Destination agent '{message.receiver_agent}' is unavailable (connection refused).",
             ) from None
         except httpx.TimeoutException:
+            if attempt < max_retries:
+                import asyncio
+                await asyncio.sleep(retry_delays[attempt])
+                continue
+            breaker.record_failure()
             raise RoutingError(
                 status_code=status.HTTP_504_GATEWAY_TIMEOUT,
                 detail=f"Destination agent '{message.receiver_agent}' timed out.",
             ) from None
         except httpx.HTTPError as exc:
+            breaker.record_failure()
             raise RoutingError(
                 status_code=status.HTTP_502_BAD_GATEWAY,
                 detail=f"Destination agent '{message.receiver_agent}' communication error: {exc.__class__.__name__}",
             ) from None
 
-    if client is not None:
-        response = await _send(client)
-    else:
-        async with httpx.AsyncClient(timeout=HTTP_TIMEOUT) as local_client:
-            response = await _send(local_client)
+    if response is None:
+        breaker.record_failure()
+        raise RoutingError(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"Destination agent '{message.receiver_agent}' failed to respond.",
+        )
 
-    # Handle downstream HTTP errors
+    # Successful HTTP connection reached downstream
     if response.status_code >= 500:
+        breaker.record_failure()
         raise RoutingError(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail=f"Destination agent '{message.receiver_agent}' returned a server error (HTTP {response.status_code}).",
         )
     elif response.status_code >= 400:
+        # Service is alive and returning valid application domain responses
+        breaker.record_success()
         try:
             err_data = response.json()
             downstream_detail = err_data.get("detail", str(err_data))
@@ -152,10 +189,12 @@ async def route_message(
             detail=msg,
         )
 
-    # Parse response body
+    # 2xx Success
+    breaker.record_success()
     try:
         data = response.json()
     except Exception:
         data = {"raw": response.text}
 
     return response.status_code, data
+
