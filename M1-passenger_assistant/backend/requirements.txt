@@ -10,3 +10,4 @@ chromadb
 sentence-transformers
 spacy
 pytest
+respx

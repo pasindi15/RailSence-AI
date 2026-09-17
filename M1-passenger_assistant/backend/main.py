@@ -10,6 +10,7 @@ Phase 1 scope:
  - hub_client is called but returns a STUB response (real Hub wiring = Phase 3)
 """
 import os
+import re
 import sys
 import uuid
 from pathlib import Path
@@ -30,7 +31,7 @@ try:
 except ImportError:
     genai = None
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from supabase import create_client, Client
@@ -94,6 +95,29 @@ class FeedbackRequest(BaseModel):
     session_id: str
     rating: int
     comment: str | None = None
+
+
+class SessionSummary(BaseModel):
+    session_id: str
+    title: str
+    is_pinned: bool
+    created_at: str
+    updated_at: str
+
+
+class PinRequest(BaseModel):
+    pinned: bool
+
+
+# Matches crypto.randomUUID() from the frontend (and str(uuid.uuid4()) from the
+# ChatRequest default). Rejecting anything else before it reaches a Supabase
+# filter keeps session_id out of query-building entirely, not just escaped.
+SESSION_ID_RE = re.compile(r"^[A-Za-z0-9_-]{1,100}$")
+
+
+def validate_session_id(session_id: str) -> None:
+    if not SESSION_ID_RE.match(session_id):
+        raise HTTPException(status_code=400, detail="Invalid session_id")
 
 
 def get_recent_history(session_id: str, turns: int = 3) -> list[dict]:
@@ -189,10 +213,42 @@ def compose_rag_answer(
         return f"Here's what I found:\n\n{chunks[0]['text'][:400]}", sources
 
 
+def touch_session(session_id: str, title_candidate: str | None = None):
+    """Create the chat_sessions row on first message, or bump updated_at on later ones.
+
+    No row is created until the first message actually sends (avoids empty-session
+    clutter from a passenger opening "+ New chat" and never typing anything).
+    """
+    if not supabase:
+        return
+    try:
+        existing = (
+            supabase.table("chat_sessions")
+            .select("session_id")
+            .eq("session_id", session_id)
+            .limit(1)
+            .execute()
+        )
+        now = datetime.now(timezone.utc).isoformat()
+        if existing.data:
+            supabase.table("chat_sessions").update({"updated_at": now}).eq("session_id", session_id).execute()
+        else:
+            title = (title_candidate or "New conversation").strip()[:60] or "New conversation"
+            supabase.table("chat_sessions").insert({
+                "session_id": session_id,
+                "title": title,
+                "updated_at": now,
+            }).execute()
+    except Exception as e:
+        print(f"Supabase session upsert failed: {e}")
+
+
 def save_message(session_id: str, role: str, message: str):
     if not supabase:
         print("Warning: Supabase is not configured.")
         return
+
+    touch_session(session_id, title_candidate=message if role == "user" else None)
 
     try:
         supabase.table("chat_messages").insert({
@@ -243,8 +299,11 @@ async def chat(req: ChatRequest):
             },
         )
         hub_response = await send_to_hub(envelope)
-        if hub_response.get("status") == "ok":
-            p = hub_response.get("payload", {})
+        if hub_response.status == "ok":
+            p = hub_response.payload
+            # Operations' /hub/message hands back structured fields, not one
+            # composed sentence (unlike Maintenance/Booking below) - this
+            # assembles them, it doesn't re-run anything through an LLM.
             delay = p.get("predicted_delay_minutes", 0)
             reason = p.get("reason") or p.get("explanation", "Operational congestion")
             similar = p.get("similar_incident")
@@ -259,7 +318,7 @@ async def chat(req: ChatRequest):
             )
             source = "via Operations Agent (Hub)"
         else:
-            reply = "I couldn't reach the Operations Agent right now."
+            reply = hub_response.message or "I couldn't reach the Operations Agent right now."
 
     elif intent == "complaint":
         envelope = build_envelope(
@@ -268,12 +327,14 @@ async def chat(req: ChatRequest):
             payload={"description": text},
         )
         hub_response = await send_to_hub(envelope)
-        if hub_response.get("status") == "ok":
-            p = hub_response["payload"]
+        if hub_response.status == "ok":
+            p = hub_response.payload
+            # Maintenance's reply text is already composed by that agent - passed
+            # through as-is, just appending the ticket id for the passenger's reference.
             reply = f"{p['message']} (Ticket: {p['ticket_id']})"
             source = "via Maintenance Agent"
         else:
-            reply = "I couldn't log your issue right now."
+            reply = hub_response.message or "I couldn't log your issue right now."
 
     elif intent == "booking_request":
         envelope = build_envelope(
@@ -289,12 +350,12 @@ async def chat(req: ChatRequest):
             },
         )
         hub_response = await send_to_hub(envelope)
-        if hub_response.get("status") == "ok":
-            p = hub_response["payload"]
-            reply = p["message"]
+        if hub_response.status == "ok":
+            # Booking's reply text is already composed by that agent - passed through as-is.
+            reply = hub_response.payload["message"]
             source = "via Booking Agent"
         else:
-            reply = "I couldn't reach the Booking Agent right now."
+            reply = hub_response.message or "I couldn't reach the Booking Agent right now."
 
     else:
         # Keyword classifier missed this one - try the FAQ docs before giving up.
@@ -319,6 +380,7 @@ async def chat(req: ChatRequest):
 
 @app.get("/chat/{session_id}/history")
 def history(session_id: str):
+    validate_session_id(session_id)
     if not supabase:
         return {"session_id": session_id, "messages": [], "error": "Supabase is not configured"}
 
@@ -335,6 +397,88 @@ def history(session_id: str):
     except Exception as e:
         print(f"Supabase history failed: {e}")
         return {"session_id": session_id, "messages": [], "error": str(e)}
+
+
+@app.get("/chat", response_model=list[SessionSummary])
+def list_sessions():
+    """Sidebar chat list: pinned sessions first, then most-recently-active."""
+    if not supabase:
+        return []
+    try:
+        result = (
+            supabase.table("chat_sessions")
+            .select("*")
+            .order("is_pinned", desc=True)
+            .order("updated_at", desc=True)
+            .execute()
+        )
+        return result.data
+    except Exception as e:
+        print(f"Supabase session list failed: {e}")
+        return []
+
+
+def get_session_or_404(session_id: str):
+    """Look up a chat_sessions row, or raise a clean HTTP error.
+
+    Wraps the query itself (not just the later mutation) - if the chat_sessions
+    table hasn't been created yet (see supabase_schema.sql), Supabase raises on
+    the SELECT itself, which would otherwise surface as an opaque 500 instead
+    of a message that tells the caller what to actually go fix.
+    """
+    try:
+        existing = (
+            supabase.table("chat_sessions").select("session_id").eq("session_id", session_id).limit(1).execute()
+        )
+    except Exception as e:
+        print(f"Supabase session lookup failed: {e}")
+        raise HTTPException(
+            status_code=503,
+            detail="Chat storage isn't set up yet - run backend/supabase_schema.sql against this Supabase project.",
+        )
+    if not existing.data:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+
+@app.delete("/chat/{session_id}", status_code=204)
+def delete_chat(session_id: str):
+    validate_session_id(session_id)
+    if not supabase:
+        raise HTTPException(status_code=503, detail="Supabase is not configured")
+
+    get_session_or_404(session_id)
+
+    try:
+        # Explicit two-step hard delete rather than relying on the FK's ON
+        # DELETE CASCADE - keeps this correct even on a database where that
+        # constraint didn't attach cleanly (see supabase_schema.sql).
+        supabase.table("chat_messages").delete().eq("session_id", session_id).execute()
+        supabase.table("chat_sessions").delete().eq("session_id", session_id).execute()
+    except Exception as e:
+        print(f"Supabase delete failed: {e}")
+        raise HTTPException(status_code=500, detail="Failed to delete session")
+    return None
+
+
+@app.patch("/chat/{session_id}/pin", response_model=SessionSummary)
+def pin_chat(session_id: str, req: PinRequest):
+    validate_session_id(session_id)
+    if not supabase:
+        raise HTTPException(status_code=503, detail="Supabase is not configured")
+
+    get_session_or_404(session_id)
+
+    try:
+        result = (
+            supabase.table("chat_sessions")
+            .update({"is_pinned": req.pinned, "updated_at": datetime.now(timezone.utc).isoformat()})
+            .eq("session_id", session_id)
+            .execute()
+        )
+        return result.data[0]
+    except Exception as e:
+        print(f"Supabase pin update failed: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update session")
 
 
 @app.post("/feedback")

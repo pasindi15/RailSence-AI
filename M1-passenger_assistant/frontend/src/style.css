@@ -98,26 +98,112 @@ textarea:focus-visible,
   transform: translateY(-1px);
 }
 
-.chat-list {
+.chat-groups {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  gap: 4px;
+}
+
+.chat-group {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* The recent group takes any extra vertical space when pinned is short/empty,
+   but still shrinks (rather than overflowing the sidebar) once pinned grows -
+   each list scrolls independently instead of the whole sidebar scrolling. */
+.chat-group-recent {
+  flex: 1;
+}
+
+.chat-group-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 6px 10px 4px;
+}
+
+.chat-group-list {
   overflow-y: auto;
+  min-height: 0;
 }
 
 .chat-item {
-  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 8px 8px 10px;
   border-radius: 8px;
   cursor: pointer;
   font-size: 13px;
   color: var(--muted);
   margin-bottom: 4px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
   transition: background-color 150ms ease, color 150ms ease;
 }
 
 .chat-item:hover { background: var(--bg); }
 .chat-item.active { background: rgba(14, 165, 233, 0.14); color: var(--passenger-hover); font-weight: 600; }
+
+.chat-item-pin {
+  flex-shrink: 0;
+  display: inline-flex;
+  color: var(--passenger);
+}
+
+.chat-item-title {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chat-item-actions {
+  flex-shrink: 0;
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+/* Keep the buttons reachable via keyboard/touch even without a hover state. */
+.chat-item:hover .chat-item-actions,
+.chat-item:focus-within .chat-item-actions,
+.chat-item-icon-btn:focus-visible {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .chat-item-actions { opacity: 1; }
+}
+
+.chat-item-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.chat-item-icon-btn:hover {
+  background: var(--border);
+  color: var(--brand);
+}
+
+.chat-item-icon-btn-danger:hover {
+  color: #DC2626;
+}
 
 .sidebar-footer {
   display: flex;
@@ -264,4 +350,115 @@ textarea:focus-visible,
 .input-bar button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* Confirm dialog */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal-dialog {
+  position: relative;
+  width: min(360px, calc(100vw - 32px));
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  padding: 20px;
+}
+
+.modal-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.modal-close:hover {
+  background: var(--bg);
+  color: var(--text);
+}
+
+.modal-title {
+  font-family: var(--font-heading);
+  font-size: 16px;
+  margin: 0 24px 8px 0;
+  color: var(--text);
+}
+
+.modal-message {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 0 0 18px;
+  line-height: 1.5;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.modal-btn-cancel {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+
+.modal-btn-cancel:hover {
+  background: var(--bg);
+}
+
+.modal-btn-confirm {
+  background: #DC2626;
+  border: none;
+  color: #fff;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+
+.modal-btn-confirm:hover {
+  background: #B91C1C;
+}
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--text);
+  color: var(--bg);
+  padding: 10px 18px;
+  border-radius: var(--radius-pill);
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: var(--shadow-card);
+  z-index: 200;
 }
