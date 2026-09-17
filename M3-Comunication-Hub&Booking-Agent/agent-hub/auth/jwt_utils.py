@@ -54,9 +54,62 @@ def get_jwt_algorithm() -> str:
     return os.getenv("JWT_ALGORITHM") or _DEFAULT_ALGO
 
 
+def create_agent_token(
+    sub: str,
+    role: str = "service",
+    user_id: str | None = None,
+    issuer: str = "railsense-hub",
+    audience: str = "railsense-services",
+    expires_in_seconds: int = 3600,
+    secret: str | None = None,
+    algorithm: str | None = None,
+) -> str:
+    """Generate a signed JWT with full claims structure."""
+    from datetime import datetime, timezone, timedelta
+    now = datetime.now(timezone.utc)
+    payload = {
+        "sub": sub,
+        "role": role,
+        "iss": issuer,
+        "aud": audience,
+        "iat": int(now.timestamp()),
+        "nbf": int(now.timestamp()),
+        "exp": int((now + timedelta(seconds=expires_in_seconds)).timestamp()),
+    }
+    if user_id:
+        payload["user_id"] = user_id
+    sec = secret or get_jwt_secret()
+    alg = algorithm or get_jwt_algorithm()
+    return jwt.encode(payload, sec, algorithm=alg)
+
+
+def mint_delegation_token(
+    original_sender: str,
+    receiver_agent: str,
+    user_id: str | None = None,
+    role: str = "service",
+    intent: str | None = None,
+) -> str:
+    """
+    Mint a trusted delegation token from the Communication Hub to the destination service.
+    Guarantees receiving service that Hub verified the original caller, preserving identity.
+    """
+    return create_agent_token(
+        sub=original_sender,
+        role=role,
+        user_id=user_id,
+        issuer="railsense-hub",
+        audience=receiver_agent,
+        expires_in_seconds=300,
+    )
+
+
 def verify_agent_token(
     token: str,
     expected_sender: str | None = None,
+    expected_audience: str | None = None,
+    expected_issuer: str | None = None,
+    required_role: str | None = None,
 ) -> dict[str, Any]:
     """
     Verify and decode an inter-agent JWT authentication token.
@@ -68,6 +121,12 @@ def verify_agent_token(
     expected_sender : str | None, optional
         The logical sender_agent from the message envelope. If provided,
         verifies that the token's subject claim matches the sender agent.
+    expected_audience : str | None, optional
+        If specified or present, verifies audience.
+    expected_issuer : str | None, optional
+        If specified or present, verifies issuer.
+    required_role : str | None, optional
+        If specified, verifies role claim matches (e.g. 'admin').
 
     Returns
     -------
@@ -76,9 +135,8 @@ def verify_agent_token(
 
     Raises
     ------
-    HTTPException (401)
-        If the token is empty, malformed, expired, has an invalid signature,
-        or if the subject claim does not match expected_sender.
+    HTTPException (401 / 403)
+        If token is invalid, expired, wrong issuer, wrong audience, or missing required role.
     """
     if not token or not isinstance(token, str):
         raise HTTPException(
@@ -100,6 +158,13 @@ def verify_agent_token(
     secret = get_jwt_secret()
     algorithm = get_jwt_algorithm()
 
+    # Decode options: require exp
+    decode_options = {
+        "require": ["exp"],
+        "verify_exp": True,
+        "verify_nbf": True,
+    }
+
     try:
         payload = jwt.decode(
             cleaned_token,
@@ -108,13 +173,34 @@ def verify_agent_token(
             options={"require": ["exp"], "verify_exp": True},
         )
     except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
-        # Do not expose low-level cryptographic details
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired authentication token",
         )
 
-    # Optional sender claim check: match 'sub' or 'agent' against expected_sender
+    # Check Issuer (iss) if present in token
+    token_iss = payload.get("iss")
+    if expected_issuer and token_iss and token_iss != expected_issuer:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Token issuer '{token_iss}' does not match expected '{expected_issuer}'",
+        )
+
+    # Check Audience (aud) if present in token
+    token_aud = payload.get("aud")
+    if expected_audience and token_aud:
+        if isinstance(token_aud, list) and expected_audience not in token_aud and "railsense-services" not in token_aud:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"Token audience '{token_aud}' does not match expected '{expected_audience}'",
+            )
+        elif isinstance(token_aud, str) and token_aud != expected_audience and token_aud != "railsense-services":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"Token audience '{token_aud}' does not match expected '{expected_audience}'",
+            )
+
+    # Sender claim check: match 'sub' or 'agent' against expected_sender
     if expected_sender:
         token_sub = payload.get("sub") or payload.get("agent")
         if not token_sub or token_sub != expected_sender:
@@ -123,4 +209,14 @@ def verify_agent_token(
                 detail="Token subject does not match sender agent",
             )
 
+    # Role check if required
+    if required_role:
+        token_role = payload.get("role")
+        if token_role != required_role:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Action requires role '{required_role}', but token has role '{token_role}'",
+            )
+
     return payload
+

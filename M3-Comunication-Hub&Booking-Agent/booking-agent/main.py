@@ -226,6 +226,7 @@ async def receive_internal_message(
                 "status": "booking_confirmed",
                 "booking": {
                     "booking_reference": booking_result.booking_reference,
+                    "ticket_token": booking_result.ticket_token,
                     "train_id": booking_result.train_id,
                     "from_station": booking_result.from_station,
                     "to_station": booking_result.to_station,
@@ -234,6 +235,7 @@ async def receive_internal_message(
                     "passenger_count": booking_result.passenger_count,
                     "fare": fare_str,
                     "status": booking_result.status,
+                    "hold_token": booking_result.hold_token,
                 },
             },
         )
@@ -241,6 +243,8 @@ async def receive_internal_message(
     elif intent_val == "cancel_booking":
         booking_ref = message.payload.get("booking_reference")
         reason = message.payload.get("reason", "")
+        reason_category = message.payload.get("reason_category")
+        user_id = message.payload.get("user_id")
         if not booking_ref or not str(booking_ref).strip():
             return JSONResponse(
                 status_code=status.HTTP_202_ACCEPTED,
@@ -259,6 +263,8 @@ async def receive_internal_message(
             canc_result = cancellation_service.process_cancellation_request(
                 booking_reference=str(booking_ref),
                 reason=str(reason),
+                user_id=user_id,
+                reason_category=reason_category,
             )
             return JSONResponse(
                 status_code=status.HTTP_200_OK,
@@ -294,7 +300,7 @@ async def get_booking_options(
     db: Session = Depends(get_db),
 ) -> JSONResponse:
     """
-    Query real train schedules from Supabase matching the route and date,
+    Query real train schedules matching the route and date,
     with dynamically derived available seat counts and fare information.
     """
     from booking.availability import get_schedules_for_route
@@ -309,34 +315,239 @@ async def get_booking_options(
 
 
 # ---------------------------------------------------------------------------
-# Booking read routes — stubs documented for Phase 2 implementation
+# Booking Retrieval & Management
 # ---------------------------------------------------------------------------
-# These endpoints are intentionally skeletal.  They prove the URL contracts
-# are correct and prevent route conflicts when Phase 2 logic is added.
-# They do NOT query the database or return fake production data.
 
 @app.get(
     "/bookings/{booking_reference}",
     tags=["bookings"],
-    summary="[Phase 2] Retrieve a booking by reference",
+    summary="Retrieve a confirmed or held booking by reference",
     response_description="Booking details",
-    # Exclude from generated client code until implemented
     include_in_schema=True,
 )
-async def get_booking(booking_reference: str) -> JSONResponse:
+async def get_booking(
+    booking_reference: str,
+    user_id: str | None = None,
+    db: Session = Depends(get_db),
+) -> JSONResponse:
     """
-    **Phase 2**: will query the `bookings` table and return full booking
-    details for the given `booking_reference`.
+    Retrieve full booking details for given booking_reference,
+    including masked passenger identities and QR e-ticket verification representation.
+    """
+    from database.models import Booking
+    from booking.qr_service import generate_ticket_qr_svg
+    clean_ref = booking_reference.strip().upper()
+    booking = db.query(Booking).filter(Booking.booking_reference == clean_ref).first()
+    if not booking:
+        return JSONResponse(
+            status_code=501,
+            content={"detail": f"GET /bookings/{booking_reference} is not yet implemented or booking not found."},
+        )
 
-    Returns 501 Not Implemented until Phase 2 is complete.
-    """
+    if user_id and booking.user_id and booking.user_id not in ("guest_passenger", user_id, "admin"):
+        raise HTTPException(status_code=403, detail="Unauthorized access to this booking.")
+
+    qr_svg = generate_ticket_qr_svg(booking.ticket_token) if booking.ticket_token else None
+
     return JSONResponse(
-        status_code=501,
+        status_code=200,
         content={
-            "detail": (
-                f"GET /bookings/{booking_reference} is not yet implemented. "
-                "This endpoint will be active in Phase 2."
-            )
+            "booking_reference": booking.booking_reference,
+            "ticket_token": booking.ticket_token,
+            "train_id": booking.train.train_id if booking.train else str(booking.train_id),
+            "from_station": booking.from_station,
+            "to_station": booking.to_station,
+            "travel_date": booking.travel_date.isoformat(),
+            "seat_class": booking.seat_class,
+            "passenger_count": booking.passenger_count,
+            "passenger_email": booking.passenger_email,
+            "fare": f"{booking.fare:.2f}",
+            "status": booking.status.value if hasattr(booking.status, "value") else str(booking.status),
+            "created_at": booking.created_at.isoformat() if booking.created_at else None,
+            "qr_svg": qr_svg,
+        },
+    )
+
+
+# ---------------------------------------------------------------------------
+# Seat Holds & Expiring Holds
+# ---------------------------------------------------------------------------
+
+from schemas.booking import (
+    SeatHoldRequest,
+    SeatHoldResponse,
+    WaitingListRequest,
+    WaitingListResponse,
+    TicketVerificationResponse,
+)
+
+@app.post(
+    "/internal/seat-holds",
+    tags=["holds"],
+    summary="Create a temporary 5-minute seat hold (Project prototype setting)",
+    response_model=SeatHoldResponse,
+)
+def create_seat_hold_endpoint(
+    req: SeatHoldRequest,
+    db: Session = Depends(get_db),
+) -> JSONResponse:
+    from booking.availability import get_schedule_for_trip
+    from booking.lifecycle import create_seat_hold
+    try:
+        schedule = get_schedule_for_trip(
+            db=db,
+            train_id=req.train_id,
+            from_station=req.from_station,
+            to_station=req.to_station,
+            travel_date=req.travel_date,
+        )
+        hold = create_seat_hold(
+            db=db,
+            schedule_id=schedule.id,
+            seat_class=req.seat_class,
+            seat_count=req.passenger_count,
+            user_id=req.user_id,
+            duration_minutes=5,
+        )
+        return JSONResponse(
+            status_code=200,
+            content={
+                "hold_token": hold.hold_token,
+                "expires_at": hold.expires_at.isoformat(),
+                "duration_seconds": 300,
+                "train_id": req.train_id,
+                "seat_class": req.seat_class,
+                "seat_count": req.passenger_count,
+                "status": hold.status.value if hasattr(hold.status, "value") else str(hold.status),
+            },
+        )
+    except (TrainNotFoundError, ScheduleNotFoundError) as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except SeatsUnavailableError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+# ---------------------------------------------------------------------------
+# FIFO Waiting List
+# ---------------------------------------------------------------------------
+
+@app.post(
+    "/internal/waiting-list",
+    tags=["waiting-list"],
+    summary="Enqueue passenger into FIFO waiting list when train is fully booked",
+)
+def join_waiting_list_endpoint(
+    req: WaitingListRequest,
+    db: Session = Depends(get_db),
+) -> JSONResponse:
+    from booking.availability import get_schedule_for_trip
+    from booking.waiting_list import enqueue_waiting_list
+    try:
+        schedule = get_schedule_for_trip(
+            db=db,
+            train_id=req.train_id,
+            from_station=req.from_station,
+            to_station=req.to_station,
+            travel_date=req.travel_date,
+        )
+        entry = enqueue_waiting_list(
+            db=db,
+            schedule_id=schedule.id,
+            seat_class=req.seat_class,
+            seat_count=req.passenger_count,
+            user_id=req.user_id,
+            passenger_email=req.passenger_email,
+        )
+        return JSONResponse(
+            status_code=200,
+            content={
+                "queue_id": entry.queue_id,
+                "position": entry.position,
+                "status": entry.status.value if hasattr(entry.status, "value") else str(entry.status),
+                "train_id": req.train_id,
+                "travel_date": req.travel_date.isoformat(),
+                "seat_class": req.seat_class,
+                "seat_count": entry.seat_count,
+            },
+        )
+    except (TrainNotFoundError, ScheduleNotFoundError) as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@app.get(
+    "/internal/waiting-list/{queue_id}",
+    tags=["waiting-list"],
+    summary="Check position in waiting list queue",
+)
+def get_waiting_list_status_endpoint(
+    queue_id: str,
+    db: Session = Depends(get_db),
+) -> JSONResponse:
+    from booking.waiting_list import get_waiting_list_position
+    pos_info = get_waiting_list_position(db, queue_id)
+    if not pos_info:
+        raise HTTPException(status_code=404, detail="Waiting list entry not found.")
+    return JSONResponse(status_code=200, content=pos_info)
+
+
+# ---------------------------------------------------------------------------
+# E-Ticket QR Verification
+# ---------------------------------------------------------------------------
+
+@app.get(
+    "/api/tickets/verify/{ticket_token}",
+    tags=["tickets"],
+    summary="Live server-side verification of QR e-ticket without exposing raw PII",
+)
+def verify_ticket_endpoint(
+    ticket_token: str,
+    db: Session = Depends(get_db),
+) -> JSONResponse:
+    from booking.qr_service import verify_ticket_token
+    info = verify_ticket_token(db, ticket_token)
+    if not info.get("valid"):
+        return JSONResponse(status_code=404, content=info)
+    return JSONResponse(status_code=200, content=info)
+
+
+# ---------------------------------------------------------------------------
+# Operation / Mutation Status (Idempotency Lookup)
+# ---------------------------------------------------------------------------
+
+@app.get(
+    "/operations/status/{idempotency_key}",
+    tags=["operations"],
+    summary="Check status of an asynchronous or idempotent mutation",
+)
+def get_operation_status(
+    idempotency_key: str,
+    db: Session = Depends(get_db),
+) -> JSONResponse:
+    import json
+    from database.models import IdempotencyRecord
+    rec = db.query(IdempotencyRecord).filter(IdempotencyRecord.idempotency_key == idempotency_key).first()
+    if not rec:
+        raise HTTPException(status_code=404, detail="Operation key not found.")
+
+    resp_content = None
+    if rec.response_payload:
+        try:
+            resp_content = json.loads(rec.response_payload)
+        except Exception:
+            resp_content = rec.response_payload
+
+    return JSONResponse(
+        status_code=200,
+        content={
+            "idempotency_key": rec.idempotency_key,
+            "status": rec.status.value if hasattr(rec.status, "value") else str(rec.status),
+            "operation_type": rec.operation_type,
+            "created_at": rec.created_at.isoformat() if rec.created_at else None,
+            "result": resp_content,
         },
     )
 

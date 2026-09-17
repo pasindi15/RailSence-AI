@@ -82,16 +82,69 @@ def security_agent_sync_handler(request: httpx.Request) -> httpx.Response:
     path = request.url.path
     if path == "/health":
         return httpx.Response(200, json={"service": "security-agent", "status": "ok"})
+
+    if SECURITY_AGENT_DIR not in sys.path:
+        sys.path.insert(0, SECURITY_AGENT_DIR)
+
     if path.endswith("/internal/fraud-score"):
         try:
             body = json.loads(request.content.decode("utf-8"))
         except Exception:
             body = {}
-        if SECURITY_AGENT_DIR not in sys.path:
-            sys.path.insert(0, SECURITY_AGENT_DIR)
         from fraud.model import fraud_detector
+        from fraud.llm_summary import generate_grounded_fraud_summary
         res = fraud_detector.score_features(body.get("features", {}))
+        if res.get("recommended_action") in ("REVIEW", "REJECT") or res.get("risk_level") in ("MEDIUM", "HIGH"):
+            ev = {
+                "features": body.get("features", {}),
+                "risk_score": res.get("risk_score", 0.0),
+                "risk_level": res.get("risk_level", "LOW"),
+                "reasons": res.get("reasons", []),
+                "travel_context": body.get("travel_context", {}),
+            }
+            res["grounded_summary"] = generate_grounded_fraud_summary(ev)
         return httpx.Response(200, json=res)
+
+    if path.endswith("/internal/messages"):
+        try:
+            body = json.loads(request.content.decode("utf-8"))
+        except Exception:
+            body = {}
+        intent = body.get("intent", "")
+        if intent in ("fraud_score_request", "fraud_check"):
+            from fraud.model import fraud_detector
+            from fraud.llm_summary import generate_grounded_fraud_summary
+            inner_body = body.get("body", {})
+            features = inner_body.get("features", {})
+            res = fraud_detector.score_features(features)
+            if res.get("recommended_action") in ("REVIEW", "REJECT") or res.get("risk_level") in ("MEDIUM", "HIGH"):
+                ev = {
+                    "features": features,
+                    "risk_score": res.get("risk_score", 0.0),
+                    "risk_level": res.get("risk_level", "LOW"),
+                    "reasons": res.get("reasons", []),
+                    "travel_context": inner_body.get("travel_context", {}),
+                }
+                res["grounded_summary"] = generate_grounded_fraud_summary(ev)
+            return httpx.Response(200, json={"message_id": f"RESP-{body.get('message_id', 'TEST')}", "status": "scored", "result": res})
+        return httpx.Response(400, json={"error": f"Unknown intent: {intent}"})
+
+    if path.endswith("/internal/grounded-summary"):
+        try:
+            body = json.loads(request.content.decode("utf-8"))
+        except Exception:
+            body = {}
+        from fraud.llm_summary import generate_grounded_fraud_summary
+        res = generate_grounded_fraud_summary(body)
+        return httpx.Response(200, json=res)
+
+    if path.endswith("/internal/investigation-feedback"):
+        try:
+            body = json.loads(request.content.decode("utf-8"))
+        except Exception:
+            body = {}
+        return httpx.Response(200, json={"status": "recorded", "record": body})
+
     return httpx.Response(404, json={"detail": "Not found"})
 
 

@@ -103,3 +103,26 @@ class FareNotFoundError(BookingError):
         super().__init__(msg)
         self.route = route
         self.seat_class = seat_class
+
+
+class IdempotencyConflictError(InvalidBookingError):
+    """Raised when an idempotency key is reused with mismatched request parameters."""
+
+    def __init__(self, key: str, message: str | None = None, code: str = "IDEMPOTENCY_CONFLICT", status_code: int = 409):
+        msg = message or f"IDEMPOTENCY_CONFLICT: Key '{key}' was previously submitted with mismatched booking parameters."
+        super().__init__(msg)
+        self.code = code
+        self.message = msg
+        self.status_code = status_code
+
+
+class HoldExpiredOrInvalidError(InvalidBookingError):
+    """Raised when a seat hold is invalid, expired, or already claimed."""
+
+    def __init__(self, token: str, message: str | None = None, code: str = "INVALID_HOLD", status_code: int = 409):
+        msg = message or f"INVALID_HOLD: Seat hold '{token}' is invalid, expired, or already claimed."
+        super().__init__(msg)
+        self.code = code
+        self.message = msg
+        self.status_code = status_code
+

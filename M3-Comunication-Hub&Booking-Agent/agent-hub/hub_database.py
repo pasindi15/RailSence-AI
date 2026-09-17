@@ -117,6 +117,19 @@ def init_db() -> None:
     """Create audit tables if they do not exist."""
     try:
         Base.metadata.create_all(bind=engine, tables=[AuditLog.__table__])
+        with engine.connect() as conn:
+            import sqlalchemy as sa
+            insp = sa.inspect(conn)
+            table_names = insp.get_table_names()
+            if "audit_logs" in table_names:
+                cols = [c["name"] for c in insp.get_columns("audit_logs")]
+                if "correlation_id" not in cols:
+                    conn.execute(sa.text("ALTER TABLE audit_logs ADD COLUMN correlation_id VARCHAR(64)"))
+                if "duration_ms" not in cols:
+                    conn.execute(sa.text("ALTER TABLE audit_logs ADD COLUMN duration_ms NUMERIC(10, 2)"))
+                if "retry_count" not in cols:
+                    conn.execute(sa.text("ALTER TABLE audit_logs ADD COLUMN retry_count INTEGER DEFAULT 0"))
+            conn.commit()
     except Exception:
         # Avoid crashing startup if remote database is not yet ready
         pass

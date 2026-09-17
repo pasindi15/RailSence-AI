@@ -63,6 +63,9 @@ def _search_supabase_pgvector(query: str, top_k: int = 3) -> list[dict[str, Any]
     if is_test_environment() and os.getenv("USE_LIVE_DB") != "1":
         return None
 
+    if os.getenv("USE_PGVECTOR") != "1":
+        return None
+
     if DATABASE_URL.startswith("sqlite"):
         return None
 
@@ -136,63 +139,117 @@ class PolicyKnowledgeBase:
             with open(doc_path, "r", encoding="utf-8") as f:
                 content = f.read()
 
-            # Extract Document ID / Title if available
+            # Extract Document Metadata
             doc_id_match = re.search(r"Document ID:\s*([A-Z0-9-]+)", content)
             doc_id = doc_id_match.group(1) if doc_id_match else doc_name.replace(".md", "").upper()
 
+            title_match = re.search(r"^#\s+([^\n]+)", content, flags=re.MULTILINE)
+            doc_title = title_match.group(1).strip() if title_match else doc_name.replace(".md", "").replace("_", " ").title()
+
+            domain_match = re.search(r"Domain:\s*([a-zA-Z_-]+)", content, flags=re.IGNORECASE)
+            if domain_match:
+                domain = domain_match.group(1).lower().strip()
+            elif "sec" in doc_id.lower() or "security" in doc_name.lower():
+                domain = "security"
+            elif "canc" in doc_id.lower() or "cancellation" in doc_name.lower() or "refund" in doc_name.lower():
+                domain = "cancellation"
+            else:
+                domain = "booking"
+
+            status_match = re.search(r"Status:\s*([^\n]+)", content, flags=re.IGNORECASE)
+            status_val = status_match.group(1).strip() if status_match else "ACTIVE (DEMO / ACADEMIC SPECIFICATION)"
+
+            ver_match = re.search(r"Version:\s*([^\n]+)", content, flags=re.IGNORECASE)
+            version_val = ver_match.group(1).strip() if ver_match else "v1.0"
+
+            date_match = re.search(r"Effective Date:\s*([^\n]+)", content, flags=re.IGNORECASE)
+            eff_date = date_match.group(1).strip() if date_match else "2026-01-01"
+
             # Split by markdown headers ## Article
             sections = re.split(r"(?=^##\s+)", content, flags=re.MULTILINE)
+            art_idx = 1
             for sec in sections:
                 sec_text = sec.strip()
-                if not sec_text:
+                if not sec_text or sec_text.startswith("# DEMO") or sec_text.startswith("Document ID:"):
                     continue
 
                 lines = sec_text.splitlines()
-                header = lines[0].replace("#", "").strip() if lines else "General Policy"
+                header = lines[0].replace("#", "").strip() if lines else f"Article {art_idx}"
 
-                # Build readable citation
+                art_num_match = re.search(r"Article\s+(\d+)", header, re.IGNORECASE)
+                art_num = art_num_match.group(1) if art_num_match else str(art_idx)
+                passage_id = f"{doc_id}-ART-{art_num}"
                 citation = f"[{doc_id} - {header}]"
 
                 chunk_record = {
+                    "passage_id": passage_id,
                     "document": doc_name,
                     "document_id": doc_id,
+                    "document_title": doc_title,
+                    "domain": domain,
+                    "status": status_val,
+                    "version": version_val,
+                    "effective_date": eff_date,
                     "section": header,
                     "content": sec_text,
                     "citation": citation,
                 }
                 self.chunks.append(chunk_record)
                 corpus.append(f"{header}\n{sec_text}")
+                art_idx += 1
 
         if corpus:
             self.vectorizer = TfidfVectorizer(stop_words="english")
             self.tfidf_matrix = self.vectorizer.fit_transform(corpus)
 
-    def retrieve(self, query: str, top_k: int = 3) -> list[dict[str, Any]]:
+    def retrieve(
+        self,
+        query: str,
+        top_k: int = 3,
+        domain: str | None = None,
+        status_filter: str | None = "ACTIVE",
+    ) -> list[dict[str, Any]]:
         """
         Retrieve the top-k most relevant policy chunks for a given query.
-        Tries Supabase pgvector first; falls back to local TF-IDF cosine similarity.
+        Tries Supabase pgvector first (for cancellation); falls back to local TF-IDF cosine similarity.
+        Supports filtering by domain (e.g. 'cancellation', 'security') and status.
         """
         clean_query = query.strip()
         if not clean_query:
             return []
 
-        # 1. Primary: Cloud Supabase pgvector search
-        pgvector_results = _search_supabase_pgvector(clean_query, top_k=top_k)
-        if pgvector_results is not None and len(pgvector_results) > 0:
-            return pgvector_results
+        # 1. Primary: Cloud Supabase pgvector search (when domain is cancellation or unspecified)
+        if domain in (None, "cancellation"):
+            pgvector_results = _search_supabase_pgvector(clean_query, top_k=top_k)
+            if pgvector_results is not None and len(pgvector_results) > 0:
+                return pgvector_results
 
-        # 2. Resilient Fallback: Local TF-IDF Cosine Similarity
+        # 2. Resilient Fallback: Local TF-IDF Cosine Similarity with metadata filtering
         if not self.chunks or self.vectorizer is None or self.tfidf_matrix is None:
+            return []
+
+        # Determine candidate indices matching domain & status filter
+        candidate_indices = []
+        for idx, chunk in enumerate(self.chunks):
+            if domain and chunk.get("domain") != domain.lower():
+                continue
+            if status_filter and status_filter.upper() not in str(chunk.get("status", "")).upper():
+                continue
+            candidate_indices.append(idx)
+
+        if not candidate_indices:
             return []
 
         query_vec = self.vectorizer.transform([clean_query])
         sims = cosine_similarity(query_vec, self.tfidf_matrix).flatten()
 
-        top_indices = sims.argsort()[::-1][:top_k]
+        # Sort candidate indices by similarity score descending
+        candidate_scores = [(idx, float(sims[idx])) for idx in candidate_indices]
+        candidate_scores.sort(key=lambda x: x[1], reverse=True)
+        top_candidates = candidate_scores[:top_k]
 
         results: list[dict[str, Any]] = []
-        for idx in top_indices:
-            score = float(sims[idx])
+        for idx, score in top_candidates:
             chunk = dict(self.chunks[idx])
             chunk["similarity_score"] = round(score, 4)
             chunk["retrieval_method"] = "local_tfidf"
@@ -212,9 +269,15 @@ def get_policy_knowledge_base() -> PolicyKnowledgeBase:
     return _kb_instance
 
 
-def retrieve_relevant_policies(query: str, top_k: int = 3) -> list[dict[str, Any]]:
+def retrieve_relevant_policies(
+    query: str,
+    top_k: int = 3,
+    domain: str | None = None,
+    status_filter: str | None = "ACTIVE",
+) -> list[dict[str, Any]]:
     """
-    Public RAG function: returns top-k verified policy chunks for a cancellation query.
+    Public RAG function: returns top-k verified policy chunks for a query.
+    Supports optional domain filtering ('cancellation', 'security', 'booking').
     """
     kb = get_policy_knowledge_base()
-    return kb.retrieve(query, top_k=top_k)
+    return kb.retrieve(query, top_k=top_k, domain=domain, status_filter=status_filter)

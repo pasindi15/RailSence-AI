@@ -139,6 +139,29 @@ def init_db(seed: bool = False) -> None:
     # Import models so all tables are registered on Base.metadata
     from . import models  # noqa: F401
     Base.metadata.create_all(bind=engine)
+    try:
+        with engine.connect() as conn:
+            import sqlalchemy as sa
+            insp = sa.inspect(conn)
+            table_names = insp.get_table_names()
+            if "bookings" in table_names:
+                cols = [c["name"] for c in insp.get_columns("bookings")]
+                if "ticket_token" not in cols:
+                    conn.execute(sa.text("ALTER TABLE bookings ADD COLUMN ticket_token VARCHAR(128)"))
+                if "hold_id" not in cols:
+                    conn.execute(sa.text("ALTER TABLE bookings ADD COLUMN hold_id INTEGER"))
+            if "audit_logs" in table_names:
+                cols = [c["name"] for c in insp.get_columns("audit_logs")]
+                if "correlation_id" not in cols:
+                    conn.execute(sa.text("ALTER TABLE audit_logs ADD COLUMN correlation_id VARCHAR(64)"))
+                if "duration_ms" not in cols:
+                    conn.execute(sa.text("ALTER TABLE audit_logs ADD COLUMN duration_ms NUMERIC(10, 2)"))
+                if "retry_count" not in cols:
+                    conn.execute(sa.text("ALTER TABLE audit_logs ADD COLUMN retry_count INTEGER DEFAULT 0"))
+            conn.commit()
+    except Exception:
+        pass
+
     if seed:
         from .seed import seed_test_train_data
         with SessionLocal() as db:

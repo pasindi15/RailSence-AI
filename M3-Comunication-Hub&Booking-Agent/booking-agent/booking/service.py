@@ -175,7 +175,47 @@ class BookingService:
             compute_passenger_fraud_features,
         )
         from fraud.client import request_fraud_score
-        from database.models import FraudReview, FraudReviewStatus
+        from database.models import (
+            FraudReview,
+            FraudReviewStatus,
+            HoldStatus,
+            IdempotencyRecord,
+            IdempotencyStatus,
+            SeatHold,
+        )
+        from datetime import datetime, timezone
+        import hashlib
+
+        # 0. Idempotency Check
+        req_hash = None
+        if request.idempotency_key:
+            payload_repr = {
+                "train_id": request.train_id,
+                "from_station": request.from_station.strip(),
+                "to_station": request.to_station.strip(),
+                "travel_date": request.travel_date.isoformat(),
+                "seat_class": request.seat_class,
+                "passenger_count": request.passenger_count,
+                "passenger_email": str(request.passenger_email).strip() if request.passenger_email else None,
+                "passengers": [{"nic": p.nic, "name": p.name} for p in (request.passengers or [])],
+            }
+            req_hash = hashlib.sha256(json.dumps(payload_repr, sort_keys=True).encode("utf-8")).hexdigest()
+            existing_rec = (
+                self.db.query(IdempotencyRecord)
+                .filter(IdempotencyRecord.idempotency_key == request.idempotency_key)
+                .first()
+            )
+            if existing_rec:
+                if existing_rec.payload_hash != req_hash:
+                    from booking.exceptions import IdempotencyConflictError
+                    raise IdempotencyConflictError(request.idempotency_key)
+                if existing_rec.status in (IdempotencyStatus.COMPLETED, IdempotencyStatus.CONFIRMED, IdempotencyStatus.COMMITTED, "COMPLETED", "CONFIRMED", "COMMITTED") and existing_rec.response_payload:
+                    cached_dict = json.loads(existing_rec.response_payload)
+                    return BookingResult(**cached_dict)
+                if existing_rec.status in (IdempotencyStatus.PROCESSING, "PROCESSING", "PENDING"):
+                    raise ValueError(
+                        f"CONCURRENT_MUTATION_IN_PROGRESS: Operation with key '{request.idempotency_key}' is already in progress."
+                    )
 
         # 1. Validate booking details
         self.validate_request(request)
@@ -194,6 +234,30 @@ class BookingService:
             to_station=request.to_station,
             travel_date=request.travel_date,
         )
+
+        # 4b. Validate Seat Hold if provided
+        active_hold = None
+        if request.hold_token:
+            now_utc = datetime.now(timezone.utc)
+            active_hold = (
+                self.db.query(SeatHold)
+                .filter(
+                    SeatHold.hold_token == request.hold_token,
+                    SeatHold.status == HoldStatus.ACTIVE,
+                )
+                .first()
+            )
+            if not active_hold:
+                raise ValueError("HOLD_INVALID: Provided seat hold token is invalid or not active.")
+            expires_at = active_hold.expires_at
+            if expires_at and expires_at.tzinfo is None:
+                expires_at = expires_at.replace(tzinfo=timezone.utc)
+            if expires_at and expires_at < now_utc:
+                raise ValueError("HOLD_EXPIRED: Provided seat hold has expired.")
+            if active_hold.schedule_id != schedule.id:
+                raise ValueError("HOLD_SCHEDULE_MISMATCH: Provided hold does not match selected journey schedule.")
+            if active_hold.seat_count < request.passenger_count:
+                raise ValueError("HOLD_CAPACITY_MISMATCH: Provided hold covers fewer seats than requested.")
 
         # 5. Deterministic protected identities (HMAC-SHA256 & masking)
         nic_hashes: list[str] = []
@@ -218,7 +282,7 @@ class BookingService:
             train_name=train.train_name,
         )
 
-        # 7. Hard Rule 3: Cross-train overlapping time conflict check
+        # 7. Hard Rule 3: Cross-train overlapping time conflict check (with overnight/timezone support)
         check_conflicting_active_journey(
             db=self.db,
             nic_hashes=nic_hashes,
@@ -227,12 +291,13 @@ class BookingService:
             requested_arrival=schedule.arrival_time,
         )
 
-        # 8. Check seat availability
-        self.check_availability(
-            schedule=schedule,
-            seat_class=request.seat_class,
-            passenger_count=request.passenger_count,
-        )
+        # 8. Check seat availability (if not holding seats)
+        if not active_hold:
+            self.check_availability(
+                schedule=schedule,
+                seat_class=request.seat_class,
+                passenger_count=request.passenger_count,
+            )
 
         # 9. Calculate deterministic fare
         fare_breakdown = self.compute_fare(
@@ -250,11 +315,23 @@ class BookingService:
             schedule=schedule,
         )
         primary_nic_key = nic_hashes[0][:16] if nic_hashes else "guest_identity"
-        risk_result = request_fraud_score(features=features, nic_key=primary_nic_key)
+        travel_ctx = {
+            "train_id": train.train_id,
+            "from_station": request.from_station.strip(),
+            "to_station": request.to_station.strip(),
+            "travel_date": request.travel_date.isoformat(),
+            "passenger_count": request.passenger_count,
+        }
+        risk_result = request_fraud_score(
+            features=features,
+            nic_key=primary_nic_key,
+            travel_context=travel_ctx,
+        )
         risk_level = str(risk_result.get("risk_level", "LOW")).upper()
         risk_score = float(risk_result.get("risk_score", 0.0))
         reasons = risk_result.get("reasons", [])
         recommended_action = risk_result.get("recommended_action", "ALLOW")
+        grounded_summary = risk_result.get("grounded_summary")
 
         # 11. Risk Decision Policy:
         # MEDIUM / HIGH -> Flag for human review (no confirmed ticket issued)
@@ -271,10 +348,11 @@ class BookingService:
                 "fare": str(fare_breakdown.total_fare),
                 "user_id": user_id or getattr(request, "user_id", None) or "guest_passenger",
                 "passengers": passenger_records,
+                "hold_token": request.hold_token,
+                "grounded_summary": grounded_summary,
             }
 
             primary_hash = nic_hashes[0] if nic_hashes else primary_nic_key
-            primary_mask = passenger_records[0]["nic_masked"] if passenger_records else "********"
 
             fraud_review = FraudReview(
                 case_reference=case_ref,
@@ -290,8 +368,9 @@ class BookingService:
             self.db.add(fraud_review)
             self.db.commit()
 
-            return BookingResult(
+            result = BookingResult(
                 booking_reference=None,
+                ticket_token=None,
                 train_id=train.train_id,
                 from_station=request.from_station.strip(),
                 to_station=request.to_station.strip(),
@@ -304,7 +383,22 @@ class BookingService:
                 case_reference=case_ref,
                 risk_level=risk_level,
                 reasons=reasons,
+                hold_token=request.hold_token,
             )
+
+            if request.idempotency_key and req_hash:
+                idem_rec = IdempotencyRecord(
+                    idempotency_key=request.idempotency_key,
+                    user_id=user_id or getattr(request, "user_id", None) or "guest_passenger",
+                    operation_type="BOOKING_MUTATION",
+                    payload_hash=req_hash,
+                    response_payload=result.model_dump_json(),
+                    status=IdempotencyStatus.COMPLETED,
+                )
+                self.db.add(idem_rec)
+                self.db.commit()
+
+            return result
 
         # 12. Normal confirmed booking persistence for LOW risk
         booking_ref = generate_booking_reference()
@@ -317,6 +411,9 @@ class BookingService:
                 fare=fare_breakdown.total_fare,
                 user_id=user_id,
                 passenger_records=passenger_records,
+                idempotency_key=request.idempotency_key,
+                actor=user_id,
+                hold_id=active_hold.id if active_hold else None,
             )
         except Exception:
             self.db.rollback()
@@ -344,8 +441,9 @@ class BookingService:
             pass
 
         # 14. Return BookingResult
-        return BookingResult(
+        result = BookingResult(
             booking_reference=booking.booking_reference,
+            ticket_token=booking.ticket_token,
             train_id=train.train_id,
             from_station=booking.from_station,
             to_station=booking.to_station,
@@ -356,4 +454,28 @@ class BookingService:
             fare=booking.fare,
             status=booking.status.value if hasattr(booking.status, "value") else str(booking.status),
             risk_level="LOW",
+            hold_token=request.hold_token,
         )
+
+        if request.idempotency_key and req_hash:
+            try:
+                existing_rec = (
+                    self.db.query(IdempotencyRecord)
+                    .filter(IdempotencyRecord.idempotency_key == request.idempotency_key)
+                    .first()
+                )
+                if not existing_rec:
+                    idem_rec = IdempotencyRecord(
+                        idempotency_key=request.idempotency_key,
+                        user_id=user_id or getattr(request, "user_id", None) or "guest_passenger",
+                        operation_type="BOOKING_MUTATION",
+                        payload_hash=req_hash,
+                        response_payload=result.model_dump_json(),
+                        status=IdempotencyStatus.COMPLETED,
+                    )
+                    self.db.add(idem_rec)
+                    self.db.commit()
+            except Exception:
+                pass
+
+        return result
