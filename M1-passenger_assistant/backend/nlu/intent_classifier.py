@@ -2,6 +2,7 @@
 Keyword-based intent classifier for Passenger Assistant Agent.
 
 Intents:
+ - train_info    : asking about a specific canonical train service
  - schedule_query : asking about train times / routes
  - fare_query      : asking about ticket price / cost
  - delay_check     : asking whether a specific train is delayed  -> routed to Hub (Operations)
@@ -46,6 +47,12 @@ INTENT_KEYWORDS = {
     ],
 }
 
+TRAIN_INFO_KEYWORDS = [
+    "what is", "where does", "where is", "which route", "train information",
+    "train details", "active", "departs", "departure", "arrives", "arrival",
+    "leave", "go",
+]
+
 
 def classify_intent(text: str) -> str:
     lowered = text.lower()
@@ -53,6 +60,8 @@ def classify_intent(text: str) -> str:
         for kw in keywords:
             if kw in lowered:
                 return intent
+    if any(kw in lowered for kw in TRAIN_INFO_KEYWORDS):
+        return "train_info"
     return "unknown"
 
 

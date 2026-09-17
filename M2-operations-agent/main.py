@@ -19,8 +19,13 @@ import os
 import uuid
 import asyncio
 import threading
+import sys
 from pathlib import Path
 from typing import Optional
+
+ROOT_DIR = Path(__file__).resolve().parents[1]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
 
 from fastapi import Body, FastAPI, HTTPException, Request, status
 from fastapi.responses import FileResponse, JSONResponse
@@ -41,6 +46,7 @@ import hub_client
 import supabase_store
 from admin import admin_db
 from admin.admin_router import router as admin_router
+from shared.train_repository import TrainRepositoryUnavailable, get_train
 
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO").upper())
 logger = logging.getLogger("railsense.operations")
@@ -296,6 +302,16 @@ def _find_historical_train(train_id: str, route: str) -> dict | None:
     return max(matches, key=lambda row: row.get("scheduled_time", ""))
 
 
+def _canonical_train_or_error(train_id: str) -> dict:
+    try:
+        train = get_train(train_id)
+    except TrainRepositoryUnavailable as exc:
+        raise HTTPException(status_code=503, detail="TRAIN_REGISTRY_UNAVAILABLE") from exc
+    if train is None or not train.get("active", False):
+        raise HTTPException(status_code=404, detail=f"TRAIN_NOT_FOUND: {train_id}")
+    return train
+
+
 class DelayPredictionRequest(BaseModel):
     route: str = Field(..., min_length=3, max_length=120, examples=["Colombo Fort - Kandy"])
     train_id: str = Field(..., min_length=3, max_length=20, examples=["PM-4082"])
@@ -549,6 +565,7 @@ async def predict_delay(request: Request, req: DelayPredictionRequest):
     explanation. The local TF-IDF index is always available; configured
     Supabase pgvector and Anthropic credentials are used automatically.
     """
+    canonical_train = _canonical_train_or_error(req.train_id)
     query_parts = [req.route]
     if req.station:
         query_parts.append(req.station)
@@ -765,7 +782,7 @@ async def hub_message(request: Request, message: HubMessage):
 
     train_id = payload.get("train_id")
     import re
-    match = re.search(r"\b[A-Z]{2}-\d{3,4}\b", raw_text)
+    match = re.search(r"\b[A-Z]{2,12}-\d{3,5}\b", raw_text, re.IGNORECASE)
     if match:
         train_id = match.group(0)
     if not train_id or (str(train_id) == "PM-4082" and not match):
