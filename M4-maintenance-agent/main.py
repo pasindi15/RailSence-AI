@@ -565,9 +565,21 @@ async def chat(request: Request, payload: ChatRequest):
 @app.post("/api/flag-train")
 @limiter.limit("30/minute")
 async def flag_train(request: Request, payload: TrainFlagRequest):
-    """Engineer flags a train as under maintenance — visible to passengers via Hub."""
+    """Engineer flags a train as under maintenance — validates against shared registry,
+    syncs maintenance_status to Supabase so M3 Booking Agent blocks new bookings."""
+    canonical_id = payload.train_id.strip().upper()
+
+    # Validate against shared canonical trains table.
+    # If Supabase is reachable and the train doesn't exist, reject the flag.
+    canonical = supabase_store.get_train_from_registry(canonical_id)
+    if canonical is None and supabase_store.get_client() is not None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"TRAIN_NOT_FOUND: Train '{canonical_id}' is not in the canonical train registry.",
+        )
+
     record = {
-        "train_id": payload.train_id,
+        "train_id": canonical_id,
         "under_maintenance": True,
         "reason": payload.reason,
         "severity": payload.severity,
@@ -575,10 +587,14 @@ async def flag_train(request: Request, payload: TrainFlagRequest):
         "estimated_clear": payload.estimated_clear,
         "flagged_at": datetime.now(timezone.utc).isoformat(),
     }
-    _train_flags[payload.train_id] = record
+    _train_flags[canonical_id] = record
+
+    # Sync OUT_OF_SERVICE to shared trains table so M3 sees it on next booking attempt.
+    supabase_store.update_train_maintenance_status(canonical_id, "OUT_OF_SERVICE")
+
     client_ip = request.client.host if request.client else "unknown"
     _write_audit("train_flagged_for_maintenance", client_ip, {
-        "train_id": payload.train_id,
+        "train_id": canonical_id,
         "reason": payload.reason,
         "severity": payload.severity,
         "flagged_by": payload.flagged_by,
@@ -589,35 +605,54 @@ async def flag_train(request: Request, payload: TrainFlagRequest):
 @app.delete("/api/flag-train/{train_id}")
 @limiter.limit("30/minute")
 async def clear_train_flag(request: Request, train_id: str):
-    """Engineer clears maintenance flag — train returns to service."""
-    if train_id not in _train_flags:
-        raise HTTPException(status_code=404, detail=f"No maintenance flag found for train '{train_id}'.")
-    record = _train_flags.pop(train_id)
+    """Engineer clears maintenance flag — train returns to service.
+    Clears maintenance_status in shared Supabase trains table so M3 resumes bookings."""
+    canonical_id = train_id.strip().upper()
+    if canonical_id not in _train_flags:
+        raise HTTPException(status_code=404, detail=f"No maintenance flag found for train '{canonical_id}'.")
+    record = _train_flags.pop(canonical_id)
+    # Clear maintenance restriction in shared trains table
+    supabase_store.update_train_maintenance_status(canonical_id, None)
     client_ip = request.client.host if request.client else "unknown"
-    _write_audit("train_maintenance_cleared", client_ip, {"train_id": train_id})
+    _write_audit("train_maintenance_cleared", client_ip, {"train_id": canonical_id})
     return {"status": "cleared", "previous_record": record}
 
 
 @app.get("/api/train-status/{train_id}")
 @limiter.limit("60/minute")
 async def get_train_status(request: Request, train_id: str):
-    """Return current maintenance status of a specific train."""
-    if train_id in _train_flags:
-        flag = _train_flags[train_id]
+    """Return current maintenance status of a specific canonical train.
+    Returns TRAIN_NOT_FOUND when the train_id is not in the shared registry."""
+    canonical_id = train_id.strip().upper()
+
+    if canonical_id in _train_flags:
+        flag = _train_flags[canonical_id]
         eta = f" Expected back in service by {flag['estimated_clear']}." if flag.get("estimated_clear") else ""
         return {
-            "train_id": train_id,
+            "train_id": canonical_id,
             "under_maintenance": True,
             "severity": flag["severity"],
             "reason": flag["reason"],
             "flagged_at": flag["flagged_at"],
             "estimated_clear": flag.get("estimated_clear"),
-            "message": f"Train {train_id} is currently under maintenance. Reason: {flag['reason']}.{eta}",
+            "message": f"Train {canonical_id} is currently under maintenance. Reason: {flag['reason']}.{eta}",
         }
+
+    # Validate against shared registry — reject invented train IDs
+    canonical = supabase_store.get_train_from_registry(canonical_id)
+    if canonical is None and supabase_store.get_client() is not None:
+        return {
+            "train_id": canonical_id,
+            "under_maintenance": False,
+            "found": False,
+            "message": f"TRAIN_NOT_FOUND: '{canonical_id}' is not a recognised train service.",
+        }
+
     return {
-        "train_id": train_id,
+        "train_id": canonical_id,
         "under_maintenance": False,
-        "message": f"Train {train_id} has no active maintenance flags and is cleared for service.",
+        "found": True,
+        "message": f"Train {canonical_id} has no active maintenance flags and is cleared for service.",
     }
 
 
@@ -703,7 +738,7 @@ async def hub_message(request: Request, payload: HubMessageRequest):
         }
 
     if payload.intent == "train_status_query":
-        train_id = payload.payload.get("train_id", "")
+        train_id = (payload.payload.get("train_id") or "").strip().upper()
         client_ip = request.client.host if request.client else "unknown"
         _write_audit("hub_train_status_query", client_ip, {
             "train_id": train_id, "sender": payload.sender_agent
@@ -729,11 +764,22 @@ async def hub_message(request: Request, payload: HubMessageRequest):
                 ),
             }
         else:
-            status_payload = {
-                "train_id": train_id,
-                "under_maintenance": False,
-                "message": f"Train {train_id} has no active maintenance issues and is cleared for service.",
-            }
+            # Validate against shared registry — reject invented train IDs
+            canonical = supabase_store.get_train_from_registry(train_id)
+            if canonical is None and supabase_store.get_client() is not None:
+                status_payload = {
+                    "train_id": train_id,
+                    "under_maintenance": False,
+                    "found": False,
+                    "message": f"TRAIN_NOT_FOUND: '{train_id}' is not a recognised train service.",
+                }
+            else:
+                status_payload = {
+                    "train_id": train_id,
+                    "under_maintenance": False,
+                    "found": True,
+                    "message": f"Train {train_id} has no active maintenance issues and is cleared for service.",
+                }
         return {
             "message_id": str(uuid.uuid4()),
             "sender_agent": "maintenance-agent",
