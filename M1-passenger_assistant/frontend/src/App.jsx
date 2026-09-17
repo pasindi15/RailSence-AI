@@ -108,7 +108,7 @@ export default function App() {
           c.id === activeChatId
             ? {
                 ...c,
-                messages: [...c.messages, { role: "bot", text: res.reply, source: res.source }],
+                messages: [...c.messages, { role: "bot", text: res.reply }],
               }
             : c
         )
