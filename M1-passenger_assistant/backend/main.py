@@ -37,7 +37,7 @@ from nlu.intent_classifier import classify_intent
 from nlu.ner_extractor import extract_entities
 from hub_client import build_envelope, send_to_hub
 from rag.retriever import retrieve_faq_chunks
-from shared.train_repository import TrainRepositoryUnavailable, get_train, get_train_schedule
+from shared.train_repository import TrainRepositoryUnavailable, get_train, get_train_schedule, search_trains
 
 load_dotenv()
 
@@ -152,13 +152,10 @@ def save_message(session_id: str, role: str, message: str):
 
 
 def _extract_train_id(text: str) -> str:
-    """Extract a train ID or number from free text (e.g. 'train 501', 'TRN-501')."""
+    """Extract a canonical train ID (e.g. PM-4082, IC-4665) from free text."""
     import re
-    match = re.search(r"\b(?:TRN-?\d+|train\s*#?\s*(\d+))\b", text, re.IGNORECASE)
-    if match:
-        num = match.group(1) or match.group(0)
-        return f"TRN-{num.strip()}" if num.isdigit() else num.upper()
-    return ""
+    match = re.search(r"\b[A-Z]{2,12}-\d{3,5}\b", text, re.IGNORECASE)
+    return match.group(0).upper() if match else ""
 
 
 @app.get("/health")
@@ -257,18 +254,31 @@ async def chat(req: ChatRequest):
 
     elif intent == "train_status":
         train_id = entities.get("train_id") or _extract_train_id(text)
-        envelope = build_envelope(
-            receiver_agent="maintenance-agent",
-            intent="train_status_query",
-            payload={"train_id": train_id or "", "raw_text": text},
-        )
-        hub_response = await send_to_hub(envelope)
-        if hub_response.get("status") == "ok":
-            p = hub_response.get("payload", {})
-            reply = p.get("message", "I could not retrieve the train status right now.")
-            source = "via Maintenance Agent"
+        if not train_id:
+            reply = "Please provide a train ID (e.g. PM-4082) so I can check its status."
+            source = "local"
         else:
-            reply = "I couldn't check the train status right now. Please try again shortly."
+            try:
+                canonical = await asyncio.to_thread(get_train, train_id)
+                if canonical is None:
+                    reply = f"TRAIN_NOT_FOUND: {train_id} is not a recognised train service."
+                    source = "via Shared Train Registry"
+                else:
+                    envelope = build_envelope(
+                        receiver_agent="maintenance-agent",
+                        intent="train_status_query",
+                        payload={"train_id": train_id, "raw_text": text},
+                    )
+                    hub_response = await send_to_hub(envelope)
+                    if hub_response.get("status") == "ok":
+                        p = hub_response.get("payload", {})
+                        reply = p.get("message", "I could not retrieve the train status right now.")
+                    else:
+                        reply = "I couldn't check the train status right now. Please try again shortly."
+                    source = "via Maintenance Agent"
+            except TrainRepositoryUnavailable:
+                reply = "The train registry is temporarily unavailable. Please try again."
+                source = "via Shared Train Registry"
 
     elif intent == "complaint":
         envelope = build_envelope(
