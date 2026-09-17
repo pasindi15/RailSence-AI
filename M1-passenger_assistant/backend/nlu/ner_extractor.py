@@ -1,9 +1,26 @@
 """
-Named Entity extraction stub for Passenger Assistant Agent.
+Named Entity extraction for Passenger Assistant Agent.
 Phase 1: simple regex/keyword based extraction for station names & times.
-Phase 2+: replace with spaCy model or LLM function-calling.
+Phase 2: when the regex/alias lookup finds no station, fall back to Gemini
+so misspellings, nicknames, or phrasing outside STATION_ALIASES still resolve
+to a known station instead of silently returning nothing.
 """
+import json
+import os
 import re
+from pathlib import Path
+
+import google.generativeai as genai
+from dotenv import load_dotenv
+
+# Anchor to backend/.env - see main.py for why load_dotenv() with no path is unsafe.
+load_dotenv(Path(__file__).parent.parent / ".env")
+
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+_llm_model = None
+if GEMINI_API_KEY:
+    genai.configure(api_key=GEMINI_API_KEY)
+    _llm_model = genai.GenerativeModel("gemini-flash-latest")
 
 # Extend this dict as you confirm real station names with your dataset.
 # Each canonical (English) name maps to its English/Sinhala/Tamil aliases.
@@ -26,6 +43,36 @@ PASSENGER_COUNT_PATTERN = re.compile(
 )
 
 
+def _llm_extract_stations(text: str) -> list[str]:
+    """Ask Gemini to match station names outside the alias list (nicknames,
+    misspellings, other phrasing). Returns [] if the LLM is unavailable, the
+    call fails, or nothing in the response matches a known station."""
+    if not _llm_model:
+        return []
+
+    known = ", ".join(STATION_ALIASES.keys())
+    prompt = (
+        "You extract Sri Lanka Railways station names from a passenger's message. "
+        f"Known stations: {known}.\n"
+        "The message may be in English, Sinhala, or Tamil, and may name a station "
+        "by nickname or misspelling. Return ONLY a JSON array (no markdown fences) "
+        "of station names from the known list that are mentioned, in the order they "
+        "appear (departure first, then destination). If none match, return [].\n\n"
+        f"Message: {text}"
+    )
+    try:
+        response = _llm_model.generate_content(prompt)
+        match = re.search(r"\[.*\]", response.text, re.DOTALL)
+        if not match:
+            return []
+        stations = json.loads(match.group(0))
+        known_set = set(STATION_ALIASES.keys())
+        return [s for s in stations if s in known_set]
+    except Exception as e:
+        print(f"LLM station extraction failed: {e}")
+        return []
+
+
 def extract_entities(text: str) -> dict:
     lowered_text = text.lower()
     found_stations = [
@@ -33,6 +80,9 @@ def extract_entities(text: str) -> dict:
         for canonical, aliases in STATION_ALIASES.items()
         if any(alias.lower() in lowered_text for alias in aliases)
     ]
+    if not found_stations:
+        found_stations = _llm_extract_stations(text)
+
     time_match = TIME_PATTERN.search(text)
     date_match = DATE_PATTERN.search(text)
     train_id_match = TRAIN_ID_PATTERN.search(text)
