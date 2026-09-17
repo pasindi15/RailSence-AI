@@ -10,7 +10,10 @@ import os
 import re
 from pathlib import Path
 
-import google.generativeai as genai
+try:
+    import google.generativeai as genai
+except ImportError:  # Gemini is optional; alias-based extraction still works offline.
+    genai = None
 from dotenv import load_dotenv
 
 # Anchor to backend/.env - see main.py for why load_dotenv() with no path is unsafe.
@@ -18,7 +21,7 @@ load_dotenv(Path(__file__).parent.parent / ".env")
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 _llm_model = None
-if GEMINI_API_KEY:
+if GEMINI_API_KEY and genai is not None:
     genai.configure(api_key=GEMINI_API_KEY)
     _llm_model = genai.GenerativeModel("gemini-flash-latest")
 

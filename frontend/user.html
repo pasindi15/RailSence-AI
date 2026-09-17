@@ -512,6 +512,16 @@ body::after {
   border: none;
 }
 
+.m1-react-unavailable {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  padding: 24px;
+  color: var(--muted-hi);
+  text-align: center;
+  font-size: 13px;
+}
+
 /* ── View 2: Train Booking Desk ────────────────────────────────────── */
 .booking-grid {
   display: grid;
@@ -861,13 +871,13 @@ body::after {
         Powered by <strong>M1 Passenger Assistant</strong> (Multilingual NLU, ChromaDB FAQ RAG, delay & complaint dispatch)
       </div>
       <div class="chat-mode-toggle">
-        <button class="mode-btn active" id="btn-mode-integrated" onclick="switchChatMode('integrated')">Integrated Assistant</button>
-        <button class="mode-btn" id="btn-mode-react" onclick="switchChatMode('react')">M1 React App (Live)</button>
+        <button class="mode-btn active" id="btn-mode-react" type="button">M1 React App (Live)</button>
       </div>
     </div>
 
-    <!-- Integrated Assistant Container -->
-    <div id="integrated-chat-container" class="chat-container">
+        <!-- Legacy integrated assistant retained in source for compatibility, but the
+          passenger portal uses the real M1 React application below. -->
+        <div id="integrated-chat-container" class="chat-container" hidden>
       <section class="chat-card">
         <div class="chat-header">
           <div>
@@ -930,8 +940,11 @@ body::after {
     </div>
 
     <!-- Standalone M1 React UI Embed Container -->
-    <div id="m1-react-container">
-      <iframe id="m1-react-iframe" src="about:blank" title="M1 React/Vite UI"></iframe>
+    <div id="m1-react-container" style="display:block">
+      <iframe id="m1-react-iframe" src="http://localhost:5173" title="M1 React/Vite UI"></iframe>
+      <div id="m1-react-unavailable" class="m1-react-unavailable" hidden>
+        The live React assistant is not running. Start the M1 Vite app on port 5173 and refresh this page.
+      </div>
     </div>
   </main>
 
@@ -1263,6 +1276,7 @@ function switchChatMode(mode) {
   const btnInteg = $('btn-mode-integrated');
   const btnReact = $('btn-mode-react');
   const iframe = $('m1-react-iframe');
+  const unavailable = $('m1-react-unavailable');
 
   if (mode === 'react') {
     integratedCont.style.display = 'none';
@@ -1270,13 +1284,17 @@ function switchChatMode(mode) {
     btnInteg.classList.remove('active');
     btnReact.classList.add('active');
     if (iframe.src === 'about:blank') {
-      iframe.src = 'http://localhost:8001';
+      iframe.src = 'http://localhost:5173';
     }
+    iframe.onload = () => { unavailable.hidden = true; };
+    iframe.onerror = () => { unavailable.hidden = false; };
   } else {
-    integratedCont.style.display = 'grid';
+    integratedCont.hidden = true;
+    integratedCont.style.display = 'none';
     reactCont.style.display = 'none';
     btnInteg.classList.add('active');
     btnReact.classList.remove('active');
+    unavailable.hidden = true;
   }
 }
 
