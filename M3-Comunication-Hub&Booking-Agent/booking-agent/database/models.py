@@ -134,10 +134,14 @@ class Train(Base):
 
     __tablename__ = "trains"
 
-    id:         Mapped[int]  = mapped_column(Integer, primary_key=True, autoincrement=True)
-    train_id:   Mapped[str]  = mapped_column(String(50),  nullable=False, unique=True, index=True)
-    train_name: Mapped[str]  = mapped_column(String(200), nullable=False)
-    active:     Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    id:                 Mapped[int]       = mapped_column(Integer, primary_key=True, autoincrement=True)
+    train_id:           Mapped[str]       = mapped_column(String(50),  nullable=False, unique=True, index=True)
+    train_name:         Mapped[str]       = mapped_column(String(200), nullable=False)
+    active:             Mapped[bool]      = mapped_column(Boolean, nullable=False, default=True)
+    # Shared canonical fields — populated from the shared Supabase trains table.
+    # NULL means the column is not yet present in the DB schema; always check before use.
+    maintenance_status: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    route:              Mapped[str | None] = mapped_column(String(500), nullable=True)
 
     # Relationships
     schedules: Mapped[list["TrainSchedule"]] = relationship(
