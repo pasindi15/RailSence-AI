@@ -1,10 +1,68 @@
+/* ============================================================
+   Light Rail design tokens
+   ============================================================ */
+:root {
+  --bg: #F7F9FC;
+  --surface: #FFFFFF;
+  --brand: #4F46E5;
+  --brand-hover: #4338CA;
+  --passenger: #0EA5E9;
+  --passenger-hover: #0284C7;
+  --text: #1E293B;
+  --muted: #64748B;
+  --border: #E2E8F0;
+
+  --shadow-card: 0 4px 16px rgba(15, 23, 42, 0.06);
+  --radius-card: 14px;
+  --radius-pill: 999px;
+
+  --font-heading: 'Plus Jakarta Sans', 'Poppins', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+[data-theme="dark"] {
+  --bg: #0F172A;
+  --surface: #1E293B;
+  --brand: #6366F1;
+  --brand-hover: #818CF8;
+  --passenger: #38BDF8;
+  --passenger-hover: #7DD3FC;
+  --text: #F1F5F9;
+  --muted: #94A3B8;
+  --border: #2E3B52;
+
+  --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.35);
+}
+
 * { box-sizing: border-box; }
+
+html {
+  color-scheme: light dark;
+}
 
 body {
   margin: 0;
-  font-family: 'Inter', system-ui, sans-serif;
-  background: #f7f9fc;
-  color: #1e293b;
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text);
+  transition: background-color 200ms ease, color 200ms ease;
+}
+
+h1, h2, h3, .brand-title {
+  font-family: var(--font-heading);
+}
+
+button, input, textarea {
+  font-family: inherit;
+}
+
+/* A visible, accessible focus ring everywhere, not just default browser outline. */
+a:focus-visible,
+button:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--passenger);
+  outline-offset: 2px;
 }
 
 .app {
@@ -15,22 +73,29 @@ body {
 /* Sidebar */
 .sidebar {
   width: 240px;
-  background: #ffffff;
-  border-right: 1px solid #e2e8f0;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   padding: 12px;
+  transition: background-color 200ms ease, border-color 200ms ease;
 }
 
 .new-chat-btn {
-  background: #0ea5e9;
+  background: var(--passenger);
   color: #fff;
   border: none;
   border-radius: 8px;
   padding: 10px;
-  font-weight: bold;
+  font-weight: 600;
   cursor: pointer;
   margin-bottom: 12px;
+  transition: background-color 150ms ease, transform 150ms ease;
+}
+
+.new-chat-btn:hover {
+  background: var(--passenger-hover);
+  transform: translateY(-1px);
 }
 
 .chat-list {
@@ -43,21 +108,44 @@ body {
   border-radius: 8px;
   cursor: pointer;
   font-size: 13px;
-  color: #475569;
+  color: var(--muted);
   margin-bottom: 4px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  transition: background-color 150ms ease, color 150ms ease;
 }
 
-.chat-item:hover { background: #f1f5f9; }
-.chat-item.active { background: #e0f4ff; color: #075985; font-weight: bold; }
+.chat-item:hover { background: var(--bg); }
+.chat-item.active { background: rgba(14, 165, 233, 0.14); color: var(--passenger-hover); font-weight: 600; }
 
 .sidebar-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   font-size: 12px;
-  color: #94a3b8;
-  border-top: 1px solid #e2e8f0;
+  color: var(--muted);
+  border-top: 1px solid var(--border);
   padding-top: 10px;
+}
+
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+  transition: background-color 150ms ease, transform 150ms ease;
+}
+
+.theme-toggle:hover {
+  background: var(--border);
+  transform: translateY(-1px);
 }
 
 /* Chat window */
@@ -65,6 +153,7 @@ body {
   flex: 1;
   display: flex;
   flex-direction: column;
+  background: var(--bg);
 }
 
 .messages {
@@ -74,7 +163,7 @@ body {
 }
 
 .empty-state {
-  color: #64748b;
+  color: var(--muted);
   text-align: center;
   margin-top: 40px;
   font-size: 14px;
@@ -98,13 +187,15 @@ body {
 }
 
 .bubble.user {
-  background: #4f46e5;
+  background: var(--brand);
   color: #fff;
 }
 
 .bubble.bot {
-  background: #e0f4ff;
-  color: #075985;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--passenger);
 }
 
 .lang-tag {
@@ -119,13 +210,13 @@ body {
 .source-tag {
   margin-top: 6px;
   font-size: 10px;
-  color: #0369a1;
+  color: var(--passenger-hover);
   opacity: 0.8;
 }
 
 .typing-indicator {
   font-size: 12px;
-  color: #94a3b8;
+  color: var(--muted);
   padding-left: 4px;
 }
 
@@ -134,28 +225,40 @@ body {
   display: flex;
   gap: 8px;
   padding: 14px 20px;
-  border-top: 1px solid #e2e8f0;
-  background: #fff;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  transition: background-color 200ms ease, border-color 200ms ease;
 }
 
 .input-bar textarea {
   flex: 1;
   resize: none;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
   border-radius: 10px;
   padding: 10px 12px;
   font-size: 14px;
   font-family: inherit;
 }
 
+.input-bar textarea::placeholder {
+  color: var(--muted);
+}
+
 .input-bar button {
-  background: #4f46e5;
+  background: var(--brand);
   color: #fff;
   border: none;
   border-radius: 10px;
   padding: 0 18px;
-  font-weight: bold;
+  font-weight: 600;
   cursor: pointer;
+  transition: background-color 150ms ease;
+}
+
+.input-bar button:hover:not(:disabled) {
+  background: var(--brand-hover);
 }
 
 .input-bar button:disabled {

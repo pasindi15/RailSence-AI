@@ -1,3 +1,5 @@
+import ThemeToggle from "./ThemeToggle.jsx";
+
 export default function Sidebar({ chats, activeChatId, onNewChat, onSelectChat }) {
   return (
     <div className="sidebar">
@@ -13,7 +15,10 @@ export default function Sidebar({ chats, activeChatId, onNewChat, onSelectChat }
           </div>
         ))}
       </div>
-      <div className="sidebar-footer">Passenger Account</div>
+      <div className="sidebar-footer">
+        <span>Passenger Account</span>
+        <ThemeToggle />
+      </div>
     </div>
   );
 }

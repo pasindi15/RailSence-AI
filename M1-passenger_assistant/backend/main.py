@@ -10,9 +10,19 @@ Phase 1 scope:
  - hub_client is called but returns a STUB response (real Hub wiring = Phase 3)
 """
 import os
+import sys
 import uuid
 from pathlib import Path
 from datetime import datetime, timezone
+
+# Windows' console defaults stdout/stderr to cp1252, which can't encode
+# Sinhala/Tamil text. Any print() of passenger input (e.g. the [chat] debug
+# logs below) then raises UnicodeEncodeError and 500s the whole request
+# before NLU/RAG/Gemini even run. Force UTF-8 so logging never crashes on
+# non-ASCII input.
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 import google.generativeai as genai
 from dotenv import load_dotenv
@@ -27,7 +37,11 @@ from nlu.ner_extractor import extract_entities
 from hub_client import build_envelope, send_to_hub
 from rag.retriever import retrieve_faq_chunks
 
-load_dotenv()
+# load_dotenv() with no path searches upward from the CWD, not from this
+# file's location - if uvicorn is ever launched from outside backend/, that
+# silently finds no .env, GEMINI_API_KEY stays None, and /chat falls back to
+# raw RAG chunk text with zero errors. Anchor it to this file instead.
+load_dotenv(Path(__file__).parent / ".env")
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
@@ -43,6 +57,9 @@ gemini_model = None
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
     gemini_model = genai.GenerativeModel("gemini-flash-latest", system_instruction=SYSTEM_PROMPT)
+    print(f"[startup] GEMINI_API_KEY loaded (len={len(GEMINI_API_KEY)}) - Gemini model ready: gemini-flash-latest")
+else:
+    print("[startup] WARNING: GEMINI_API_KEY not set - /chat will fall back to raw RAG chunk text, not LLM answers")
 
 app = FastAPI(title="RailSense AI - Passenger Assistant Agent")
 
@@ -94,33 +111,77 @@ def get_recent_history(session_id: str, turns: int = 3) -> list[dict]:
         return []
 
 
-def compose_rag_answer(text: str, language: str, session_id: str) -> tuple[str, str]:
+# fare_query / schedule_query map 1:1 to a doc, so retrieval can skip
+# straight to it instead of relying on embedding similarity to pick the
+# right file (e.g. "train fare" otherwise ranks schedules.md over fares.md).
+INTENT_SOURCE_DOC = {
+    "fare_query": "fares.md",
+    "schedule_query": "schedules.md",
+}
+
+
+def compose_rag_answer(
+    text: str,
+    language: str,
+    session_id: str,
+    source_filter: str | None = None,
+    intent: str = "unknown",
+    entities: dict | None = None,
+) -> tuple[str, str]:
     """Retrieve top FAQ chunks and have Gemini compose a grounded natural-language reply."""
-    chunks = retrieve_faq_chunks(text, top_k=3)
+    # The embedding model is English-centric, so embedding a Sinhala/Tamil
+    # question directly makes retrieval ranking close to random - even
+    # between the right document section and an unrelated one (e.g. Kandy
+    # vs. Badulla both under fares.md). NER already resolves station names
+    # to their canonical English form regardless of input language, so use
+    # those for the retrieval query when available instead of the raw text.
+    entity_stations = (entities or {}).get("stations") or []
+    retrieval_query = " to ".join(entity_stations) if entity_stations else text
+
+    try:
+        chunks = retrieve_faq_chunks(retrieval_query, top_k=3, source_filter=source_filter)
+    except Exception as e:
+        # A retrieval-layer failure (e.g. a chromadb version/data mismatch) must not
+        # 500 the whole /chat endpoint or leak internals to the passenger - log the
+        # real exception and degrade to a clean message instead.
+        print(f"[rag] ERROR - retrieval failed ({type(e).__name__}): {e}")
+        return "I'm having trouble looking that up right now. Please try again in a moment.", ""
+    print(f"[rag] retrieved {len(chunks)} chunk(s) for query={retrieval_query!r} (original text={text!r}) source_filter={source_filter!r}")
     if not chunks:
-        return "I don't have that information yet.", ""
+        return (
+            "I don't have that information in my current knowledge base. "
+            "Could you rephrase, or ask about schedules, fares, delays, or bookings instead?"
+        ), ""
 
     sources = ", ".join(sorted({c["source"] for c in chunks}))
 
     if not gemini_model:
+        print("[llm] SKIPPED - gemini_model is None (GEMINI_API_KEY missing/not loaded) - returning raw RAG chunk text")
         return f"Here's what I found:\n\n{chunks[0]['text'][:400]}", sources
 
     history = get_recent_history(session_id)
     history_text = "\n".join(f"{h['role']}: {h['message']}" for h in history) or "(no prior messages)"
     context_text = "\n\n---\n\n".join(f"[{c['source']}] {c['text']}" for c in chunks)
+    # Only surface entities the NLU actually found - an empty/None-filled dict
+    # would just add noise to the prompt instead of useful grounding signal.
+    known_details = ", ".join(f"{k}={v}" for k, v in (entities or {}).items() if v) or "none extracted"
 
     prompt = (
         f"language: {language}\n\n"
+        f"Detected intent: {intent}\n"
+        f"Extracted details from the passenger's message: {known_details}\n\n"
         f"Conversation history:\n{history_text}\n\n"
-        f"Retrieved context:\n{context_text}\n\n"
-        f"User question: {text}"
+        f"Retrieved knowledge base context:\n{context_text}\n\n"
+        f"Passenger's question: {text}"
     )
 
+    print("[llm] Gemini request started (gemini-flash-latest)")
     try:
         response = gemini_model.generate_content(prompt)
+        print(f"[llm] Gemini response received ({len(response.text)} chars)")
         return response.text.strip(), sources
     except Exception as e:
-        print(f"Gemini generation failed: {e}")
+        print(f"[llm] ERROR - Gemini generation failed ({type(e).__name__}): {e} - falling back to raw RAG chunk text")
         return f"Here's what I found:\n\n{chunks[0]['text'][:400]}", sources
 
 
@@ -147,16 +208,21 @@ def health():
 @app.post("/chat", response_model=ChatResponse)
 async def chat(req: ChatRequest):
     text = req.message.strip()
+    print(f"[chat] received message={text!r} session_id={req.session_id}")
 
     language = detect_language(text)
     intent = classify_intent(text)
     entities = extract_entities(text)
+    print(f"[chat] language={language} intent={intent}")
 
     source = "local"
     reply = ""
 
     if intent in ("schedule_query", "fare_query"):
-        reply, source = compose_rag_answer(text, language, req.session_id)
+        reply, source = compose_rag_answer(
+            text, language, req.session_id,
+            source_filter=INTENT_SOURCE_DOC[intent], intent=intent, entities=entities,
+        )
 
     elif intent == "delay_check":
         envelope = build_envelope(
@@ -212,13 +278,15 @@ async def chat(req: ChatRequest):
 
     else:
         # Keyword classifier missed this one - try the FAQ docs before giving up.
-        reply, source = compose_rag_answer(text, language, req.session_id)
-        if not source:
-            reply = "I can help with schedules, fares, delays, bookings, or reporting an issue. Could you rephrase your question?"
+        # compose_rag_answer() already returns a clear "not found, try rephrasing"
+        # message (with source="") when nothing relevant is retrieved, so no
+        # separate override is needed here.
+        reply, source = compose_rag_answer(text, language, req.session_id, intent=intent, entities=entities)
 
     save_message(req.session_id, "user", text)
     save_message(req.session_id, "assistant", reply)
 
+    print(f"[chat] final answer source={source!r} reply={reply[:120]!r}")
     return ChatResponse(
         session_id=req.session_id,
         reply=reply,
