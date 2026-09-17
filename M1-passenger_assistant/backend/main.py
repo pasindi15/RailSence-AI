@@ -10,24 +10,35 @@ Phase 1 scope:
  - hub_client is called but returns a STUB response (real Hub wiring = Phase 3)
 """
 import os
+import re
+import sys
 import uuid
 import asyncio
-import sys
 from pathlib import Path
 from datetime import datetime, timezone
 
+# Needed to import the shared/ package (train_repository) from the monorepo
+# root, which isn't on sys.path by default when uvicorn runs from backend/.
 ROOT_DIR = Path(__file__).resolve().parents[2]
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
+
+# Windows' console defaults stdout/stderr to cp1252, which can't encode
+# Sinhala/Tamil text. Any print() of passenger input (e.g. the [chat] debug
+# logs below) then raises UnicodeEncodeError and 500s the whole request
+# before NLU/RAG/Gemini even run. Force UTF-8 so logging never crashes on
+# non-ASCII input.
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 try:
     # pyrefly: ignore [missing-import]
     import google.generativeai as genai
 except ImportError:
     genai = None
-
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from supabase import create_client, Client
@@ -39,7 +50,11 @@ from hub_client import build_envelope, send_to_hub
 from rag.retriever import retrieve_faq_chunks
 from shared.train_repository import TrainRepositoryUnavailable, get_train, get_train_schedule, search_trains
 
-load_dotenv()
+# load_dotenv() with no path searches upward from the CWD, not from this
+# file's location - if uvicorn is ever launched from outside backend/, that
+# silently finds no .env, GEMINI_API_KEY stays None, and /chat falls back to
+# raw RAG chunk text with zero errors. Anchor it to this file instead.
+load_dotenv(Path(__file__).parent / ".env")
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_SECRET_KEY", os.getenv("SUPABASE_SERVICE_ROLE_KEY"))
@@ -55,6 +70,9 @@ gemini_model = None
 if GEMINI_API_KEY and genai is not None:
     genai.configure(api_key=GEMINI_API_KEY)
     gemini_model = genai.GenerativeModel("gemini-flash-latest", system_instruction=SYSTEM_PROMPT)
+    print(f"[startup] GEMINI_API_KEY loaded (len={len(GEMINI_API_KEY)}) - Gemini model ready: gemini-flash-latest")
+else:
+    print("[startup] WARNING: GEMINI_API_KEY not set - /chat will fall back to raw RAG chunk text, not LLM answers")
 
 app = FastAPI(title="RailSense AI - Passenger Assistant Agent")
 
@@ -87,6 +105,29 @@ class FeedbackRequest(BaseModel):
     comment: str | None = None
 
 
+class SessionSummary(BaseModel):
+    session_id: str
+    title: str
+    is_pinned: bool
+    created_at: str
+    updated_at: str
+
+
+class PinRequest(BaseModel):
+    pinned: bool
+
+
+# Matches crypto.randomUUID() from the frontend (and str(uuid.uuid4()) from the
+# ChatRequest default). Rejecting anything else before it reaches a Supabase
+# filter keeps session_id out of query-building entirely, not just escaped.
+SESSION_ID_RE = re.compile(r"^[A-Za-z0-9_-]{1,100}$")
+
+
+def validate_session_id(session_id: str) -> None:
+    if not SESSION_ID_RE.match(session_id):
+        raise HTTPException(status_code=400, detail="Invalid session_id")
+
+
 def get_recent_history(session_id: str, turns: int = 3) -> list[dict]:
     """Last `turns` conversation turns (user+assistant pairs) for this session, oldest first."""
     if not supabase:
@@ -106,40 +147,116 @@ def get_recent_history(session_id: str, turns: int = 3) -> list[dict]:
         return []
 
 
-def compose_rag_answer(text: str, language: str, session_id: str) -> tuple[str, str]:
+# fare_query / schedule_query map 1:1 to a doc, so retrieval can skip
+# straight to it instead of relying on embedding similarity to pick the
+# right file (e.g. "train fare" otherwise ranks schedules.md over fares.md).
+INTENT_SOURCE_DOC = {
+    "fare_query": "fares.md",
+    "schedule_query": "schedules.md",
+}
+
+
+def compose_rag_answer(
+    text: str,
+    language: str,
+    session_id: str,
+    source_filter: str | None = None,
+    intent: str = "unknown",
+    entities: dict | None = None,
+) -> tuple[str, str]:
     """Retrieve top FAQ chunks and have Gemini compose a grounded natural-language reply."""
-    chunks = retrieve_faq_chunks(text, top_k=3)
+    # The embedding model is English-centric, so embedding a Sinhala/Tamil
+    # question directly makes retrieval ranking close to random - even
+    # between the right document section and an unrelated one (e.g. Kandy
+    # vs. Badulla both under fares.md). NER already resolves station names
+    # to their canonical English form regardless of input language, so use
+    # those for the retrieval query when available instead of the raw text.
+    entity_stations = (entities or {}).get("stations") or []
+    retrieval_query = " to ".join(entity_stations) if entity_stations else text
+
+    try:
+        chunks = retrieve_faq_chunks(retrieval_query, top_k=3, source_filter=source_filter)
+    except Exception as e:
+        # A retrieval-layer failure (e.g. a chromadb version/data mismatch) must not
+        # 500 the whole /chat endpoint or leak internals to the passenger - log the
+        # real exception and degrade to a clean message instead.
+        print(f"[rag] ERROR - retrieval failed ({type(e).__name__}): {e}")
+        return "I'm having trouble looking that up right now. Please try again in a moment.", ""
+    print(f"[rag] retrieved {len(chunks)} chunk(s) for query={retrieval_query!r} (original text={text!r}) source_filter={source_filter!r}")
     if not chunks:
-        return "I don't have that information yet.", ""
+        return (
+            "I don't have that information in my current knowledge base. "
+            "Could you rephrase, or ask about schedules, fares, delays, or bookings instead?"
+        ), ""
 
     sources = ", ".join(sorted({c["source"] for c in chunks}))
 
     if not gemini_model:
+        print("[llm] SKIPPED - gemini_model is None (GEMINI_API_KEY missing/not loaded) - returning raw RAG chunk text")
         return f"Here's what I found:\n\n{chunks[0]['text'][:400]}", sources
 
     history = get_recent_history(session_id)
     history_text = "\n".join(f"{h['role']}: {h['message']}" for h in history) or "(no prior messages)"
     context_text = "\n\n---\n\n".join(f"[{c['source']}] {c['text']}" for c in chunks)
+    # Only surface entities the NLU actually found - an empty/None-filled dict
+    # would just add noise to the prompt instead of useful grounding signal.
+    known_details = ", ".join(f"{k}={v}" for k, v in (entities or {}).items() if v) or "none extracted"
 
     prompt = (
         f"language: {language}\n\n"
+        f"Detected intent: {intent}\n"
+        f"Extracted details from the passenger's message: {known_details}\n\n"
         f"Conversation history:\n{history_text}\n\n"
-        f"Retrieved context:\n{context_text}\n\n"
-        f"User question: {text}"
+        f"Retrieved knowledge base context:\n{context_text}\n\n"
+        f"Passenger's question: {text}"
     )
 
+    print("[llm] Gemini request started (gemini-flash-latest)")
     try:
         response = gemini_model.generate_content(prompt)
+        print(f"[llm] Gemini response received ({len(response.text)} chars)")
         return response.text.strip(), sources
     except Exception as e:
-        print(f"Gemini generation failed: {e}")
+        print(f"[llm] ERROR - Gemini generation failed ({type(e).__name__}): {e} - falling back to raw RAG chunk text")
         return f"Here's what I found:\n\n{chunks[0]['text'][:400]}", sources
+
+
+def touch_session(session_id: str, title_candidate: str | None = None):
+    """Create the chat_sessions row on first message, or bump updated_at on later ones.
+
+    No row is created until the first message actually sends (avoids empty-session
+    clutter from a passenger opening "+ New chat" and never typing anything).
+    """
+    if not supabase:
+        return
+    try:
+        existing = (
+            supabase.table("chat_sessions")
+            .select("session_id")
+            .eq("session_id", session_id)
+            .limit(1)
+            .execute()
+        )
+        now = datetime.now(timezone.utc).isoformat()
+        if existing.data:
+            supabase.table("chat_sessions").update({"updated_at": now}).eq("session_id", session_id).execute()
+        else:
+            title = (title_candidate or "New conversation").strip()[:60] or "New conversation"
+            supabase.table("chat_sessions").insert({
+                "session_id": session_id,
+                "title": title,
+                "updated_at": now,
+            }).execute()
+    except Exception as e:
+        print(f"Supabase session upsert failed: {e}")
 
 
 def save_message(session_id: str, role: str, message: str):
     if not supabase:
         print("Warning: Supabase is not configured.")
         return
+
+    touch_session(session_id, title_candidate=message if role == "user" else None)
 
     try:
         supabase.table("chat_messages").insert({
@@ -166,18 +283,23 @@ def health():
 @app.post("/chat", response_model=ChatResponse)
 async def chat(req: ChatRequest):
     text = req.message.strip()
+    print(f"[chat] received message={text!r} session_id={req.session_id}")
 
     language = detect_language(text)
     intent = classify_intent(text)
     entities = extract_entities(text)
     if entities.get("train_id") and intent == "schedule_query":
         intent = "train_info"
+    print(f"[chat] language={language} intent={intent}")
 
     source = "local"
     reply = ""
 
     if intent in ("schedule_query", "fare_query"):
-        reply, source = compose_rag_answer(text, language, req.session_id)
+        reply, source = compose_rag_answer(
+            text, language, req.session_id,
+            source_filter=INTENT_SOURCE_DOC[intent], intent=intent, entities=entities,
+        )
 
     elif intent == "train_info":
         train_id = entities.get("train_id")
@@ -232,8 +354,11 @@ async def chat(req: ChatRequest):
             },
         )
         hub_response = await send_to_hub(envelope)
-        if hub_response.get("status") == "ok":
-            p = hub_response.get("payload", {})
+        if hub_response.status == "ok":
+            p = hub_response.payload
+            # Operations' /hub/message hands back structured fields, not one
+            # composed sentence (unlike Maintenance/Booking below) - this
+            # assembles them, it doesn't re-run anything through an LLM.
             delay = p.get("predicted_delay_minutes", 0)
             reason = p.get("reason") or p.get("explanation", "Operational congestion")
             similar = p.get("similar_incident")
@@ -248,7 +373,7 @@ async def chat(req: ChatRequest):
             )
             source = "via Operations Agent (Hub)"
         else:
-            message = hub_response.get("message", "I couldn't reach the Operations Agent right now.")
+            message = hub_response.message or "I couldn't reach the Operations Agent right now."
             reply = message if "TRAIN_NOT_FOUND" in message else "I couldn't reach the Operations Agent right now."
             source = "via Operations Agent (Hub)"
 
@@ -270,8 +395,8 @@ async def chat(req: ChatRequest):
                         payload={"train_id": train_id, "raw_text": text},
                     )
                     hub_response = await send_to_hub(envelope)
-                    if hub_response.get("status") == "ok":
-                        p = hub_response.get("payload", {})
+                    if hub_response.status == "ok":
+                        p = hub_response.payload
                         reply = p.get("message", "I could not retrieve the train status right now.")
                     else:
                         reply = "I couldn't check the train status right now. Please try again shortly."
@@ -287,12 +412,14 @@ async def chat(req: ChatRequest):
             payload={"description": text, "train_id": entities.get("train_id", "")},
         )
         hub_response = await send_to_hub(envelope)
-        if hub_response.get("status") == "ok":
-            p = hub_response["payload"]
+        if hub_response.status == "ok":
+            p = hub_response.payload
+            # Maintenance's reply text is already composed by that agent - passed
+            # through as-is, just appending the ticket id for the passenger's reference.
             reply = f"{p['message']} (Ticket: {p['ticket_id']})"
             source = "via Maintenance Agent"
         else:
-            reply = "I couldn't log your issue right now."
+            reply = hub_response.message or "I couldn't log your issue right now."
 
     elif intent == "booking_request":
         envelope = build_envelope(
@@ -308,19 +435,24 @@ async def chat(req: ChatRequest):
             },
         )
         hub_response = await send_to_hub(envelope)
-        if hub_response.get("status") == "ok":
-            p = hub_response["payload"]
-            reply = p["message"]
+        if hub_response.status == "ok":
+            # Booking's reply text is already composed by that agent - passed through as-is.
+            reply = hub_response.payload["message"]
             source = "via Booking Agent"
         else:
-            reply = "I couldn't reach the Booking Agent right now."
+            reply = hub_response.message or "I couldn't reach the Booking Agent right now."
 
     else:
-        reply = "I can help with schedules, fares, delays, bookings, or reporting an issue. Could you rephrase your question?"
+        # Keyword classifier missed this one - try the FAQ docs before giving up.
+        # compose_rag_answer() already returns a clear "not found, try rephrasing"
+        # message (with source="") when nothing relevant is retrieved, so no
+        # separate override is needed here.
+        reply, source = compose_rag_answer(text, language, req.session_id, intent=intent, entities=entities)
 
     save_message(req.session_id, "user", text)
     save_message(req.session_id, "assistant", reply)
 
+    print(f"[chat] final answer source={source!r} reply={reply[:120]!r}")
     return ChatResponse(
         session_id=req.session_id,
         reply=reply,
@@ -333,6 +465,7 @@ async def chat(req: ChatRequest):
 
 @app.get("/chat/{session_id}/history")
 def history(session_id: str):
+    validate_session_id(session_id)
     if not supabase:
         return {"session_id": session_id, "messages": [], "error": "Supabase is not configured"}
 
@@ -349,6 +482,88 @@ def history(session_id: str):
     except Exception as e:
         print(f"Supabase history failed: {e}")
         return {"session_id": session_id, "messages": [], "error": str(e)}
+
+
+@app.get("/chat", response_model=list[SessionSummary])
+def list_sessions():
+    """Sidebar chat list: pinned sessions first, then most-recently-active."""
+    if not supabase:
+        return []
+    try:
+        result = (
+            supabase.table("chat_sessions")
+            .select("*")
+            .order("is_pinned", desc=True)
+            .order("updated_at", desc=True)
+            .execute()
+        )
+        return result.data
+    except Exception as e:
+        print(f"Supabase session list failed: {e}")
+        return []
+
+
+def get_session_or_404(session_id: str):
+    """Look up a chat_sessions row, or raise a clean HTTP error.
+
+    Wraps the query itself (not just the later mutation) - if the chat_sessions
+    table hasn't been created yet (see supabase_schema.sql), Supabase raises on
+    the SELECT itself, which would otherwise surface as an opaque 500 instead
+    of a message that tells the caller what to actually go fix.
+    """
+    try:
+        existing = (
+            supabase.table("chat_sessions").select("session_id").eq("session_id", session_id).limit(1).execute()
+        )
+    except Exception as e:
+        print(f"Supabase session lookup failed: {e}")
+        raise HTTPException(
+            status_code=503,
+            detail="Chat storage isn't set up yet - run backend/supabase_schema.sql against this Supabase project.",
+        )
+    if not existing.data:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+
+@app.delete("/chat/{session_id}", status_code=204)
+def delete_chat(session_id: str):
+    validate_session_id(session_id)
+    if not supabase:
+        raise HTTPException(status_code=503, detail="Supabase is not configured")
+
+    get_session_or_404(session_id)
+
+    try:
+        # Explicit two-step hard delete rather than relying on the FK's ON
+        # DELETE CASCADE - keeps this correct even on a database where that
+        # constraint didn't attach cleanly (see supabase_schema.sql).
+        supabase.table("chat_messages").delete().eq("session_id", session_id).execute()
+        supabase.table("chat_sessions").delete().eq("session_id", session_id).execute()
+    except Exception as e:
+        print(f"Supabase delete failed: {e}")
+        raise HTTPException(status_code=500, detail="Failed to delete session")
+    return None
+
+
+@app.patch("/chat/{session_id}/pin", response_model=SessionSummary)
+def pin_chat(session_id: str, req: PinRequest):
+    validate_session_id(session_id)
+    if not supabase:
+        raise HTTPException(status_code=503, detail="Supabase is not configured")
+
+    get_session_or_404(session_id)
+
+    try:
+        result = (
+            supabase.table("chat_sessions")
+            .update({"is_pinned": req.pinned, "updated_at": datetime.now(timezone.utc).isoformat()})
+            .eq("session_id", session_id)
+            .execute()
+        )
+        return result.data[0]
+    except Exception as e:
+        print(f"Supabase pin update failed: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update session")
 
 
 @app.post("/feedback")
