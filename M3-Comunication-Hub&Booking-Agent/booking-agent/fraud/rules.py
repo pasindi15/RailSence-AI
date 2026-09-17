@@ -103,12 +103,23 @@ def check_conflicting_active_journey(
 ) -> None:
     """
     Hard Rule 3: Cross-Train Time Conflict Check.
-    Verifies that no passenger already has another CONFIRMED booking on the same date
-    whose travel interval overlaps with the requested interval:
-    existing_departure < requested_arrival AND requested_departure < existing_arrival
+    Verifies that no passenger already has another active CONFIRMED booking
+    whose travel interval overlaps with the requested interval.
+    Properly handles overnight journeys and boundary-crossing trips using full timezone-aware datetimes.
     """
     if not nic_hashes:
         return
+
+    from booking.availability import calculate_journey_interval
+
+    req_start, req_end = calculate_journey_interval(
+        travel_date=travel_date,
+        departure_time=requested_departure,
+        arrival_time=requested_arrival,
+    )
+
+    # Check same day and adjacent days for overnight trips
+    check_dates = [travel_date - timedelta(days=1), travel_date, travel_date + timedelta(days=1)]
 
     query = (
         db.query(Booking)
@@ -117,7 +128,7 @@ def check_conflicting_active_journey(
         .join(TrainSchedule, Booking.schedule_id == TrainSchedule.id)
         .filter(
             Booking.status == BookingStatus.CONFIRMED,
-            Booking.travel_date == travel_date,
+            Booking.travel_date.in_(check_dates),
             Passenger.nic_hash.in_(nic_hashes),
         )
     )
@@ -132,18 +143,26 @@ def check_conflicting_active_journey(
     for b in confirmed_bookings:
         if not b.schedule:
             continue
-        ex_dep = b.schedule.departure_time
-        ex_arr = b.schedule.arrival_time
+        ex_start, ex_end = calculate_journey_interval(
+            travel_date=b.travel_date,
+            departure_time=b.schedule.departure_time,
+            arrival_time=b.schedule.arrival_time,
+        )
 
-        # Strict interval overlap check
-        if ex_dep < requested_arrival and requested_departure < ex_arr:
+        # Full datetime interval overlap check: (StartA < EndB) and (EndA > StartB)
+        if ex_start < req_end and req_start < ex_end:
             train_display = b.train.train_name if b.train else f"Train #{b.train_id}"
-            ex_window = f"{ex_dep.strftime('%H:%M')}–{ex_arr.strftime('%H:%M')}"
+            ex_window = f"{b.schedule.departure_time.strftime('%H:%M')}–{b.schedule.arrival_time.strftime('%H:%M')}"
             raise ConflictingActiveJourneyError(
                 existing_train=train_display,
                 existing_window=ex_window,
                 requested_window=req_window,
             )
+
+
+check_cross_train_conflicts = check_conflicting_active_journey
+
+
 
 
 def compute_passenger_fraud_features(

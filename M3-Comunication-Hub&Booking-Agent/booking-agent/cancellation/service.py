@@ -76,15 +76,18 @@ class CancellationService:
         self,
         booking_reference: str,
         reason: str,
+        user_id: str | None = None,
+        reason_category: str | None = None,
     ) -> dict[str, Any]:
         """
         Step 1 to 8: Process incoming cancellation request from passenger.
         Does NOT cancel the booking; creates a PENDING_ADMIN_REVIEW case.
+        Reuses upstream reason_category if provided to avoid redundant NLP classification.
         """
         clean_ref = booking_reference.strip().upper()
         clean_reason = reason.strip()
 
-        # 1. Retrieve real booking from Supabase
+        # 1. Retrieve real booking from database
         booking = (
             self.db.query(Booking)
             .filter(Booking.booking_reference == clean_ref)
@@ -92,6 +95,11 @@ class CancellationService:
         )
         if not booking:
             raise BookingNotFoundError(clean_ref)
+
+        # Enforce passenger ownership if user_id is provided
+        if user_id and booking.user_id and booking.user_id != "guest_passenger":
+            if user_id != booking.user_id and user_id != "admin":
+                raise CancellationError("Unauthorized: You may only cancel your own bookings.", status_code=403)
 
         if booking.status == BookingStatus.CANCELLED:
             raise BookingAlreadyCancelledError(clean_ref)
@@ -108,13 +116,16 @@ class CancellationService:
             elif existing_req.status == CancellationStatus.APPROVED:
                 raise BookingAlreadyCancelledError(clean_ref)
 
-        # 2. NLP Processing
-        nlp_res = process_cancellation_nlp(clean_reason)
-        reason_category = nlp_res["reason_category"]
+        # 2. Upstream Reason Category or NLP Classification
+        if not reason_category or not reason_category.strip():
+            nlp_res = process_cancellation_nlp(clean_reason)
+            reason_category = nlp_res["reason_category"]
+        else:
+            reason_category = reason_category.strip().lower()
 
-        # 3. RAG Policy Retrieval
+        # 3. RAG Policy Retrieval (domain: cancellation)
         query = f"{clean_reason} {reason_category.replace('_', ' ')} cancellation refund"
-        policy_evidence = retrieve_relevant_policies(query, top_k=3)
+        policy_evidence = retrieve_relevant_policies(query, top_k=3, domain="cancellation")
 
         # 4. Deterministic Business Logic
         departure_time = booking.schedule.departure_time if booking.schedule else None
@@ -125,7 +136,7 @@ class CancellationService:
             reason_category=reason_category,
         )
 
-        # 5. LLM Grounded Advisory Summary
+        # 5. LLM Grounded Advisory Summary & Structured Briefing
         booking_facts = {
             "booking_reference": booking.booking_reference,
             "from_station": booking.from_station,
@@ -136,7 +147,18 @@ class CancellationService:
             "fare": f"{booking.fare:.2f}",
         }
 
-        ai_summary = generate_admin_advisory_summary(
+        from .llm import generate_cancellation_advisory_briefing
+        briefing = generate_cancellation_advisory_briefing(
+            booking_facts=booking_facts,
+            passenger_reason=clean_reason,
+            reason_category=reason_category,
+            policy_evidence=policy_evidence,
+            eligibility=calc_result.eligibility,
+            suggested_refund=f"{calc_result.suggested_refund:.2f}",
+            refund_percentage=calc_result.refund_percentage,
+            policy_rule_applied=calc_result.policy_rule_applied,
+        )
+        ai_summary = briefing.get("summary_text") or generate_admin_advisory_summary(
             booking_facts=booking_facts,
             passenger_reason=clean_reason,
             reason_category=reason_category,
@@ -165,6 +187,7 @@ class CancellationService:
 
         # Note: booking.status strictly remains CONFIRMED
         return {
+            "success": True,
             "status": "cancellation_requested",
             "case_reference": case_ref,
             "booking_reference": clean_ref,
@@ -175,8 +198,14 @@ class CancellationService:
             "refund_percentage": calc_result.refund_percentage,
             "policy_applied": calc_result.policy_rule_applied,
             "ai_summary": ai_summary,
+            "briefing": briefing,
             "policy_evidence": [
-                {"citation": c["citation"], "section": c["section"], "score": c["similarity_score"]}
+                {
+                    "passage_id": c.get("passage_id"),
+                    "citation": c.get("citation"),
+                    "section": c.get("section"),
+                    "score": c.get("similarity_score"),
+                }
                 for c in policy_evidence
             ],
             "cancellation_status": canc_req.status.value,
@@ -270,6 +299,18 @@ class CancellationService:
             case.reviewed_at = now
             if booking:
                 booking.status = BookingStatus.CANCELLED
+                self.db.flush()
+                # Deterministic FIFO waiting list allocation on seat release
+                try:
+                    from booking.waiting_list import evaluate_waiting_list_for_schedule
+                    if booking.schedule_id:
+                        evaluate_waiting_list_for_schedule(
+                            db=self.db,
+                            schedule_id=booking.schedule_id,
+                            seat_class=booking.seat_class,
+                        )
+                except Exception:
+                    pass
 
             # Record immutable trace in audit_logs table
             try:

@@ -53,26 +53,61 @@ def persist_booking(
     fare: Decimal | None = None,
     user_id: str | None = None,
     passenger_records: list[dict] | None = None,
+    idempotency_key: str | None = None,
+    actor: str | None = None,
+    hold_id: int | None = None,
 ) -> Booking:
     """
-    Persist a new confirmed booking record into the database.
+    Persist a new confirmed booking record atomically into the database.
 
-    Parameters
-    ----------
-    db:                SQLAlchemy database session.
-    request:           Validated BookingRequest payload.
-    schedule:          TrainSchedule instance corresponding to the booking.
-    booking_reference: Generated unique booking reference string (optional; generated if absent).
-    fare:              Calculated fare amount (Decimal).
-    user_id:           Identifier of the booking owner / passenger.
-
-    Returns
-    -------
-    Booking: Newly created and committed Booking ORM instance with status CONFIRMED.
+    Concurrency & Idempotency Rules:
+    - Locks the TrainSchedule row (via with_for_update on PostgreSQL) to serialize seat allocation.
+    - Performs final seat capacity verification inside the protected transaction.
+    - Generates opaque, unpredictable ticket_token for server-side verified QR issuance.
+    - Transitions linked SeatHold (if any) to CONFIRMED.
+    - Atomically persists IdempotencyRecord when an idempotency_key is provided.
     """
+    from .availability import SeatsUnavailableError, get_available_seats
+    from .qr_service import generate_opaque_ticket_token
+    from database.models import (
+        BookingPassenger,
+        HoldStatus,
+        IdempotencyRecord,
+        IdempotencyStatus,
+        Passenger,
+        SeatHold,
+    )
+
+    # 1. Row-level concurrency lock on schedule
+    try:
+        locked_schedule = (
+            db.query(TrainSchedule)
+            .filter(TrainSchedule.id == schedule.id)
+            .with_for_update()
+            .first()
+        )
+    except Exception:
+        # Fallback for backends that do not support SELECT FOR UPDATE (e.g. SQLite)
+        locked_schedule = db.query(TrainSchedule).filter(TrainSchedule.id == schedule.id).first()
+
+    target_schedule = locked_schedule or schedule
+    canonical_class = normalize_seat_class(request.seat_class)
+
+    # 2. Re-verify seat capacity inside locked transaction (if not preceded by an active hold)
+    if not hold_id:
+        avail = get_available_seats(db, schedule=target_schedule, seat_class=canonical_class)
+        if avail < request.passenger_count:
+            raise SeatsUnavailableError(
+                seat_class=canonical_class,
+                requested_seats=request.passenger_count,
+                available_seats=avail,
+                train_id=target_schedule.train.train_id if target_schedule.train else str(target_schedule.train_id),
+                travel_date=str(target_schedule.travel_date),
+            )
+
+    # 3. Collision-resistant booking reference generation
     ref = booking_reference
     if not ref:
-        # Collision-resistant generation
         for _ in range(10):
             candidate = generate_booking_reference()
             existing = db.query(Booking).filter(Booking.booking_reference == candidate).first()
@@ -83,19 +118,20 @@ def persist_booking(
             ref = f"RS-{secrets.randbelow(900000) + 100000}"
 
     resolved_fare = fare if fare is not None else Decimal("0.00")
-    # Phase 3 development note: 'guest_passenger' safely remains as the temporary default when omitted.
-    # In Phase 4, the Passenger Agent authentication layer should pass the real authenticated passenger user_id.
     resolved_user = user_id or getattr(request, "user_id", None) or "guest_passenger"
+    ticket_token = generate_opaque_ticket_token()
 
     booking = Booking(
         booking_reference=ref,
+        ticket_token=ticket_token,
+        hold_id=hold_id,
         user_id=resolved_user,
-        train_id=schedule.train_id,
-        schedule_id=schedule.id,
+        train_id=target_schedule.train_id,
+        schedule_id=target_schedule.id,
         from_station=request.from_station.strip(),
         to_station=request.to_station.strip(),
         travel_date=request.travel_date,
-        seat_class=normalize_seat_class(request.seat_class),
+        seat_class=canonical_class,
         passenger_count=request.passenger_count,
         passenger_email=str(request.passenger_email).strip() if getattr(request, "passenger_email", None) else None,
         fare=resolved_fare,
@@ -103,7 +139,6 @@ def persist_booking(
     )
 
     try:
-        from database.models import Passenger, BookingPassenger
         db.add(booking)
         db.flush()
 
@@ -138,10 +173,69 @@ def persist_booking(
                 )
                 db.add(bp)
 
+        # Transition linked seat hold if present
+        if hold_id:
+            hold = db.query(SeatHold).filter(SeatHold.id == hold_id).first()
+            if hold:
+                hold.status = HoldStatus.CONFIRMED
+
+        # Persist idempotency record atomically
+        if idempotency_key:
+            import hashlib
+            import json
+            payload_repr = {
+                "train_id": request.train_id,
+                "from_station": request.from_station.strip(),
+                "to_station": request.to_station.strip(),
+                "travel_date": request.travel_date.isoformat(),
+                "seat_class": request.seat_class,
+                "passenger_count": request.passenger_count,
+                "passenger_email": str(request.passenger_email).strip() if getattr(request, "passenger_email", None) else None,
+                "passengers": [{"nic": p.nic, "name": p.name} for p in (request.passengers or [])],
+            }
+            req_fingerprint = hashlib.sha256(
+                json.dumps(payload_repr, sort_keys=True).encode("utf-8")
+            ).hexdigest()
+
+            cached_result = {
+                "booking_reference": booking.booking_reference,
+                "ticket_token": booking.ticket_token,
+                "train_id": target_schedule.train.train_id if target_schedule.train else str(target_schedule.train_id),
+                "from_station": booking.from_station,
+                "to_station": booking.to_station,
+                "travel_date": booking.travel_date.isoformat(),
+                "seat_class": booking.seat_class,
+                "passenger_count": booking.passenger_count,
+                "passenger_email": booking.passenger_email,
+                "fare": str(booking.fare),
+                "status": "CONFIRMED",
+                "risk_level": "LOW",
+                "hold_token": getattr(request, "hold_token", None),
+            }
+
+            idem = db.query(IdempotencyRecord).filter(
+                IdempotencyRecord.idempotency_key == idempotency_key
+            ).first()
+            if not idem:
+                idem = IdempotencyRecord(
+                    idempotency_key=idempotency_key,
+                    actor=actor or resolved_user,
+                    operation="create_booking",
+                    request_hash=req_fingerprint,
+                    status=IdempotencyStatus.COMMITTED,
+                    response_payload=json.dumps(cached_result),
+                )
+                db.add(idem)
+            else:
+                idem.request_hash = req_fingerprint
+                idem.status = IdempotencyStatus.COMMITTED
+                idem.response_payload = json.dumps(cached_result)
+
         db.commit()
         db.refresh(booking)
         return booking
     except Exception:
         db.rollback()
         raise
+
 

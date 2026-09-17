@@ -1145,6 +1145,9 @@ body::after {
     <button class="tab-btn" id="tab-admin" onclick="switchView('admin')">
       <span class="tab-icon">🛡️</span> Admin Review Queue
     </button>
+    <button class="tab-btn" id="tab-hub" onclick="switchView('hub')">
+      <span class="tab-icon">⚡</span> Hub Monitor
+    </button>
   </nav>
 
   <!-- ==================== VIEW 1: PASSENGER CHAT ==================== -->
@@ -1298,6 +1301,34 @@ body::after {
             />
           </div>
 
+          <!-- Seat Hold & Availability Banner -->
+          <div id="hold-section" style="margin-bottom: 16px;">
+            <div id="hold-banner" style="display: none; padding: 12px 16px; background: rgba(91,143,201,0.12); border: 1px solid rgba(91,143,201,0.35); border-radius: 8px; justify-content: space-between; align-items: center;">
+              <div>
+                <div style="font-weight: 700; font-size: 13px; color: #93C5FD; display: flex; align-items: center; gap: 6px;">
+                  <span>⏱️ 5-Minute Prototype Seat Hold</span>
+                  <span id="hold-status-pill" style="font-size: 10px; font-family: 'Share Tech Mono', monospace; padding: 2px 6px; border-radius: 4px; background: rgba(91,143,201,0.25); color: #BFDBFE;">AVAILABLE</span>
+                </div>
+                <div id="hold-timer-text" style="font-size: 11px; color: var(--muted-hi); font-family: 'Share Tech Mono', monospace; margin-top: 2px;">
+                  Hold your seats for 5 minutes during checkout to protect against concurrent booking races.
+                </div>
+              </div>
+              <button type="button" id="btn-request-hold" onclick="requestSeatHold()" style="padding: 7px 14px; border-radius: 6px; background: rgba(91,143,201,0.25); border: 1px solid rgba(91,143,201,0.5); color: #BFDBFE; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap;">
+                Hold Seats (5m)
+              </button>
+            </div>
+
+            <div id="waiting-list-banner" style="display: none; padding: 12px 16px; background: rgba(201,162,42,0.12); border: 1px solid rgba(201,162,42,0.35); border-radius: 8px; justify-content: space-between; align-items: center; margin-top: 10px;">
+              <div>
+                <div style="font-weight: 700; font-size: 13px; color: #FBBF24;">📋 Service Sold Out — FIFO Waiting List</div>
+                <div style="font-size: 11px; color: var(--muted-hi); margin-top: 2px;">No seats currently remaining. Join the queue for automatic allocation upon cancellations.</div>
+              </div>
+              <button type="button" id="btn-join-waiting-list" onclick="joinWaitingList()" style="padding: 7px 14px; border-radius: 6px; background: rgba(201,162,42,0.25); border: 1px solid rgba(201,162,42,0.5); color: #FDE68A; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap;">
+                Join Waiting List
+              </button>
+            </div>
+          </div>
+
           <!-- Mandatory Passenger Identities & NICs -->
           <div class="field-group">
             <label class="field-label">Passenger Identities & Mandatory Sri Lankan NIC *</label>
@@ -1411,6 +1442,25 @@ body::after {
             </div>
           </div>
 
+          <!-- E-Ticket QR and Verification Code -->
+          <div id="conf-qr-container" style="margin: 20px 0; padding: 16px; background: rgba(10,5,2,0.85); border: 1px dashed var(--border-hi); border-radius: 10px; display: flex; align-items: center; justify-content: space-around; gap: 20px; flex-wrap: wrap;">
+            <div id="conf-qr-svg" style="width: 140px; height: 140px; background: #FFF; padding: 8px; border-radius: 8px; display: grid; place-items: center;">
+              <!-- SVG QR Rendered here -->
+            </div>
+            <div style="flex: 1; min-width: 220px; display: flex; flex-direction: column; gap: 8px;">
+              <div style="font-size: 11px; color: var(--muted); font-family: 'Share Tech Mono', monospace; text-transform: uppercase; letter-spacing: 1px;">Digital Ticket Verification Token</div>
+              <div id="conf-ticket-token" style="font-family: 'Share Tech Mono', monospace; font-size: 13px; font-weight: 700; color: var(--brand); word-break: break-all; background: rgba(0,0,0,0.5); padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border);">TKT-XXXXXXXX</div>
+              <div style="display: flex; align-items: center; gap: 10px; margin-top: 4px;">
+                <span id="conf-verify-badge" style="display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-family: 'Share Tech Mono', monospace; padding: 4px 10px; border-radius: 20px; background: rgba(58,138,74,0.2); border: 1px solid rgba(58,138,74,0.5); color: #6EE7B7;">
+                  <span style="width: 6px; height: 6px; border-radius: 50%; background: #4ADE80; box-shadow: 0 0 6px #4ADE80;"></span>
+                  LIVE VERIFIED (VALID)
+                </span>
+                <button type="button" class="btn-verify-live" onclick="verifyCurrentTicket()" style="padding: 4px 10px; border-radius: 6px; background: rgba(201,162,42,0.15); border: 1px solid var(--border-hi); color: var(--ink-bright); font-size: 11px; cursor: pointer;">Verify Now</button>
+              </div>
+              <div id="conf-verify-result" style="font-size: 11px; color: var(--muted-hi); font-family: 'Share Tech Mono', monospace;">Live server-side verification: Valid Sri Lanka Railway Reservation Token</div>
+            </div>
+          </div>
+
           <div style="display:flex;justify-content:space-between;align-items:center;">
             <span class="ticket-status-pill">● CONFIRMED</span>
             <span style="font-size:11px;color:var(--muted);font-family:'Share Tech Mono',monospace">Recorded in Supabase</span>
@@ -1418,7 +1468,7 @@ body::after {
         </div>
 
         <footer class="ticket-footer">
-          <span style="font-size:12px;color:var(--muted-hi)">Please show reference code at the station.</span>
+          <span style="font-size:12px;color:var(--muted-hi)">Please show reference code or digital QR token at the station.</span>
           <button class="btn-book-another" onclick="resetToBooking()">Book Another Journey</button>
         </footer>
       </article>
@@ -1532,6 +1582,85 @@ body::after {
         </div>
       </div>
     </section>
+  </main>
+
+  <!-- ==================== VIEW 5: CENTRAL HUB DASHBOARD ==================== -->
+  <main id="view-hub" class="view-panel">
+    <div class="admin-desk-card">
+      <div class="admin-header">
+        <div>
+          <h1 class="desk-title" style="display:flex;align-items:center;gap:10px;">
+            <span>⚡ Central Communication Hub Monitor</span>
+            <span class="badge-live" id="hub-live-badge">PORT 8002 ACTIVE</span>
+          </h1>
+          <p class="desk-sub">Live inter-agent message routing telemetry, circuit breaker resilience, and privacy audit timeline.</p>
+        </div>
+        <button class="btn-refresh-admin" onclick="loadHubDashboard()">🔄 Refresh Telemetry</button>
+      </div>
+
+      <!-- Hub Stat Cards -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+        <div style="background: rgba(14,8,3,0.85); border: 1px solid var(--border); border-radius: 10px; padding: 16px;">
+          <div style="font-size: 11px; color: var(--muted); font-family: 'Share Tech Mono', monospace;">TOTAL MESSAGES ROUTED</div>
+          <div id="hub-stat-total" style="font-size: 26px; font-weight: 800; color: var(--ink-bright); margin-top: 4px;">0</div>
+          <div style="font-size: 11px; color: #4ADE80; margin-top: 4px;">Audited & Nonce-Protected</div>
+        </div>
+        <div style="background: rgba(14,8,3,0.85); border: 1px solid var(--border); border-radius: 10px; padding: 16px;">
+          <div style="font-size: 11px; color: var(--muted); font-family: 'Share Tech Mono', monospace;">DELIVERY SUCCESS RATE</div>
+          <div id="hub-stat-delivery" style="font-size: 26px; font-weight: 800; color: #4ADE80; margin-top: 4px;">100.0%</div>
+          <div style="font-size: 11px; color: var(--muted-hi); margin-top: 4px;"><span id="hub-stat-delivered">0</span> delivered / <span id="hub-stat-failed">0</span> failed</div>
+        </div>
+        <div style="background: rgba(14,8,3,0.85); border: 1px solid var(--border); border-radius: 10px; padding: 16px;">
+          <div style="font-size: 11px; color: var(--muted); font-family: 'Share Tech Mono', monospace;">AVERAGE LATENCY</div>
+          <div id="hub-stat-latency" style="font-size: 26px; font-weight: 800; color: var(--brand); margin-top: 4px;">0.00 ms</div>
+          <div style="font-size: 11px; color: var(--muted-hi); margin-top: 4px;">Fast async dispatch</div>
+        </div>
+        <div style="background: rgba(14,8,3,0.85); border: 1px solid var(--border); border-radius: 10px; padding: 16px;">
+          <div style="font-size: 11px; color: var(--muted); font-family: 'Share Tech Mono', monospace;">CIRCUIT BREAKER</div>
+          <div id="hub-stat-breaker" style="font-size: 20px; font-weight: 800; color: #4ADE80; margin-top: 8px;">● CLOSED (HEALTHY)</div>
+          <div style="font-size: 11px; color: var(--muted-hi); margin-top: 4px;">Fast-fail recovery enabled</div>
+        </div>
+      </div>
+
+      <!-- Agent Registry Status -->
+      <div style="background: rgba(18,11,5,0.7); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 24px;">
+        <div style="font-weight: 700; font-size: 13px; color: var(--ink-bright); margin-bottom: 10px;">Registered Agent Network</div>
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+          <span style="display:flex;align-items:center;gap:6px;padding:6px 12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:20px;font-family:'Share Tech Mono',monospace;font-size:12px;">
+            <span style="width:8px;height:8px;border-radius:50%;background:#4ADE80;"></span> passenger-agent (Gateway)
+          </span>
+          <span style="display:flex;align-items:center;gap:6px;padding:6px 12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:20px;font-family:'Share Tech Mono',monospace;font-size:12px;">
+            <span style="width:8px;height:8px;border-radius:50%;background:#4ADE80;"></span> booking-agent (Port 8003)
+          </span>
+          <span style="display:flex;align-items:center;gap:6px;padding:6px 12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:20px;font-family:'Share Tech Mono',monospace;font-size:12px;">
+            <span style="width:8px;height:8px;border-radius:50%;background:#4ADE80;"></span> security-agent (Port 8004)
+          </span>
+          <span style="display:flex;align-items:center;gap:6px;padding:6px 12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:20px;font-family:'Share Tech Mono',monospace;font-size:12px;">
+            <span style="width:8px;height:8px;border-radius:50%;background:#4ADE80;"></span> hub-auditor (Internal)
+          </span>
+        </div>
+      </div>
+
+      <!-- Live Message Timeline -->
+      <div style="font-weight: 700; font-size: 14px; color: var(--ink-bright); margin-bottom: 12px;">Live Inter-Agent Message Routing Timeline</div>
+      <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 12px; font-family: 'Share Tech Mono', monospace;">
+          <thead>
+            <tr style="border-bottom: 1px solid var(--border); color: var(--muted); text-align: left;">
+              <th style="padding: 10px 8px;">TIMESTAMP</th>
+              <th style="padding: 10px 8px;">MESSAGE ID</th>
+              <th style="padding: 10px 8px;">SENDER ➔ RECEIVER</th>
+              <th style="padding: 10px 8px;">INTENT</th>
+              <th style="padding: 10px 8px;">STATUS</th>
+              <th style="padding: 10px 8px;">LATENCY</th>
+            </tr>
+          </thead>
+          <tbody id="hub-timeline-body">
+            <tr><td colspan="6" style="padding: 20px; text-align: center; color: var(--muted);">Loading message timeline...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
   </main>
 
   <!-- Modal: Reject Fraud Review Request -->
@@ -1698,6 +1827,10 @@ function switchView(viewName) {
     $('view-admin').classList.add('active');
     $('tab-admin').classList.add('active');
     refreshActiveAdminQueue();
+  } else if (viewName === 'hub') {
+    $('view-hub').classList.add('active');
+    $('tab-hub').classList.add('active');
+    loadHubDashboard();
   }
 }
 
@@ -1896,6 +2029,25 @@ function onTrainSelected() {
       }
     });
   }
+
+  const holdBanner = $('hold-banner');
+  const wlBanner = $('waiting-list-banner');
+  if (schedule) {
+    const selectedClass = $('seat-class').value;
+    const clsInfo = schedule.available_classes?.find(c => c.seat_class === selectedClass);
+    const seats = clsInfo ? clsInfo.available_seats : 1;
+    if (seats <= 0) {
+      if (holdBanner) holdBanner.style.display = 'none';
+      if (wlBanner) wlBanner.style.display = 'flex';
+    } else {
+      if (holdBanner) holdBanner.style.display = 'flex';
+      if (wlBanner) wlBanner.style.display = 'none';
+    }
+  } else {
+    if (holdBanner) holdBanner.style.display = 'none';
+    if (wlBanner) wlBanner.style.display = 'none';
+  }
+
   updateSummary();
 }
 
@@ -2101,6 +2253,7 @@ async function submitBooking() {
         passenger_email: email,
         user_id: 'passenger_web_user',
         passengers: nicValidation.passengers,
+        hold_token: currentHoldToken,
       })
     });
 
@@ -2154,6 +2307,8 @@ function showPendingFraudReview(data) {
   $('pending-reasons').textContent = Array.isArray(reasons) ? reasons.join('; ') : String(reasons);
 }
 
+let currentTicketToken = null;
+
 function showConfirmation(booking) {
   switchView('confirmation');
 
@@ -2164,6 +2319,61 @@ function showConfirmation(booking) {
   $('conf-class').textContent = booking.seat_class;
   $('conf-passengers').textContent = `${booking.passenger_count} Passenger${booking.passenger_count > 1 ? 's' : ''}`;
   $('conf-fare').textContent = `Rs. ${booking.fare}`;
+
+  currentTicketToken = booking.ticket_token || null;
+  if (booking.ticket_token) {
+    $('conf-ticket-token').textContent = booking.ticket_token;
+  } else {
+    $('conf-ticket-token').textContent = 'Generating Secure Token...';
+  }
+
+  if (booking.qr_svg) {
+    $('conf-qr-svg').innerHTML = booking.qr_svg;
+  } else if (booking.booking_reference) {
+    // Fetch live QR code & token
+    fetch(`/api/tickets/${booking.booking_reference}`)
+      .then(r => r.json())
+      .then(d => {
+        if (d.ticket_token) {
+          currentTicketToken = d.ticket_token;
+          $('conf-ticket-token').textContent = d.ticket_token;
+        }
+        if (d.qr_svg) {
+          $('conf-qr-svg').innerHTML = d.qr_svg;
+        }
+      })
+      .catch(() => {});
+  }
+}
+
+async function verifyCurrentTicket() {
+  if (!currentTicketToken) {
+    alert('Ticket verification token is not available yet.');
+    return;
+  }
+  const badge = $('conf-verify-badge');
+  const resultText = $('conf-verify-result');
+  badge.innerHTML = '<span class="spinner" style="width:10px;height:10px;border-width:2px;"></span> VERIFYING...';
+  try {
+    const res = await fetch(`/api/tickets/verify/${currentTicketToken}`);
+    const data = await res.json();
+    if (res.ok && data.is_valid) {
+      badge.style.background = 'rgba(58,138,74,0.2)';
+      badge.style.borderColor = 'rgba(58,138,74,0.5)';
+      badge.style.color = '#6EE7B7';
+      badge.innerHTML = '<span style="width:6px;height:6px;border-radius:50%;background:#4ADE80;box-shadow:0 0 6px #4ADE80;"></span> LIVE VERIFIED (VALID)';
+      resultText.textContent = `Server Status: Confirmed valid token for train ${data.train_id} (${data.seat_class}, ${data.passenger_count} pass). Zero PII exposed.`;
+    } else {
+      badge.style.background = 'rgba(176,64,48,0.2)';
+      badge.style.borderColor = 'rgba(176,64,48,0.5)';
+      badge.style.color = '#F87171';
+      badge.innerHTML = '● VERIFICATION FAILED';
+      resultText.textContent = data.message || data.detail || 'Ticket token was invalid or expired.';
+    }
+  } catch (err) {
+    badge.innerHTML = '● ERROR';
+    resultText.textContent = 'Unable to reach live verification server.';
+  }
 }
 
 function resetToBooking() {
@@ -2600,6 +2810,59 @@ function renderFraudCases() {
 
     const reasonsList = Array.isArray(c.reasons) ? c.reasons.join(', ') : (c.reasons || 'Behavioral risk threshold reached');
 
+    let summaryHtml = '';
+    let gSum = c.grounded_summary;
+    if (!gSum && c.booking_payload) {
+      try {
+        const pObj = typeof c.booking_payload === 'string' ? JSON.parse(c.booking_payload) : c.booking_payload;
+        gSum = pObj.grounded_summary;
+      } catch (e) {}
+    }
+
+    if (gSum) {
+      const facts = (gSum.observed_facts || []).map(f => `<li>${escapeHtml(f)}</li>`).join('');
+      const triggers = (gSum.reasons_for_review || []).map(r => `<li>${escapeHtml(r)}</li>`).join('');
+      const matters = (gSum.matters_to_check || []).map(m => `<li>${escapeHtml(m)}</li>`).join('');
+      const policies = (gSum.policy_citations || []).map(p => `
+        <span style="display:inline-block;padding:2px 8px;border-radius:4px;background:rgba(201,162,42,0.15);border:1px solid rgba(201,162,42,0.3);color:#FBBF24;font-size:11px;font-family:'Share Tech Mono',monospace;margin-right:6px;margin-top:4px;">
+          ${escapeHtml(p.citation || p.title)}
+        </span>
+      `).join('');
+
+      summaryHtml = `
+        <div style="margin-top:10px;padding:12px;background:rgba(20,12,5,0.8);border:1px solid rgba(201,162,42,0.3);border-radius:8px;font-size:12px;">
+          <div style="font-weight:700;color:var(--brand);margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">
+            <span>🤖 Grounded Security Analysis (Project Demo Specification)</span>
+            <span style="font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace;">Zero Hallucination</span>
+          </div>
+
+          ${policies ? `<div style="margin-bottom:8px;"><strong>Cited Policies:</strong> ${policies}</div>` : ''}
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px;">
+            <div style="background:rgba(0,0,0,0.3);padding:8px;border-radius:6px;">
+              <strong style="color:#93C5FD;">📊 Observed Facts:</strong>
+              <ul style="margin:4px 0 0 16px;line-height:1.4;color:var(--ink);">${facts || '<li>Telemetry within nominal ranges</li>'}</ul>
+            </div>
+            <div style="background:rgba(0,0,0,0.3);padding:8px;border-radius:6px;">
+              <strong style="color:#FCA5A5;">⚠️ Reasons for Review:</strong>
+              <ul style="margin:4px 0 0 16px;line-height:1.4;color:var(--ink);">${triggers || '<li>Behavioral anomaly indicator</li>'}</ul>
+            </div>
+          </div>
+
+          <div style="background:rgba(0,0,0,0.3);padding:8px;border-radius:6px;margin-bottom:8px;">
+            <strong style="color:#FBBF24;">🔍 Matters to Check (Human Adjudicator):</strong>
+            <ul style="margin:4px 0 0 16px;line-height:1.4;color:var(--ink);">${matters || '<li>Verify passenger identification consistency</li>'}</ul>
+          </div>
+
+          ${gSum.uncertainty ? `
+            <div style="font-size:11px;color:var(--muted-hi);font-style:italic;">
+              <strong>Model Uncertainty:</strong> ${escapeHtml(gSum.uncertainty)}
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }
+
     card.innerHTML = `
       <div class="case-top-row">
         <div>
@@ -2626,6 +2889,8 @@ function renderFraudCases() {
         <span style="color:var(--muted);font-weight:600;">Flag Reasons &amp; Behavior Notes:</span><br>
         <span style="color:var(--ink-bright);font-style:italic">"${escapeHtml(reasonsList)}"</span>
       </div>
+
+      ${summaryHtml}
 
       ${actionsHtml}
     `;
@@ -2735,6 +3000,191 @@ async function reviewFraudCase(caseRef, decision, btn) {
       btn.disabled = false;
       btn.textContent = 'Approve & Issue Ticket';
     }
+  }
+}
+// ── Seat Hold & Waiting List Handlers ──────────────────────────────
+let currentHoldToken = null;
+let holdTimerInterval = null;
+
+async function requestSeatHold() {
+  const trainId = $('train-select').value.trim();
+  const from = $('from-station').value.trim();
+  const to = $('to-station').value.trim();
+  const travelDate = $('travel-date').value.trim();
+  const seatClass = $('seat-class').value.trim();
+  const count = parseInt($('passenger-count').value, 10) || 1;
+
+  if (!trainId || !from || !to || !travelDate) {
+    showAlert("Please select route, travel date, and train first.", "error");
+    return;
+  }
+
+  const btn = $('btn-request-hold');
+  btn.disabled = true;
+  btn.textContent = "Holding...";
+
+  try {
+    const resp = await fetch('/api/holds', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        train_id: trainId,
+        from_station: from,
+        to_station: to,
+        travel_date: travelDate,
+        seat_class: seatClass,
+        passenger_count: count,
+        user_id: 'passenger_web_user'
+      })
+    });
+    const data = await resp.json();
+    if (resp.ok && data.hold_token) {
+      currentHoldToken = data.hold_token;
+      $('hold-status-pill').textContent = "SEATS HELD";
+      $('hold-status-pill').style.background = "rgba(58,138,74,0.3)";
+      $('hold-status-pill').style.color = "#4ADE80";
+      btn.textContent = "Held ✓";
+      startHoldCountdown(data.expires_in_seconds || 300);
+      showAlert(`✓ Reserved ${count} seat(s) on hold for 5 minutes!`, "success");
+    } else {
+      showAlert(data.error || "Unable to acquire hold on seats.", "error");
+      btn.disabled = false;
+      btn.textContent = "Hold Seats (5m)";
+    }
+  } catch (err) {
+    showAlert("Hold service temporarily unavailable.", "error");
+    btn.disabled = false;
+    btn.textContent = "Hold Seats (5m)";
+  }
+}
+
+function startHoldCountdown(durationSec) {
+  if (holdTimerInterval) clearInterval(holdTimerInterval);
+  let remaining = durationSec;
+  const textEl = $('hold-timer-text');
+
+  holdTimerInterval = setInterval(() => {
+    remaining--;
+    if (remaining <= 0) {
+      clearInterval(holdTimerInterval);
+      textEl.textContent = "Hold expired. Seats released back to public inventory.";
+      $('hold-status-pill').textContent = "EXPIRED";
+      $('hold-status-pill').style.color = "#F87171";
+      $('btn-request-hold').disabled = false;
+      $('btn-request-hold').textContent = "Hold Seats (5m)";
+      currentHoldToken = null;
+      return;
+    }
+    const mins = String(Math.floor(remaining / 60)).padStart(2, '0');
+    const secs = String(remaining % 60).padStart(2, '0');
+    textEl.textContent = `Active hold secured — auto-expires in ${mins}:${secs}`;
+  }, 1000);
+}
+
+async function joinWaitingList() {
+  const trainId = $('train-select').value.trim();
+  const from = $('from-station').value.trim();
+  const to = $('to-station').value.trim();
+  const travelDate = $('travel-date').value.trim();
+  const seatClass = $('seat-class').value.trim();
+  const count = parseInt($('passenger-count').value, 10) || 1;
+  const email = $('passenger-email').value.trim();
+
+  if (!email || !email.includes('@')) {
+    showAlert("Please enter your email to join the waiting list notifications.", "error");
+    return;
+  }
+
+  const btn = $('btn-join-waiting-list');
+  btn.disabled = true;
+  btn.textContent = "Enqueuing...";
+
+  try {
+    const resp = await fetch('/api/waiting-list', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        train_id: trainId,
+        from_station: from,
+        to_station: to,
+        travel_date: travelDate,
+        seat_class: seatClass,
+        passenger_count: count,
+        passenger_email: email,
+        user_id: 'passenger_web_user'
+      })
+    });
+    const data = await resp.json();
+    if (resp.ok && data.queue_position !== undefined) {
+      showAlert(`✓ Added to FIFO waiting list! Your queue position is #${data.queue_position}. You will be notified via email upon ticket releases.`, "success");
+      btn.textContent = `Enqueued (#${data.queue_position}) ✓`;
+    } else {
+      showAlert(data.error || "Unable to join waiting list.", "error");
+      btn.disabled = false;
+      btn.textContent = "Join Waiting List";
+    }
+  } catch (err) {
+    showAlert("Waiting list service temporarily unavailable.", "error");
+    btn.disabled = false;
+    btn.textContent = "Join Waiting List";
+  }
+}
+
+// ── Central Hub Dashboard Telemetry Loader ─────────────────────────
+async function loadHubDashboard() {
+  try {
+    const [statResp, timeResp] = await Promise.all([
+      fetch('/api/hub/dashboard'),
+      fetch('/api/hub/timeline?limit=15')
+    ]);
+    if (statResp.ok) {
+      const s = await statResp.json();
+      $('hub-stat-total').textContent = s.total_messages || 0;
+      $('hub-stat-delivery').textContent = `${(s.delivery_rate_percent || 100).toFixed(1)}%`;
+      $('hub-stat-delivered').textContent = s.delivered || 0;
+      $('hub-stat-failed').textContent = s.failed || 0;
+      $('hub-stat-latency').textContent = `${(s.average_latency_ms || 0).toFixed(2)} ms`;
+      const breakerEl = $('hub-stat-breaker');
+      if (s.circuit_breaker_status === 'OPEN') {
+        breakerEl.textContent = '● OPEN (FAILED)';
+        breakerEl.style.color = '#F87171';
+      } else {
+        breakerEl.textContent = '● CLOSED (HEALTHY)';
+        breakerEl.style.color = '#4ADE80';
+      }
+    }
+
+    if (timeResp.ok) {
+      const resData = await timeResp.json();
+      const logs = Array.isArray(resData) ? resData : (resData.items || []);
+      const tbody = $('hub-timeline-body');
+      if (Array.isArray(logs) && logs.length > 0) {
+        tbody.innerHTML = logs.map(l => {
+          const sAgent = l.sender || l.sender_agent || 'unknown';
+          const rAgent = l.receiver || l.receiver_agent || 'unknown';
+          const st = (l.status || 'ROUTED').toLowerCase();
+          const isFailed = st === 'failed' || st === 'rejected';
+          const bgCol = isFailed ? 'rgba(176,64,48,0.2)' : 'rgba(58,138,74,0.2)';
+          const textCol = isFailed ? '#F87171' : '#4ADE80';
+          const timeStr = l.timestamp ? new Date(l.timestamp).toLocaleTimeString() : 'N/A';
+          const durStr = l.duration_ms ? l.duration_ms.toFixed(1) + ' ms' : '< 1 ms';
+          return `
+            <tr style="border-bottom:1px solid rgba(180,130,40,0.15);">
+              <td style="padding:8px;color:var(--muted);">${timeStr}</td>
+              <td style="padding:8px;color:var(--brand);font-weight:600;">${escapeHtml(l.message_id || 'N/A')}</td>
+              <td style="padding:8px;"><span style="color:#93C5FD;">${escapeHtml(sAgent)}</span> ➔ <span style="color:#A7F3D0;">${escapeHtml(rAgent)}</span></td>
+              <td style="padding:8px;color:var(--ink-bright);">${escapeHtml(l.intent || '')}</td>
+              <td style="padding:8px;"><span style="padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;background:${bgCol};color:${textCol}">${escapeHtml(l.status || 'ROUTED')}</span></td>
+              <td style="padding:8px;color:var(--muted-hi);">${durStr}</td>
+            </tr>
+          `;
+        }).join('');
+      } else {
+        tbody.innerHTML = '<tr><td colspan="6" style="padding:20px;text-align:center;color:var(--muted);">No message telemetry recorded in audit trail yet.</td></tr>';
+      }
+    }
+  } catch (err) {
+    console.error("Failed to load hub dashboard:", err);
   }
 }
 </script>

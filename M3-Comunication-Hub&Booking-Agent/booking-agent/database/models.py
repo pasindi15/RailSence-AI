@@ -20,6 +20,7 @@ logic, no fare/policy calculations.
 from __future__ import annotations
 
 import enum
+import json
 from datetime import date, datetime, time
 from decimal import Decimal
 
@@ -49,8 +50,47 @@ from .database import Base
 
 class BookingStatus(str, enum.Enum):
     """Lifecycle states for a booking row."""
-    CONFIRMED        = "CONFIRMED"
-    CANCELLED        = "CANCELLED"
+    HELD                 = "HELD"
+    PENDING_FRAUD_REVIEW = "PENDING_FRAUD_REVIEW"
+    CONFIRMED            = "CONFIRMED"
+    CANCELLED            = "CANCELLED"
+    EXPIRED              = "EXPIRED"
+    REJECTED             = "REJECTED"
+
+
+class HoldStatus(str, enum.Enum):
+    """Lifecycle states for a temporary seat hold."""
+    ACTIVE    = "ACTIVE"
+    CONFIRMED = "CONFIRMED"
+    RELEASED  = "RELEASED"
+    EXPIRED   = "EXPIRED"
+
+
+class WaitingListStatus(str, enum.Enum):
+    """Lifecycle states for a waiting-list queue entry."""
+    WAITING   = "WAITING"
+    OFFERED   = "OFFERED"
+    ALLOCATED = "ALLOCATED"
+    ACCEPTED  = "ACCEPTED"
+    EXPIRED   = "EXPIRED"
+    CANCELLED = "CANCELLED"
+
+
+class IdempotencyStatus(str, enum.Enum):
+    """Processing state for an idempotent mutation operation."""
+    PROCESSING = "PROCESSING"
+    COMMITTED  = "COMMITTED"
+    COMPLETED  = "COMPLETED"
+    CONFIRMED  = "CONFIRMED"
+    FAILED     = "FAILED"
+
+
+class InvestigationLabel(str, enum.Enum):
+    """Ground truth feedback label assigned by human investigator."""
+    UNKNOWN         = "UNKNOWN"
+    LEGITIMATE      = "LEGITIMATE"
+    FALSE_POSITIVE  = "FALSE_POSITIVE"
+    CONFIRMED_FRAUD = "CONFIRMED_FRAUD"
 
 
 class CancellationStatus(str, enum.Enum):
@@ -75,6 +115,7 @@ class AuditStatus(str, enum.Enum):
     ROUTED        = "ROUTED"
     REJECTED      = "REJECTED"
     FAILED        = "FAILED"
+
 
 
 # ===========================================================================
@@ -179,6 +220,8 @@ class Booking(Base):
 
     id:                Mapped[int]            = mapped_column(Integer, primary_key=True, autoincrement=True)
     booking_reference: Mapped[str]            = mapped_column(String(50), nullable=False, unique=True, index=True)
+    ticket_token:      Mapped[str | None]     = mapped_column(String(64), nullable=True, unique=True, index=True)
+    hold_id:           Mapped[int | None]     = mapped_column(Integer, nullable=True, index=True)
     user_id:           Mapped[str]            = mapped_column(String(100), nullable=False, index=True)
     train_id:          Mapped[int]            = mapped_column(
                            Integer, ForeignKey("trains.id", ondelete="RESTRICT"), nullable=False, index=True
@@ -299,6 +342,7 @@ class AuditLog(Base):
 
     id:             Mapped[int]          = mapped_column(Integer, primary_key=True, autoincrement=True)
     message_id:     Mapped[str]          = mapped_column(String(100), nullable=False, index=True)
+    correlation_id: Mapped[str | None]   = mapped_column(String(100), nullable=True, index=True)
     sender_agent:   Mapped[str]          = mapped_column(String(100), nullable=False)
     receiver_agent: Mapped[str]          = mapped_column(String(100), nullable=False)
     intent:         Mapped[str]          = mapped_column(String(100), nullable=False)
@@ -306,6 +350,8 @@ class AuditLog(Base):
                         SAEnum(AuditStatus, name="audit_status"), nullable=False
                     )
     error_message:  Mapped[str | None]   = mapped_column(Text, nullable=True)
+    duration_ms:    Mapped[int | None]   = mapped_column(Integer, nullable=True)
+    retry_count:    Mapped[int]          = mapped_column(Integer, nullable=False, default=0, server_default="0")
     timestamp:      Mapped[datetime]     = mapped_column(
                         DateTime(timezone=True), nullable=False, server_default=func.now()
                     )
@@ -407,4 +453,185 @@ class FraudReview(Base):
 
     def __repr__(self) -> str:
         return f"<FraudReview id={self.id} case={self.case_reference!r} status={self.status}>"
+
+
+# ===========================================================================
+# I. seat_holds (Server-controlled expiring reservation holds)
+# ===========================================================================
+
+class SeatHold(Base):
+    """
+    Temporary seat hold record with server-controlled expiration.
+    Guarantees that a seat is held while booking/payment/review completes,
+    and automatically releases seats once expired.
+    """
+    __tablename__ = "seat_holds"
+
+    id:           Mapped[int]        = mapped_column(Integer, primary_key=True, autoincrement=True)
+    hold_token:   Mapped[str]        = mapped_column(String(64), nullable=False, unique=True, index=True)
+    schedule_id:  Mapped[int]        = mapped_column(
+        Integer, ForeignKey("train_schedules.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    seat_class:   Mapped[str]        = mapped_column(String(50), nullable=False)
+    seat_count:   Mapped[int]        = mapped_column(Integer, nullable=False)
+    nic_hashes:   Mapped[str]        = mapped_column(Text, nullable=False)  # JSON array of hashed NICs
+    user_id:      Mapped[str]        = mapped_column(String(100), nullable=False, index=True)
+    status:       Mapped[HoldStatus] = mapped_column(
+        SAEnum(HoldStatus, name="hold_status"),
+        nullable=False,
+        default=HoldStatus.ACTIVE,
+        server_default=HoldStatus.ACTIVE.value,
+    )
+    expires_at:   Mapped[datetime]   = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+    created_at:   Mapped[datetime]   = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    def is_active(self) -> bool:
+        from datetime import datetime, timezone
+        return self.status == HoldStatus.ACTIVE and self.expires_at > datetime.now(timezone.utc)
+
+    def __repr__(self) -> str:
+        return f"<SeatHold id={self.id} token={self.hold_token!r} status={self.status}>"
+
+
+# ===========================================================================
+# J. waiting_list_entries (Deterministic FIFO Queue)
+# ===========================================================================
+
+class WaitingListEntry(Base):
+    """
+    Deterministic FIFO waiting list entry for high-demand train schedules.
+    On seat release (cancellation, expiry, rejection), eligible requests
+    receive a time-limited offer.
+    """
+    __tablename__ = "waiting_list_entries"
+
+    id:                Mapped[int]               = mapped_column(Integer, primary_key=True, autoincrement=True)
+    queue_token:       Mapped[str]               = mapped_column(String(64), nullable=False, unique=True, index=True)
+    schedule_id:       Mapped[int]               = mapped_column(
+        Integer, ForeignKey("train_schedules.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    train_id:          Mapped[int]               = mapped_column(
+        Integer, ForeignKey("trains.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    seat_class:        Mapped[str]               = mapped_column(String(50), nullable=False)
+    passenger_count:   Mapped[int]               = mapped_column(Integer, nullable=False)
+    passenger_email:   Mapped[str | None]        = mapped_column(String(255), nullable=True)
+    user_id:           Mapped[str]               = mapped_column(String(100), nullable=False, index=True)
+    passenger_payload: Mapped[str]               = mapped_column(Text, nullable=False)  # JSON passenger details
+    status:            Mapped[WaitingListStatus] = mapped_column(
+        SAEnum(WaitingListStatus, name="waiting_list_status"),
+        nullable=False,
+        default=WaitingListStatus.WAITING,
+        server_default=WaitingListStatus.WAITING.value,
+    )
+    offer_expires_at:  Mapped[datetime | None]   = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at:        Mapped[datetime]          = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), index=True
+    )
+
+    def __repr__(self) -> str:
+        return f"<WaitingListEntry id={self.id} token={self.queue_token!r} status={self.status}>"
+
+
+# ===========================================================================
+# K. idempotency_records (Atomic Mutation Deduplication)
+# ===========================================================================
+
+class IdempotencyRecord(Base):
+    """
+    Persists business mutation idempotency state.
+    Guarantees that replayed requests with the same key return identical results
+    without executing duplicate booking, cancellation, or hold mutations.
+    """
+    __tablename__ = "idempotency_records"
+
+    id:               Mapped[int]               = mapped_column(Integer, primary_key=True, autoincrement=True)
+    idempotency_key:  Mapped[str]               = mapped_column(String(100), nullable=False, index=True)
+    actor:            Mapped[str]               = mapped_column(String(100), nullable=False, index=True)
+    operation:        Mapped[str]               = mapped_column(String(50), nullable=False)
+    request_hash:     Mapped[str]               = mapped_column(String(64), nullable=False)
+    status:           Mapped[IdempotencyStatus] = mapped_column(
+        SAEnum(IdempotencyStatus, name="idempotency_status"),
+        nullable=False,
+        default=IdempotencyStatus.PROCESSING,
+        server_default=IdempotencyStatus.PROCESSING.value,
+    )
+    response_payload: Mapped[str | None]        = mapped_column(Text, nullable=True)
+    created_at:       Mapped[datetime]          = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    expires_at:       Mapped[datetime | None]   = mapped_column(DateTime(timezone=True), nullable=True)
+
+    __table_args__ = (
+        Index("ix_idempotency_actor_key", "actor", "operation", "idempotency_key", unique=True),
+    )
+
+    @property
+    def payload_hash(self) -> str:
+        return self.request_hash
+
+    @property
+    def booking_reference(self) -> str | None:
+        if not self.response_payload:
+            return None
+        try:
+            d = json.loads(self.response_payload)
+            return d.get("booking_reference")
+        except Exception:
+            return None
+
+    def __repr__(self) -> str:
+        return f"<IdempotencyRecord id={self.id} key={self.idempotency_key!r} status={self.status}>"
+
+
+# ===========================================================================
+# L. fraud_investigation_labels (Ground Truth Reviewer Attribution)
+# ===========================================================================
+
+class FraudInvestigationLabel(Base):
+    """
+    Independent ground-truth investigation label assigned by human reviewer.
+    Allows distinguishing between operational approval and model accuracy ground truth.
+    """
+    __tablename__ = "fraud_investigation_labels"
+
+    id:              Mapped[int]                = mapped_column(Integer, primary_key=True, autoincrement=True)
+    case_reference:  Mapped[str]                = mapped_column(String(50), nullable=False, index=True)
+    label:           Mapped[InvestigationLabel] = mapped_column(
+        SAEnum(InvestigationLabel, name="investigation_label"), nullable=False, default=InvestigationLabel.CONFIRMED_FRAUD
+    )
+    evidence_notes:  Mapped[str | None]         = mapped_column(Text, nullable=True)
+    reviewer_id:     Mapped[str]                = mapped_column(String(100), nullable=False, default="admin")
+    created_at:      Mapped[datetime]           = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    def __init__(self, **kwargs: Any) -> None:
+        if "true_label" in kwargs and "label" not in kwargs:
+            tl = kwargs.pop("true_label")
+            if isinstance(tl, str):
+                kwargs["label"] = InvestigationLabel(tl.upper()) if tl.upper() in InvestigationLabel._value2member_map_ else InvestigationLabel.CONFIRMED_FRAUD
+            else:
+                kwargs["label"] = tl
+        if "reviewer_notes" in kwargs and "evidence_notes" not in kwargs:
+            kwargs["evidence_notes"] = kwargs.pop("reviewer_notes")
+        if "reviewer_id" not in kwargs:
+            kwargs["reviewer_id"] = "admin"
+        kwargs.pop("primary_nic_hash", None)
+        super().__init__(**kwargs)
+
+    @property
+    def true_label(self) -> str:
+        return self.label.value if hasattr(self.label, "value") else str(self.label)
+
+    @property
+    def reviewer_notes(self) -> str | None:
+        return self.evidence_notes
+
+    def __repr__(self) -> str:
+        return f"<FraudInvestigationLabel id={self.id} case={self.case_reference!r} label={self.label}>"
+
+
 

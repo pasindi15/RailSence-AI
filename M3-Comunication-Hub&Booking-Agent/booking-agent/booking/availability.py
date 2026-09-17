@@ -223,24 +223,71 @@ def get_schedule_for_trip(
 # Seat Availability Calculations
 # ---------------------------------------------------------------------------
 
+import os
+from datetime import date, datetime, time, timedelta, timezone
+try:
+    from zoneinfo import ZoneInfo
+    COLOMBO_TZ = ZoneInfo("Asia/Colombo")
+except Exception:
+    COLOMBO_TZ = timezone(timedelta(hours=5, minutes=30))
+
+MINIMUM_CONNECTION_MINUTES = int(os.getenv("MIN_CONNECTION_MINUTES", "30"))
+
+
+def calculate_journey_interval(
+    travel_date: date,
+    departure_time: time,
+    arrival_time: time,
+) -> tuple[datetime, datetime]:
+    """
+    Construct timezone-aware start and end datetimes for a journey (Asia/Colombo UTC+05:30).
+    Properly accounts for overnight journeys crossing midnight boundaries.
+    """
+    dep_dt = datetime.combine(travel_date, departure_time).replace(tzinfo=COLOMBO_TZ)
+    if arrival_time < departure_time:
+        # Overnight journey spans into next calendar day
+        arr_dt = datetime.combine(travel_date + timedelta(days=1), arrival_time).replace(tzinfo=COLOMBO_TZ)
+    else:
+        arr_dt = datetime.combine(travel_date, arrival_time).replace(tzinfo=COLOMBO_TZ)
+    return dep_dt, arr_dt
+
+
+def validate_journey_connection(
+    journey1_end: datetime,
+    journey2_start: datetime,
+    station1: str,
+    station2: str,
+    min_connection_minutes: int | None = None,
+) -> tuple[bool, str]:
+    """
+    Validate that a transfer between two sequential train journeys is physically feasible.
+    """
+    min_minutes = min_connection_minutes if min_connection_minutes is not None else MINIMUM_CONNECTION_MINUTES
+    gap_minutes = (journey2_start - journey1_end).total_seconds() / 60.0
+
+    if gap_minutes < 0:
+        return False, "NEGATIVE_INTERVAL: Second journey departs before preceding journey arrives."
+    elif station1.strip().lower() == station2.strip().lower():
+        if gap_minutes < min_minutes:
+            return False, f"INSUFFICIENT_TRANSFER_TIME: Only {int(gap_minutes)}m buffer at {station1}, minimum required is {min_minutes}m."
+        return True, "FEASIBLE"
+    else:
+        # Transfer across different stations requires expanded travel buffer
+        required_gap = min_minutes * 2
+        if gap_minutes < required_gap:
+            return False, f"TRANSFER_DATA_UNAVAILABLE_OR_INSUFFICIENT: Inter-station transfer between {station1} and {station2} requires at least {required_gap}m, but only {int(gap_minutes)}m is available."
+        return True, "FEASIBLE"
+
+
 def get_booked_seats(db: Session, schedule_id: int, seat_class: str) -> int:
     """
     Calculate the total number of booked seats for a given schedule and seat class.
 
     Rules:
-    - Counts only bookings with status = CONFIRMED.
-    - CANCELLED bookings do NOT consume capacity.
+    - Counts bookings with status = CONFIRMED.
+    - Counts active unexpired SeatHolds (so held seats are not double-allocated).
+    - CANCELLED, EXPIRED, and REJECTED bookings do NOT consume capacity.
     - Scoped strictly to the specific schedule and matching seat class.
-
-    Parameters
-    ----------
-    db:          Active SQLAlchemy database session.
-    schedule_id: Integer primary key of the TrainSchedule.
-    seat_class:  Seat class string (e.g., 'First Class' or 'Second Class').
-
-    Returns
-    -------
-    int: Total confirmed booked seats.
     """
     canonical_class = normalize_seat_class(seat_class)
     booked_count = (
@@ -252,7 +299,15 @@ def get_booked_seats(db: Session, schedule_id: int, seat_class: str) -> int:
         )
         .scalar()
     )
-    return int(booked_count or 0)
+    # Include unexpired active seat holds
+    try:
+        from .lifecycle import get_active_hold_seat_count
+        hold_count = get_active_hold_seat_count(db, schedule_id=schedule_id, seat_class=canonical_class)
+    except Exception:
+        hold_count = 0
+
+    return int(booked_count or 0) + int(hold_count or 0)
+
 
 
 def get_available_seats(
