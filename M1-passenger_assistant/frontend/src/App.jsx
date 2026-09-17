@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Sidebar from "./components/Sidebar.jsx";
 import ChatWindow from "./components/ChatWindow.jsx";
+import LoginPage from "./components/LoginPage.jsx";
 import { sendMessage } from "./api.js";
 
 function newChatId() {
@@ -8,9 +9,14 @@ function newChatId() {
 }
 
 export default function App() {
+  const [passenger, setPassenger] = useState(null);
   const [chats, setChats] = useState([{ id: newChatId(), title: "New conversation", messages: [] }]);
   const [activeChatId, setActiveChatId] = useState(chats[0].id);
   const [loading, setLoading] = useState(false);
+
+  if (!passenger) {
+    return <LoginPage onLogin={(p) => setPassenger(p)} />;
+  }
 
   const activeChat = chats.find((c) => c.id === activeChatId);
 
@@ -69,6 +75,8 @@ export default function App() {
         activeChatId={activeChatId}
         onNewChat={handleNewChat}
         onSelectChat={handleSelectChat}
+        passenger={passenger}
+        onLogout={() => setPassenger(null)}
       />
       <ChatWindow messages={activeChat.messages} onSend={handleSend} loading={loading} />
     </div>
