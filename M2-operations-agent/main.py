@@ -18,6 +18,7 @@ import logging
 import os
 import uuid
 import asyncio
+import threading
 from pathlib import Path
 from typing import Optional
 
@@ -48,6 +49,13 @@ limiter = Limiter(key_func=get_remote_address, default_limits=["120/minute"])
 
 @asynccontextmanager
 async def lifespan(_app):
+    try:
+        incident_retriever._load_root_env()
+        if os.getenv("SUPABASE_URL") and os.getenv("SUPABASE_PUBLISHABLE_KEY"):
+            await asyncio.to_thread(incident_retriever._get_embedding_model)
+            logger.info("Warmed RAG embedding model")
+    except Exception as exc:
+        logger.warning("RAG model warm-up skipped: %s", exc.__class__.__name__)
     try:
         await hub_client.register_with_hub()
         logger.info("Registered with agent Hub")
@@ -150,6 +158,52 @@ def _record_event(event: dict, destinations: list[str]) -> None:
         logger.info("Supabase events unavailable; retained in-memory event")
 
 
+async def _persist_prediction_side_effects(
+    request: Request,
+    route: str,
+    train_id: str,
+    delay: float,
+    model_version: str,
+) -> None:
+    alert = await hub_client.publish_delay_alert(route, train_id, delay)
+    if alert.get("event"):
+        await asyncio.to_thread(_record_event, alert["event"], alert.get("destinations", []))
+    await asyncio.to_thread(
+        _audit,
+        "prediction",
+        request,
+        {"route": route, "train_id": train_id, "delay": delay, "model": model_version},
+    )
+
+
+def _run_prediction_side_effects(
+    request: Request,
+    route: str,
+    train_id: str,
+    delay: float,
+    model_version: str,
+) -> None:
+    asyncio.run(
+        _persist_prediction_side_effects(
+            request, route, train_id, delay, model_version
+        )
+    )
+
+
+def _start_prediction_side_effects(
+    request: Request,
+    route: str,
+    train_id: str,
+    delay: float,
+    model_version: str,
+) -> None:
+    threading.Thread(
+        target=_run_prediction_side_effects,
+        args=(request, route, train_id, delay, model_version),
+        daemon=True,
+    ).start()
+
+
 def _metric_file(path: Path) -> dict:
     try:
         return json.loads(path.read_text(encoding="utf-8"))
@@ -228,6 +282,18 @@ def _historical_delay_estimate(
     middle = len(delays) // 2
     estimate = delays[middle] if len(delays) % 2 else (delays[middle - 1] + delays[middle]) / 2
     return round(estimate, 1), len(candidates)
+
+
+def _find_historical_train(train_id: str, route: str) -> dict | None:
+    """Return the latest matching observation for a known train and route."""
+    matches = [
+        row for row in HISTORY
+        if row.get("train_id", "").casefold() == train_id.casefold()
+        and row.get("route", "").casefold() == route.casefold()
+    ]
+    if not matches:
+        return None
+    return max(matches, key=lambda row: row.get("scheduled_time", ""))
 
 
 class DelayPredictionRequest(BaseModel):
@@ -490,6 +556,37 @@ async def predict_delay(request: Request, req: DelayPredictionRequest):
         query_parts.append(req.weather.value)
     if req.incident_type and req.incident_type != IncidentType.none:
         query_parts.append(req.incident_type.value.replace("_", " "))
+    historical_train = _find_historical_train(req.train_id, req.route)
+    if historical_train:
+        observed_delay = round(float(historical_train.get("delay_minutes", 0)), 1)
+        incident_note = str(historical_train.get("incident_note", "")).strip()
+        citations = incident_retriever.format_incident_citations([historical_train])
+        explanation = (
+            f"Historical observation for {req.train_id}: {observed_delay} minutes on "
+            f"{req.route}."
+        )
+        if incident_note:
+            explanation += f" Recorded operational cause: {incident_note}"
+        response = DelayPredictionResponse(
+            route=req.route,
+            train_id=req.train_id,
+            predicted_delay_minutes=observed_delay,
+            confidence="high",
+            explanation=explanation,
+            top_contributing_features=[
+                {"feature": "historical_train_observation", "importance": 1.0}
+            ],
+            similar_past_incidents=citations,
+            model_version="historical-observation-v1",
+            retrieval_method="historical_record",
+            explanation_method="historical_record",
+        )
+        _predictions.append(response.model_dump())
+        _start_prediction_side_effects(
+            request, req.route, req.train_id, observed_delay, response.model_version
+        )
+        return response
+
     retrieval = incident_retriever.retrieve_similar_incidents(
         " ".join(query_parts),
         top_k=3,
@@ -527,10 +624,13 @@ async def predict_delay(request: Request, req: DelayPredictionRequest):
             explanation_method=grounded["method"],
         )
         _predictions.append(response.model_dump())
-        alert = await hub_client.publish_delay_alert(req.route, req.train_id, response.predicted_delay_minutes)
-        if alert.get("event"):
-            await asyncio.to_thread(_record_event, alert["event"], alert.get("destinations", []))
-        await asyncio.to_thread(_audit, "prediction", request, {"route": req.route, "train_id": req.train_id, "delay": response.predicted_delay_minutes, "model": response.model_version})
+        _start_prediction_side_effects(
+            request,
+            req.route,
+            req.train_id,
+            response.predicted_delay_minutes,
+            response.model_version,
+        )
         return response
 
     result = delay_model.predict_delay(
@@ -566,10 +666,13 @@ async def predict_delay(request: Request, req: DelayPredictionRequest):
         explanation_method=grounded["method"],
     )
     _predictions.append(response.model_dump())
-    alert = await hub_client.publish_delay_alert(req.route, req.train_id, response.predicted_delay_minutes)
-    if alert.get("event"):
-        await asyncio.to_thread(_record_event, alert["event"], alert.get("destinations", []))
-    await asyncio.to_thread(_audit, "prediction", request, {"route": req.route, "train_id": req.train_id, "delay": response.predicted_delay_minutes, "model": response.model_version})
+    _start_prediction_side_effects(
+        request,
+        req.route,
+        req.train_id,
+        response.predicted_delay_minutes,
+        response.model_version,
+    )
     return response
 
 
