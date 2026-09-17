@@ -97,6 +97,15 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
+from fastapi.middleware.cors import CORSMiddleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 # ---------------------------------------------------------------------------
 # Health
@@ -114,6 +123,26 @@ async def health_check() -> dict:
     Used by container orchestrators and the Agent Hub's readiness checks.
     """
     return {"service": "booking-agent", "status": "ok"}
+
+
+@app.get(
+    "/booking-options",
+    tags=["schedules"],
+    summary="Get available train schedules and seat counts for route and date",
+)
+def get_booking_options(
+    from_station: str,
+    to_station: str,
+    travel_date: str,
+    db: Session = Depends(get_db),
+) -> JSONResponse:
+    from booking.availability import get_schedules_for_route
+    try:
+        d = date.fromisoformat(travel_date)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid date format, expected YYYY-MM-DD")
+    options = get_schedules_for_route(db, from_station, to_station, d)
+    return JSONResponse(status_code=200, content={"trains": options})
 
 
 # ---------------------------------------------------------------------------

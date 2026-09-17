@@ -22,7 +22,7 @@ from pathlib import Path
 from typing import Optional
 
 from fastapi import Body, FastAPI, HTTPException, Request, status
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 import bleach
 from pydantic import BaseModel, Field, field_validator
@@ -41,7 +41,7 @@ import supabase_store
 from admin import admin_db
 from admin.admin_router import router as admin_router
 
-logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
+logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO").upper())
 logger = logging.getLogger("railsense.operations")
 limiter = Limiter(key_func=get_remote_address, default_limits=["120/minute"])
 
@@ -64,6 +64,15 @@ app = FastAPI(
 app.include_router(admin_router)
 app.mount("/admin", StaticFiles(directory=Path(__file__).parent / "admin_ui", html=True), name="admin_ui")
 app.state.limiter = limiter
+
+from fastapi.middleware.cors import CORSMiddleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 app.add_middleware(SlowAPIMiddleware)
 
 
@@ -188,6 +197,37 @@ class IncidentType(str, Enum):
     weather = "weather"
     track_obstruction = "track_obstruction"
     staffing = "staffing"
+
+
+def _historical_delay_estimate(
+    route: str,
+    scheduled_time: datetime,
+    station: Optional[str],
+    weather: Optional[WeatherCondition],
+    day_type: Optional[DayType],
+    incident_type: Optional[IncidentType],
+) -> tuple[float, int]:
+    """Estimate delay from the closest matching records when no model is trained."""
+    candidates = HISTORY
+    filters = [
+        lambda row: row.get("route") == route,
+        lambda row: station and row.get("station") == station,
+        lambda row: row.get("scheduled_time", "").startswith(f"{scheduled_time.date()}"),
+        lambda row: row.get("weather") == weather.value if weather else True,
+        lambda row: row.get("day_type") == day_type.value if day_type else True,
+        lambda row: row.get("incident_type") == incident_type.value if incident_type else True,
+    ]
+    for predicate in filters:
+        narrowed = [row for row in candidates if predicate(row)]
+        if narrowed:
+            candidates = narrowed
+
+    delays = sorted(float(row.get("delay_minutes", 0)) for row in candidates)
+    if not delays:
+        raise HTTPException(status_code=503, detail="No historical operations data is available for this request")
+    middle = len(delays) // 2
+    estimate = delays[middle] if len(delays) % 2 else (delays[middle - 1] + delays[middle]) / 2
+    return round(estimate, 1), len(candidates)
 
 
 class DelayPredictionRequest(BaseModel):
@@ -462,13 +502,14 @@ async def predict_delay(request: Request, req: DelayPredictionRequest):
     prefer_llm = bool(__import__("os").getenv("ANTHROPIC_API_KEY"))
 
     if not delay_model.is_model_available():
-        baseline = 4.0
-        if req.weather in (WeatherCondition.heavy_rain, WeatherCondition.fog):
-            baseline += 6.0
-        elif req.weather == WeatherCondition.light_rain:
-            baseline += 2.0
-        if req.day_type == DayType.public_holiday:
-            baseline += 3.0
+        baseline, historical_sample_size = _historical_delay_estimate(
+            req.route,
+            req.scheduled_time,
+            req.station,
+            req.weather,
+            req.day_type,
+            req.incident_type,
+        )
 
         grounded = explanation_layer.compose_explanation(
             req.route, baseline, [], incidents, prefer_llm=prefer_llm
@@ -477,11 +518,11 @@ async def predict_delay(request: Request, req: DelayPredictionRequest):
             route=req.route,
             train_id=req.train_id,
             predicted_delay_minutes=round(baseline, 1),
-            confidence="low",
+            confidence="low" if historical_sample_size < 10 else "medium",
             explanation=grounded["explanation"],
             top_contributing_features=[],
             similar_past_incidents=citations,
-            model_version="phase1-heuristic-v0",
+            model_version="historical-median-v1",
             retrieval_method=retrieval["method"],
             explanation_method=grounded["method"],
         )
@@ -598,34 +639,60 @@ async def hub_message(request: Request, message: HubMessage):
         raise HTTPException(status_code=400, detail="unsupported hub intent")
     payload = message.payload or {}
     
-    # Robust extraction of route and train_id from payload or raw_text/stations
+    # Prefer entities in the original passenger text so M2 never answers for a
+    # fabricated route or train supplied by an upstream fallback.
     route = payload.get("route")
-    if not route:
-        stations = payload.get("stations")
-        if isinstance(stations, list) and len(stations) >= 2:
-            route = f"{stations[0]} - {stations[1]}"
-        elif isinstance(stations, str) and stations:
-            route = f"Colombo Fort - {stations}"
-        else:
-            route = "Colombo Fort - Kandy"
+    raw_text = str(payload.get("raw_text", ""))
+    stations = payload.get("stations")
+    if isinstance(stations, list):
+        stations = [str(item).strip() for item in stations if str(item).strip()]
+    else:
+        stations = []
+    known_stations = sorted(
+        {station for row in HISTORY for station in (row.get("route", "").split(" - ")) if station},
+        key=len,
+        reverse=True,
+    )
+    text_stations = [station for station in known_stations if station.casefold() in raw_text.casefold()]
+    route_stations = text_stations[:2] if len(text_stations) >= 2 else stations[:2]
+    if len(route_stations) >= 2:
+        route = f"{route_stations[0]} - {route_stations[1]}"
+    if not route or not str(route).strip():
+        raise HTTPException(status_code=422, detail="delay_check requires a route with origin and destination")
 
     train_id = payload.get("train_id")
-    if not train_id:
-        raw_text = payload.get("raw_text", "")
-        import re
-        match = re.search(r"[A-Z]{2}-\d{4}", raw_text)
-        if match:
-            train_id = match.group(0)
-        else:
-            train_id = "PM-4082"
+    import re
+    match = re.search(r"\b[A-Z]{2}-\d{3,4}\b", raw_text)
+    if match:
+        train_id = match.group(0)
+    if not train_id or (str(train_id) == "PM-4082" and not match):
+        raise HTTPException(status_code=422, detail="delay_check requires a train identifier")
+
+    scheduled_time = payload.get("scheduled_time")
+    if not scheduled_time and payload.get("time"):
+        try:
+            scheduled_time = datetime.combine(
+                datetime.now(timezone.utc).date(),
+                datetime.strptime(str(payload["time"]), "%H:%M").time(),
+                tzinfo=timezone.utc,
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail="time must use HH:MM format") from exc
+    scheduled_time = scheduled_time or datetime.now(timezone.utc)
+    if isinstance(scheduled_time, str):
+        try:
+            scheduled_time = datetime.fromisoformat(scheduled_time.replace("Z", "+00:00"))
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail="scheduled_time must be ISO-8601") from exc
+    day_type = payload.get("day_type") or ("weekend" if scheduled_time.weekday() >= 5 else "weekday")
 
     try:
         prediction_request = DelayPredictionRequest(
             route=route,
             train_id=train_id,
-            scheduled_time=payload.get("scheduled_time", datetime.now(timezone.utc)),
+            scheduled_time=scheduled_time,
             weather=payload.get("weather"),
-            day_type=payload.get("day_type", "weekday"),
+            day_type=day_type,
             station=payload.get("station"),
             incident_type=payload.get("incident_type", "none"),
         )

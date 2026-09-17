@@ -46,7 +46,7 @@ from rag import chatbot as engineer_chatbot
 import hub_client
 import supabase_store
 
-logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
+logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO").upper())
 logger = logging.getLogger("railsense.maintenance")
 limiter = Limiter(key_func=get_remote_address, default_limits=["120/minute"])
 
@@ -58,9 +58,21 @@ UI_DIR = AGENT_DIR / "ui"
 _in_memory_events: list[dict] = []
 _in_memory_reports: list[dict] = []
 
+# Simple cache — avoids hitting Supabase on every request
+_asset_cache: list[dict] = []
+_asset_cache_ts: float = 0.0
+_CACHE_TTL = 60.0  # seconds
+
 
 @asynccontextmanager
 async def lifespan(_app):
+    # Pre-warm the TF-IDF index and SentenceTransformer model so first request is fast
+    try:
+        manual_retriever._ensure_tfidf()
+        manual_retriever._ensure_st_model()
+        logger.info("RAG indexes pre-warmed")
+    except Exception as exc:
+        logger.warning("RAG pre-warm failed: %s", exc)
     try:
         await hub_client.register_with_hub()
         logger.info("Registered with agent Hub")
@@ -77,6 +89,15 @@ app = FastAPI(
 )
 app.state.limiter = limiter
 app.add_middleware(SlowAPIMiddleware)
+
+from fastapi.middleware.cors import CORSMiddleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Serve train images — place images in ui/trains/<name>.jpg
 _trains_dir = UI_DIR / "trains"
@@ -191,10 +212,16 @@ def _load_csv_history() -> list[dict]:
 
 
 def _get_history() -> list[dict]:
+    import time
+    global _asset_cache, _asset_cache_ts
+    if _asset_cache and (time.time() - _asset_cache_ts) < _CACHE_TTL:
+        return _asset_cache
     rows = supabase_store.fetch_assets_history()
-    if rows is not None:
-        return rows
-    return _load_csv_history()
+    if rows is None:
+        rows = _load_csv_history()
+    _asset_cache = rows
+    _asset_cache_ts = time.time()
+    return rows
 
 
 def _dashboard_aggregates(rows: list[dict]) -> dict:

@@ -18,6 +18,7 @@ Responsibilities:
 
 from __future__ import annotations
 
+import asyncio
 import os
 import re
 import sys
@@ -31,7 +32,7 @@ import httpx
 import jwt
 from fastapi import FastAPI, HTTPException, Query, Request, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr, Field
 
@@ -64,6 +65,13 @@ else:
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "change-me")
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 HTML_FILE = _CURRENT_DIR / "index.html"
+USER_HTML_FILE = _CURRENT_DIR / "user.html"
+ADMIN_HTML_FILE = _CURRENT_DIR / "admin.html"
+
+PASSENGER_AGENT_URL = os.getenv("PASSENGER_AGENT_URL", "http://localhost:8001").rstrip("/")
+OPERATIONS_AGENT_URL = os.getenv("OPERATIONS_AGENT_URL", "http://localhost:8005").rstrip("/")
+MAINTENANCE_AGENT_URL = os.getenv("MAINTENANCE_AGENT_URL", "http://localhost:8006").rstrip("/")
+SECURITY_AGENT_URL = os.getenv("SECURITY_AGENT_URL", "http://localhost:8004").rstrip("/")
 
 app = FastAPI(
     title="RailSense AI - Passenger Web & Booking Gateway",
@@ -242,30 +250,42 @@ def extract_cancellation_intent_and_entities(message: str) -> tuple[bool, dict[s
 # ---------------------------------------------------------------------------
 @app.get("/", include_in_schema=False)
 def get_index():
+    return RedirectResponse(url="/user", status_code=status.HTTP_302_FOUND)
+
+
+@app.get("/user", include_in_schema=False)
+@app.get("/user/chat", include_in_schema=False)
+@app.get("/user/booking", include_in_schema=False)
+@app.get("/user/confirmation", include_in_schema=False)
+def get_user_portal():
+    if USER_HTML_FILE.is_file():
+        return FileResponse(USER_HTML_FILE)
     if HTML_FILE.is_file():
         return FileResponse(HTML_FILE)
-    raise HTTPException(status_code=404, detail="index.html not found")
+    raise HTTPException(status_code=404, detail="user.html not found")
 
 
 @app.get("/booking", include_in_schema=False)
 def get_booking_page():
-    if HTML_FILE.is_file():
-        return FileResponse(HTML_FILE)
-    raise HTTPException(status_code=404, detail="index.html not found")
+    return RedirectResponse(url="/user/booking", status_code=status.HTTP_302_FOUND)
 
 
 @app.get("/admin", include_in_schema=False)
-def get_admin_page():
+@app.get("/admin/operations", include_in_schema=False)
+@app.get("/admin/bookings", include_in_schema=False)
+@app.get("/admin/maintenance", include_in_schema=False)
+@app.get("/admin/security", include_in_schema=False)
+def get_admin_portal():
+    if ADMIN_HTML_FILE.is_file():
+        return FileResponse(ADMIN_HTML_FILE)
     if HTML_FILE.is_file():
         return FileResponse(HTML_FILE)
-    raise HTTPException(status_code=404, detail="index.html not found")
+    raise HTTPException(status_code=404, detail="admin.html not found")
 
 
 @app.get("/admin/cancellations", include_in_schema=False)
 def get_admin_cancellations_page():
-    if HTML_FILE.is_file():
-        return FileResponse(HTML_FILE)
-    raise HTTPException(status_code=404, detail="index.html not found")
+    return RedirectResponse(url="/admin/bookings", status_code=status.HTTP_302_FOUND)
 
 
 # ---------------------------------------------------------------------------
@@ -347,6 +367,32 @@ async def chat_endpoint(payload: ChatInput) -> dict[str, Any]:
             },
         }
 
+    # General assistance: try M1 Passenger Assistant first
+    try:
+        async with httpx.AsyncClient(timeout=8.0) as client:
+            m1_resp = await client.post(
+                f"{PASSENGER_AGENT_URL}/chat",
+                json={
+                    "message": payload.message,
+                    "session_id": payload.session_id or str(uuid.uuid4()),
+                },
+            )
+            if m1_resp.status_code == 200:
+                m1_data = m1_resp.json()
+                reply_text = m1_data.get("reply") or m1_data.get("response")
+                if reply_text:
+                    return {
+                        "reply": reply_text,
+                        "intent": m1_data.get("intent", "general_inquiry"),
+                        "language": m1_data.get("language", "en"),
+                        "source": m1_data.get("source", "m1_passenger_assistant"),
+                        "entities": m1_data.get("entities", {}),
+                        "prefill": {},
+                        "action": None,
+                    }
+    except Exception:
+        pass
+
     # General assistance fallback
     return {
         "reply": (
@@ -370,7 +416,7 @@ async def booking_options_proxy(
     Never invents mock train data.
     """
     try:
-        async with httpx.AsyncClient(timeout=6.0) as client:
+        async with httpx.AsyncClient(timeout=25.0) as client:
             resp = await client.get(
                 f"{BOOKING_AGENT_URL}/booking-options",
                 params={
@@ -382,7 +428,7 @@ async def booking_options_proxy(
             if resp.status_code == 200:
                 return JSONResponse(status_code=200, content=resp.json())
             return JSONResponse(status_code=resp.status_code, content=resp.json())
-    except httpx.ConnectError:
+    except (httpx.ConnectError, httpx.TimeoutException):
         # Fallback to direct DB query if booking agent service is not running on separate port
         try:
             sys.path.insert(0, str(_M3_ROOT / "booking-agent"))
@@ -459,7 +505,7 @@ async def confirm_booking_endpoint(req: ConfirmBookingInput) -> JSONResponse:
 
     # 4. Dispatch through Communication Hub
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
+        async with httpx.AsyncClient(timeout=25.0) as client:
             resp = await client.post(
                 f"{HUB_URL}/messages",
                 json=envelope,
@@ -796,7 +842,7 @@ async def list_admin_cancellations(status: str | None = None) -> JSONResponse:
     List cancellation cases for Admin Dashboard review.
     """
     try:
-        async with httpx.AsyncClient(timeout=6.0) as client:
+        async with httpx.AsyncClient(timeout=25.0) as client:
             resp = await client.get(
                 f"{BOOKING_AGENT_URL}/cancellations",
                 params={"status": status} if status else {},
@@ -830,7 +876,7 @@ async def review_admin_cancellation(
     - REJECT: keeps Booking.status as CONFIRMED and transitions CancellationRequest.status -> REJECTED
     """
     try:
-        async with httpx.AsyncClient(timeout=6.0) as client:
+        async with httpx.AsyncClient(timeout=25.0) as client:
             resp = await client.post(
                 f"{BOOKING_AGENT_URL}/internal/cancellations/{case_reference}/review",
                 json={"decision": payload.decision, "admin_reason": payload.admin_reason},
@@ -870,7 +916,7 @@ async def preview_cancellation_nlp(payload: AdminNLPPreviewReq) -> JSONResponse:
     Analyze proposed rejection reason with NLP for real-time frontend feedback.
     """
     try:
-        async with httpx.AsyncClient(timeout=6.0) as client:
+        async with httpx.AsyncClient(timeout=25.0) as client:
             resp = await client.post(
                 f"{BOOKING_AGENT_URL}/internal/cancellations/nlp-preview",
                 json={"reason": payload.reason},
@@ -911,7 +957,7 @@ async def list_admin_fraud_reviews(status: str | None = None) -> JSONResponse:
     List fraud review cases for Admin Console adjudication.
     """
     try:
-        async with httpx.AsyncClient(timeout=6.0) as client:
+        async with httpx.AsyncClient(timeout=25.0) as client:
             resp = await client.get(
                 f"{BOOKING_AGENT_URL}/internal/fraud-reviews",
                 params={"status": status} if status else {},
@@ -946,7 +992,7 @@ async def review_admin_fraud_case(
     - REJECT: Updates FraudReview to REJECTED with reason; no ticket is created.
     """
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
+        async with httpx.AsyncClient(timeout=25.0) as client:
             resp = await client.post(
                 f"{BOOKING_AGENT_URL}/internal/fraud-reviews/{case_reference}/review",
                 json={
@@ -985,6 +1031,62 @@ async def review_admin_fraud_case(
         return JSONResponse(status_code=exc.status_code, content={"error": exc.message})
     except Exception as exc:
         return JSONResponse(status_code=500, content={"error": f"Failed to adjudicate review: {exc}"})
+
+
+# ---------------------------------------------------------------------------
+# Admin Multi-Agent Health Endpoint
+# ---------------------------------------------------------------------------
+@app.get("/api/admin/system-health", tags=["admin"])
+async def get_system_health() -> JSONResponse:
+    """
+    Real-time multi-agent health checker for Admin Suite.
+    Probes M1 (8001), M2 (8005), M3 Hub (8002), M3 Booking (8003), Security (8004), M4 (8006).
+    """
+    agents = [
+        {"id": "m1_passenger", "name": "M1 Passenger Assistant", "url": PASSENGER_AGENT_URL, "health_path": "/health"},
+        {"id": "m2_operations", "name": "M2 Operations Control", "url": OPERATIONS_AGENT_URL, "health_path": "/health"},
+        {"id": "m3_hub", "name": "M3 Communication Hub", "url": HUB_URL, "health_path": "/health"},
+        {"id": "m3_booking", "name": "M3 Booking Agent", "url": BOOKING_AGENT_URL, "health_path": "/health"},
+        {"id": "security_agent", "name": "Security & Fraud Model", "url": SECURITY_AGENT_URL, "health_path": "/health"},
+        {"id": "m4_maintenance", "name": "M4 Maintenance Fleet", "url": MAINTENANCE_AGENT_URL, "health_path": "/health"},
+    ]
+
+    async def probe(agent: dict[str, str]) -> dict[str, Any]:
+        target_url = f"{agent['url']}{agent['health_path']}"
+        start_time = datetime.now(timezone.utc)
+        try:
+            async with httpx.AsyncClient(timeout=2.5) as client:
+                resp = await client.get(target_url)
+                latency = round((datetime.now(timezone.utc) - start_time).total_seconds() * 1000, 1)
+                is_up = resp.status_code in (200, 204, 307, 308)
+                return {
+                    "id": agent["id"],
+                    "name": agent["name"],
+                    "url": agent["url"],
+                    "status": "ONLINE" if is_up else "DEGRADED",
+                    "status_code": resp.status_code,
+                    "latency_ms": latency,
+                }
+        except Exception:
+            latency = round((datetime.now(timezone.utc) - start_time).total_seconds() * 1000, 1)
+            return {
+                "id": agent["id"],
+                "name": agent["name"],
+                "url": agent["url"],
+                "status": "OFFLINE",
+                "status_code": None,
+                "latency_ms": latency,
+            }
+
+    results = await asyncio.gather(*(probe(a) for a in agents))
+    all_online = all(r["status"] == "ONLINE" for r in results)
+    overall = "HEALTHY" if all_online else ("DEGRADED" if any(r["status"] == "ONLINE" for r in results) else "OFFLINE")
+
+    return JSONResponse(status_code=200, content={
+        "status": overall,
+        "checked_at": datetime.now(timezone.utc).isoformat(),
+        "services": results,
+    })
 
 
 # ---------------------------------------------------------------------------
