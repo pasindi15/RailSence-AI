@@ -254,6 +254,7 @@ def get_index():
 
 
 @app.get("/user", include_in_schema=False)
+@app.get("/user/dashboard", include_in_schema=False)
 @app.get("/user/chat", include_in_schema=False)
 @app.get("/user/booking", include_in_schema=False)
 @app.get("/user/confirmation", include_in_schema=False)
@@ -263,6 +264,83 @@ def get_user_portal():
     if HTML_FILE.is_file():
         return FileResponse(HTML_FILE)
     raise HTTPException(status_code=404, detail="user.html not found")
+
+
+@app.get("/api/train-board", tags=["passenger"])
+async def train_board(travel_date: str | None = Query(default=None)) -> JSONResponse:
+    """Return the canonical date-specific train board for the passenger dashboard."""
+    selected_date = travel_date or date.today().isoformat()
+    try:
+        parsed_date = date.fromisoformat(selected_date)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid travel date")
+
+    try:
+        sys.path.insert(0, str(_WORKSPACE_ROOT))
+        from shared.train_repository import TrainRepositoryUnavailable, get_client
+
+        client = get_client()
+        schedule_rows = (
+            client.table("train_schedules")
+            .select("*, trains(*)")
+            .eq("travel_date", parsed_date.isoformat())
+            .order("departure_time")
+            .execute()
+            .data or []
+        )
+        train_rows = client.table("trains").select("*").execute().data or []
+        trains_by_key = {}
+        for row in train_rows:
+            if row.get("id") is not None:
+                trains_by_key[str(row.get("id"))] = row
+            if row.get("train_id"):
+                trains_by_key[str(row.get("train_id")).upper()] = row
+        services = []
+        for schedule in schedule_rows:
+            schedule_train_key = str(schedule.get("train_id") or "")
+            train = schedule.get("trains") or trains_by_key.get(schedule_train_key) or trains_by_key.get(schedule_train_key.upper()) or {}
+            train_metadata = train.get("metadata") if isinstance(train.get("metadata"), dict) else {}
+            schedule_metadata = schedule.get("metadata") if isinstance(schedule.get("metadata"), dict) else {}
+            stops = schedule.get("stops") or schedule_metadata.get("stops") or train_metadata.get("stops") or train_metadata.get("route_stops")
+            if not isinstance(stops, list):
+                stops = []
+            live_status = train_metadata.get("live_status") or train_metadata.get("movement_status")
+            current_station = train_metadata.get("current_station")
+            next_station = train_metadata.get("next_station")
+            maintenance = str(train.get("maintenance_status") or "UNKNOWN").upper()
+            service_status = str(schedule.get("service_status") or "SCHEDULED").upper()
+            if not train.get("active") or maintenance in {"OUT_OF_SERVICE", "DECOMMISSIONED"}:
+                service_status = "OUT_OF_SERVICE"
+            services.append({
+                "train_id": train.get("train_id"),
+                "train_name": train.get("train_name"),
+                "from_station": schedule.get("from_station") or train.get("origin_station"),
+                "to_station": schedule.get("to_station") or train.get("destination_station"),
+                "route": train.get("route"),
+                "departure_time": schedule.get("departure_time"),
+                "arrival_time": schedule.get("arrival_time"),
+                "service_status": service_status,
+                "maintenance_status": maintenance,
+                "platform": schedule.get("platform"),
+                "stops": stops,
+                "live_status": live_status,
+                "current_station": current_station,
+                "next_station": next_station,
+                "progress_percent": train_metadata.get("progress_percent"),
+                "first_class_capacity": schedule.get("first_class_capacity"),
+                "second_class_capacity": schedule.get("second_class_capacity"),
+            })
+        return JSONResponse(content={
+            "travel_date": parsed_date.isoformat(),
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "source": "shared_supabase",
+            "services": services,
+        })
+    except Exception as exc:
+        if exc.__class__.__name__ == "TrainRepositoryUnavailable":
+            return JSONResponse(status_code=503, content={"error": "Train board is temporarily unavailable."})
+        print(f"[train-board] shared query failed: {type(exc).__name__}: {exc}")
+        return JSONResponse(status_code=503, content={"error": "Train board is temporarily unavailable."})
 
 
 @app.get("/booking", include_in_schema=False)

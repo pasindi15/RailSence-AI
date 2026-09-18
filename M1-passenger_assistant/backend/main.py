@@ -48,7 +48,7 @@ from nlu.intent_classifier import classify_intent
 from nlu.ner_extractor import extract_entities
 from hub_client import build_envelope, send_to_hub
 from rag.retriever import retrieve_faq_chunks
-from shared.train_repository import TrainRepositoryUnavailable, get_train, get_train_schedule, search_trains
+from shared.train_repository import TrainRepositoryUnavailable, get_train, get_train_details, get_train_schedule, search_trains
 
 # load_dotenv() with no path searches upward from the CWD, not from this
 # file's location - if uvicorn is ever launched from outside backend/, that
@@ -97,6 +97,7 @@ class ChatResponse(BaseModel):
     language: str
     entities: dict
     source: str
+    delay_minutes: float | None = None
 
 
 class FeedbackRequest(BaseModel):
@@ -280,6 +281,20 @@ def health():
     return {"status": "ok", "time": datetime.now(timezone.utc).isoformat()}
 
 
+@app.get("/trains/{train_id}/details")
+def train_details(train_id: str):
+    clean_id = train_id.strip().upper()
+    if not re.fullmatch(r"[A-Z]{2,12}-\d{3,5}", clean_id):
+        raise HTTPException(status_code=404, detail="Train not found")
+    try:
+        details = get_train_details(clean_id)
+    except TrainRepositoryUnavailable:
+        raise HTTPException(status_code=503, detail="Train details are temporarily unavailable")
+    if details is None:
+        raise HTTPException(status_code=404, detail="Train not found")
+    return {"train": details, "updated_at": datetime.now(timezone.utc).isoformat()}
+
+
 @app.post("/chat", response_model=ChatResponse)
 async def chat(req: ChatRequest):
     text = req.message.strip()
@@ -294,6 +309,7 @@ async def chat(req: ChatRequest):
 
     source = "local"
     reply = ""
+    delay_minutes = None
 
     if intent in ("schedule_query", "fare_query"):
         reply, source = compose_rag_answer(
@@ -360,6 +376,7 @@ async def chat(req: ChatRequest):
             # composed sentence (unlike Maintenance/Booking below) - this
             # assembles them, it doesn't re-run anything through an LLM.
             delay = p.get("predicted_delay_minutes", 0)
+            delay_minutes = float(delay)
             reason = p.get("reason") or p.get("explanation", "Operational congestion")
             similar = p.get("similar_incident")
             if not similar and p.get("similar_past_incidents"):
@@ -443,11 +460,34 @@ async def chat(req: ChatRequest):
             reply = hub_response.message or "I couldn't reach the Booking Agent right now."
 
     else:
-        # Keyword classifier missed this one - try the FAQ docs before giving up.
-        # compose_rag_answer() already returns a clear "not found, try rephrasing"
-        # message (with source="") when nothing relevant is retrieved, so no
-        # separate override is needed here.
-        reply, source = compose_rag_answer(text, language, req.session_id, intent=intent, entities=entities)
+        # Natural route questions can miss the keyword classifier. Resolve them
+        # against the shared registry before falling back to FAQ retrieval.
+        route_words = text.lower()
+        if len(entities.get("stations", [])) >= 2 and "train" in route_words:
+            origin, destination = entities["stations"][:2]
+            try:
+                services = await asyncio.to_thread(search_trains, origin, destination)
+                if services:
+                    service_lines = [
+                        f"{service.get('train_id') or 'N/A'} — {service.get('train_name') or 'N/A'}"
+                        for service in services[:10]
+                    ]
+                    reply = (
+                        f"I found {len(services)} train service(s) from {origin} to {destination}:\n"
+                        + "\n".join(f"- {line}" for line in service_lines)
+                    )
+                    source = "via Shared Train Registry"
+                else:
+                    reply = f"I couldn't find a shared train service from {origin} to {destination}."
+                    source = "via Shared Train Registry"
+            except TrainRepositoryUnavailable:
+                reply = "The shared train registry is temporarily unavailable. Please try again shortly."
+                source = "via Shared Train Registry"
+        else:
+            # Keyword classifier missed this one - try the FAQ docs before giving up.
+            # compose_rag_answer() already returns a clear "not found, try rephrasing"
+            # message (with source="") when nothing relevant is retrieved.
+            reply, source = compose_rag_answer(text, language, req.session_id, intent=intent, entities=entities)
 
     save_message(req.session_id, "user", text)
     save_message(req.session_id, "assistant", reply)
@@ -460,6 +500,7 @@ async def chat(req: ChatRequest):
         language=language,
         entities=entities,
         source=source,
+        delay_minutes=delay_minutes,
     )
 
 

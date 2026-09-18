@@ -4,6 +4,7 @@ import ChatWindow from "./components/ChatWindow.jsx";
 import LoginPage from "./components/LoginPage.jsx";
 import ConfirmDialog from "./components/ConfirmDialog.jsx";
 import Toast from "./components/Toast.jsx";
+import TrainDetailsPanel from "./components/TrainDetailsPanel.jsx";
 import { sendMessage, getHistory, listChats, deleteChat, pinChat } from "./api.js";
 
 const CHATS_KEY = "railsense_chats";
@@ -47,6 +48,8 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState(null);
   const [toastMessage, setToastMessage] = useState(null);
+  const [detectedTrainId, setDetectedTrainId] = useState(null);
+  const [delayMinutes, setDelayMinutes] = useState(null);
 
   const activeChat = chats.find((c) => c.id === activeChatId);
 
@@ -148,9 +151,15 @@ export default function App() {
     const chat = emptyChat();
     setChats((prev) => [chat, ...prev]);
     setActiveChatId(chat.id);
+    setDetectedTrainId(null);
+    setDelayMinutes(null);
   };
 
-  const handleSelectChat = (id) => setActiveChatId(id);
+  const handleSelectChat = (id) => {
+    setDetectedTrainId(null);
+    setDelayMinutes(null);
+    setActiveChatId(id);
+  };
 
   const handleSend = async (text) => {
     // optimistic render of the user's message
@@ -169,6 +178,8 @@ export default function App() {
 
     try {
       const res = await sendMessage(activeChatId, text);
+      setDetectedTrainId(res.entities?.train_id?.toUpperCase() || null);
+      setDelayMinutes(res.delay_minutes ?? null);
       // The backend creates the session row on this first save, so this chat
       // is now real - subsequent pin/delete on it are backend-backed.
       setChats((prev) =>
@@ -269,6 +280,7 @@ export default function App() {
         onLogout={() => setPassenger(null)}
       />
       <ChatWindow messages={activeChat?.messages || []} onSend={handleSend} loading={loading} />
+      <TrainDetailsPanel messages={activeChat?.messages || []} detectedTrainId={detectedTrainId} delayMinutes={delayMinutes} />
       <ConfirmDialog
         open={pendingDeleteId !== null}
         title="Delete this chat?"
