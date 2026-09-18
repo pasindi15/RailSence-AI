@@ -36,3 +36,10 @@ export async function pinChat(sessionId, pinned) {
   if (!res.ok) throw new Error("Failed to update pin");
   return res.json();
 }
+
+export async function getTrainDetails(trainId) {
+  const res = await fetch(`${BASE_URL}/trains/${encodeURIComponent(trainId)}/details`);
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error("Train details request failed");
+  return res.json();
+}
