@@ -13,7 +13,7 @@ from pathlib import Path
 
 try:
     import google.generativeai as genai
-except ImportError:
+except ImportError:  # Gemini is optional; alias-based extraction still works offline.
     genai = None
 from dotenv import load_dotenv
 
