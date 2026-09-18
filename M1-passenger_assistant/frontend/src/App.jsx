@@ -8,6 +8,16 @@ import { sendMessage, getHistory, listChats, deleteChat, pinChat } from "./api.j
 
 const CHATS_KEY = "railsense_chats";
 const ACTIVE_KEY = "railsense_active_chat";
+const PASSENGER_KEY = "railsense_passenger";
+
+function loadStoredPassenger() {
+  try {
+    const raw = localStorage.getItem(PASSENGER_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
 
 function newChatId() {
   return crypto.randomUUID();
@@ -38,7 +48,7 @@ function mapHistoryMessages(messages) {
 }
 
 export default function App() {
-  const [passenger, setPassenger] = useState(null);
+  const [passenger, setPassenger] = useState(loadStoredPassenger);
   const [chats, setChats] = useState(loadStoredChats);
   const [activeChatId, setActiveChatId] = useState(() => {
     const stored = localStorage.getItem(ACTIVE_KEY);
@@ -169,6 +179,40 @@ export default function App() {
 
     try {
       const res = await sendMessage(activeChatId, text);
+      let botAction = res.action || null;
+      let botPrefill = res.prefill || null;
+      let botCancellation = res.cancellation || null;
+
+      // Fallback client-side synthesis for booking request if not populated by backend
+      if (!botAction && (res.intent === "booking_request" || /\b(book|reserve|reservation)\b/i.test(text))) {
+        const fromMatch = text.match(/\b(?:from)\s+([A-Za-z\s]+?)(?=\s+(?:to|on|at|\d)|$)/i);
+        const toMatch = text.match(/\b(?:to)\s+([A-Za-z\s]+?)(?=\s+(?:on|at|from|\d)|$)/i);
+        const dateMatch = text.match(/\b(\d{4}-\d{2}-\d{2})\b/);
+        const pre = {
+          from_station: res.entities?.from_station || (fromMatch ? fromMatch[1].trim() : ""),
+          to_station: res.entities?.to_station || (toMatch ? toMatch[1].trim() : ""),
+          travel_date: res.entities?.travel_date || (dateMatch ? dateMatch[1].trim() : ""),
+        };
+        botPrefill = pre;
+        botAction = {
+          type: "continue_to_booking",
+          label: "Continue to Booking ➔",
+          prefill: pre,
+        };
+      }
+
+      // Fallback client-side synthesis for cancellation if not populated by backend
+      if (!botAction && (res.intent === "cancel_booking" || /\b(cancel|cancellation|refund)\b/i.test(text))) {
+        const refMatch = text.match(/\b(RS-[A-Za-z0-9]{4,10})\b/i);
+        const reasonMatch = text.match(/\b(?:because|due to|as|reason:)\s+(.+)$/i);
+        botAction = {
+          type: "cancellation_confirmation_card",
+          label: "Send Cancellation Request ➔",
+          booking_reference: refMatch ? refMatch[1].toUpperCase() : (res.entities?.booking_reference || ""),
+          reason: reasonMatch ? reasonMatch[1].trim() : (res.entities?.reason || text),
+        };
+      }
+
       // The backend creates the session row on this first save, so this chat
       // is now real - subsequent pin/delete on it are backend-backed.
       setChats((prev) =>
@@ -177,7 +221,18 @@ export default function App() {
             ? {
                 ...c,
                 persisted: true,
-                messages: [...c.messages, { role: "bot", text: res.reply }],
+                messages: [
+                  ...c.messages,
+                  {
+                    role: "bot",
+                    text: res.reply,
+                    source: res.source,
+                    intent: res.intent,
+                    action: botAction,
+                    prefill: botPrefill,
+                    cancellation: botCancellation,
+                  },
+                ],
               }
             : c
         )
@@ -248,12 +303,22 @@ export default function App() {
     }
   };
 
-  // Kept below all hooks (rather than an early return above them) so the
-  // list stays the same length/order on every render regardless of login
-  // state - an early return before some useEffect calls would violate the
-  // Rules of Hooks the moment login/logout actually toggles this.
+  const handleLogin = (p) => {
+    setPassenger(p);
+    try {
+      localStorage.setItem(PASSENGER_KEY, JSON.stringify(p));
+    } catch {}
+  };
+
+  const handleLogout = () => {
+    setPassenger(null);
+    try {
+      localStorage.removeItem(PASSENGER_KEY);
+    } catch {}
+  };
+
   if (!passenger) {
-    return <LoginPage onLogin={(p) => setPassenger(p)} />;
+    return <LoginPage onLogin={handleLogin} />;
   }
 
   return (
@@ -266,7 +331,7 @@ export default function App() {
         onPin={handlePin}
         onDeleteRequest={handleDeleteRequest}
         passenger={passenger}
-        onLogout={() => setPassenger(null)}
+        onLogout={handleLogout}
       />
       <ChatWindow messages={activeChat?.messages || []} onSend={handleSend} loading={loading} />
       <ConfirmDialog
