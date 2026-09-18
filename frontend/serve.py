@@ -353,12 +353,25 @@ def get_booking_page():
 @app.get("/admin/bookings", include_in_schema=False)
 @app.get("/admin/maintenance", include_in_schema=False)
 @app.get("/admin/security", include_in_schema=False)
+@app.get("/admin/hub", include_in_schema=False)
 def get_admin_portal():
     if ADMIN_HTML_FILE.is_file():
         return FileResponse(ADMIN_HTML_FILE)
     if HTML_FILE.is_file():
         return FileResponse(HTML_FILE)
     raise HTTPException(status_code=404, detail="admin.html not found")
+
+
+@app.get("/hub", include_in_schema=False)
+@app.get("/hub-monitor", include_in_schema=False)
+@app.get("/monitor", include_in_schema=False)
+def get_hub_monitor_page():
+    print("[ROUTE HIT] Serving hub monitor page")
+    if ADMIN_HTML_FILE.is_file():
+        return FileResponse(ADMIN_HTML_FILE)
+    if HTML_FILE.is_file():
+        return FileResponse(HTML_FILE)
+    raise HTTPException(status_code=404, detail="index.html not found")
 
 
 @app.get("/admin/cancellations", include_in_schema=False)
