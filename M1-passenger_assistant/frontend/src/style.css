@@ -70,6 +70,52 @@ textarea:focus-visible,
   height: 100vh;
 }
 
+.train-details-panel {
+  width: 320px;
+  flex: 0 0 320px;
+  padding: 24px 20px;
+  overflow-y: auto;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+}
+.train-details-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 24px; }
+.panel-eyebrow { margin: 0 0 5px; color: var(--passenger); font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.train-details-header h2 { margin: 0; font-size: 19px; }
+.live-indicator { color: #15803d; font-size: 11px; font-weight: 700; white-space: nowrap; }
+.live-indicator i, .train-status i { display: inline-block; width: 7px; height: 7px; margin-right: 4px; border-radius: 50%; background: currentColor; }
+.train-panel-empty, .train-panel-message { display: flex; flex-direction: column; gap: 8px; padding: 32px 12px; color: var(--muted); text-align: center; font-size: 12px; line-height: 1.5; }
+.train-panel-empty strong, .train-panel-message strong { color: var(--text); font-size: 14px; }
+.train-panel-loading { display: grid; gap: 12px; padding-top: 10px; }
+.train-panel-loading span { height: 14px; border-radius: 5px; background: var(--border); animation: panel-pulse 1.2s ease-in-out infinite; }
+.train-panel-loading span:nth-child(2) { width: 75%; }.train-panel-loading span:nth-child(3) { width: 90%; }
+@keyframes panel-pulse { 50% { opacity: .45; } }
+.train-identity { display: flex; flex-direction: column; gap: 4px; padding-bottom: 18px; border-bottom: 1px solid var(--border); }
+.train-id { color: var(--text); font-family: var(--font-heading); font-size: 25px; font-weight: 800; letter-spacing: .01em; }
+.train-name { color: var(--muted); font-size: 12px; }
+.train-route { display: flex; align-items: center; gap: 8px; padding: 18px 0; color: var(--text); font-size: 12px; font-weight: 700; }
+.train-route span { min-width: 0; }.train-route span:last-child { text-align: right; }.train-route b { color: var(--passenger); font-size: 18px; }
+.train-status { display: inline-flex; align-items: center; width: fit-content; padding: 6px 9px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+.train-status.on-time { color: #15803d; background: #dcfce7; }.train-status.delayed { color: #a16207; background: #fef3c7; }.train-status.cancelled, .train-status.out-of-service { color: #b91c1c; background: #fee2e2; }
+.train-detail-list { margin-top: 18px; border-top: 1px solid var(--border); }
+.train-detail-row { display: flex; justify-content: space-between; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--border); font-size: 11px; }
+.train-detail-row span { color: var(--muted); }.train-detail-row strong { color: var(--text); text-align: right; font-weight: 700; }
+.train-panel-footer { padding-top: 18px; color: var(--muted); font-size: 10px; }
+
+@media (max-width: 900px) {
+  .app { flex-wrap: wrap; }
+  .chat-window { min-width: 0; }
+  .train-details-panel {
+    width: 100%;
+    flex-basis: 100%;
+    max-height: 280px;
+    padding: 16px 20px;
+    border-top: 1px solid var(--border);
+    border-left: 0;
+  }
+  .train-details-header { margin-bottom: 12px; }
+  .train-panel-empty, .train-panel-message { padding: 12px; }
+}
+
 /* ── LOGIN PAGE ── */
 .login-root {
   display: flex;
