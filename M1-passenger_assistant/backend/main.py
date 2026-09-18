@@ -37,6 +37,7 @@ try:
     import google.generativeai as genai
 except ImportError:
     genai = None
+import httpx
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -98,6 +99,9 @@ class ChatResponse(BaseModel):
     entities: dict
     source: str
     delay_minutes: float | None = None
+    action: dict | None = None
+    prefill: dict | None = None
+    cancellation: dict | None = None
 
 
 class FeedbackRequest(BaseModel):
@@ -310,6 +314,9 @@ async def chat(req: ChatRequest):
     source = "local"
     reply = ""
     delay_minutes = None
+    action = None
+    prefill = None
+    cancellation = None
 
     if intent in ("schedule_query", "fare_query"):
         reply, source = compose_rag_answer(
@@ -439,25 +446,90 @@ async def chat(req: ChatRequest):
             reply = hub_response.message or "I couldn't log your issue right now."
 
     elif intent == "booking_request":
+        from_st = entities.get("from_station")
+        to_st = entities.get("to_station")
+        t_date = entities.get("travel_date")
+        prefill = {}
+        if from_st:
+            prefill["from_station"] = from_st
+        if to_st:
+            prefill["to_station"] = to_st
+        if t_date:
+            prefill["travel_date"] = t_date
+
+        params = []
+        if from_st:
+            params.append(f"from={from_st}")
+        if to_st:
+            params.append(f"to={to_st}")
+        if t_date:
+            params.append(f"date={t_date}")
+        query_str = f"?{'&'.join(params)}" if params else ""
+        booking_url = f"http://localhost:3000/user/booking{query_str}"
+
+        action = {
+            "type": "continue_to_booking",
+            "label": "Continue to Booking ➔",
+            "url": booking_url,
+            "prefill": prefill,
+        }
+
         envelope = build_envelope(
             receiver_agent="booking-agent",
             intent="booking_request",
             payload={
-                "from_station": entities["from_station"],
-                "to_station": entities["to_station"],
-                "travel_date": entities["travel_date"],
-                "train_id": entities["train_id"],
-                "seat_class": entities["seat_class"],
-                "passenger_count": entities["passenger_count"],
+                "from_station": entities.get("from_station"),
+                "to_station": entities.get("to_station"),
+                "travel_date": entities.get("travel_date"),
+                "train_id": entities.get("train_id"),
+                "seat_class": entities.get("seat_class"),
+                "passenger_count": entities.get("passenger_count", 1),
             },
         )
         hub_response = await send_to_hub(envelope)
         if hub_response.status == "ok":
-            # Booking's reply text is already composed by that agent - passed through as-is.
-            reply = hub_response.payload["message"]
+            reply = hub_response.payload.get("message", "Booking request processed.")
             source = "via Booking Agent"
         else:
-            reply = hub_response.message or "I couldn't reach the Booking Agent right now."
+            details_list = []
+            if from_st:
+                details_list.append(f"from **{from_st}**")
+            if to_st:
+                details_list.append(f"to **{to_st}**")
+            if t_date:
+                details_list.append(f"on **{t_date}**")
+            if details_list:
+                reply = (
+                    f"I found your booking request {' '.join(details_list)}. "
+                    "Click the button below to proceed to the reservation desk with these details pre-filled."
+                )
+            else:
+                reply = (
+                    "I can help you book a train ticket! "
+                    "Click the button below to open the booking desk and select your route and date."
+                )
+            source = "via Booking Agent"
+
+    elif intent == "cancel_booking":
+        booking_ref = entities.get("booking_reference") or _extract_train_id(text)
+        reason = entities.get("reason") or "No reason provided"
+        ref_display = booking_ref or "Reference Required"
+
+        reply = (
+            f"I have prepared your cancellation request for booking **{ref_display}** "
+            f"with reason: *\"{reason}\"*. Please review the confirmation card below and click **Send Cancellation Request**."
+        )
+        cancellation = {
+            "booking_reference": booking_ref or "",
+            "reason": reason,
+        }
+        action = {
+            "type": "cancellation_confirmation_card",
+            "label": "Send Cancellation Request ➔",
+            "booking_reference": booking_ref or "",
+            "reason": reason,
+        }
+        source = "via Booking Agent (Hub)"
 
     else:
         # Natural route questions can miss the keyword classifier. Resolve them
@@ -501,6 +573,9 @@ async def chat(req: ChatRequest):
         entities=entities,
         source=source,
         delay_minutes=delay_minutes,
+        action=action,
+        prefill=prefill,
+        cancellation=cancellation,
     )
 
 

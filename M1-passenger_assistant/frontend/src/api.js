@@ -43,3 +43,31 @@ export async function getTrainDetails(trainId) {
   if (!res.ok) throw new Error("Train details request failed");
   return res.json();
 }
+
+export async function submitCancellationRequest(bookingRef, reason, userId = "passenger_web_user") {
+  try {
+    const res = await fetch(`${BASE_URL}/cancellations/confirm`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        booking_reference: bookingRef,
+        reason: reason,
+        user_id: userId,
+      }),
+    });
+    if (res.ok) return await res.json();
+  } catch (e) {
+    console.warn("M1 cancellations endpoint fallback:", e);
+  }
+
+  const gatewayRes = await fetch("http://localhost:3000/api/cancellations/confirm", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      booking_reference: bookingRef,
+      reason: reason,
+    }),
+  });
+  if (!gatewayRes.ok) throw new Error("Cancellation request failed");
+  return gatewayRes.json();
+}
