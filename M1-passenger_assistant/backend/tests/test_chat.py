@@ -97,3 +97,14 @@ def test_fare_query_uses_rag_and_llm_composition(monkeypatch):
     assert not body["reply"].startswith("Here's what I found:")
     assert "##" not in body["reply"]
     assert "fares.md" in body["source"]
+
+
+def test_cancel_booking():
+    r = client.post("/chat", json={"message": "Cancel booking RS-84521 because I accidentally booked twice"})
+    assert r.status_code == 200
+    body = r.json()
+    assert body["intent"] == "cancel_booking"
+    assert body["entities"]["booking_reference"] == "RS-84521"
+    assert body["action"]["type"] == "cancellation_confirmation_card"
+    assert body["action"]["booking_reference"] == "RS-84521"
+    assert "booked twice" in body["action"]["reason"]

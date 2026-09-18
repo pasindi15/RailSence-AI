@@ -1799,7 +1799,9 @@ function handleUrlRouting() {
   const to = url.searchParams.get('to');
   const dateVal = url.searchParams.get('date');
 
-  if (window.location.pathname.includes('/admin')) {
+  if (window.location.pathname.includes('/hub') || window.location.pathname.includes('/monitor') || window.location.hash === '#view-hub' || url.searchParams.get('tab') === 'hub') {
+    switchView('hub');
+  } else if (window.location.pathname.includes('/admin')) {
     switchView('admin');
   } else if (from || to || dateVal || window.location.pathname.includes('/booking')) {
     switchView('booking');

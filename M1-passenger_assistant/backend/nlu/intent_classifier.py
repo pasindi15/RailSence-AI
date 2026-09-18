@@ -25,6 +25,13 @@ INTENT_KEYWORDS = {
         "ප්‍රමාද", "ප්‍රමාදයි", "ප්‍රමාදද",
         "தாமதம்", "தாமதமா",
     ],
+    "cancel_booking": [
+        "cancel booking", "cancel my booking", "cancel ticket", "cancel my ticket",
+        "cancel reservation", "cancel my reservation", "cancellation", "cancel",
+        "refund", "drop booking",
+        "අවලංගු", "අවලංගු කරන්න", "ටිකට් අවලංගු",
+        "ரத்து", "முன்பதிவு ரத்து", "டிக்கெட் ரத்து",
+    ],
     "booking_request": [
         "book", "booking", "reserve", "reservation", "buy ticket", "purchase ticket",
         "වෙන්කරව", "වෙන් කරගන්න", "ටිකට් එක",
