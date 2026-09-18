@@ -29,6 +29,20 @@
   --r-input:        8px;
   --shadow-sm:      0 1px 3px rgba(0,0,0,0.05);
   --shadow-card:    0 4px 18px rgba(0,0,0,0.06);
+  /* Aliases for the passenger dashboard panel (merged from Operations branch) */
+  --brand:          var(--primary);
+  --card:           var(--card-bg);
+  --border:         var(--border-light);
+  --border-hi:      var(--border-input);
+  --ink:            var(--text-dark);
+  --ink-bright:     var(--text-dark);
+  --muted:          var(--text-sub);
+  --muted-hi:       var(--text-label);
+  --passenger:      #5B8FC9;
+  --r:              var(--r-card);
+  --shadow:         var(--shadow-card);
+  --blur:           none;
+  --ease:           ease;
 }
 
 /* ── Global Reset ─────────────────────────────────────────────────── */
@@ -150,6 +164,48 @@ body {
   color: var(--primary-hover);
 }
 
+/* ── Navigation View Tabs ──────────────────────────────────────────── */
+.nav-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 22px;
+  background: #FFFFFF;
+  padding: 6px;
+  border-radius: var(--r-card);
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-sm);
+}
+
+.tab-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 18px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-sub);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tab-btn:hover {
+  color: var(--text-dark);
+  background: var(--primary-light);
+}
+
+.tab-btn.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #FFFFFF;
+  box-shadow: 0 4px 12px var(--primary-glow);
+}
+
 /* ── Centered Heading: Booking Details ─────────────────────────────── */
 .page-heading-box {
   text-align: center;
@@ -234,6 +290,57 @@ body {
   align-items: start;
 }
 
+.dashboard-shell { display: grid; gap: 18px; }
+.dashboard-hero { display: flex; justify-content: space-between; align-items: end; gap: 24px; padding: 8px 2px 4px; }
+.dashboard-kicker { color: var(--brand); font: 11px 'Share Tech Mono', monospace; letter-spacing: 1.4px; text-transform: uppercase; }
+.dashboard-title { margin-top: 7px; font: 700 clamp(28px, 4vw, 46px)/1.05 'Playfair Display', serif; color: var(--ink-bright); }
+.dashboard-copy { max-width: 480px; margin-top: 10px; color: var(--muted-hi); font-size: 13px; line-height: 1.6; }
+.dashboard-date-control { min-width: 190px; }
+.dashboard-date-control label { display:block; margin-bottom:6px; color:var(--muted); font:10px 'Share Tech Mono',monospace; text-transform:uppercase; letter-spacing:.8px; }
+.dashboard-date-control input { width:100%; padding:10px 12px; color:var(--ink-bright); background:rgba(10,6,2,.8); border:1px solid var(--border-hi); border-radius:8px; font:13px 'Share Tech Mono',monospace; }
+.dashboard-kpis { display:grid; grid-template-columns:repeat(4, 1fr); gap:12px; }
+.dashboard-kpi, .dashboard-card { background:var(--card); border:1px solid var(--border); border-radius:var(--r); box-shadow:var(--shadow); backdrop-filter:var(--blur); }
+.dashboard-kpi { padding:16px 18px; }
+.dashboard-kpi-label { color:var(--muted); font:10px 'Share Tech Mono',monospace; text-transform:uppercase; letter-spacing:.8px; }
+.dashboard-kpi-value { margin-top:8px; color:var(--ink-bright); font:700 28px 'Share Tech Mono',monospace; }
+.dashboard-kpi-note { margin-top:4px; color:var(--muted-hi); font-size:11px; }
+.dashboard-grid { display:grid; grid-template-columns:minmax(0, 1.35fr) minmax(300px, .65fr); gap:18px; }
+.dashboard-card { padding:18px; overflow:hidden; }
+.dashboard-card-header { display:flex; justify-content:space-between; align-items:start; gap:14px; margin-bottom:14px; }
+.dashboard-card-title { color:var(--ink-bright); font-size:15px; font-weight:700; }
+.dashboard-card-subtitle { margin-top:3px; color:var(--muted); font-size:11px; }
+.dashboard-live { color:#6EE7B7; font:10px 'Share Tech Mono',monospace; white-space:nowrap; }
+.dashboard-live::before { content:'●'; margin-right:5px; color:#4ADE80; }
+.network-map { position:relative; min-height:360px; overflow:hidden; border:1px solid rgba(91,143,201,.3); border-radius:10px; background:radial-gradient(circle at 20% 18%,rgba(91,143,201,.18),transparent 32%),linear-gradient(145deg,rgba(8,20,35,.95),rgba(24,14,8,.96)); }
+.network-map::before { content:''; position:absolute; inset:0; opacity:.32; background-image:linear-gradient(rgba(91,143,201,.12) 1px,transparent 1px),linear-gradient(90deg,rgba(91,143,201,.12) 1px,transparent 1px); background-size:32px 32px; }
+.map-route { position:absolute; height:2px; transform-origin:left center; background:linear-gradient(90deg,rgba(201,162,42,.8),rgba(91,143,201,.6)); box-shadow:0 0 8px rgba(91,143,201,.4); }
+.map-station { position:absolute; z-index:2; width:9px; height:9px; border:2px solid var(--ink-bright); border-radius:50%; background:var(--passenger); box-shadow:0 0 0 4px rgba(91,143,201,.14); }
+.map-station span { position:absolute; top:13px; left:0; color:var(--muted-hi); white-space:nowrap; font:10px 'Share Tech Mono',monospace; }
+.map-station.major { background:var(--brand); box-shadow:0 0 0 4px rgba(201,162,42,.16),0 0 12px rgba(201,162,42,.55); }
+.map-service-dot { position:absolute; z-index:3; width:8px; height:8px; border-radius:50%; background:#4ADE80; box-shadow:0 0 0 4px rgba(74,222,128,.14),0 0 12px #4ADE80; animation: service-pulse 2s ease-in-out infinite; }
+@keyframes service-pulse { 50% { transform:scale(1.5); opacity:.7; } }
+.map-overlay { position:absolute; z-index:4; left:14px; top:13px; color:var(--muted); font:10px 'Share Tech Mono',monospace; letter-spacing:.7px; }
+.map-legend { display:flex; gap:14px; flex-wrap:wrap; margin-top:12px; color:var(--muted); font-size:11px; }
+.map-legend i { display:inline-block; width:7px; height:7px; margin-right:5px; border-radius:50%; background:var(--brand); }.map-legend i.live { background:#4ADE80; }.map-legend i.route { width:16px; height:2px; border-radius:0; background:var(--passenger); vertical-align:middle; }
+.service-table-wrap { max-height:360px; overflow:auto; }
+.service-table { width:100%; border-collapse:collapse; font-size:11px; }
+.service-table th { position:sticky; top:0; padding:9px 8px; color:var(--muted); background:rgba(20,12,6,.98); text-align:left; font:10px 'Share Tech Mono',monospace; text-transform:uppercase; letter-spacing:.5px; }
+.service-table td { padding:10px 8px; color:var(--ink); border-top:1px solid rgba(180,130,40,.12); white-space:nowrap; }
+.service-table td:first-child { color:var(--ink-bright); font-weight:700; }.service-table td.route-cell { white-space:normal; min-width:150px; }
+.service-status { display:inline-flex; padding:3px 7px; border-radius:20px; font:10px 'Share Tech Mono',monospace; }.service-status.scheduled { color:#6EE7B7; background:rgba(58,138,74,.17); }.service-status.cancelled,.service-status.out_of_service { color:#FCA5A5; background:rgba(176,64,48,.18); }.service-status.delayed { color:#FDE68A; background:rgba(201,162,42,.18); }
+.dashboard-note { padding:12px 14px; color:var(--muted-hi); background:rgba(91,143,201,.08); border-left:3px solid var(--passenger); border-radius:6px; font-size:11px; line-height:1.5; }
+.dashboard-empty { padding:34px 16px; color:var(--muted); text-align:center; font-size:12px; }
+.dashboard-ask { display:grid; grid-template-columns:1fr auto; gap:10px; align-items:center; padding:14px 16px; background:linear-gradient(110deg,rgba(91,143,201,.12),rgba(201,162,42,.07)); border:1px solid rgba(91,143,201,.28); border-radius:10px; }
+.dashboard-ask-copy strong { display:block; color:var(--ink-bright); font-size:13px; }.dashboard-ask-copy span { display:block; margin-top:3px; color:var(--muted-hi); font-size:11px; }
+.dashboard-ask-form { display:flex; gap:8px; min-width:340px; }.dashboard-ask-form input { flex:1; min-width:0; padding:9px 11px; color:var(--ink-bright); background:rgba(10,6,2,.82); border:1px solid var(--border); border-radius:7px; font:12px 'Inter',sans-serif; }.dashboard-ask-form button, .service-action { padding:8px 10px; color:#120B05; background:var(--brand); border:0; border-radius:7px; font-size:11px; font-weight:700; cursor:pointer; white-space:nowrap; }.dashboard-ask-result { grid-column:1 / -1; display:none; padding:10px 12px; color:var(--ink); background:rgba(10,6,2,.55); border-radius:7px; font-size:12px; line-height:1.5; white-space:pre-wrap; }.dashboard-ask-result.visible { display:block; }
+.service-stops { display:block; margin-top:3px; color:var(--muted); font-size:10px; line-height:1.35; white-space:normal; }.service-position { display:block; margin-top:4px; color:#93C5FD; font-size:10px; }.service-actions { display:flex; gap:5px; margin-top:6px; }.service-action { padding:5px 7px; color:var(--ink-bright); background:rgba(91,143,201,.16); border:1px solid rgba(91,143,201,.35); font-size:10px; }.service-action:hover { background:rgba(91,143,201,.3); }
+
+/* ── View Panels ───────────────────────────────────────────────────── */
+.view-panel {
+  display: none;
+  animation: fadeIn 0.2s ease;
+}
+
 .left-content {
   display: flex;
   flex-direction: column;
@@ -244,6 +351,7 @@ body {
   animation: fadeIn 0.2s ease;
 }
 
+.view-panel.active,
 .panel-view.active {
   display: block;
 }
@@ -935,6 +1043,22 @@ body {
     </div>
   </header>
 
+  <!-- Navigation View Tabs -->
+  <nav class="nav-tabs" role="tablist">
+    <button class="tab-btn" id="tab-dashboard" onclick="navigateTo('/user')">
+      <span>⌂</span> Home Dashboard
+    </button>
+    <button class="tab-btn active" id="tab-chat" onclick="navigateTo('/user/chat')">
+      <span>💬</span> Passenger Assistant
+    </button>
+    <button class="tab-btn" id="tab-booking" onclick="navigateTo('/user/booking')">
+      <span>🎫</span> Train Booking Desk
+    </button>
+    <button class="tab-btn" id="tab-confirmation" onclick="navigateTo('/user/confirmation')">
+      <span>📋</span> Ticket Confirmation
+    </button>
+  </nav>
+
   <!-- Centered Heading: Booking Details -->
   <div class="page-heading-box">
     <h1 class="page-heading">Booking Details</h1>
@@ -962,6 +1086,46 @@ body {
       <span>Confirmation & Payment</span>
     </button>
   </nav>
+
+  <!-- ==================== VIEW 0: PASSENGER DASHBOARD ==================== -->
+  <main id="view-dashboard" class="view-panel">
+    <section class="dashboard-shell">
+      <div class="dashboard-hero">
+        <div>
+          <div class="dashboard-kicker">Passenger network / live board</div>
+          <h1 class="dashboard-title">Know your journey<br>before it moves.</h1>
+          <p class="dashboard-copy">A daily view of scheduled services, route coverage, and live service signals from the RailSense railway network.</p>
+        </div>
+        <div class="dashboard-date-control">
+          <label for="dashboard-date">Service date</label>
+          <input type="date" id="dashboard-date" onchange="loadPassengerDashboard()" />
+        </div>
+      </div>
+      <div class="dashboard-kpis">
+        <div class="dashboard-kpi"><div class="dashboard-kpi-label">Services today</div><div class="dashboard-kpi-value" id="dash-service-count">—</div><div class="dashboard-kpi-note">Scheduled departures</div></div>
+        <div class="dashboard-kpi"><div class="dashboard-kpi-label">Routes covered</div><div class="dashboard-kpi-value" id="dash-route-count">—</div><div class="dashboard-kpi-note">Origin to destination</div></div>
+        <div class="dashboard-kpi"><div class="dashboard-kpi-label">On schedule</div><div class="dashboard-kpi-value" id="dash-on-time">—</div><div class="dashboard-kpi-note">Current service status</div></div>
+        <div class="dashboard-kpi"><div class="dashboard-kpi-label">Network feed</div><div class="dashboard-kpi-value" id="dash-feed-status">LIVE</div><div class="dashboard-kpi-note" id="dash-last-updated">Refreshing shared data</div></div>
+      </div>
+      <div class="dashboard-grid">
+        <section class="dashboard-card">
+          <div class="dashboard-card-header"><div><div class="dashboard-card-title">Live railway lines</div><div class="dashboard-card-subtitle">Routes and stations present in the selected service board</div></div><span class="dashboard-live">LIVE FEED</span></div>
+          <div class="network-map" id="dashboard-map"><div class="map-overlay">RAILSENSE / NETWORK VIEW</div><div class="dashboard-empty">Loading live service network…</div></div>
+          <div class="map-legend"><span><i class="route"></i>Scheduled line</span><span><i></i>Station hub</span><span><i class="live"></i>Active service</span></div>
+        </section>
+        <section class="dashboard-card">
+          <div class="dashboard-card-header"><div><div class="dashboard-card-title">Today's services</div><div class="dashboard-card-subtitle">Select a service to continue in chat</div></div><button class="btn-refresh-admin" type="button" onclick="loadPassengerDashboard()">↻</button></div>
+          <div class="service-table-wrap" id="dashboard-services"><div class="dashboard-empty">Loading services…</div></div>
+        </section>
+      </div>
+      <section class="dashboard-ask">
+        <div class="dashboard-ask-copy"><strong>Ask about operations</strong><span>Ask about delays, current movement, maintenance, or a train on this board.</span></div>
+        <form class="dashboard-ask-form" onsubmit="askDashboardAssistant(event)"><input id="dashboard-question" placeholder="Is PM-4082 delayed?" autocomplete="off" /><button type="submit">Ask assistant</button></form>
+        <div id="dashboard-ask-result" class="dashboard-ask-result"></div>
+      </section>
+      <div class="dashboard-note">Service data, schedules, and availability are read from the shared railway source of truth. Live operational positions are shown only when the network provides them; unavailable values remain marked as N/A.</div>
+    </section>
+  </main>
 
   <!-- ==================== VIEW 1: PASSENGER CHAT ==================== -->
   <main id="view-chat" class="view-panel active">
@@ -1479,6 +1643,19 @@ window.addEventListener('DOMContentLoaded', () => {
 
 window.addEventListener('popstate', handleUrlRouting);
 
+function navigateTo(path) {
+  history.pushState(null, '', path);
+  handleUrlRouting();
+}
+
+function applyPrefill(prefill) {
+  if (!prefill) return;
+  if (prefill.from_station) $('from-station').value = prefill.from_station;
+  if (prefill.to_station) $('to-station').value = prefill.to_station;
+  if (prefill.travel_date) $('travel-date').value = prefill.travel_date;
+  onRouteOrDateChanged();
+}
+
 function handleUrlRouting() {
   const path = window.location.pathname;
   const url = new URL(window.location.href);
@@ -1486,23 +1663,133 @@ function handleUrlRouting() {
   const to = url.searchParams.get('to');
   const dateVal = url.searchParams.get('date');
 
-  if (path.includes('/confirmation')) {
+  if (path === '/user' || path.includes('/dashboard')) {
+    switchView('dashboard');
+  } else if (path.includes('/booking')) {
+    switchView('booking');
+    if (from || to || dateVal) applyPrefill({ from_station: from, to_station: to, travel_date: dateVal });
+  } else if (path.includes('/confirmation')) {
+    switchView('confirmation');
     const savedBooking = sessionStorage.getItem('railsense_last_booking');
     if (savedBooking) {
-      try {
-        showConfirmation(JSON.parse(savedBooking));
-        return;
-      } catch (e) {}
+      try { showConfirmation(JSON.parse(savedBooking)); } catch (e) {}
     }
+  } else {
+    switchView('chat');
   }
 
   if (from) $('from-station').value = from;
   if (to) $('to-station').value = to;
   if (dateVal) $('travel-date').value = dateVal;
+  if (from || to || dateVal) onRouteOrDateChanged();
+}
 
-  if (from || to || dateVal) {
-    onRouteOrDateChanged();
+function switchView(viewName) {
+  document.querySelectorAll('.view-panel').forEach(panel => panel.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(button => button.classList.remove('active'));
+
+  const view = $(`view-${viewName}`);
+  if (view) view.classList.add('active');
+  const tab = $(`tab-${viewName}`);
+  if (tab) tab.classList.add('active');
+  if (viewName === 'dashboard') loadPassengerDashboard();
+  if (viewName === 'booking' && typeof updateSummary === 'function') updateSummary();
+}
+
+let dashboardServices = [];
+let dashboardRefreshTimer = null;
+
+async function loadPassengerDashboard() {
+  const dateInput = $('dashboard-date');
+  if (!dateInput) return;
+  if (!dateInput.value) dateInput.value = new Date().toISOString().split('T')[0];
+  const map = $('dashboard-map');
+  const list = $('dashboard-services');
+  try {
+    const response = await fetch(`/api/train-board?travel_date=${encodeURIComponent(dateInput.value)}`);
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Train board unavailable');
+    dashboardServices = Array.isArray(data.services) ? data.services : [];
+    renderDashboardServices(data);
+    renderDashboardMap(dashboardServices);
+    $('dash-feed-status').textContent = 'LIVE';
+    $('dash-last-updated').textContent = `Updated ${new Date(data.updated_at).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' })}`;
+  } catch (error) {
+    dashboardServices = [];
+    $('dash-feed-status').textContent = 'OFFLINE';
+    $('dash-last-updated').textContent = 'Shared feed unavailable';
+    list.innerHTML = `<div class="dashboard-empty">${escapeHtml(error.message)}</div>`;
+    map.innerHTML = '<div class="map-overlay">RAILSENSE / NETWORK VIEW</div><div class="dashboard-empty">Live network map unavailable.</div>';
+    updateDashboardKpis([]);
   }
+  clearTimeout(dashboardRefreshTimer);
+  dashboardRefreshTimer = setTimeout(loadPassengerDashboard, 30000);
+}
+
+function updateDashboardKpis(services) {
+  const routes = new Set(services.map(s => `${s.from_station || 'N/A'}→${s.to_station || 'N/A'}`));
+  const onTime = services.filter(s => ['SCHEDULED', 'ON_TIME'].includes(String(s.service_status || '').toUpperCase())).length;
+  $('dash-service-count').textContent = services.length;
+  $('dash-route-count').textContent = routes.size;
+  $('dash-on-time').textContent = services.length ? `${Math.round(onTime / services.length * 100)}%` : '—';
+}
+
+function renderDashboardServices(data) {
+  updateDashboardKpis(data.services);
+  const list = $('dashboard-services');
+  if (!data.services.length) { list.innerHTML = `<div class="dashboard-empty">No shared train schedules were found for ${escapeHtml(data.travel_date)}.<br>Choose another service date to view the daily board.</div>`; return; }
+  list.innerHTML = `<table class="service-table"><thead><tr><th>Train</th><th>Route & stops</th><th>Time</th><th>Status</th></tr></thead><tbody>${data.services.map(service => {
+    const status = String(service.service_status || 'SCHEDULED').toLowerCase();
+    const stops = Array.isArray(service.stops) && service.stops.length ? service.stops.join(' · ') : 'Stops: N/A';
+    const position = service.current_station || service.next_station ? `Now: ${service.current_station || 'N/A'} → ${service.next_station || 'N/A'}` : 'Live position: N/A';
+    const trainId = service.train_id || '';
+    return `<tr><td>${escapeHtml(trainId || 'N/A')}<br><small>${escapeHtml(service.train_name || 'N/A')}</small><div class="service-actions"><button class="service-action" type="button" onclick="askDashboardQuestion('Is ${escapeHtml(trainId)} delayed?')">Delay</button><button class="service-action" type="button" onclick="askDashboardQuestion('What is the current operational status of ${escapeHtml(trainId)}?')">Operations</button></div></td><td class="route-cell"><strong>${escapeHtml(service.from_station || 'N/A')} → ${escapeHtml(service.to_station || 'N/A')}</strong><span class="service-stops">Stops: ${escapeHtml(stops)}</span><span class="service-position">${escapeHtml(position)}</span></td><td>${escapeHtml(service.departure_time || 'N/A')}<br><small>Arrive ${escapeHtml(service.arrival_time || 'N/A')}</small></td><td><span class="service-status ${status}">${escapeHtml(status.replaceAll('_',' '))}</span></td></tr>`;
+  }).join('')}</tbody></table>`;
+}
+
+function askDashboardQuestion(question) {
+  const input = $('dashboard-question');
+  input.value = question;
+  input.focus();
+  askDashboardAssistant();
+}
+
+async function askDashboardAssistant(event) {
+  if (event) event.preventDefault();
+  const input = $('dashboard-question');
+  const result = $('dashboard-ask-result');
+  const question = input.value.trim();
+  if (!question) return;
+  result.textContent = 'Checking the Passenger Assistant and Operations Agent…';
+  result.classList.add('visible');
+  try {
+    const response = await fetch('/api/chat', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ message: question }) });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || data.detail || 'Assistant unavailable');
+    result.textContent = data.reply || 'No operational answer was returned.';
+  } catch (error) {
+    result.textContent = error.message;
+  }
+}
+
+function renderDashboardMap(services) {
+  const map = $('dashboard-map');
+  if (!services.length) { map.innerHTML = '<div class="map-overlay">RAILSENSE / NETWORK VIEW</div><div class="dashboard-empty">No route data for this date.</div>'; return; }
+  const stations = [...new Set(services.flatMap(s => [s.from_station, ...(Array.isArray(s.stops) ? s.stops : []), s.to_station].filter(Boolean)))];
+  const positions = new Map(stations.map((station, index) => [station, { x: 12 + (index * 71) % 76, y: 24 + ((index * 43) % 58) }]));
+  const routes = services.map(service => {
+    const routeStations = [service.from_station, ...(Array.isArray(service.stops) ? service.stops : []), service.to_station].filter(Boolean);
+    return routeStations.slice(0, -1).map((station, index) => {
+      const from = positions.get(station), to = positions.get(routeStations[index + 1]);
+      if (!from || !to) return '';
+      const length = Math.hypot(to.x - from.x, to.y - from.y);
+      const angle = Math.atan2(to.y - from.y, to.x - from.x) * 180 / Math.PI;
+      return `<i class="map-route" title="${escapeHtml(service.train_id || 'N/A')}" style="left:${from.x}%;top:${from.y}%;width:${length}%;transform:rotate(${angle}deg)"></i>`;
+    }).join('');
+  }).join('');
+  const stationNodes = stations.map(station => { const p = positions.get(station); return `<i class="map-station ${stations.indexOf(station) === 0 ? 'major' : ''}" style="left:${p.x}%;top:${p.y}%"><span>${escapeHtml(station)}</span></i>`; }).join('');
+  const activeDots = services.filter(service => service.current_station || service.next_station || service.live_status).slice(0, 8).map((service, index) => { const current = positions.get(service.current_station) || positions.get(service.from_station); if (!current) return ''; return `<i class="map-service-dot" title="${escapeHtml(service.train_id || 'N/A')} · ${escapeHtml(service.live_status || 'Live position')}" style="left:${Math.min(94, current.x + (index * 2))}%;top:${Math.min(90, current.y + (index * 2))}%"></i>`; }).join('');
+  map.innerHTML = `<div class="map-overlay">RAILSENSE / NETWORK VIEW</div>${routes}${stationNodes}${activeDots}`;
 }
 
 function switchChatMode(mode) {

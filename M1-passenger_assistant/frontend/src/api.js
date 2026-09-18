@@ -37,6 +37,13 @@ export async function pinChat(sessionId, pinned) {
   return res.json();
 }
 
+export async function getTrainDetails(trainId) {
+  const res = await fetch(`${BASE_URL}/trains/${encodeURIComponent(trainId)}/details`);
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error("Train details request failed");
+  return res.json();
+}
+
 export async function submitCancellationRequest(bookingRef, reason, userId = "passenger_web_user") {
   try {
     const res = await fetch(`${BASE_URL}/cancellations/confirm`, {
