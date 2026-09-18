@@ -525,9 +525,21 @@ body {
   justify-content: center;
 }
 
-.btn-next-action:hover {
-  background: var(--primary-hover);
-  transform: translateY(-1px);
+.m1-react-unavailable {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  padding: 24px;
+  color: var(--muted-hi);
+  text-align: center;
+  font-size: 13px;
+}
+
+/* ── View 2: Train Booking Desk ────────────────────────────────────── */
+.booking-grid {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 20px;
 }
 
 /* ── Stage 4: Ticket Summary Table ─────────────────────────────────── */
@@ -951,24 +963,28 @@ body {
     </button>
   </nav>
 
-  <!-- Two-Column Layout: Form (Left) + Order Summary (Right) -->
-  <div class="booking-grid">
-    
-    <!-- LEFT CONTENT AREA: 5 STEP PANELS -->
-    <div class="left-content">
-      
-      <div id="booking-alert" class="alert-box"></div>
+  <!-- ==================== VIEW 1: PASSENGER CHAT ==================== -->
+  <main id="view-chat" class="view-panel active">
+    <!-- View Mode Bar (Integrated vs Standalone React UI) -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <div style="font-size:12px;color:var(--muted-hi);">
+        Powered by <strong>M1 Passenger Assistant</strong> (Multilingual NLU, ChromaDB FAQ RAG, delay & complaint dispatch)
+      </div>
+      <div class="chat-mode-toggle">
+        <button class="mode-btn active" id="btn-mode-react" type="button">M1 React App (Live)</button>
+      </div>
+    </div>
 
-      <!-- ==================== STAGE 0: HOME ==================== -->
-      <section id="panel-step-0" class="panel-view">
-        <div class="home-hero">
-          <h2 class="home-hero-title">Sri Lanka Railway Reservation Portal</h2>
-          <p class="home-hero-sub">
-            Real-time schedule discovery, live seat inventory, instant ticket reservations, and AI delay prediction across Sri Lanka.
-          </p>
-          <button type="button" class="btn-next-action" style="width: auto; padding: 0 32px;" onclick="goToStep(1)">
-            Start Booking ➔
-          </button>
+        <!-- Legacy integrated assistant retained in source for compatibility, but the
+          passenger portal uses the real M1 React application below. -->
+        <div id="integrated-chat-container" class="chat-container" hidden>
+      <section class="chat-card">
+        <div class="chat-header">
+          <div>
+            <div class="chat-title">Multilingual Passenger Assistant</div>
+            <div class="chat-sub">English · සිංහල · தமிழ் — Real-time schedules, fares, delays & complaints</div>
+          </div>
+          <span class="badge-live" style="padding:3px 9px;font-size:10px;">M1 Agent Ready</span>
         </div>
 
         <div class="card-box">
@@ -1007,9 +1023,32 @@ body {
         <div class="card-box">
           <div class="section-title">Search Routes & Check Availability</div>
 
-          <div class="field-row">
-            <div class="field-cell">
-              <label class="form-label" for="from-station">From Station *</label>
+    <!-- Standalone M1 React UI Embed Container -->
+    <div id="m1-react-container" style="display:block">
+      <iframe id="m1-react-iframe" src="http://localhost:5173" title="M1 React/Vite UI"></iframe>
+      <div id="m1-react-unavailable" class="m1-react-unavailable" hidden>
+        The live React assistant is not running. Start the M1 Vite app on port 5173 and refresh this page.
+      </div>
+    </div>
+  </main>
+
+  <!-- ==================== VIEW 2: BOOKING PAGE ==================== -->
+  <main id="view-booking" class="view-panel">
+    <div class="booking-grid">
+      <!-- Form Panel -->
+      <section class="booking-card">
+        <div class="desk-header">
+          <h1 class="desk-title">Train Ticket Reservation</h1>
+          <p class="desk-sub">Deterministic schedule discovery, live seat inventory, and secure ticket booking.</p>
+        </div>
+
+        <div id="booking-alert" class="alert-box"></div>
+
+        <form id="booking-form" onsubmit="event.preventDefault(); submitBooking();" class="form-section">
+          <!-- Route -->
+          <div class="form-row">
+            <div class="field-group">
+              <label class="field-label" for="from-station">From Station *</label>
               <input
                 type="text"
                 id="from-station"
@@ -1466,24 +1505,31 @@ function handleUrlRouting() {
   }
 }
 
-// ── 5-Stage Stepper Navigation ──────────────────────────────────────
-// ── Validation Helpers ──────────────────────────────────────────────
-function markInvalid(el, msg) {
-  if (el) {
-    el.classList.add('input-invalid');
-    try {
-      el.focus();
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    } catch (e) {}
+function switchChatMode(mode) {
+  const integratedCont = $('integrated-chat-container');
+  const reactCont = $('m1-react-container');
+  const btnInteg = $('btn-mode-integrated');
+  const btnReact = $('btn-mode-react');
+  const iframe = $('m1-react-iframe');
+  const unavailable = $('m1-react-unavailable');
 
-    const clearHandler = () => {
-      el.classList.remove('input-invalid');
-      el.removeEventListener('input', clearHandler);
-      el.removeEventListener('change', clearHandler);
-      hideAlert();
-    };
-    el.addEventListener('input', clearHandler);
-    el.addEventListener('change', clearHandler);
+  if (mode === 'react') {
+    integratedCont.style.display = 'none';
+    reactCont.style.display = 'block';
+    btnInteg.classList.remove('active');
+    btnReact.classList.add('active');
+    if (iframe.src === 'about:blank') {
+      iframe.src = 'http://localhost:5173';
+    }
+    iframe.onload = () => { unavailable.hidden = true; };
+    iframe.onerror = () => { unavailable.hidden = false; };
+  } else {
+    integratedCont.hidden = true;
+    integratedCont.style.display = 'none';
+    reactCont.style.display = 'none';
+    btnInteg.classList.add('active');
+    btnReact.classList.remove('active');
+    unavailable.hidden = true;
   }
   showAlert(msg, "error");
 }
