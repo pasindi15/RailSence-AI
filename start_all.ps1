@@ -6,19 +6,7 @@ $root = $PSScriptRoot
 Write-Host "Starting RailSense AI Multi-Agent Ecosystem..." -ForegroundColor Cyan
 
 # 1. M1 Passenger Assistant (Port 8001)
-# Uses M1's own venv (not the global 'python') so RAG/ChromaDB resolves against the
-# dependency versions M1 was built and tested with (the global interpreter has an
-# incompatible older ChromaDB that can't read M1's persisted index).
-# NOTE: PYTHONPATH is forced to the venv's site-packages in addition to activating the
-# venv. On Windows, uvicorn's --reload worker subprocess is spawned via Python's
-# multiprocessing "venv launcher" workaround, which was found (through repeated testing)
-# to unreliably fall back to the global interpreter's site-packages even when M1 is
-# started correctly through its venv. Forcing PYTHONPATH makes the correct ChromaDB
-# resolve on sys.path regardless of which interpreter binary the reload worker ends up
-# using, which activation/direct-path invocation alone could not guarantee.
-$m1SitePackages = "$root\M1-passenger_assistant\backend\venv\Lib\site-packages"
-$m1Cmd = "cd '$root\M1-passenger_assistant\backend'; `$env:PYTHONPATH = '$m1SitePackages'; & '.\venv\Scripts\Activate.ps1'; Write-Host 'Starting M1 Passenger Assistant on port 8001...' -ForegroundColor Cyan; python -m uvicorn main:app --host 127.0.0.1 --port 8001 --reload"
-Start-Process powershell -ArgumentList "-NoExit", "-Command", $m1Cmd
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$root\M1-passenger_assistant\backend'; Write-Host 'Starting M1 Passenger Assistant on port 8001...' -ForegroundColor Cyan; python -m uvicorn main:app --host 127.0.0.1 --port 8001 --reload"
 
 # 2. M2 Operations Agent (Port 8005)
 Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$root\M2-operations-agent'; Write-Host 'Starting M2 Operations Agent on port 8005...' -ForegroundColor DarkCyan; python -m uvicorn main:app --host 127.0.0.1 --port 8005 --reload"
