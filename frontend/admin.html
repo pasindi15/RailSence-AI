@@ -575,7 +575,7 @@ body::after {
 
     <div>
       <a href="/user" class="btn-portal-switch">
-        <span>Passenger Portal</span>
+        <span>Train Booking Desk</span>
         <span>➔</span>
       </a>
     </div>
@@ -597,6 +597,9 @@ body::after {
     </button>
     <button class="admin-nav-tab" id="nav-security" onclick="navigateTo('/admin/security')">
       <span>🛡️</span> Security &amp; System
+    </button>
+    <button class="admin-nav-tab" id="nav-hub" onclick="navigateTo('/admin?tab=hub')">
+      <span>⚡</span> Hub Monitor
     </button>
   </nav>
 
@@ -676,6 +679,10 @@ body::after {
         <button class="btn-refresh" style="padding:12px;text-align:left;" onclick="navigateTo('/admin/operations'); switchSubSection('operations', 'admin-console');">
           <strong style="color:var(--ink-bright);display:block;">⚙️ M2 Model Retraining &amp; CRUD</strong>
           <span style="font-size:11.5px;color:var(--muted);">Data quality check &amp; delay regressor rollback</span>
+        </button>
+        <button class="btn-refresh" style="padding:12px;text-align:left;" onclick="navigateTo('/admin?tab=hub')">
+          <strong style="color:var(--ink-bright);display:block;">⚡ Communication Hub Monitor</strong>
+          <span style="font-size:11.5px;color:var(--muted);">Live inter-agent routing telemetry &amp; timeline</span>
         </button>
       </div>
     </div>
@@ -877,6 +884,99 @@ body::after {
         • Message Lifecycle Statuses: <code>AUTHENTICATED</code> ➔ <code>ROUTED</code> ➔ <code>FAILED</code> ➔ <code>REJECTED</code><br>
         • Rate Limiting: Per-agent token bucket flood protection active
       </div>
+      <div style="margin-top:12px;">
+        <button class="btn-refresh" onclick="navigateTo('/admin?tab=hub')">⚡ Open Live Communication Hub Monitor ➔</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- ==================== SECTION 6: CENTRAL HUB MONITOR ==================== -->
+  <main id="view-hub" class="view-panel">
+    <div class="card-section">
+      <div class="card-header">
+        <div>
+          <div class="card-title" style="display:flex;align-items:center;gap:10px;">
+            <span>⚡ Central Communication Hub Monitor</span>
+            <span class="badge-tag badge-green" id="hub-live-badge">PORT 8002 ACTIVE</span>
+          </div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px;">
+            Live inter-agent message routing telemetry, circuit breaker resilience, and privacy audit timeline.
+          </div>
+        </div>
+        <button class="btn-refresh" onclick="loadAdminHubDashboard()">🔄 Refresh Telemetry</button>
+      </div>
+
+      <!-- Hub Stat Cards -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin: 16px 0 24px;">
+        <div style="background: rgba(10,14,26,0.85); border: 1px solid var(--border); border-radius: 8px; padding: 16px;">
+          <div style="font-size: 11px; color: var(--muted); font-family: 'Share Tech Mono', monospace;">TOTAL MESSAGES ROUTED</div>
+          <div id="hub-stat-total" style="font-size: 26px; font-weight: 800; color: var(--ink-bright); margin-top: 4px;">0</div>
+          <div style="font-size: 11px; color: #34D399; margin-top: 4px;">Audited & Nonce-Protected</div>
+        </div>
+        <div style="background: rgba(10,14,26,0.85); border: 1px solid var(--border); border-radius: 8px; padding: 16px;">
+          <div style="font-size: 11px; color: var(--muted); font-family: 'Share Tech Mono', monospace;">DELIVERY SUCCESS RATE</div>
+          <div id="hub-stat-delivery" style="font-size: 26px; font-weight: 800; color: #34D399; margin-top: 4px;">100.0%</div>
+          <div style="font-size: 11px; color: var(--muted-hi); margin-top: 4px;"><span id="hub-stat-delivered">0</span> delivered / <span id="hub-stat-failed">0</span> failed</div>
+        </div>
+        <div style="background: rgba(10,14,26,0.85); border: 1px solid var(--border); border-radius: 8px; padding: 16px;">
+          <div style="font-size: 11px; color: var(--muted); font-family: 'Share Tech Mono', monospace;">AVERAGE LATENCY</div>
+          <div id="hub-stat-latency" style="font-size: 26px; font-weight: 800; color: var(--brand); margin-top: 4px;">0.00 ms</div>
+          <div style="font-size: 11px; color: var(--muted-hi); margin-top: 4px;">Fast async dispatch</div>
+        </div>
+        <div style="background: rgba(10,14,26,0.85); border: 1px solid var(--border); border-radius: 8px; padding: 16px;">
+          <div style="font-size: 11px; color: var(--muted); font-family: 'Share Tech Mono', monospace;">CIRCUIT BREAKER</div>
+          <div id="hub-stat-breaker" style="font-size: 18px; font-weight: 800; color: #34D399; margin-top: 8px;">● CLOSED (HEALTHY)</div>
+          <div style="font-size: 11px; color: var(--muted-hi); margin-top: 4px;">Fast-fail recovery enabled</div>
+        </div>
+      </div>
+
+      <!-- Agent Registry Status -->
+      <div style="background: rgba(10,14,26,0.7); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 24px;">
+        <div style="font-weight: 700; font-size: 12.5px; color: var(--ink-bright); margin-bottom: 10px;">Registered Agent Network</div>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <span style="display:flex;align-items:center;gap:6px;padding:6px 12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:20px;font-family:'Share Tech Mono',monospace;font-size:12px;">
+            <span style="width:8px;height:8px;border-radius:50%;background:#34D399;"></span> passenger-agent (Port 8001 / Gateway)
+          </span>
+          <span style="display:flex;align-items:center;gap:6px;padding:6px 12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:20px;font-family:'Share Tech Mono',monospace;font-size:12px;">
+            <span style="width:8px;height:8px;border-radius:50%;background:#34D399;"></span> booking-agent (Port 8003)
+          </span>
+          <span style="display:flex;align-items:center;gap:6px;padding:6px 12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:20px;font-family:'Share Tech Mono',monospace;font-size:12px;">
+            <span style="width:8px;height:8px;border-radius:50%;background:#34D399;"></span> security-agent (Port 8004)
+          </span>
+          <span style="display:flex;align-items:center;gap:6px;padding:6px 12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:20px;font-family:'Share Tech Mono',monospace;font-size:12px;">
+            <span style="width:8px;height:8px;border-radius:50%;background:#34D399;"></span> operations-agent (Port 8005)
+          </span>
+          <span style="display:flex;align-items:center;gap:6px;padding:6px 12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:20px;font-family:'Share Tech Mono',monospace;font-size:12px;">
+            <span style="width:8px;height:8px;border-radius:50%;background:#34D399;"></span> maintenance-agent (Port 8006)
+          </span>
+          <span style="display:flex;align-items:center;gap:6px;padding:6px 12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:20px;font-family:'Share Tech Mono',monospace;font-size:12px;">
+            <span style="width:8px;height:8px;border-radius:50%;background:#34D399;"></span> hub-auditor (Internal Ledger)
+          </span>
+        </div>
+      </div>
+
+      <!-- Live Message Timeline -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <div style="font-weight:700;font-size:14px;color:var(--ink-bright);">Live Inter-Agent Message Routing Timeline</div>
+        <span style="font-size:11px;color:var(--muted);font-family:'Share Tech Mono',monospace;">Auto-refreshes every 5s</span>
+      </div>
+      <div style="overflow-x: auto;">
+        <table class="status-table" style="font-family:'Share Tech Mono',monospace;font-size:12px;">
+          <thead>
+            <tr>
+              <th>TIMESTAMP</th>
+              <th>MESSAGE ID</th>
+              <th>SENDER ➔ RECEIVER</th>
+              <th>INTENT</th>
+              <th>STATUS</th>
+              <th>LATENCY</th>
+            </tr>
+          </thead>
+          <tbody id="admin-hub-timeline-body">
+            <tr><td colspan="6" style="padding: 20px; text-align: center; color: var(--muted);">Loading message timeline...</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </main>
 </div>
@@ -973,19 +1073,25 @@ function navigateTo(path) {
 
 function handleUrlRouting() {
   const path = window.location.pathname;
+  const hash = window.location.hash;
+  const search = window.location.search;
 
-  if (path.includes('/operations')) {
+  if (path.includes('/operations') || hash === '#operations' || search.includes('tab=operations')) {
     switchSection('operations');
-  } else if (path.includes('/bookings')) {
+  } else if (path.includes('/bookings') || hash === '#bookings' || search.includes('tab=bookings')) {
     switchSection('bookings');
-  } else if (path.includes('/maintenance')) {
+  } else if (path.includes('/maintenance') || hash === '#maintenance' || search.includes('tab=maintenance')) {
     switchSection('maintenance');
-  } else if (path.includes('/security')) {
+  } else if (path.includes('/security') || hash === '#security' || search.includes('tab=security')) {
     switchSection('security');
+  } else if (path.includes('/hub') || path.includes('/monitor') || hash === '#hub' || hash === '#view-hub' || search.includes('tab=hub') || search.includes('tab=monitor')) {
+    switchSection('hub');
   } else {
     switchSection('dashboard');
   }
 }
+
+let adminHubInterval = null;
 
 function switchSection(secName) {
   document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
@@ -1005,6 +1111,11 @@ function switchSection(secName) {
   } else if (secName === 'bookings') {
     loadAdminFraudReviews();
     loadAdminCancellations();
+  } else if (secName === 'hub') {
+    loadAdminHubDashboard();
+    if (!adminHubInterval) {
+      adminHubInterval = setInterval(loadAdminHubDashboard, 5000);
+    }
   }
 }
 
@@ -1508,6 +1619,66 @@ async function inspectSchedules() {
 function escapeHtml(text) {
   if (!text) return '';
   return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+async function loadAdminHubDashboard() {
+  try {
+    const [statResp, timeResp] = await Promise.all([
+      fetch('/api/hub/dashboard'),
+      fetch('/api/hub/timeline?limit=25')
+    ]);
+    if (statResp.ok) {
+      const s = await statResp.json();
+      if ($('hub-stat-total')) $('hub-stat-total').textContent = s.total_messages || 0;
+      if ($('hub-stat-delivery')) $('hub-stat-delivery').textContent = `${(s.delivery_rate_percent || 100).toFixed(1)}%`;
+      if ($('hub-stat-delivered')) $('hub-stat-delivered').textContent = s.delivered || 0;
+      if ($('hub-stat-failed')) $('hub-stat-failed').textContent = s.failed || 0;
+      if ($('hub-stat-latency')) $('hub-stat-latency').textContent = `${(s.average_latency_ms || 0).toFixed(2)} ms`;
+      const breakerEl = $('hub-stat-breaker');
+      if (breakerEl) {
+        if (s.circuit_breaker_status === 'OPEN') {
+          breakerEl.textContent = '● OPEN (FAILED)';
+          breakerEl.style.color = '#F87171';
+        } else {
+          breakerEl.textContent = '● CLOSED (HEALTHY)';
+          breakerEl.style.color = '#34D399';
+        }
+      }
+    }
+
+    if (timeResp.ok) {
+      const resData = await timeResp.json();
+      const logs = Array.isArray(resData) ? resData : (resData.items || []);
+      const tbody = $('admin-hub-timeline-body');
+      if (tbody) {
+        if (Array.isArray(logs) && logs.length > 0) {
+          tbody.innerHTML = logs.map(l => {
+            const sAgent = l.sender || l.sender_agent || 'unknown';
+            const rAgent = l.receiver || l.receiver_agent || 'unknown';
+            const st = (l.status || 'ROUTED').toLowerCase();
+            const isFailed = st === 'failed' || st === 'rejected';
+            const badgeClass = isFailed ? 'badge-red' : 'badge-green';
+            const timeStr = l.timestamp ? new Date(l.timestamp).toLocaleTimeString() : 'N/A';
+            const durStr = l.duration_ms ? Number(l.duration_ms).toFixed(1) + ' ms' : '< 1 ms';
+            return `
+              <tr>
+                <td style="color:var(--muted);">${timeStr}</td>
+                <td style="color:var(--brand);font-weight:600;">${escapeHtml(l.message_id || 'N/A')}</td>
+                <td><span style="color:#93C5FD;">${escapeHtml(sAgent)}</span> ➔ <span style="color:#A7F3D0;">${escapeHtml(rAgent)}</span></td>
+                <td style="color:var(--ink-bright);">${escapeHtml(l.intent || '')}</td>
+                <td><span class="badge-tag ${badgeClass}">${escapeHtml(l.status || 'ROUTED')}</span></td>
+                <td style="color:var(--muted-hi);">${durStr}</td>
+              </tr>
+            `;
+          }).join('');
+        } else {
+          tbody.innerHTML = '<tr><td colspan="6" style="padding:20px;text-align:center;color:var(--muted);">No message telemetry recorded in audit trail yet.</td></tr>';
+        }
+      }
+    }
+  } catch (err) {
+    console.error("Failed to load hub dashboard:", err);
+  }
 }
 </script>
 
