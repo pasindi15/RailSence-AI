@@ -11,8 +11,27 @@ Intents:
  - train_status    : asking if a specific train is running/available -> routed to Hub (Maintenance)
  - unknown         : fallback, handled locally with a clarifying reply
 """
+import re
+
+# Same pattern ner_extractor.py uses for train_id (e.g. "PM-4082").
+_TRAIN_ID_PATTERN = re.compile(r"\b[A-Z]{2,12}-\d{3,5}\b", re.IGNORECASE)
 
 INTENT_KEYWORDS = {
+    "train_status": [
+        # "is train" / "is the train" were removed - as bare substrings they
+        # matched almost any "What is the train fare/schedule...?" or "Is
+        # the train ... delayed?" question, hijacking fare_query/
+        # schedule_query/delay_check before their own keywords were ever
+        # checked (train_status is the first key in this dict). The phrases
+        # below are specific enough to still catch real train-status
+        # questions (e.g. "Is train running?" still matches "train running")
+        # without that false-positive footprint.
+        "train running", "train available", "train cancelled", "train service",
+        "will train", "train operating", "out of service", "under maintenance",
+        "train working", "train today", "service today", "train status",
+        "දුම්රිය ධාවනය", "දුම්රිය ක්‍රියාත්මකද",
+        "ரயில் இயங்குகிறதா", "ரயில் நிலை",
+    ],
     "operational_alert": [
         "operational delay alert", "operational alert", "delay alert",
         "require an operational", "require a delay alert", "require an alert",
@@ -21,6 +40,9 @@ INTENT_KEYWORDS = {
         "historical incident", "historical incidents", "similar incident", "similar incidents",
         "similar past incident", "similar to the delay", "past incident", "past incidents",
         "incident history",
+    ],
+    "delay_check": [
+
     ],
     "delay_check": [
         "delay", "delayed", "late", "on time", "on-time", "how late", "expected delay",
@@ -68,11 +90,46 @@ INTENT_KEYWORDS = {
     ],
 }
 
+# "what is" was removed - as a bare substring it matched almost any "What is
+# ...?" question with no requirement that it even mention a train (e.g. "What
+# is the weather in London?"), routing genuinely off-topic questions here
+# instead of letting them correctly fall through to "unknown" (which the
+# off-topic guardrail in compose_rag_answer() then catches).
+#
+# The remaining phrases here (e.g. "train details") have the exact same
+# failure mode, just less obviously - "kandy colombo train details" matches
+# "train details" and got promoted to train_info even though no specific
+# train was named, and train_info's handler is useless without one (it just
+# immediately asks for a train ID). classify_intent() below now requires an
+# actual train ID pattern to be present before returning train_info via this
+# list at all, rather than removing keywords one at a time as each one's
+# false-positive turns up - a station-only "train details" question instead
+# correctly falls through to "unknown", which has real, on-topic matches in
+# schedules.md for a from/to station query like that.
 TRAIN_INFO_KEYWORDS = [
-    "what is", "where does", "where is", "which route", "train information",
+    "where does", "where is", "which route", "train information",
     "train details", "active", "departs", "departure", "arrives", "arrival",
     "leave", "go",
 ]
+
+# Whole-message greetings only ("hii", "vanakkam") - deliberately not a
+# substring check like the keyword lists above, since "hi" as a substring
+# would false-positive on real questions (e.g. a message that merely
+# contains "history"). A greeting mixed with an actual question ("hi, what's
+# the fare to kandy") should still fall through to normal intent
+# classification instead of being swallowed here.
+GREETING_WORDS = {
+    "hi", "hii", "hiii", "hiiii", "hello", "helo", "hey", "heya", "yo",
+    "good morning", "good afternoon", "good evening",
+    "vanakkam", "ayubowan",
+    "ආයුබෝවන්",
+    "வணக்கம்",
+}
+
+
+def is_greeting(text: str) -> bool:
+    cleaned = text.strip().lower().strip("!.,? ")
+    return cleaned in GREETING_WORDS
 
 
 def classify_intent(text: str) -> str:
@@ -81,7 +138,7 @@ def classify_intent(text: str) -> str:
         for kw in keywords:
             if kw in lowered:
                 return intent
-    if any(kw in lowered for kw in TRAIN_INFO_KEYWORDS):
+    if _TRAIN_ID_PATTERN.search(text) and any(kw in lowered for kw in TRAIN_INFO_KEYWORDS):
         return "train_info"
     return "unknown"
 

@@ -737,9 +737,9 @@ textarea:focus-visible,
 }
 
 .bubble.bot {
-  background: #FFFFFF;
+  background: var(--surface);
   color: var(--text);
-  border: 1px solid #E8EFFE;
+  border: 1px solid var(--border);
   border-left: 3px solid var(--passenger);
   border-radius: 16px 16px 16px 4px;
   box-shadow: var(--shadow-bubble);
@@ -774,15 +774,15 @@ textarea:focus-visible,
   gap: 10px;
   padding: 14px 20px 16px;
   border-top: 1px solid var(--border);
-  background: #FFFFFF;
+  background: var(--surface);
   transition: background-color 200ms ease, border-color 200ms ease;
 }
 
 .input-bar textarea {
   flex: 1;
   resize: none;
-  border: 1.5px solid #E2E8F0;
-  background: #F8FAFF;
+  border: 1.5px solid var(--border);
+  background: var(--chat-area-bg);
   color: var(--text);
   border-radius: 14px;
   padding: 11px 16px;
@@ -794,13 +794,13 @@ textarea:focus-visible,
 }
 
 .input-bar textarea:focus {
-  border-color: #2563EB;
-  background: #FFFFFF;
+  border-color: var(--brand);
+  background: var(--surface);
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
 .input-bar textarea::placeholder {
-  color: #B0BEC5;
+  color: var(--muted);
 }
 
 .input-bar button {
@@ -947,8 +947,8 @@ textarea:focus-visible,
   justify-content: space-between;
   align-items: center;
   padding: 13px 24px;
-  background: #FFFFFF;
-  border-bottom: 1px solid #EEF2FB;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
   gap: 12px;
   box-shadow: 0 1px 4px rgba(15, 23, 42, 0.04);
 }
@@ -1014,8 +1014,8 @@ textarea:focus-visible,
 
 .quick-prompts-strip {
   padding: 10px 24px;
-  background: #F8FAFF;
-  border-bottom: 1px solid #EEF2FB;
+  background: var(--chat-area-bg);
+  border-bottom: 1px solid var(--border);
   animation: fadeIn 200ms ease;
 }
 
@@ -1038,9 +1038,9 @@ textarea:focus-visible,
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: #FFFFFF;
-  border: 1px solid #E2E8F0;
-  color: #334155;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
   padding: 6px 14px;
   border-radius: 20px;
   font-size: 12px;
@@ -1052,9 +1052,9 @@ textarea:focus-visible,
 }
 
 .strip-chip:hover {
-  border-color: #2563EB;
-  background: #EFF6FF;
-  color: #1D4ED8;
+  border-color: var(--brand);
+  background: var(--bg);
+  color: var(--brand-hover);
   transform: translateY(-1px);
   box-shadow: 0 2px 8px rgba(37, 99, 235, 0.15);
 }
@@ -1073,8 +1073,8 @@ textarea:focus-visible,
 .empty-state-card {
   text-align: center;
   padding: 32px 28px 28px;
-  background: #FFFFFF;
-  border: 1px solid #EEF2FB;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 20px;
   box-shadow: 0 4px 20px rgba(37, 99, 235, 0.07);
 }
@@ -1096,14 +1096,14 @@ textarea:focus-visible,
 .empty-state-title {
   font-size: 24px;
   font-weight: 800;
-  color: #0F172A;
+  color: var(--text);
   margin: 0 0 8px;
   font-family: var(--font-heading);
 }
 
 .empty-state-desc {
   font-size: 13px;
-  color: #64748B;
+  color: var(--muted);
   margin: 0 auto;
   max-width: 560px;
   line-height: 1.7;
@@ -1139,8 +1139,8 @@ textarea:focus-visible,
 
 .quick-card {
   text-align: left;
-  background: #FFFFFF;
-  border: 1px solid #E8EFFE;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 14px;
   padding: 16px;
   cursor: pointer;
@@ -1152,10 +1152,10 @@ textarea:focus-visible,
 }
 
 .quick-card:hover {
-  border-color: #2563EB;
+  border-color: var(--brand);
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(37, 99, 235, 0.13);
-  background: #F8FAFF;
+  background: var(--bg);
 }
 
 .quick-card-top {
@@ -1212,7 +1212,7 @@ textarea:focus-visible,
   gap: 12px;
   margin-top: 8px;
   padding-top: 6px;
-  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  border-top: 1px solid var(--border);
   font-size: 10px;
   color: var(--muted);
 }

@@ -26,6 +26,30 @@ TRAIN_NAME_MAP: dict[str, dict] = {
     "denuwara menike":   {"loco": "DE-2004", "number": "1087", "route": "Colombo Fort–Kandy"},
 }
 
+# ── Linked rolling-stock assets per train (loco + bogie + brake system) ───────
+# Each loco's numeric suffix maps to its paired bogie and brake system unit.
+TRAIN_ASSET_MAP: dict[str, list[str]] = {
+    "DE-1001": ["DE-1001", "BG-1001", "BR-1001"],
+    "DE-1002": ["DE-1002", "BG-1002", "BR-1002"],
+    "DE-1003": ["DE-1003", "BG-1003", "BR-1003"],
+    "DE-1004": ["DE-1004", "BG-1004", "BR-1004"],
+    "DE-2001": ["DE-2001", "BG-1006", "BR-1005"],
+    "DE-2002": ["DE-2002", "BG-1007", "BR-1006"],
+    "DE-2003": ["DE-2003", "BG-1008", "BR-1007"],
+    "DE-2004": ["DE-2004", "BG-1009", "BR-1008"],
+}
+
+# ── Train-list query detection ────────────────────────────────────────────────
+_TRAIN_LIST_KEYWORDS = [
+    "train list", "list of trains", "list trains", "all trains", "show trains",
+    "what trains", "which trains", "available trains", "trains available",
+    "train names", "fleet list", "train fleet",
+]
+
+def _is_train_list_query(message: str) -> bool:
+    lower = message.lower()
+    return any(kw in lower for kw in _TRAIN_LIST_KEYWORDS)
+
 ASSET_TYPE_HINTS: dict[str, list[str]] = {
     "diesel_engine": ["engine", "diesel", "oil", "coolant", "radiator", "crankshaft", "fuel pump", "starter", "overheating", "rpm", "exhaust"],
     "electric_loco": ["pantograph", "inverter", "igbt", "traction motor", "electric", "loco", "overhead"],
@@ -43,6 +67,13 @@ Always reply using EXACTLY this structure (use the bold labels as shown):
 
 **Status:** One sentence — current condition or direct answer to the question.
 
+**Assets:** (ONLY when the context contains specific fleet/asset health records — omit this section entirely otherwise)
+- ASSET_ID | Asset Type | health_score | HEALTH_STATUS
+Example format (one line per asset, pipe-separated, no extra text):
+- DE-1003 | Diesel Engine | 91.93 | GREEN
+- BG-1003 | Bogie | 66.52 | AMBER
+- BR-1003 | Brake System | 75.66 | GREEN
+
 **Details:**
 - Key finding or fact 1
 - Key finding or fact 2
@@ -56,8 +87,9 @@ Always reply using EXACTLY this structure (use the bold labels as shown):
 **Reference:** Manual section, threshold, or interval that applies.
 
 Rules:
-- When fleet/asset data is provided, use it as the PRIMARY source. Cite the asset ID, health score, and status in the Status line.
-- When manual context is provided but does NOT match the question topic, IGNORE it and answer from your expert railway engineering knowledge instead. Label the Reference as "General guidance — SLR standard practice".
+- When fleet/asset data is provided, ALWAYS output the **Assets:** section with one pipe-separated line per asset. Use the exact format: ASSET_ID | Asset Type | score | STATUS.
+- In **Details:**, describe findings (fault types, days since service, recommendations) — do NOT repeat the asset table here.
+- When manual context is provided but does NOT match the question topic, IGNORE it and answer from expert knowledge. Label the Reference as "General guidance — SLR standard practice".
 - When manual context IS relevant, cite it in the Reference line.
 - Use only bullet points for lists — no tables, no numbered lists, no markdown headings.
 - Be concise. Each bullet should be one clear sentence.
@@ -89,34 +121,43 @@ def _detect_train(message: str) -> Optional[dict]:
 
 
 def _fetch_asset_data(loco_id: str) -> Optional[dict]:
-    """Fetch the latest health record for a locomotive from Supabase or CSV."""
+    """Fetch the latest health records for a train's full rolling-stock set."""
+    asset_ids = TRAIN_ASSET_MAP.get(loco_id, [loco_id])
     try:
         import supabase_store
         client = supabase_store.get_client()
+        rows: list[dict] = []
         if client:
             result = (
                 client.table("assets_history")
                 .select("*")
-                .eq("asset_id", loco_id)
+                .in_("asset_id", asset_ids)
                 .order("last_service_date", desc=True)
-                .limit(5)
+                .limit(20)
                 .execute()
             )
-            rows = result.data or []
+            raw = result.data or []
+            # Keep only the latest record per asset_id
+            seen: set[str] = set()
+            for r in raw:
+                aid = r.get("asset_id", "")
+                if aid not in seen:
+                    seen.add(aid)
+                    rows.append(r)
         else:
             import csv
             data_path = AGENT_DIR / "data" / "assets_history.csv"
-            rows = []
             if data_path.exists():
+                seen2: set[str] = set()
                 with open(data_path, encoding="utf-8") as f:
-                    rows = [r for r in csv.DictReader(f) if r.get("asset_id") == loco_id]
-                rows = rows[-5:]
+                    for r in csv.DictReader(f):
+                        if r.get("asset_id") in asset_ids and r.get("asset_id") not in seen2:
+                            seen2.add(r["asset_id"])
+                            rows.append(r)
         if not rows:
             return None
-        # Summarise across asset types for this loco
-        summary = []
-        for r in rows:
-            summary.append({
+        summary = [
+            {
                 "asset_id": r.get("asset_id"),
                 "asset_type": r.get("asset_type", "").replace("_", " "),
                 "health_score": r.get("health_score"),
@@ -128,10 +169,26 @@ def _fetch_asset_data(loco_id: str) -> Optional[dict]:
                 "technician_note": r.get("technician_note"),
                 "station": r.get("station"),
                 "last_service_date": r.get("last_service_date"),
-            })
+            }
+            for r in rows
+        ]
         return {"loco_id": loco_id, "records": summary}
     except Exception:
         return None
+
+
+def _build_train_list_answer() -> str:
+    """Return a formatted train list answer from the known registry."""
+    lines = ["**Status:** Here is the current Sri Lanka Railways maintenance fleet registered in RailSense AI.\n"]
+    lines.append("**Details:**")
+    for name, info in TRAIN_NAME_MAP.items():
+        lines.append(f"- {name.title()} — Train #{info['number']} | Loco: {info['loco']} | Route: {info['route']}")
+    lines.append("\n**Action Required:**")
+    lines.append("- Use a specific train name (e.g. 'Podi Menike engine status') to get live health data.")
+    lines.append("- Flag a train for maintenance via the dashboard Train Flags panel.")
+    lines.append("- Contact Train Control Center (TCC) for real-time operational schedules.")
+    lines.append("\n**Reference:** RailSense M4 internal train registry — 8 tracked locomotives.")
+    return "\n".join(lines)
 
 
 def _build_asset_context(train: dict, asset_data: Optional[dict]) -> str:
@@ -251,6 +308,17 @@ def answer_engineer_question(
     history: Optional[list[dict]] = None,
 ) -> dict[str, Any]:
     history = history or []
+
+    # 0. Short-circuit: train list query
+    if _is_train_list_query(message):
+        return {
+            "answer": _build_train_list_answer(),
+            "citations": [],
+            "retrieval_method": "registry",
+            "answer_method": "registry",
+            "detected_asset_type": "",
+            "detected_train": None,
+        }
 
     # 1. Detect if question is about a specific train
     train = _detect_train(message)

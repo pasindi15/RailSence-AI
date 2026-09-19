@@ -64,29 +64,40 @@ body.dark .toggle-container::after{content:'Light mode'}
 body{font-family:"DM Sans",system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;-webkit-font-smoothing:antialiased}
 
 /* ── Sidebar ── */
-.sidebar{width:var(--sidebar-w);background:var(--white);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:100;box-shadow:2px 0 12px rgba(0,0,0,0.04)}
-.sb-logo{display:flex;align-items:center;gap:10px;padding:18px 20px 16px;border-bottom:1px solid var(--border)}
-.sb-logo svg{width:34px;height:34px;flex-shrink:0}
-.sb-brand{font-size:0.93rem;font-weight:800;color:var(--text);letter-spacing:-0.3px}
-.sb-sub{font-size:0.67rem;color:var(--text-muted);margin-top:1px}
-nav{flex:1;padding:12px 10px;overflow-y:auto}
-.nav-section{font-size:0.62rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text-light);padding:12px 14px 5px}
-.nav-item{display:flex;align-items:center;gap:11px;padding:9px 14px;border-radius:11px;cursor:pointer;font-size:0.84rem;font-weight:500;color:var(--text-muted);transition:all 0.15s;margin-bottom:1px;border:none;background:none;font-family:inherit;width:100%;text-align:left;position:relative}
+.sidebar{width:var(--sidebar-w);background:var(--white);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:100;box-shadow:2px 0 12px rgba(0,0,0,0.04);overflow:hidden;transition:width 280ms cubic-bezier(0.16,1,0.3,1),box-shadow 280ms}
+.sidebar.collapsed{width:0;border-right-color:transparent;box-shadow:none}
+.sb-logo{display:flex;align-items:center;justify-content:center;padding:20px 14px 18px;border-bottom:1px solid var(--border);min-width:var(--sidebar-w)}
+.sb-logo-img{width:90px;height:90px;object-fit:contain;flex-shrink:0}
+nav{flex:1;padding:12px 10px;overflow-y:auto;min-width:var(--sidebar-w)}
+.nav-section{font-size:0.62rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text-light);padding:12px 14px 5px;white-space:nowrap}
+.nav-item{display:flex;align-items:center;gap:11px;padding:9px 14px;border-radius:11px;cursor:pointer;font-size:0.84rem;font-weight:500;color:var(--text-muted);transition:all 0.15s;margin-bottom:1px;border:none;background:none;font-family:inherit;width:100%;text-align:left;position:relative;white-space:nowrap}
 .nav-item:hover{background:#f1f5f9;color:var(--text)}
 .nav-item.active{background:var(--blue-bg);color:var(--primary);font-weight:600}
 .nav-item.active::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:60%;background:var(--primary);border-radius:0 3px 3px 0}
 .nav-icon{width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0}
-.sb-footer{padding:14px 16px;border-top:1px solid var(--border);background:#fafbfc}
+.sb-footer{padding:14px 16px;border-top:1px solid var(--border);background:#fafbfc;min-width:var(--sidebar-w)}
 .sb-sys{display:flex;flex-direction:column;gap:7px}
 .sb-sys-row{display:flex;align-items:center;justify-content:space-between;font-size:0.72rem}
-.sb-sys-name{color:var(--text-muted);display:flex;align-items:center;gap:5px}
+.sb-sys-name{color:var(--text-muted);display:flex;align-items:center;gap:5px;white-space:nowrap}
 .sb-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
 .sb-dot.on{background:var(--green)}
 .sb-dot.off{background:#d1d5db}
 .sb-time{font-size:0.65rem;color:var(--text-light);margin-top:9px;padding-top:9px;border-top:1px solid var(--border);display:flex;justify-content:space-between}
+.sb-logout-btn{margin-top:12px;width:100%;display:flex;align-items:center;justify-content:center;gap:7px;padding:9px 0;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--text-muted);font-size:0.8rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all 0.15s;white-space:nowrap}
+.sb-logout-btn:hover{background:#fef2f2;color:#dc2626;border-color:#fca5a5;}
+body.dark .sb-logout-btn:hover{background:#2d1515;color:#f87171;border-color:#7f1d1d;}
+
+/* ── Sidebar toggle tab ── */
+.sb-toggle{position:fixed;top:50%;transform:translateY(-50%);left:var(--sidebar-w);z-index:101;width:18px;height:48px;background:var(--white);border:1px solid var(--border);border-left:none;border-radius:0 8px 8px 0;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:left 280ms cubic-bezier(0.16,1,0.3,1),background 0.15s,box-shadow 0.15s;box-shadow:2px 0 8px rgba(0,0,0,0.07);padding:0}
+.sb-toggle:hover{background:var(--blue-bg);box-shadow:2px 0 12px rgba(37,99,235,0.15)}
+.sb-toggle svg{width:10px;height:10px;color:var(--text-muted);transition:transform 280ms cubic-bezier(0.16,1,0.3,1),color 0.15s}
+.sb-toggle:hover svg{color:var(--primary)}
+.sidebar.collapsed ~ .sb-toggle{left:0;border-left:1px solid var(--border);border-radius:8px}
+.sidebar.collapsed ~ .sb-toggle svg{transform:rotate(180deg)}
 
 /* ── Main ── */
-.main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-height:100vh}
+.main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-height:100vh;transition:margin-left 280ms cubic-bezier(0.16,1,0.3,1)}
+.sidebar.collapsed ~ .sb-toggle ~ .main{margin-left:0}
 .topbar{background:var(--white);border-bottom:1px solid var(--border);padding:11px 28px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:50;box-shadow:0 1px 0 var(--border)}
 .topbar-title{font-size:0.97rem;font-weight:800;letter-spacing:-0.2px}
 .topbar-sub{font-size:0.7rem;color:var(--text-muted);margin-top:1px}
@@ -280,6 +291,20 @@ tbody tr:hover td{background:#f8fafc}
 .health-bar-fill{height:100%;border-radius:20px;transition:width 0.7s ease}
 .health-bar-labels{display:flex;justify-content:space-between;font-size:0.67rem;color:var(--text-light)}
 .train-loco-tag{display:inline-flex;align-items:center;gap:4px;background:var(--blue-bg);border:1px solid #bfdbfe;border-radius:20px;padding:3px 8px;font-size:0.68rem;color:var(--primary);font-weight:600;margin-top:7px}
+.train-linked-assets{margin-top:11px;padding-top:11px;border-top:1px solid var(--border)}
+.linked-assets-label{font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:var(--text-light);margin-bottom:7px}
+.linked-assets-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.la-chip{display:flex;align-items:center;gap:6px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:6px 8px;transition:border-color 0.15s,box-shadow 0.15s}
+.la-chip:hover{border-color:#bfdbfe;box-shadow:0 2px 8px rgba(37,99,235,0.07)}
+.la-chip-icon{font-size:0.9rem;flex-shrink:0;line-height:1}
+.la-chip-info{flex:1;min-width:0}
+.la-chip-id{font-size:0.69rem;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.la-chip-type{font-size:0.61rem;color:var(--text-muted);margin-top:1px}
+.la-chip-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.la-dot-green{background:var(--green)}
+.la-dot-amber{background:var(--amber)}
+.la-dot-red{background:var(--red)}
+.la-dot-unknown{background:#94a3b8}
 
 /* ── Empty ── */
 .empty-state{text-align:center;padding:28px 16px;color:var(--text-light);font-size:0.81rem}
@@ -324,6 +349,22 @@ tbody tr:hover td{background:#f8fafc}
 .cp-msg.user .cp-bubble{background:var(--primary);color:white;border-bottom-right-radius:4px}
 .cp-msg.bot .cp-bubble{background:var(--white);color:var(--text);border:1px solid var(--border);border-bottom-left-radius:4px;box-shadow:var(--shadow-sm)}
 .cp-bubble p{margin:0 0 6px 0}.cp-bubble p:last-child{margin-bottom:0}.cp-bubble strong{font-weight:700}.cp-bubble ul{padding-left:14px;margin:2px 0 6px 0}.cp-bubble li{margin-bottom:4px;line-height:1.45}.cp-bubble p.cp-label{margin-bottom:2px}.cp-bubble p.cp-label+ul{margin-top:0}
+.cp-fleet{background:var(--bg);border:1px solid var(--border);border-radius:9px;overflow:hidden;margin:6px 0}
+.cp-fleet-hdr{font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-light);padding:6px 10px 5px;border-bottom:1px solid var(--border);background:#f8fafc}
+.cp-fleet-row{display:flex;align-items:center;gap:9px;padding:7px 10px;border-bottom:1px solid var(--border)}
+.cp-fleet-row:last-child{border-bottom:none}
+.cp-fleet-row.fag{border-left:3px solid #10b981}
+.cp-fleet-row.faa{border-left:3px solid #f59e0b}
+.cp-fleet-row.far{border-left:3px solid #ef4444}
+.cp-fleet-info{flex:1;min-width:0}
+.cp-fleet-id{font-size:0.72rem;font-weight:800;color:var(--text)}
+.cp-fleet-type{font-size:0.6rem;color:var(--text-muted)}
+.cp-fleet-right{text-align:right;flex-shrink:0}
+.cp-fleet-score{font-size:0.78rem;font-weight:800;color:var(--text)}
+.cp-fleet-badge{font-size:0.58rem;font-weight:700;padding:1px 5px;border-radius:20px}
+.cp-fleet-badge.fg{background:#d1fae5;color:#065f46}
+.cp-fleet-badge.fa{background:#fef3c7;color:#92400e}
+.cp-fleet-badge.fr{background:#fee2e2;color:#991b1b}
 .cp-citations{margin-top:7px;padding-top:7px;border-top:1px solid var(--border)}
 .cp-cite-label{font-size:0.63rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-light);margin-bottom:4px}
 .cp-cite-chip{display:inline-flex;align-items:center;gap:3px;background:var(--blue-bg);border:1px solid #bfdbfe;border-radius:20px;padding:2px 8px;font-size:0.66rem;color:var(--primary);margin:2px 3px 2px 0;cursor:pointer;font-weight:600}
@@ -416,14 +457,9 @@ tbody tr:hover td{background:#f8fafc}
 </div>
 
 <!-- ═══ Sidebar ═══ -->
-<aside class="sidebar">
+<aside class="sidebar" id="sidebar">
   <div class="sb-logo">
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 200 200" width="34" height="34">
-      <g clip-path="url(#sb_c)"><mask id="sb_m" style="mask-type:alpha" width="200" height="200" x="0" y="0" maskUnits="userSpaceOnUse"><path fill="#fff" fill-rule="evenodd" d="M100 150c27.614 0 50-22.386 50-50s-22.386-50-50-50-50 22.386-50 50 22.386 50 50 50zm0 50c55.228 0 100-44.772 100-100S155.228 0 100 0 0 44.772 0 100s44.772 100 100 100z" clip-rule="evenodd"/></mask>
-      <g mask="url(#sb_m)"><path fill="#fff" d="M200 0H0v200h200V0z"/><path fill="#2563eb" fill-opacity=".28" d="M200 0H0v200h200V0z"/><g filter="url(#sb_b)" class="animate-gradient"><path fill="#2563eb" d="M110 32H18v68h92V32z"/><path fill="#1d4ed8" d="M188-24H15v98h173v-98z"/><path fill="#3b82f6" d="M175 70H5v156h170V70z"/><path fill="#60a5fa" d="M230 51H100v103h130V51z"/></g></g></g>
-      <defs><filter id="sb_b" width="385" height="410" x="-75" y="-104" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="b"/><feBlend in="SourceGraphic" in2="b" result="s"/><feGaussianBlur result="e" stdDeviation="40"/></filter><clipPath id="sb_c"><path fill="#fff" d="M0 0H200V200H0z"/></clipPath></defs>
-    </svg>
-    <div><div class="sb-brand">RailSense M4</div><div class="sb-sub">Maintenance Agent</div></div>
+    <img src="/static/logo.png" alt="RailSense" class="sb-logo-img"/>
   </div>
 
   <nav>
@@ -444,6 +480,10 @@ tbody tr:hover td{background:#f8fafc}
     <button class="nav-item" data-page="metrics" onclick="nav('metrics',this)">
       <span class="nav-icon">📊</span> Model Metrics
     </button>
+    <div class="nav-section">Support</div>
+    <a href="/chat-ui" class="nav-item" style="text-decoration:none;">
+      <span class="nav-icon">💬</span> Engineer Chatbot
+    </a>
   </nav>
 
   <div class="sb-footer">
@@ -453,11 +493,22 @@ tbody tr:hover td{background:#f8fafc}
       <div class="sb-sys-row"><span class="sb-sys-name"><span class="sb-dot" id="sdot-redis"></span>Redis Hub</span><span style="font-size:0.7rem;color:var(--text-light)" id="sbv-redis">—</span></div>
     </div>
     <div class="sb-time"><span>Last sync</span><span id="sb-sync">—</span></div>
+    <button class="sb-logout-btn" onclick="handleLogout()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Sign Out
+    </button>
   </div>
 </aside>
 
+<!-- ═══ Sidebar Toggle Tab ═══ -->
+<button class="sb-toggle" id="sb-toggle-btn" onclick="toggleSidebar()" title="Toggle sidebar" aria-label="Toggle sidebar">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="15 18 9 12 15 6"/>
+  </svg>
+</button>
+
 <!-- ═══ Main ═══ -->
-<div class="main">
+<div class="main" id="main-content">
 
   <!-- Topbar -->
   <div class="topbar">
@@ -470,7 +521,7 @@ tbody tr:hover td{background:#f8fafc}
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.27"/></svg>
         <span id="refresh-time">—</span>
       </div>
-      <div class="toggle-container" title="Toggle dark mode">
+      <div class="toggle-container" title="Toggle dark mode" style="margin-left:8px;">
         <input class="toggle-input" type="checkbox" id="dm-lever" onchange="toggleDark(this.checked)" aria-label="Toggle dark mode"/>
         <div class="toggle-handle-wrapper">
           <div class="toggle-handle">
@@ -486,14 +537,6 @@ tbody tr:hover td{background:#f8fafc}
           </div>
         </div>
       </div>
-      <a href="/chat-ui" class="chat-btn">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-        Full Chatbot
-      </a>
-      <button class="logout-btn" onclick="handleLogout()" title="Logout">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-        Logout
-      </button>
     </div>
   </div>
 
@@ -728,14 +771,14 @@ tbody tr:hover td{background:#f8fafc}
 <script>
 /* ═══ TRAINS DATA ═══ */
 const TRAINS = [
-  { id:'T-001', name:'Udarata Menike',    number:'1015', cls:'Express',    route:['Colombo Fort','Badulla'],    loco:'DE-1001', gradient:['#1e3a5f','#2d6a9f'], img:'udarata-menike',   capacity:800,  speed:90,  ontime:94 },
-  { id:'T-002', name:'Intercity Express', number:'1083', cls:'IC Express', route:['Colombo Fort','Kandy'],     loco:'DE-1002', gradient:['#1a4731','#2d9b6f'], img:'intercity-express',capacity:1200, speed:120, ontime:91 },
-  { id:'T-003', name:'Yal Devi',          number:'1001', cls:'Express',    route:['Colombo Fort','Jaffna'],    loco:'DE-2001', gradient:['#4a1f1f','#a83232'], img:'yal-devi',         capacity:700,  speed:100, ontime:88 },
-  { id:'T-004', name:'Ruhunu Kumari',     number:'1078', cls:'Express',    route:['Colombo Fort','Matara'],    loco:'DE-2002', gradient:['#2a1f4a','#6b3fa0'], img:'ruhunu-kumari',    capacity:900,  speed:95,  ontime:92 },
-  { id:'T-005', name:'Podi Menike',       number:'1019', cls:'Express',    route:['Kandy','Badulla'],          loco:'DE-1003', gradient:['#1f3a4a','#2d7ea0'], img:'podi-menike',      capacity:600,  speed:65,  ontime:96 },
-  { id:'T-006', name:'Galu Kumari',       number:'1084', cls:'Express',    route:['Colombo Fort','Galle'],     loco:'DE-1004', gradient:['#1f4a2d','#3a8f5a'], img:'galu-kumari',      capacity:850,  speed:100, ontime:93 },
-  { id:'T-007', name:'Night Mail',        number:'1045', cls:'Mail',       route:['Colombo Fort','Matara'],    loco:'DE-2003', gradient:['#2a2a2a','#555555'], img:'night-mail',       capacity:500,  speed:80,  ontime:85 },
-  { id:'T-008', name:'Denuwara Menike',   number:'1087', cls:'IC Express', route:['Colombo Fort','Kandy'],     loco:'DE-2004', gradient:['#1f2a4a','#4a6fa0'], img:'denuwara-menike',  capacity:1100, speed:120, ontime:95 },
+  { id:'T-001', name:'Udarata Menike',    number:'1015', cls:'Express',    route:['Colombo Fort','Badulla'],    loco:'DE-1001', assets:['DE-1001','BG-1001','BR-1001'], gradient:['#1e3a5f','#2d6a9f'], img:'udarata-menike',   capacity:800,  speed:90,  ontime:94 },
+  { id:'T-002', name:'Intercity Express', number:'1083', cls:'IC Express', route:['Colombo Fort','Kandy'],     loco:'DE-1002', assets:['DE-1002','BG-1002','BR-1002'], gradient:['#1a4731','#2d9b6f'], img:'intercity-express',capacity:1200, speed:120, ontime:91 },
+  { id:'T-003', name:'Yal Devi',          number:'1001', cls:'Express',    route:['Colombo Fort','Jaffna'],    loco:'DE-2001', assets:['DE-2001','BG-1006','BR-1005'], gradient:['#4a1f1f','#a83232'], img:'yal-devi',         capacity:700,  speed:100, ontime:88 },
+  { id:'T-004', name:'Ruhunu Kumari',     number:'1078', cls:'Express',    route:['Colombo Fort','Matara'],    loco:'DE-2002', assets:['DE-2002','BG-1007','BR-1006'], gradient:['#2a1f4a','#6b3fa0'], img:'ruhunu-kumari',    capacity:900,  speed:95,  ontime:92 },
+  { id:'T-005', name:'Podi Menike',       number:'1019', cls:'Express',    route:['Kandy','Badulla'],          loco:'DE-1003', assets:['DE-1003','BG-1003','BR-1003'], gradient:['#1f3a4a','#2d7ea0'], img:'podi-menike',      capacity:600,  speed:65,  ontime:96 },
+  { id:'T-006', name:'Galu Kumari',       number:'1084', cls:'Express',    route:['Colombo Fort','Galle'],     loco:'DE-1004', assets:['DE-1004','BG-1004','BR-1004'], gradient:['#1f4a2d','#3a8f5a'], img:'galu-kumari',      capacity:850,  speed:100, ontime:93 },
+  { id:'T-007', name:'Night Mail',        number:'1045', cls:'Mail',       route:['Colombo Fort','Matara'],    loco:'DE-2003', assets:['DE-2003','BG-1008','BR-1007'], gradient:['#2a2a2a','#555555'], img:'night-mail',       capacity:500,  speed:80,  ontime:85 },
+  { id:'T-008', name:'Denuwara Menike',   number:'1087', cls:'IC Express', route:['Colombo Fort','Kandy'],     loco:'DE-2004', assets:['DE-2004','BG-1009','BR-1008'], gradient:['#1f2a4a','#4a6fa0'], img:'denuwara-menike',  capacity:1100, speed:120, ontime:95 },
 ];
 
 /* ═══ NAV META ═══ */
@@ -881,6 +924,27 @@ function trainSVG([c1,c2]) {
   </svg>`;
 }
 
+function trainLinkedAssets(assets) {
+  const typeLabel={'DE':'Locomotive','BG':'Bogie','BR':'Brake Sys.'};
+  const typeIcon={'DE':'🚂','BG':'⚙️','BR':'🔴'};
+  return (assets||[]).map(aid=>{
+    const prefix=aid.split('-')[0];
+    const label=typeLabel[prefix]||'Asset';
+    const icon=typeIcon[prefix]||'🔧';
+    const rec=fleetAll.find(a=>a.asset_id===aid);
+    const st=rec?(rec.health_status||'UNKNOWN'):'UNKNOWN';
+    const dotCls=st==='GREEN'?'la-dot-green':st==='AMBER'?'la-dot-amber':st==='RED'?'la-dot-red':'la-dot-unknown';
+    return `<div class="la-chip">
+      <span class="la-chip-icon">${icon}</span>
+      <div class="la-chip-info">
+        <div class="la-chip-id">${esc(aid)}</div>
+        <div class="la-chip-type">${label}</div>
+      </div>
+      <div class="la-chip-dot ${dotCls}" title="${esc(st)}"></div>
+    </div>`;
+  }).join('');
+}
+
 function renderTrains() {
   const grid=document.getElementById('train-grid');
   grid.innerHTML=TRAINS.map(t=>{
@@ -888,6 +952,11 @@ function renderTrains() {
     const rc=h.status==='GREEN'?'mini-green':h.status==='AMBER'?'mini-amber':'mini-red';
     const bc=h.status==='GREEN'?'badge-green':h.status==='AMBER'?'badge-amber':'badge-red';
     const barColor=h.status==='GREEN'?'var(--green)':h.status==='AMBER'?'var(--amber)':'var(--red)';
+    const linkedHtml=t.assets&&t.assets.length?`
+        <div class="train-linked-assets">
+          <div class="linked-assets-label">Rolling Stock</div>
+          <div class="linked-assets-grid">${trainLinkedAssets(t.assets)}</div>
+        </div>`:'';
     return `<div class="train-card">
       <div class="train-hero">
         <div class="train-hero-bg" style="background:linear-gradient(135deg,${t.gradient[0]},${t.gradient[1]})"></div>
@@ -920,6 +989,7 @@ function renderTrains() {
           <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
           Loco: ${esc(t.loco)}
         </div>
+        ${linkedHtml}
       </div>
     </div>`;
   }).join('');
@@ -928,10 +998,45 @@ function renderTrains() {
 /* ═══ UTILITIES ═══ */
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
 function toast(msg,ms=2600){const e=document.getElementById('toast');e.textContent=msg;e.style.display='block';setTimeout(()=>e.style.display='none',ms)}
-function handleLogout(){if(confirm('Sign out of the Maintenance Portal?')){sessionStorage.removeItem('m4_eng_auth');location.reload();}}
+function handleLogout(){if(confirm('Sign out of the Maintenance Portal?')){localStorage.removeItem('m4_eng_auth');location.replace('http://localhost:3002');}}
+
+/* ── Sidebar toggle ── */
+function _applySidebarState(collapsed){
+  const sb=document.getElementById('sidebar');
+  const main=document.getElementById('main-content');
+  if(collapsed){
+    sb.classList.add('collapsed');
+    main.style.marginLeft='0';
+  }else{
+    sb.classList.remove('collapsed');
+    main.style.marginLeft='var(--sidebar-w)';
+  }
+}
+(function(){
+  const collapsed=localStorage.getItem('m4_sidebar')==='false';
+  _applySidebarState(collapsed);
+})();
+function toggleSidebar(){
+  const sb=document.getElementById('sidebar');
+  const nowCollapsed=!sb.classList.contains('collapsed');
+  _applySidebarState(nowCollapsed);
+  localStorage.setItem('m4_sidebar',nowCollapsed?'false':'true');
+}
 
 /* ── Engineer Login Gate ── */
-(function(){var g=document.getElementById('login-gate');if(sessionStorage.getItem('m4_eng_auth')==='1'){g.style.display='none';}})();
+(function(){
+  var g=document.getElementById('login-gate');
+  var params=new URLSearchParams(window.location.search);
+  if(params.get('m4auth')==='1'){
+    localStorage.setItem('m4_eng_auth','1');
+    history.replaceState(null,'',window.location.pathname);
+    g.style.display='none';
+    return;
+  }
+  if(localStorage.getItem('m4_eng_auth')==='1'){g.style.display='none';return;}
+  // Not authenticated — redirect to robot login
+  window.location.replace('http://localhost:3002');
+})();
 async function doEngineerLogin(e){
   e.preventDefault();
   var id=document.getElementById('eng-id').value.trim();
@@ -943,7 +1048,7 @@ async function doEngineerLogin(e){
   try{
     var res=await fetch('/api/engineer-login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({engineer_id:id,password:pw})});
     if(res.ok){
-      sessionStorage.setItem('m4_eng_auth','1');
+      localStorage.setItem('m4_eng_auth','1');
       var g=document.getElementById('login-gate');
       g.style.transition='opacity 0.35s ease';g.style.opacity='0';
       setTimeout(function(){g.remove();},370);
@@ -1078,28 +1183,45 @@ function cpUser(t){const m=document.getElementById('cp-msgs'),d=document.createE
 function cpTypingOn(){const m=document.getElementById('cp-msgs'),d=document.createElement('div');d.className='cp-msg bot';d.id='cp-typing';d.innerHTML=`<div class="cp-av b">🔧</div><div class="cp-bubble"><div class="cp-typing"><span></span><span></span><span></span></div></div>`;m.appendChild(d);m.scrollTop=m.scrollHeight}
 function cpTypingOff(){const e=document.getElementById('cp-typing');if(e)e.remove()}
 function cpRender(t){
-  // Split into blocks by blank lines
+  // Extract **Assets:** section first and render as fleet card
+  let assetHtml='';
+  t=t.replace(/\*\*Assets:\*\*\s*([\s\S]*?)(?=\*\*(?:Status|Details|Action Required|Reference):\*\*|$)/,(_, body)=>{
+    const rows=body.split('\n').map(l=>l.trim()).filter(l=>/^[-•*]/.test(l))
+      .map(l=>l.replace(/^[-•*]\s*/,'').trim())
+      .map(line=>{
+        const p=line.split('|').map(s=>s.trim());
+        if(p.length<4)return '';
+        const[id,type,scoreStr,status]=p;
+        const score=parseFloat(scoreStr)||0;
+        const st=status.toUpperCase().replace(/[^A-Z]/g,'');
+        const isg=st==='GREEN',isr=st==='RED';
+        const ac=isg?'fag':isr?'far':'faa';
+        const bc=isg?'fg':isr?'fr':'fa';
+        const bl=isg?'GREEN':isr?'RED':'AMBER';
+        return `<div class="cp-fleet-row ${ac}"><div class="cp-fleet-info"><div class="cp-fleet-id">${esc(id)}</div><div class="cp-fleet-type">${esc(type)}</div></div><div class="cp-fleet-right"><div class="cp-fleet-score">${score.toFixed(0)}<span style="font-size:0.58rem;font-weight:400;color:var(--text-muted)">/100</span></div><span class="cp-fleet-badge ${bc}">${bl}</span></div></div>`;
+      }).filter(Boolean).join('');
+    if(rows) assetHtml=`<div class="cp-fleet"><div class="cp-fleet-hdr">Rolling Stock</div>${rows}</div>`;
+    return '';
+  });
+  // Split remaining text into blocks
   const blocks=t.split(/\n\n+/);
   let html='';
   for(let block of blocks){
     block=block.trim();
     if(!block)continue;
     const lines=block.split('\n');
-    // Detect bullet list block
     if(lines.every(l=>/^[-*•]\s/.test(l.trim()))){
       const items=lines.map(l=>`<li>${esc(l.replace(/^[-*•]\s/,'').trim()).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')}</li>`).join('');
       html+=`<ul>${items}</ul>`;
     } else if(lines.length===1&&/^\*\*[^*]+:\*\*/.test(lines[0].trim())){
-      // Bold label line like **Status:** text — render as label paragraph
       const rendered=esc(lines[0].trim()).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
       html+=`<p class="cp-label">${rendered}</p>`;
     } else {
-      // Regular paragraph — apply bold inside
       const rendered=lines.map(l=>esc(l).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')).join('<br>');
       html+=`<p>${rendered}</p>`;
     }
   }
-  return html;
+  return assetHtml+html;
 }
 function cpBot(data){const m=document.getElementById('cp-msgs'),d=document.createElement('div');d.className='cp-msg bot';const cites=(data.citations||[]).map(c=>`<span class="cp-cite-chip">${esc(c.section_title||c.manual||'Manual')}</span>`).join('');const ch=cites?`<div class="cp-citations"><div class="cp-cite-label">Sources</div>${cites}</div>`:'';d.innerHTML=`<div class="cp-av b">🔧</div><div class="cp-bubble">${cpRender(data.answer)}${ch}</div>`;m.appendChild(d);m.scrollTop=m.scrollHeight;const l=data.answer_method==='llm_grounded';document.getElementById('cp-mdot').style.background=l?'var(--primary-light)':'var(--green)';document.getElementById('cp-mlbl').textContent=`${l?'LLM':'Template'} · ${data.retrieval_method==='supabase_pgvector'?'pgvector':'TF-IDF'}`}
 async function cpSendMsg(){const inp=document.getElementById('cp-input'),text=inp.value.trim();if(!text||cpBusy)return;inp.value='';inp.style.height='auto';document.getElementById('cp-send').disabled=true;cpBusy=true;cpUser(text);cpTypingOn();try{const res=await fetch('/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,asset_type:'',history:cpHist.slice(-10)})});if(!res.ok)throw new Error(`HTTP ${res.status}`);const data=await res.json();cpTypingOff();cpBot(data);cpHist.push({role:'user',content:text},{role:'assistant',content:data.answer})}catch(err){cpTypingOff();const m=document.getElementById('cp-msgs'),d=document.createElement('div');d.className='cp-msg bot';d.innerHTML=`<div class="cp-av b">🔧</div><div class="cp-bubble" style="color:var(--red)">Error: ${esc(err.message)}</div>`;m.appendChild(d);m.scrollTop=m.scrollHeight}finally{cpBusy=false;document.getElementById('cp-send').disabled=false}}
