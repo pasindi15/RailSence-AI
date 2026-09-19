@@ -338,39 +338,67 @@ body.dark .fd-note{background:#1e293b;border-color:#334155}
 .ov-report-sum{font-size:0.75rem;color:var(--text-muted);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .ov-report-meta{display:flex;gap:6px;align-items:center;margin-top:5px;flex-wrap:wrap}
 
-/* ── Report Submit Modal ── */
+/* ── Field Observation Modal ── */
 .rpt-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:400;display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;pointer-events:none;transition:opacity 0.2s ease}
 .rpt-backdrop.open{opacity:1;pointer-events:all}
-.rpt-modal{background:var(--white);border:1px solid var(--border);border-radius:18px;padding:26px 28px 22px;width:100%;max-width:500px;box-shadow:0 24px 60px rgba(0,0,0,0.18);transform:scale(0.94) translateY(16px);transition:transform 0.22s cubic-bezier(0.34,1.56,0.64,1);max-height:90vh;overflow-y:auto}
+.rpt-modal{background:var(--white);border:1px solid var(--border);border-radius:18px;width:100%;max-width:520px;box-shadow:0 24px 60px rgba(0,0,0,0.18);transform:scale(0.94) translateY(16px);transition:transform 0.22s cubic-bezier(0.34,1.56,0.64,1);max-height:92vh;overflow:hidden;display:flex;flex-direction:column}
 .rpt-backdrop.open .rpt-modal{transform:scale(1) translateY(0)}
-.rpt-modal-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;gap:10px}
+/* Shared header */
+.rpt-modal-hdr{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:22px 24px 0}
 .rpt-modal-title{font-size:0.95rem;font-weight:800;color:var(--text)}
-.rpt-modal-sub{font-size:0.71rem;color:var(--text-muted);margin-top:2px}
+.rpt-modal-sub{font-size:0.71rem;color:var(--text-muted);margin-top:2px;line-height:1.4}
 .rpt-modal-close{width:28px;height:28px;border-radius:8px;border:1px solid var(--border);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text-muted);transition:all 0.12s;flex-shrink:0}
 .rpt-modal-close:hover{background:#fef2f2;color:var(--red);border-color:#fca5a5}
-.rpt-field{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+/* Purpose bar */
+.rpt-purpose{margin:14px 24px 0;background:var(--blue-bg);border:1px solid #bfdbfe;border-radius:10px;padding:9px 12px;display:flex;align-items:flex-start;gap:9px;font-size:0.74rem;line-height:1.5;color:#1e40af}
+.rpt-purpose svg{flex-shrink:0;margin-top:1px}
+/* Scrollable body */
+.rpt-body{padding:16px 24px;overflow-y:auto;flex:1}
+.rpt-field{display:flex;flex-direction:column;gap:5px;margin-bottom:13px}
 .rpt-label{font-size:0.72rem;font-weight:700;color:var(--text-muted)}
 .rpt-label span{color:var(--red);margin-left:2px}
 .rpt-select,.rpt-input{background:var(--bg);border:1.5px solid var(--border);border-radius:10px;color:var(--text);padding:9px 12px;font-size:0.82rem;font-family:inherit;width:100%;transition:all 0.15s;appearance:none}
 .rpt-select:focus,.rpt-input:focus{outline:none;border-color:var(--border-focus);box-shadow:0 0 0 3px rgba(37,99,235,0.08);background:var(--white)}
 .rpt-select option{background:var(--white);color:var(--text)}
-.rpt-textarea{background:var(--bg);border:1.5px solid var(--border);border-radius:10px;color:var(--text);padding:9px 12px;font-size:0.82rem;font-family:inherit;width:100%;transition:all 0.15s;resize:vertical;min-height:100px;max-height:200px;line-height:1.6}
+.rpt-textarea{background:var(--bg);border:1.5px solid var(--border);border-radius:10px;color:var(--text);padding:9px 12px;font-size:0.82rem;font-family:inherit;width:100%;transition:all 0.15s;resize:vertical;min-height:110px;max-height:180px;line-height:1.65}
 .rpt-textarea:focus{outline:none;border-color:var(--border-focus);box-shadow:0 0 0 3px rgba(37,99,235,0.08);background:var(--white)}
-.rpt-char{font-size:0.66rem;color:var(--text-light);text-align:right;margin-top:2px}
-.rpt-char.warn{color:var(--amber)} .rpt-char.over{color:var(--red)}
+.rpt-char{font-size:0.66rem;color:var(--text-light);text-align:right;margin-top:3px}
+.rpt-char.warn{color:var(--amber)}.rpt-char.over{color:var(--red)}
 .rpt-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.rpt-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border)}
-.btn-ghost{background:transparent;border:1.5px solid var(--border);color:var(--text-muted);border-radius:10px;padding:8px 16px;font-size:0.8rem;font-weight:600;font-family:inherit;cursor:pointer;transition:all 0.12s}
-.btn-ghost:hover{border-color:#94a3b8;color:var(--text);background:var(--bg)}
 .rpt-error{font-size:0.75rem;color:var(--red);margin-top:10px;display:none;padding:8px 12px;background:var(--red-bg);border-radius:8px;border:1px solid #fca5a5}
 .rpt-error.show{display:block}
-/* Submit report button in card header */
+/* Footer */
+.rpt-footer{display:flex;justify-content:flex-end;gap:10px;padding:14px 24px 20px;border-top:1px solid var(--border);flex-shrink:0}
+.btn-ghost{background:transparent;border:1.5px solid var(--border);color:var(--text-muted);border-radius:10px;padding:8px 16px;font-size:0.8rem;font-weight:600;font-family:inherit;cursor:pointer;transition:all 0.12s}
+.btn-ghost:hover{border-color:#94a3b8;color:var(--text);background:var(--bg)}
+/* ── AI Result Panel (shown after submission) ── */
+.rpt-result{display:none;padding:20px 24px 0;flex:1;overflow-y:auto;animation:fadeUp 0.2s ease}
+.rpt-result.show{display:block}
+.rpt-result-hero{text-align:center;padding:10px 0 18px}
+.rpt-result-icon{width:52px;height:52px;border-radius:16px;background:#d1fae5;display:flex;align-items:center;justify-content:center;margin:0 auto 10px}
+.rpt-result-title{font-size:0.96rem;font-weight:800;color:var(--text)}
+.rpt-result-sub{font-size:0.74rem;color:var(--text-muted);margin-top:3px}
+.rpt-ai-section{margin-bottom:14px}
+.rpt-ai-lbl{font-size:0.63rem;font-weight:800;text-transform:uppercase;letter-spacing:0.6px;color:var(--text-light);margin-bottom:6px;display:flex;align-items:center;gap:5px}
+.rpt-fault-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:0.78rem;font-weight:700;border:1.5px solid}
+.rpt-fault-chip.fc-none{background:var(--green-bg);border-color:#6ee7b7;color:#065f46}
+.rpt-fault-chip.fc-fault{background:var(--amber-bg);border-color:#fcd34d;color:#92400e}
+.rpt-fault-chip.fc-crit{background:var(--red-bg);border-color:#fca5a5;color:#991b1b}
+.rpt-summary-box{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:11px 13px;font-size:0.79rem;line-height:1.65;color:var(--text-muted)}
+.rpt-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:2px}
+.rpt-tag{background:var(--blue-bg);border:1px solid #bfdbfe;border-radius:20px;padding:3px 10px;font-size:0.7rem;font-weight:600;color:var(--primary)}
+.rpt-tag.tg-action{background:#f0fdf4;border-color:#86efac;color:#166534}
+.rpt-manual-ref{display:flex;align-items:center;gap:7px;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:9px;font-size:0.74rem;color:var(--text-muted);margin-bottom:5px}
+.rpt-manual-ref svg{flex-shrink:0;color:var(--primary)}
+/* Log observation button in card header */
 .btn-add-report{display:inline-flex;align-items:center;gap:5px;background:var(--primary);color:#fff;border:none;border-radius:9px;padding:6px 13px;font-size:0.74rem;font-weight:600;font-family:inherit;cursor:pointer;transition:all 0.15s;white-space:nowrap}
 .btn-add-report:hover{background:var(--primary-dark);transform:translateY(-1px);box-shadow:0 4px 12px rgba(37,99,235,0.3)}
-/* dark mode for modal */
-body.dark .rpt-modal{background:var(--white);border-color:var(--border)}
+/* dark */
+body.dark .rpt-purpose{background:#1e3a5f;border-color:#1e40af;color:#93c5fd}
 body.dark .rpt-select,body.dark .rpt-input,body.dark .rpt-textarea{background:var(--bg);border-color:var(--border);color:var(--text)}
 body.dark .rpt-select option{background:#1e293b}
+body.dark .rpt-summary-box,body.dark .rpt-manual-ref{background:#162032}
+body.dark .rpt-tag{background:#1e3a5f;border-color:#1e40af;color:#93c5fd}
 
 /* ── Health prediction ── */
 .form-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}
@@ -921,7 +949,7 @@ body.dark .rpt-select option{background:#1e293b}
           </div>
           <button class="btn-add-report" onclick="openReportModal()">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Submit Report
+            Log Observation
           </button>
         </div>
         <div id="reports-list"><div class="empty-state"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:5px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>No reports yet</div></div>
@@ -1215,63 +1243,135 @@ body.dark .rpt-select option{background:#1e293b}
 
 </div><!-- /main -->
 
-<!-- ═══ Report Submit Modal ═══ -->
+<!-- ═══ Field Observation Modal ═══ -->
 <div class="rpt-backdrop" id="rpt-backdrop" onclick="if(event.target===this)closeReportModal()">
   <div class="rpt-modal" role="dialog" aria-modal="true" aria-labelledby="rpt-modal-title">
+
+    <!-- Header (shared) -->
     <div class="rpt-modal-hdr">
       <div>
-        <div class="rpt-modal-title" id="rpt-modal-title">Submit Maintenance Report</div>
-        <div class="rpt-modal-sub">Report will be processed by the NLP pipeline and appear in the feed</div>
+        <div class="rpt-modal-title" id="rpt-modal-title">Log Field Observation</div>
+        <div class="rpt-modal-sub" id="rpt-modal-sub">Write what you saw in the field — AI will do the rest</div>
       </div>
       <button class="rpt-modal-close" onclick="closeReportModal()" aria-label="Close">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
     </div>
 
-    <!-- Train selector -->
-    <div class="rpt-field">
-      <label class="rpt-label" for="rpt-train">Train<span>*</span></label>
-      <select class="rpt-select" id="rpt-train" onchange="populateAssets()">
-        <option value="">— Select train —</option>
-      </select>
+    <!-- Purpose bar -->
+    <div class="rpt-purpose">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span>After you submit, the AI automatically <strong>detects the fault type</strong>, <strong>summarises your note</strong>, and <strong>finds the relevant manual procedure</strong> — so you can act faster.</span>
     </div>
 
-    <!-- Asset ID (auto-populated) -->
-    <div class="rpt-field">
-      <label class="rpt-label" for="rpt-asset">Asset<span>*</span></label>
-      <select class="rpt-select" id="rpt-asset" onchange="populateAssetType()">
-        <option value="">— Select train first —</option>
-      </select>
-    </div>
+    <!-- ── FORM STATE ── -->
+    <div class="rpt-body" id="rpt-form-body">
 
-    <!-- Asset type + Station row -->
-    <div class="rpt-row">
-      <div class="rpt-field" style="margin-bottom:0">
-        <label class="rpt-label" for="rpt-type">Asset Type<span>*</span></label>
-        <input class="rpt-input" id="rpt-type" type="text" readonly placeholder="Auto-filled" style="color:var(--text-muted);cursor:default">
+      <!-- Train selector -->
+      <div class="rpt-field">
+        <label class="rpt-label" for="rpt-train">Train<span>*</span></label>
+        <select class="rpt-select" id="rpt-train" onchange="populateAssets()">
+          <option value="">— Select train —</option>
+        </select>
       </div>
-      <div class="rpt-field" style="margin-bottom:0">
-        <label class="rpt-label" for="rpt-station">Station<span>*</span></label>
-        <input class="rpt-input" id="rpt-station" type="text" placeholder="e.g. Kandy" maxlength="80">
+
+      <!-- Asset (auto-populated from train) -->
+      <div class="rpt-field">
+        <label class="rpt-label" for="rpt-asset">Asset<span>*</span></label>
+        <select class="rpt-select" id="rpt-asset" onchange="populateAssetType()">
+          <option value="">— Select train first —</option>
+        </select>
       </div>
-    </div>
 
-    <!-- Description -->
-    <div class="rpt-field" style="margin-top:14px">
-      <label class="rpt-label" for="rpt-text">Field Observation<span>*</span></label>
-      <textarea class="rpt-textarea" id="rpt-text" placeholder="Describe what you observed, measured readings, actions taken…" maxlength="2000" oninput="updateCharCount()"></textarea>
-      <div class="rpt-char" id="rpt-char">0 / 2000</div>
-    </div>
+      <!-- Asset type + Station -->
+      <div class="rpt-row">
+        <div class="rpt-field" style="margin-bottom:0">
+          <label class="rpt-label" for="rpt-type">Asset Type</label>
+          <input class="rpt-input" id="rpt-type" type="text" readonly placeholder="Auto-filled" style="color:var(--text-muted);cursor:default;font-size:0.78rem">
+        </div>
+        <div class="rpt-field" style="margin-bottom:0">
+          <label class="rpt-label" for="rpt-station">Current Station<span>*</span></label>
+          <input class="rpt-input" id="rpt-station" type="text" placeholder="e.g. Kandy" maxlength="80">
+        </div>
+      </div>
 
-    <div class="rpt-error" id="rpt-error"></div>
+      <!-- Observation text -->
+      <div class="rpt-field" style="margin-top:14px">
+        <label class="rpt-label" for="rpt-text">
+          What did you observe?<span>*</span>
+          <span style="font-weight:400;color:var(--text-light);margin-left:4px">— plain language is fine</span>
+        </label>
+        <textarea class="rpt-textarea" id="rpt-text" maxlength="2000" oninput="updateCharCount()"
+          placeholder="Example: Found oil seepage around the main gasket seal on DE-1003. Engine temperature was 98°C during run. Tightened drain plug and replaced cracked gasket. Pressure tested at 3.2 bar."></textarea>
+        <div class="rpt-char" id="rpt-char">0 / 2000</div>
+      </div>
 
-    <div class="rpt-footer">
+      <div class="rpt-error" id="rpt-error"></div>
+    </div><!-- /rpt-form-body -->
+
+    <!-- ── RESULT STATE (shown after submit) ── -->
+    <div class="rpt-result" id="rpt-result-body">
+      <div class="rpt-result-hero">
+        <div class="rpt-result-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div class="rpt-result-title">Observation Logged</div>
+        <div class="rpt-result-sub" id="rpt-res-asset">AI analysis complete</div>
+      </div>
+
+      <!-- Detected Fault -->
+      <div class="rpt-ai-section">
+        <div class="rpt-ai-lbl">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          Fault Detected
+        </div>
+        <span class="rpt-fault-chip fc-none" id="rpt-res-fault">—</span>
+      </div>
+
+      <!-- AI Summary -->
+      <div class="rpt-ai-section">
+        <div class="rpt-ai-lbl">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          AI Summary
+        </div>
+        <div class="rpt-summary-box" id="rpt-res-summary">—</div>
+      </div>
+
+      <!-- Parts + Actions (side by side) -->
+      <div class="rpt-row" style="margin-bottom:14px">
+        <div class="rpt-ai-section" style="margin-bottom:0">
+          <div class="rpt-ai-lbl">Parts Mentioned</div>
+          <div class="rpt-tags" id="rpt-res-parts"><span style="font-size:0.72rem;color:var(--text-light)">None detected</span></div>
+        </div>
+        <div class="rpt-ai-section" style="margin-bottom:0">
+          <div class="rpt-ai-lbl">Actions Taken</div>
+          <div class="rpt-tags" id="rpt-res-actions"><span style="font-size:0.72rem;color:var(--text-light)">None detected</span></div>
+        </div>
+      </div>
+
+      <!-- Manual References -->
+      <div class="rpt-ai-section" id="rpt-res-manuals-wrap">
+        <div class="rpt-ai-lbl">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+          Manual Procedures Found
+        </div>
+        <div id="rpt-res-manuals"></div>
+      </div>
+    </div><!-- /rpt-result-body -->
+
+    <!-- Footer -->
+    <div class="rpt-footer" id="rpt-footer-form">
       <button class="btn-ghost" onclick="closeReportModal()">Cancel</button>
       <button class="btn btn-primary" id="rpt-submit-btn" onclick="submitReport()">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-        Submit Report
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        Analyse &amp; Log
       </button>
     </div>
+    <div class="rpt-footer" id="rpt-footer-result" style="display:none">
+      <button class="btn-ghost" onclick="resetReportModal()">Log Another</button>
+      <button class="btn btn-primary" onclick="closeReportModal()">Done</button>
+    </div>
+
   </div>
 </div>
 
@@ -1751,8 +1851,26 @@ function renderReports(reports){
 
 /* ═══ REPORT MODAL ═══ */
 const ASSET_TYPE_LABELS={'DE':'diesel_engine','BG':'bogie','BR':'brake_system'};
+/* ═══ FIELD OBSERVATION MODAL ═══ */
+function _rptShowFormState(){
+  document.getElementById('rpt-form-body').style.display='block';
+  document.getElementById('rpt-result-body').className='rpt-result';
+  document.getElementById('rpt-footer-form').style.display='flex';
+  document.getElementById('rpt-footer-result').style.display='none';
+  document.getElementById('rpt-modal-title').textContent='Log Field Observation';
+  document.getElementById('rpt-modal-sub').textContent='Write what you saw in the field — AI will do the rest';
+}
+function _rptShowResultState(){
+  document.getElementById('rpt-form-body').style.display='none';
+  document.getElementById('rpt-result-body').className='rpt-result show';
+  document.getElementById('rpt-footer-form').style.display='none';
+  document.getElementById('rpt-footer-result').style.display='flex';
+  document.getElementById('rpt-modal-title').textContent='AI Analysis Complete';
+  document.getElementById('rpt-modal-sub').textContent='Your observation has been logged and analysed';
+}
+
 function openReportModal(){
-  // Populate train dropdown
+  _rptShowFormState();
   const tSel=document.getElementById('rpt-train');
   tSel.innerHTML='<option value="">— Select train —</option>'+
     TRAINS.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join('');
@@ -1765,11 +1883,17 @@ function openReportModal(){
   document.getElementById('rpt-error').className='rpt-error';
   document.getElementById('rpt-submit-btn').disabled=false;
   document.getElementById('rpt-submit-btn').innerHTML=
-    '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Submit Report';
+    '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg> Analyse &amp; Log';
   document.getElementById('rpt-backdrop').classList.add('open');
   setTimeout(()=>document.getElementById('rpt-train').focus(),50);
 }
+
+function resetReportModal(){
+  openReportModal(); // clears form and goes back to form state
+}
+
 function closeReportModal(){document.getElementById('rpt-backdrop').classList.remove('open')}
+
 function populateAssets(){
   const tid=document.getElementById('rpt-train').value;
   const train=TRAINS.find(t=>t.id===tid);
@@ -1782,22 +1906,68 @@ function populateAssets(){
       return`<option value="${esc(aid)}">${esc(aid)} — ${label}</option>`;
     }).join('');
   document.getElementById('rpt-type').value='';
-  // Pre-fill station from train route
   const stations=train.route||[];
   document.getElementById('rpt-station').value=stations[stations.length-1]||'';
 }
+
 function populateAssetType(){
   const aid=document.getElementById('rpt-asset').value;
   if(!aid){document.getElementById('rpt-type').value='';return}
   const prefix=aid.split('-')[0];
   document.getElementById('rpt-type').value=ASSET_TYPE_LABELS[prefix]||'';
 }
+
 function updateCharCount(){
   const txt=document.getElementById('rpt-text').value;
   const el=document.getElementById('rpt-char');
   el.textContent=txt.length+' / 2000';
   el.className='rpt-char'+(txt.length>1800?' warn':txt.length>=2000?' over':'');
 }
+
+function showRptResult(data, assetId, assetType){
+  // Fault chip
+  const fault=(data.detected_fault_type||'none').replace(/_/g,' ');
+  const isNone=fault==='none'||!fault;
+  const faultEl=document.getElementById('rpt-res-fault');
+  faultEl.textContent=isNone?'No fault detected':fault;
+  faultEl.className='rpt-fault-chip '+(isNone?'fc-none':'fc-fault');
+
+  // Asset line
+  document.getElementById('rpt-res-asset').textContent=
+    `${assetId} · ${(assetType||'').replace(/_/g,' ')}`;
+
+  // Summary
+  document.getElementById('rpt-res-summary').textContent=data.summary||'No summary generated.';
+
+  // Parts mentioned
+  const parts=(data.parts_mentioned||[]);
+  document.getElementById('rpt-res-parts').innerHTML=parts.length
+    ?parts.map(p=>`<span class="rpt-tag">${esc(p)}</span>`).join('')
+    :'<span style="font-size:0.72rem;color:var(--text-light)">None detected</span>';
+
+  // Actions taken
+  const acts=(data.actions_taken||[]);
+  document.getElementById('rpt-res-actions').innerHTML=acts.length
+    ?acts.map(a=>`<span class="rpt-tag tg-action">${esc(a)}</span>`).join('')
+    :'<span style="font-size:0.72rem;color:var(--text-light)">None detected</span>';
+
+  // Manual references
+  const manuals=(data.manual_sections_cited||[]).filter(Boolean);
+  const mWrap=document.getElementById('rpt-res-manuals-wrap');
+  const mEl=document.getElementById('rpt-res-manuals');
+  if(manuals.length){
+    mWrap.style.display='block';
+    mEl.innerHTML=manuals.map(m=>`<div class="rpt-manual-ref">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+      ${esc(m)}
+    </div>`).join('');
+  } else {
+    mWrap.style.display='none';
+  }
+
+  _rptShowResultState();
+}
+
 async function submitReport(){
   const asset_id=document.getElementById('rpt-asset').value.trim();
   const asset_type=document.getElementById('rpt-type').value.trim();
@@ -1806,32 +1976,27 @@ async function submitReport(){
   const errEl=document.getElementById('rpt-error');
   errEl.className='rpt-error';
   if(!asset_id||!asset_type||!station||text.length<5){
-    errEl.textContent='Please fill in all fields. Observation must be at least 5 characters.';
+    errEl.textContent='Please select a train, asset, station and write at least one sentence.';
     errEl.className='rpt-error show';return;
   }
   const btn=document.getElementById('rpt-submit-btn');
   btn.disabled=true;
-  btn.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="animation:spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Submitting…';
+  btn.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="animation:spin 0.9s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Analysing…';
   try{
     const res=await fetch('/maintenance-report',{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({asset_id,asset_type,station,text})});
     const data=await res.json();
     if(!res.ok) throw new Error(data.detail||'Server error');
-    closeReportModal();
-    toast('Report submitted successfully');
-    // Refresh reports list
-    try{
-      const dr=await fetch('/api/dashboard').then(r=>r.json());
-      renderReports(dr.recent_reports||[]);
-    }catch(_){}
+    showRptResult(data, asset_id, asset_type);
+    // Silently refresh recent reports in background
+    fetch('/api/dashboard').then(r=>r.json()).then(dr=>renderReports(dr.recent_reports||[])).catch(()=>{});
   }catch(e){
     btn.disabled=false;
-    btn.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Submit Report';
-    errEl.textContent='Error: '+e.message+'. Please try again.';
+    btn.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg> Analyse &amp; Log';
+    errEl.textContent='Error: '+e.message;
     errEl.className='rpt-error show';
   }
 }
-// Close modal on Escape key
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeReportModal()});
 
 /* ═══ FLEET ═══ */
