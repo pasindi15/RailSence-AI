@@ -36,6 +36,7 @@ import bleach
 from fastapi import Depends, FastAPI, Header, HTTPException, Request, status
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+import httpx
 from pydantic import BaseModel, Field, field_validator
 from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
@@ -431,6 +432,14 @@ async def api_dashboard(request: Request):
 
     manual_sections_count = len(manual_retriever._load_manual_sections())
 
+    hub_reachable = False
+    try:
+        async with httpx.AsyncClient(timeout=1.5) as _hc:
+            _hr = await _hc.get(f"{hub_client.HUB_BASE_URL.rstrip('/')}/health")
+            hub_reachable = _hr.status_code == 200
+    except Exception:
+        pass
+
     return {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "data_source": "supabase" if supabase_store.get_client() else "local_csv",
@@ -443,6 +452,7 @@ async def api_dashboard(request: Request):
         "recent_events": recent_events,
         "hub_status": {
             "hub_url": hub_client.HUB_BASE_URL,
+            "hub_reachable": hub_reachable,
             "upstash_configured": bool(hub_client.UPSTASH_REDIS_URL),
             "supabase_configured": supabase_store.get_client() is not None,
         },
