@@ -273,44 +273,210 @@
     color: #1e40af;
   }
 
-  /* ── Answer cards ── */
-  .answer-cards { display: flex; flex-direction: column; gap: 9px; min-width: 380px; }
-  .ac { border-radius: 12px; overflow: hidden; font-size: 0.855rem; line-height: 1.65; }
-  .ac-header { display: flex; align-items: center; gap: 7px; padding: 7px 13px; font-size: 0.69rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; }
-  .ac-body { padding: 11px 14px; }
-  .ac-body p { margin: 0; }
-  .ac-body ul, .ac-body ol { padding-left: 18px; margin: 0; }
-  .ac-body li { margin-bottom: 5px; }
-  .ac-body li:last-child { margin-bottom: 0; }
+  /* ══════════════════════════════════════
+     Answer card layout
+  ══════════════════════════════════════ */
+  .answer-cards { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 640px; }
 
-  /* Status card */
-  .ac.ac-status            { border: 1.5px solid #bfdbfe; background: #eff6ff; }
-  .ac.ac-status.ac-green   { border-color: #6ee7b7; background: #ecfdf5; }
-  .ac.ac-status.ac-red     { border-color: #fca5a5; background: #fef2f2; }
-  .ac.ac-status.ac-amber   { border-color: #fcd34d; background: #fffbeb; }
-  .ac.ac-status            .ac-header { background: #dbeafe; color: #1e40af; }
-  .ac.ac-status.ac-green   .ac-header { background: #d1fae5; color: #065f46; }
-  .ac.ac-status.ac-red     .ac-header { background: #fee2e2; color: #991b1b; }
-  .ac.ac-status.ac-amber   .ac-header { background: #fef3c7; color: #92400e; }
-  .ac.ac-status .ac-body   { font-weight: 500; }
+  /* ── Status card ── */
+  .ac-status {
+    background: var(--white);
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    border-left: 4px solid #3b82f6;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    overflow: hidden;
+  }
+  .ac-status.ac-green { border-left-color: #10b981; }
+  .ac-status.ac-red   { border-left-color: #ef4444; }
+  .ac-status.ac-amber { border-left-color: #f59e0b; }
 
-  /* Details card */
-  .ac.ac-details           { border: 1px solid var(--border); background: var(--white); }
-  .ac.ac-details .ac-header{ background: #f8fafc; color: var(--text-muted); border-bottom: 1px solid var(--border); }
+  .ac-status-inner { display: flex; align-items: flex-start; gap: 13px; padding: 14px 16px; }
+  .ac-status-icon {
+    width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: #eff6ff;
+  }
+  .ac-status.ac-green .ac-status-icon { background: #ecfdf5; }
+  .ac-status.ac-red   .ac-status-icon { background: #fef2f2; }
+  .ac-status.ac-amber .ac-status-icon { background: #fffbeb; }
+  .ac-status-icon svg { width: 18px; height: 18px; color: #3b82f6; }
+  .ac-status.ac-green .ac-status-icon svg { color: #10b981; }
+  .ac-status.ac-red   .ac-status-icon svg { color: #ef4444; }
+  .ac-status.ac-amber .ac-status-icon svg { color: #f59e0b; }
 
-  /* Action Required card */
-  .ac.ac-action            { border: 1.5px solid #fcd34d; background: #fffbeb; }
-  .ac.ac-action .ac-header { background: #fef3c7; color: #92400e; }
-  .ac.ac-action .ac-body li{ color: #78350f; font-weight: 500; }
+  .ac-status-content { flex: 1; }
+  .ac-status-label {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 5px;
+  }
+  .ac-status-tag {
+    font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px;
+    color: #64748b;
+  }
+  .ac-status-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 8px; border-radius: 20px; font-size: 0.65rem; font-weight: 700;
+    background: #dbeafe; color: #1e40af;
+  }
+  .ac-status.ac-green .ac-status-badge { background: #d1fae5; color: #065f46; }
+  .ac-status.ac-red   .ac-status-badge { background: #fee2e2; color: #991b1b; }
+  .ac-status.ac-amber .ac-status-badge { background: #fef3c7; color: #92400e; }
+  .ac-status-badge-dot {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: #3b82f6; animation: pulse-dot 2s infinite;
+  }
+  .ac-status.ac-green .ac-status-badge-dot { background: #10b981; }
+  .ac-status.ac-red   .ac-status-badge-dot { background: #ef4444; animation: none; }
+  .ac-status.ac-amber .ac-status-badge-dot { background: #f59e0b; }
+  @keyframes pulse-dot {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: 0.5; transform: scale(0.7); }
+  }
+  .ac-status-text { font-size: 0.875rem; font-weight: 500; color: var(--text); line-height: 1.6; }
 
-  /* Reference card */
-  .ac.ac-ref               { border: 1px solid var(--border); background: #f8fafc; }
-  .ac.ac-ref .ac-header    { background: #f1f5f9; color: var(--text-muted); border-bottom: 1px solid var(--border); }
-  .ac.ac-ref .ac-body      { font-size: 0.82rem; color: var(--text-muted); }
+  /* ── Details card ── */
+  .ac-details {
+    background: var(--white);
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    overflow: hidden;
+  }
+  .ac-details-header {
+    display: flex; align-items: center; gap: 7px;
+    padding: 9px 16px;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 0.69rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.7px; color: #94a3b8;
+    background: #fafbfc;
+  }
+  .ac-details-header svg { width: 12px; height: 12px; color: #94a3b8; }
+  .ac-details-list { padding: 6px 0; }
+  .ac-detail-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 8px 16px;
+    font-size: 0.855rem; color: var(--text); line-height: 1.6;
+    border-bottom: 1px solid #f8fafc;
+    transition: background 0.1s;
+  }
+  .ac-detail-item:last-child { border-bottom: none; }
+  .ac-detail-item:hover { background: #fafbfc; }
+  .ac-detail-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #3b82f6; flex-shrink: 0; margin-top: 7px;
+  }
+
+  /* ── Action Required card ── */
+  .ac-action {
+    background: var(--white);
+    border: 1px solid #fed7aa;
+    border-radius: 14px;
+    box-shadow: 0 2px 8px rgba(234,88,12,0.07);
+    overflow: hidden;
+  }
+  .ac-action-header {
+    display: flex; align-items: center; gap: 8px;
+    padding: 9px 16px;
+    background: linear-gradient(90deg, #fff7ed 0%, #fef3e2 100%);
+    border-bottom: 1px solid #fed7aa;
+    font-size: 0.69rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.7px; color: #c2410c;
+  }
+  .ac-action-header svg { width: 13px; height: 13px; color: #ea580c; }
+  .ac-steps { padding: 10px 16px 12px; display: flex; flex-direction: column; gap: 0; }
+  .ac-step {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 7px 0; position: relative;
+  }
+  .ac-step:not(:last-child)::after {
+    content: ''; position: absolute;
+    left: 13px; top: 30px;
+    width: 1px; height: calc(100% - 14px);
+    background: #fed7aa;
+  }
+  .ac-step-num {
+    width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
+    background: linear-gradient(135deg, #f97316, #ea580c);
+    color: white; font-size: 0.7rem; font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 2px 6px rgba(234,88,12,0.3); z-index: 1;
+  }
+  .ac-step-text { font-size: 0.855rem; color: #431407; font-weight: 500; line-height: 1.6; padding-top: 3px; }
+
+  /* ── Reference — inline footnote, no card ── */
+  .ac-reference {
+    display: flex; align-items: flex-start; gap: 8px;
+    padding: 10px 4px 2px;
+    border-top: 1px solid #f1f5f9;
+    margin-top: 2px;
+  }
+  .ac-reference svg { width: 12px; height: 12px; color: #94a3b8; flex-shrink: 0; margin-top: 2px; }
+  .ac-reference-text { font-size: 0.79rem; color: #94a3b8; line-height: 1.55; font-style: italic; }
+  .ac-reference-text strong { font-style: normal; color: #64748b; font-weight: 600; }
+
+  /* ── Fleet / Rolling-Stock Health Card ── */
+  .ac-fleet {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 6px;
+  }
+  .ac-fleet-header {
+    display: flex; align-items: center; gap: 7px;
+    padding: 9px 14px 8px;
+    font-size: 0.69rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.55px;
+    color: #64748b;
+    background: #f8fafc;
+    border-bottom: 1px solid var(--border);
+  }
+  .ac-fleet-header svg { width: 12px; height: 12px; color: #94a3b8; flex-shrink: 0; }
+  .ac-fleet-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .ac-fleet-asset {
+    padding: 12px 13px;
+    border-right: 1px solid var(--border);
+    position: relative;
+    transition: background 0.12s;
+  }
+  .ac-fleet-asset:last-child { border-right: none; }
+  .ac-fleet-asset:hover { background: #fafbfc; }
+  .ac-fleet-asset.fag { border-top: 3px solid #10b981; }
+  .ac-fleet-asset.faa { border-top: 3px solid #f59e0b; }
+  .ac-fleet-asset.far { border-top: 3px solid #ef4444; }
+  .ac-fleet-asset-id {
+    font-size: 0.75rem; font-weight: 800; color: var(--text);
+    margin-bottom: 1px; letter-spacing: -0.2px;
+  }
+  .ac-fleet-asset-type {
+    font-size: 0.63rem; color: #94a3b8; margin-bottom: 9px;
+  }
+  .ac-fleet-score-row {
+    display: flex; align-items: flex-end; justify-content: space-between; gap: 5px;
+  }
+  .ac-fleet-score { font-size: 1.15rem; font-weight: 800; color: var(--text); letter-spacing: -0.5px; line-height: 1; }
+  .ac-fleet-score-sub { font-size: 0.58rem; color: #94a3b8; }
+  .ac-fleet-badge {
+    font-size: 0.6rem; font-weight: 700;
+    padding: 2px 6px; border-radius: 20px; letter-spacing: 0.3px;
+    white-space: nowrap;
+  }
+  .ac-fleet-badge.fg { background: #d1fae5; color: #065f46; }
+  .ac-fleet-badge.fa { background: #fef3c7; color: #92400e; }
+  .ac-fleet-badge.fr { background: #fee2e2; color: #991b1b; }
+  .ac-fleet-bar-track { height: 3px; background: #f1f5f9; border-radius: 20px; margin-top: 8px; overflow: hidden; }
+  .ac-fleet-bar-fill { height: 100%; border-radius: 20px; transition: width 0.6s ease; }
+  .ac-fleet-bar-fill.bg { background: #10b981; }
+  .ac-fleet-bar-fill.ba { background: #f59e0b; }
+  .ac-fleet-bar-fill.br { background: #ef4444; }
 
   /* Transparent bubble wrapper when cards are present */
-  .bubble.card-bubble { padding: 0; background: transparent !important; border: none !important; box-shadow: none !important; }
-  .bubble.card-bubble .citations { margin-top: 6px; }
+  .bubble.card-bubble { padding: 4px 0 0; background: transparent !important; border: none !important; box-shadow: none !important; }
+  .bubble.card-bubble .citations { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
 
   /* ── Citations ── */
   .citations { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); }
@@ -864,72 +1030,124 @@ function renderMarkdown(text) {
 
 // ── Answer card renderer ──
 function renderAnswerCards(text) {
-  const SECTIONS = ['Status', 'Details', 'Action Required', 'Reference'];
-  const pattern = /\*\*(Status|Details|Action Required|Reference):\*\*\s*([\s\S]*?)(?=\*\*(?:Status|Details|Action Required|Reference):\*\*|$)/g;
+  const pattern = /\*\*(Status|Assets|Details|Action Required|Reference):\*\*\s*([\s\S]*?)(?=\*\*(?:Status|Assets|Details|Action Required|Reference):\*\*|$)/g;
   const found = {};
   let m;
   while ((m = pattern.exec(text)) !== null) found[m[1]] = m[2].trim();
-  if (!Object.keys(found).length) return null; // fall back to markdown
+  if (!Object.keys(found).length) return null;
 
-  function parseBullets(str) {
-    const lines = str.split('\n').filter(l => /^[-•*]/.test(l.trim()));
-    if (!lines.length) return `<p>${escHtml(str.replace(/\n/g,' ').trim())}</p>`;
-    return `<ul>${lines.map(l=>`<li>${escHtml(l.replace(/^[-•*]\s*/,'').trim())}</li>`).join('')}</ul>`;
-  }
-  function parseSteps(str) {
-    const lines = str.split('\n').filter(l => /^[-•*]/.test(l.trim()));
-    if (!lines.length) return `<p>${escHtml(str.replace(/\n/g,' ').trim())}</p>`;
-    return `<ol>${lines.map(l=>`<li>${escHtml(l.replace(/^[-•*]\s*/,'').trim())}</li>`).join('')}</ol>`;
+  function bullets(str) {
+    return str.split('\n')
+      .map(l => l.trim()).filter(l => /^[-•*]/.test(l))
+      .map(l => l.replace(/^[-•*]\s*/, '').trim());
   }
 
   let html = '<div class="answer-cards">';
 
-  // Status card — colour by keywords
+  // ── Status card ──────────────────────────────
   if (found['Status']) {
     const s = found['Status'];
-    let col = '';
-    if (/\bGREEN\b|healthy|good condition|no fault|cleared/i.test(s)) col = 'ac-green';
-    else if (/\bRED\b|critical|out of service|failure|severe|danger/i.test(s)) col = 'ac-red';
-    else if (/\bAMBER\b|caution|warning|approaching|degraded|overdue/i.test(s)) col = 'ac-amber';
-    html += `<div class="ac ac-status ${col}">
-      <div class="ac-header">
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        Status
+    let col = '', badge = 'INFO', badgeSvg = '';
+    if      (/\bGREEN\b|healthy|good condition|no fault|cleared|nominal/i.test(s)) { col='ac-green'; badge='GREEN'; }
+    else if (/\bRED\b|critical|out of service|failure|severe|danger/i.test(s))     { col='ac-red';   badge='RED'; }
+    else if (/\bAMBER\b|caution|warning|approaching|degraded|overdue/i.test(s))    { col='ac-amber'; badge='CAUTION'; }
+
+    const iconSvg = col === 'ac-green'
+      ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`
+      : col === 'ac-red'
+      ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`
+      : col === 'ac-amber'
+      ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`
+      : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
+
+    html += `<div class="ac-status ${col}">
+      <div class="ac-status-inner">
+        <div class="ac-status-icon">${iconSvg}</div>
+        <div class="ac-status-content">
+          <div class="ac-status-label">
+            <span class="ac-status-tag">Current Status</span>
+            <span class="ac-status-badge"><span class="ac-status-badge-dot"></span>${badge}</span>
+          </div>
+          <div class="ac-status-text">${escHtml(s)}</div>
+        </div>
       </div>
-      <div class="ac-body"><p>${escHtml(s)}</p></div>
     </div>`;
   }
 
-  // Details card
+  // ── Assets / Fleet health card ───────────────
+  if (found['Assets']) {
+    const lines = found['Assets'].split('\n')
+      .map(l => l.trim()).filter(l => /^[-•*]/.test(l))
+      .map(l => l.replace(/^[-•*]\s*/, '').trim());
+
+    const assetChips = lines.map(line => {
+      const parts = line.split('|').map(p => p.trim());
+      if (parts.length < 4) return '';
+      const [id, type, scoreStr, status] = parts;
+      const score = parseFloat(scoreStr) || 0;
+      const st = status.toUpperCase().replace(/[^A-Z]/g, '');
+      const isg = st === 'GREEN', isr = st === 'RED';
+      const accentCls = isg ? 'fag' : isr ? 'far' : 'faa';
+      const badgeCls  = isg ? 'fg'  : isr ? 'fr'  : 'fa';
+      const barCls    = isg ? 'bg'  : isr ? 'br'  : 'ba';
+      const badgeLabel = isg ? 'GREEN' : isr ? 'RED' : 'AMBER';
+      return `<div class="ac-fleet-asset ${accentCls}">
+        <div class="ac-fleet-asset-id">${escHtml(id)}</div>
+        <div class="ac-fleet-asset-type">${escHtml(type)}</div>
+        <div class="ac-fleet-score-row">
+          <div><span class="ac-fleet-score">${score.toFixed(0)}</span><span class="ac-fleet-score-sub"> /100</span></div>
+          <span class="ac-fleet-badge ${badgeCls}">${badgeLabel}</span>
+        </div>
+        <div class="ac-fleet-bar-track"><div class="ac-fleet-bar-fill ${barCls}" style="width:${Math.min(score,100)}%"></div></div>
+      </div>`;
+    }).filter(Boolean).join('');
+
+    if (assetChips) {
+      html += `<div class="ac-fleet">
+        <div class="ac-fleet-header">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+          Rolling Stock Health
+        </div>
+        <div class="ac-fleet-grid">${assetChips}</div>
+      </div>`;
+    }
+  }
+
+  // ── Details card ─────────────────────────────
   if (found['Details']) {
-    html += `<div class="ac ac-details">
-      <div class="ac-header">
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+    const items = bullets(found['Details']);
+    const rows = items.length
+      ? items.map(t => `<div class="ac-detail-item"><div class="ac-detail-dot"></div><span>${escHtml(t)}</span></div>`).join('')
+      : `<div class="ac-detail-item"><div class="ac-detail-dot"></div><span>${escHtml(found['Details'].replace(/\n/g,' ').trim())}</span></div>`;
+    html += `<div class="ac-details">
+      <div class="ac-details-header">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
         Details
       </div>
-      <div class="ac-body">${parseBullets(found['Details'])}</div>
+      <div class="ac-details-list">${rows}</div>
     </div>`;
   }
 
-  // Action Required card
+  // ── Action Required card ──────────────────────
   if (found['Action Required']) {
-    html += `<div class="ac ac-action">
-      <div class="ac-header">
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    const items = bullets(found['Action Required']);
+    const steps = items.length
+      ? items.map((t,i) => `<div class="ac-step"><div class="ac-step-num">${i+1}</div><div class="ac-step-text">${escHtml(t)}</div></div>`).join('')
+      : `<div class="ac-step"><div class="ac-step-num">1</div><div class="ac-step-text">${escHtml(found['Action Required'].replace(/\n/g,' ').trim())}</div></div>`;
+    html += `<div class="ac-action">
+      <div class="ac-action-header">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
         Action Required
       </div>
-      <div class="ac-body">${parseSteps(found['Action Required'])}</div>
+      <div class="ac-steps">${steps}</div>
     </div>`;
   }
 
-  // Reference card
+  // ── Reference — inline footnote ───────────────
   if (found['Reference']) {
-    html += `<div class="ac ac-ref">
-      <div class="ac-header">
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-        Reference
-      </div>
-      <div class="ac-body"><p>${escHtml(found['Reference'])}</p></div>
+    html += `<div class="ac-reference">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      <span class="ac-reference-text"><strong>Reference:</strong> ${escHtml(found['Reference'])}</span>
     </div>`;
   }
 
