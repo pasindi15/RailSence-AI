@@ -234,11 +234,67 @@ tbody tr:hover td{background:#f8fafc}
 .report-sum{font-size:0.77rem;color:var(--text-muted);line-height:1.5}
 .report-meta{display:flex;gap:5px;align-items:center;margin-top:5px;flex-wrap:wrap}
 
-/* ── System status ── */
+/* ── System status (sidebar only) ── */
 .sys-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid #f1f5f9}
 .sys-row:last-child{border-bottom:none}
 .sys-name{display:flex;align-items:center;gap:9px;font-size:0.82rem;font-weight:500}
 .sys-ico{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:0.85rem;flex-shrink:0}
+
+/* ── Sidebar collapsible System Status ── */
+.sb-status-sec{border-top:1px solid var(--border);min-width:var(--sidebar-w)}
+.sb-status-hdr{display:flex;align-items:center;justify-content:space-between;padding:9px 16px;cursor:pointer;user-select:none;transition:background 0.12s}
+.sb-status-hdr:hover{background:var(--bg)}
+.sb-status-hdr-lbl{font-size:0.64rem;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:var(--text-light);display:flex;align-items:center;gap:5px}
+.sb-status-hdr-lbl svg{width:10px;height:10px}
+.sb-status-chevron{color:var(--text-light);transition:transform 0.2s ease;flex-shrink:0}
+.sb-status-chevron.open{transform:rotate(180deg)}
+.sb-status-body{padding:0 16px 10px;display:none}
+.sb-status-body.open{display:block}
+.sb-status-row{display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)}
+.sb-status-row:last-child{border-bottom:none}
+.sb-status-name{font-size:0.71rem;color:var(--text-muted);display:flex;align-items:center;gap:5px}
+.sb-status-name svg{width:9px;height:9px;color:var(--text-light);flex-shrink:0}
+
+/* ── KPI SVG icon override ── */
+.kpi-icon svg{width:18px;height:18px}
+.kpi.amber{border-left-color:var(--amber)}
+
+/* ── Overview: Fleet at a Glance ── */
+.ov-2col{display:grid;grid-template-columns:3fr 2fr;gap:18px;margin-bottom:22px}
+.ov-right-stack{display:flex;flex-direction:column;gap:18px}
+.ov-fleet-row{display:flex;align-items:center;gap:9px;padding:9px 0;border-bottom:1px solid var(--border)}
+.ov-fleet-row:last-child{border-bottom:none;padding-bottom:0}
+.ov-fleet-info{flex:0 0 136px;min-width:0}
+.ov-fleet-name{font-size:0.79rem;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ov-fleet-route{font-size:0.61rem;color:var(--text-muted);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ov-fleet-loco{font-size:0.6rem;font-weight:700;color:var(--primary);background:var(--blue-bg);border:1px solid #bfdbfe;border-radius:20px;padding:2px 7px;flex-shrink:0;white-space:nowrap}
+.ov-fleet-dots{display:flex;gap:5px;align-items:center;flex-shrink:0}
+.ov-asset-dot{width:9px;height:9px;border-radius:50%;cursor:default;transition:transform 0.12s}
+.ov-asset-dot:hover{transform:scale(1.4)}
+.ov-fleet-bar-wrap{flex:1;min-width:40px}
+.ov-fleet-bar-track{height:4px;background:#f1f5f9;border-radius:20px;overflow:hidden}
+.ov-fleet-bar-fill{height:100%;border-radius:20px;transition:width 0.8s ease}
+.ov-fleet-end{display:flex;align-items:center;gap:7px;flex-shrink:0}
+.ov-fleet-score{font-size:0.74rem;font-weight:800;color:var(--text);width:30px;text-align:right}
+
+/* ── Overview: improved alert card ── */
+.ov-alert-card{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+.ov-alert-card:last-child{border-bottom:none;padding-bottom:0}
+.ov-alert-icon{width:30px;height:30px;border-radius:8px;background:var(--red-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ov-alert-icon svg{width:14px;height:14px;color:var(--red)}
+.ov-alert-title{font-size:0.79rem;font-weight:600;margin-bottom:2px}
+.ov-alert-sub{font-size:0.71rem;color:var(--text-muted);line-height:1.4}
+.ov-alert-time{font-size:0.67rem;color:var(--text-light);margin-top:3px}
+
+/* ── Overview: improved report card ── */
+.ov-report-card{display:flex;gap:11px;padding:11px 0;border-bottom:1px solid var(--border)}
+.ov-report-card:last-child{border-bottom:none;padding-bottom:0}
+.ov-report-left{display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0}
+.ov-report-dot{width:8px;height:8px;border-radius:50%;margin-top:4px}
+.ov-report-body{flex:1;min-width:0}
+.ov-report-title{font-size:0.8rem;font-weight:600;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ov-report-sum{font-size:0.75rem;color:var(--text-muted);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ov-report-meta{display:flex;gap:6px;align-items:center;margin-top:5px;flex-wrap:wrap}
 
 /* ── Health prediction ── */
 .form-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}
@@ -465,26 +521,74 @@ tbody tr:hover td{background:#f8fafc}
   <nav>
     <div class="nav-section">Main</div>
     <button class="nav-item active" data-page="overview" onclick="nav('overview',this)">
-      <span class="nav-icon">🏠</span> Overview
+      <span class="nav-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span> Overview
     </button>
     <button class="nav-item" data-page="trains" onclick="nav('trains',this)">
-      <span class="nav-icon">🚆</span> Trains
+      <span class="nav-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="16" rx="2"/><path d="M4 11h16M12 3v8"/><circle cx="8.5" cy="19" r="1.5"/><circle cx="15.5" cy="19" r="1.5"/><path d="M8.5 19h7"/></svg></span> Trains
     </button>
     <button class="nav-item" data-page="fleet" onclick="nav('fleet',this)">
-      <span class="nav-icon">🚂</span> Asset Fleet
+      <span class="nav-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></span> Asset Fleet
     </button>
     <div class="nav-section">Tools</div>
     <button class="nav-item" data-page="predict" onclick="nav('predict',this)">
-      <span class="nav-icon">🔮</span> Health Prediction
+      <span class="nav-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span> Health Prediction
     </button>
     <button class="nav-item" data-page="metrics" onclick="nav('metrics',this)">
-      <span class="nav-icon">📊</span> Model Metrics
+      <span class="nav-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span> Model Metrics
     </button>
     <div class="nav-section">Support</div>
     <a href="/chat-ui" class="nav-item" style="text-decoration:none;">
-      <span class="nav-icon">💬</span> Engineer Chatbot
+      <span class="nav-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span> Engineer Chatbot
     </a>
   </nav>
+
+  <!-- Collapsible System Status -->
+  <div class="sb-status-sec" id="sb-status-sec">
+    <div class="sb-status-hdr" onclick="toggleSbStatus()" role="button" aria-expanded="false" id="sb-status-hdr">
+      <span class="sb-status-hdr-lbl">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        System Status
+      </span>
+      <svg class="sb-status-chevron" id="sb-status-chevron" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="sb-status-body" id="sb-status-body">
+      <div class="sb-status-row">
+        <span class="sb-status-name">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+          LLM Engine
+        </span>
+        <span class="badge badge-gray" id="sys-llm">checking…</span>
+      </div>
+      <div class="sb-status-row">
+        <span class="sb-status-name">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+          Supabase / pgvector
+        </span>
+        <span class="badge badge-gray" id="sys-db">checking…</span>
+      </div>
+      <div class="sb-status-row">
+        <span class="sb-status-name">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          Upstash Redis
+        </span>
+        <span class="badge badge-gray" id="sys-redis">checking…</span>
+      </div>
+      <div class="sb-status-row">
+        <span class="sb-status-name">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          RAG Backend
+        </span>
+        <span class="badge badge-green" id="sys-rag">TF-IDF</span>
+      </div>
+      <div class="sb-status-row">
+        <span class="sb-status-name">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8.56 2.75c4.37 6.03 6.02 9.42 8.03 17.72m2.54-15.38c-3.72 4.35-8.94 5.66-16.88 5.85m19.5 1.9c-3.5-.93-6.63-.82-8.94 0-2.58.92-5.01 2.86-7.44 6.32"/></svg>
+          Agent Hub
+        </span>
+        <span class="badge badge-gray" id="sys-hub">checking…</span>
+      </div>
+    </div>
+  </div>
 
   <div class="sb-footer">
     <div class="sb-sys">
@@ -585,37 +689,98 @@ tbody tr:hover td{background:#f8fafc}
     </div>
 
     <div class="page-content">
+
+      <!-- KPI Row -->
       <div class="grid-4">
-        <div class="kpi blue"><div class="kpi-icon" style="background:#eff6ff">📦</div><div><div class="kpi-label">Total Assets</div><div class="kpi-value" id="kpi-total">—</div><div class="kpi-desc">tracked fleet</div></div></div>
-        <div class="kpi blue"><div class="kpi-icon" style="background:#eff6ff">📊</div><div><div class="kpi-label">Avg Health</div><div class="kpi-value" id="kpi-avg">—</div><div class="kpi-desc">fleet average</div></div></div>
-        <div class="kpi green"><div class="kpi-icon" style="background:var(--green-bg)">✅</div><div><div class="kpi-label">Healthy</div><div class="kpi-value" id="kpi-healthy" style="color:var(--green)">—</div><div class="kpi-desc">GREEN status</div></div></div>
-        <div class="kpi red"><div class="kpi-icon" style="background:var(--red-bg)">🚨</div><div><div class="kpi-label">Critical</div><div class="kpi-value" id="kpi-critical" style="color:var(--red)">—</div><div class="kpi-desc">need service</div></div></div>
-      </div>
-
-      <div class="grid-2">
-        <div class="card">
-          <div class="sec-lbl">Health Status Distribution</div>
-          <div id="status-dist"><div class="empty-state"><span class="empty-icon">📊</span>Loading…</div></div>
-          <div class="sec-lbl" style="margin-top:20px">Asset Type Breakdown</div>
-          <div id="type-dist"><div class="empty-state"><span class="empty-icon">📦</span>Loading…</div></div>
-        </div>
-        <div class="card">
-          <div class="sec-lbl">System Status</div>
-          <div>
-            <div class="sys-row"><div class="sys-name"><div class="sys-ico" style="background:var(--blue-bg)">🤖</div>LLM Engine</div><span class="badge badge-gray" id="sys-llm">checking…</span></div>
-            <div class="sys-row"><div class="sys-name"><div class="sys-ico" style="background:#f0fdf4">🗄️</div>Supabase / pgvector</div><span class="badge badge-gray" id="sys-db">checking…</span></div>
-            <div class="sys-row"><div class="sys-name"><div class="sys-ico" style="background:#fefce8">⚡</div>Upstash Redis</div><span class="badge badge-gray" id="sys-redis">checking…</span></div>
-            <div class="sys-row"><div class="sys-name"><div class="sys-ico" style="background:#faf5ff">📚</div>RAG Backend</div><span class="badge badge-green" id="sys-rag">TF-IDF</span></div>
-            <div class="sys-row"><div class="sys-name"><div class="sys-ico" style="background:var(--bg)">🔗</div>Agent Hub</div><span class="badge badge-gray" id="sys-hub">checking…</span></div>
+        <div class="kpi blue">
+          <div class="kpi-icon" style="background:#eff6ff">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
           </div>
-          <div class="sec-lbl" style="margin-top:20px">Recent Alerts</div>
-          <div id="alerts-list"><div class="empty-state"><span class="empty-icon">✅</span>No alerts</div></div>
+          <div>
+            <div class="kpi-label">Total Assets</div>
+            <div class="kpi-value" id="kpi-total">—</div>
+            <div class="kpi-desc">tracked fleet</div>
+          </div>
+        </div>
+        <div class="kpi blue">
+          <div class="kpi-icon" style="background:#eff6ff">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </div>
+          <div>
+            <div class="kpi-label">Avg Health</div>
+            <div class="kpi-value" id="kpi-avg">—</div>
+            <div class="kpi-desc">fleet average score</div>
+          </div>
+        </div>
+        <div class="kpi green">
+          <div class="kpi-icon" style="background:var(--green-bg)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+          </div>
+          <div>
+            <div class="kpi-label">Healthy</div>
+            <div class="kpi-value" id="kpi-healthy" style="color:var(--green)">—</div>
+            <div class="kpi-desc">GREEN status</div>
+          </div>
+        </div>
+        <div class="kpi amber">
+          <div class="kpi-icon" style="background:var(--amber-bg)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </div>
+          <div>
+            <div class="kpi-label">Needs Service</div>
+            <div class="kpi-value" id="kpi-critical" style="color:var(--amber)">—</div>
+            <div class="kpi-desc">AMBER + RED assets</div>
+          </div>
         </div>
       </div>
 
+      <!-- Main 2-col: Fleet at a Glance + right stack -->
+      <div class="ov-2col">
+
+        <!-- Left: Fleet at a Glance -->
+        <div class="card">
+          <div class="card-hdr" style="margin-bottom:14px">
+            <div>
+              <div class="card-title">Fleet at a Glance</div>
+              <div class="card-sub">8 trains · rolling stock health · live</div>
+            </div>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--text-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+          </div>
+          <div id="ov-fleet-rows">
+            <div class="empty-state" style="padding:20px 0"><span style="font-size:1.4rem;display:block;margin-bottom:6px">🚂</span>Loading fleet…</div>
+          </div>
+        </div>
+
+        <!-- Right stack: Health Distribution + Alerts -->
+        <div class="ov-right-stack">
+          <div class="card">
+            <div class="sec-lbl">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>
+              Health Distribution
+            </div>
+            <div id="status-dist"><div class="empty-state"><span style="font-size:1.1rem">📊</span> Loading…</div></div>
+            <div style="display:none" id="type-dist"></div>
+          </div>
+          <div class="card">
+            <div class="sec-lbl">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+              Recent Alerts
+            </div>
+            <div id="alerts-list"><div class="empty-state" style="padding:12px 0"><span style="font-size:1.1rem">✅</span> No alerts</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Technician Reports -->
       <div class="card">
-        <div class="sec-lbl">Recent Technician Reports</div>
-        <div id="reports-list"><div class="empty-state"><span class="empty-icon">📋</span>No reports yet</div></div>
+        <div class="card-hdr" style="margin-bottom:14px">
+          <div>
+            <div class="card-title">Recent Technician Reports</div>
+            <div class="card-sub">Latest submitted field reports</div>
+          </div>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        </div>
+        <div id="reports-list"><div class="empty-state"><span style="font-size:1.1rem">📋</span> No reports yet</div></div>
       </div>
     </div>
   </div>
@@ -800,6 +965,49 @@ function nav(page, btn) {
   document.getElementById('page-title').textContent=m.title||'';
   document.getElementById('page-sub').textContent=m.sub||'';
   if(page==='trains') renderTrains();
+  if(page==='overview' && fleetAll.length) renderFleetGlance();
+}
+
+function toggleSbStatus(){
+  const body=document.getElementById('sb-status-body');
+  const chevron=document.getElementById('sb-status-chevron');
+  const hdr=document.getElementById('sb-status-hdr');
+  const open=body.classList.toggle('open');
+  chevron.classList.toggle('open',open);
+  hdr.setAttribute('aria-expanded',open);
+}
+
+function renderFleetGlance(){
+  const el=document.getElementById('ov-fleet-rows');
+  if(!el)return;
+  el.innerHTML=TRAINS.map(t=>{
+    const h=trainHealthScore(t.loco);
+    const barColor=h.status==='GREEN'?'var(--green)':h.status==='AMBER'?'var(--amber)':'var(--red)';
+    const badgeCls=h.status==='GREEN'?'badge-green':h.status==='AMBER'?'badge-amber':'badge-red';
+    const dots=(t.assets||[]).map(aid=>{
+      const rec=fleetAll.find(a=>a.asset_id===aid);
+      const st=rec?(rec.health_status||'UNKNOWN'):'UNKNOWN';
+      const prefix=aid.split('-')[0];
+      const typeLabel=prefix==='DE'?'Loco':prefix==='BG'?'Bogie':'Brake';
+      const dotColor=st==='GREEN'?'var(--green)':st==='AMBER'?'var(--amber)':st==='RED'?'var(--red)':'#cbd5e1';
+      return `<span class="ov-asset-dot" style="background:${dotColor}" title="${esc(typeLabel)}: ${esc(aid)} — ${esc(st)}"></span>`;
+    }).join('');
+    return `<div class="ov-fleet-row">
+      <div class="ov-fleet-info">
+        <div class="ov-fleet-name">${esc(t.name)}</div>
+        <div class="ov-fleet-route">${esc(t.route[0])} → ${esc(t.route[1])}</div>
+      </div>
+      <span class="ov-fleet-loco">${esc(t.loco)}</span>
+      <div class="ov-fleet-dots">${dots}</div>
+      <div class="ov-fleet-bar-wrap">
+        <div class="ov-fleet-bar-track"><div class="ov-fleet-bar-fill" style="width:${h.score}%;background:${barColor}"></div></div>
+      </div>
+      <div class="ov-fleet-end">
+        <span class="ov-fleet-score">${h.score}</span>
+        <span class="badge ${badgeCls}" style="font-size:0.59rem;padding:1px 6px">${esc(h.status)}</span>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 /* ═══ HERO CAROUSEL ═══ */
@@ -1076,7 +1284,7 @@ async function loadDashboard() {
     document.getElementById('kpi-total').textContent=agg.total_assets??'—';
     document.getElementById('kpi-avg').textContent=agg.avg_health_score!=null?agg.avg_health_score.toFixed(1):'—';
     document.getElementById('kpi-healthy').textContent=agg.assets_healthy_pct!=null?agg.assets_healthy_pct+'%':'—';
-    document.getElementById('kpi-critical').textContent=dist.RED??'—';
+    document.getElementById('kpi-critical').textContent=((dist.RED||0)+(dist.AMBER||0))||'—';
     const now=new Date().toLocaleTimeString();
     document.getElementById('refresh-time').textContent=now;
     document.getElementById('sb-sync').textContent=now;
@@ -1102,6 +1310,7 @@ async function loadDashboard() {
 
     fleetAll=ar.assets||[];
     renderFleet();
+    renderFleetGlance();
     if(document.getElementById('page-trains').classList.contains('active')) renderTrains();
     heroUpdateContent(heroIdx);
   } catch(e){console.error('Dashboard error:',e)}
@@ -1123,8 +1332,27 @@ function renderTypeDist(dist){
 function renderMLMetrics(m){const el=document.getElementById('ml-metrics');if(!m||!m.mae){el.innerHTML='<div class="empty-state"><span class="empty-icon">🤖</span>Run train_health_model.py</div>';return}el.innerHTML=[['Model',m.model||'GBR'],['Version',m.version||'v1'],['MAE',m.mae],['RMSE',m.rmse],['R²',m.r2],['Test Samples',m.test_samples]].map(([l,v])=>`<div class="metric-row"><span class="metric-label">${l}</span><span class="metric-val">${v}</span></div>`).join('')}
 function renderNLPMetrics(m){const el=document.getElementById('nlp-metrics');if(!m||!m.accuracy){el.innerHTML='<div class="empty-state"><span class="empty-icon">📝</span>Run evaluate_nlp.py</div>';return}el.innerHTML=[['Accuracy',(m.accuracy*100).toFixed(1)+'%'],['Macro F1',(m.macro_f1*100).toFixed(1)+'%'],['Samples',m.total_samples]].map(([l,v])=>`<div class="metric-row"><span class="metric-label">${l}</span><span class="metric-val">${v}</span></div>`).join('')}
 function renderRAGMetrics(m){const el=document.getElementById('rag-metrics');if(!m||m.precision_at_1==null){el.innerHTML='<div class="empty-state"><span class="empty-icon">📚</span>Run evaluate_retrieval.py</div>';return}el.innerHTML=[['P@1',m.precision_at_1],['P@3',m.precision_at_3],['P@5',m.precision_at_5],['Backend',m.label||'local_tfidf']].map(([l,v])=>`<div class="metric-row"><span class="metric-label">${l}</span><span class="metric-val">${v}</span></div>`).join('')}
-function renderAlerts(events){const el=document.getElementById('alerts-list'),a=events.filter(e=>e.event_type==='maintenance_alert');if(!a.length){el.innerHTML='<div class="empty-state"><span class="empty-icon">✅</span>No alerts — fleet healthy</div>';return}el.innerHTML=a.slice(0,4).map(x=>`<div class="alert-card"><div class="alert-ico">🚨</div><div><div class="alert-title">${esc(x.asset_id||'?')} &nbsp;<span class="badge badge-red"><span class="badge-dot"></span>CRITICAL</span></div><div style="font-size:0.76rem;color:var(--text-muted);margin-top:2px">${esc((x.asset_type||'').replace(/_/g,' '))} — health below threshold</div><div class="alert-time">${esc(x.created_at||'')}</div></div></div>`).join('')}
-function renderReports(reports){const el=document.getElementById('reports-list');if(!reports.length){el.innerHTML='<div class="empty-state"><span class="empty-icon">📋</span>No reports yet</div>';return}el.innerHTML=reports.slice(0,5).map(r=>`<div class="report-card"><div class="report-dot" style="background:${r.detected_fault_type!=='none'?'var(--amber)':'var(--green)'}"></div><div><div class="report-title">${esc(r.asset_id)} · ${esc((r.asset_type||'').replace(/_/g,' '))} · ${esc(r.station)}</div><div class="report-sum">${esc(r.summary||'')}</div><div class="report-meta"><span class="badge ${r.detected_fault_type!=='none'?'badge-amber':'badge-green'}">${esc(r.detected_fault_type)}</span></div></div></div>`).join('')}
+function renderAlerts(events){
+  const el=document.getElementById('alerts-list');
+  const a=events.filter(e=>e.event_type==='maintenance_alert');
+  if(!a.length){el.innerHTML='<div class="empty-state" style="padding:12px 0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:0 auto 6px"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>No alerts — fleet healthy</div>';return}
+  el.innerHTML=a.slice(0,4).map(x=>`<div class="ov-alert-card"><div class="ov-alert-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div><div style="flex:1;min-width:0"><div class="ov-alert-title">${esc(x.asset_id||'?')} <span class="badge badge-red" style="font-size:0.62rem"><span class="badge-dot"></span>CRITICAL</span></div><div class="ov-alert-sub">${esc((x.asset_type||'').replace(/_/g,' '))} — health below threshold</div><div class="ov-alert-time">${esc(x.created_at||'')}</div></div></div>`).join('');
+}
+function renderReports(reports){
+  const el=document.getElementById('reports-list');
+  if(!reports.length){el.innerHTML='<div class="empty-state"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:5px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>No reports yet</div>';return}
+  el.innerHTML=reports.slice(0,5).map(r=>{
+    const hasFault=r.detected_fault_type&&r.detected_fault_type!=='none';
+    return `<div class="ov-report-card">
+      <div class="ov-report-left"><div class="ov-report-dot" style="background:${hasFault?'var(--amber)':'var(--green)'}"></div></div>
+      <div class="ov-report-body">
+        <div class="ov-report-title">${esc(r.asset_id)} · ${esc((r.asset_type||'').replace(/_/g,' '))} · ${esc(r.station)}</div>
+        <div class="ov-report-sum">${esc(r.summary||'')}</div>
+        <div class="ov-report-meta"><span class="badge ${hasFault?'badge-amber':'badge-green'}">${esc(r.detected_fault_type||'none')}</span></div>
+      </div>
+    </div>`;
+  }).join('');
+}
 
 /* ═══ FLEET ═══ */
 let fleetFilter='ALL';
