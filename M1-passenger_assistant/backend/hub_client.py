@@ -147,6 +147,18 @@ def send_to_hub_mock(message: HubMessage) -> HubResponse:
                 "similar_incident": "Signal failure occurred on same route previously",
             },
         )
+    if message.intent == "train_status_query":
+        train_id = message.payload.get("train_id", "UNKNOWN")
+        return HubResponse(
+            status="ok",
+            sender_agent="maintenance-agent",
+            payload={
+                "train_id": train_id,
+                "under_maintenance": False,
+                "found": True,
+                "message": f"Train {train_id} has no active maintenance issues and is cleared for service.",
+            },
+        )
     if message.intent == "issue_report":
         return HubResponse(
             status="ok",
