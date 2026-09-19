@@ -2304,29 +2304,40 @@ function cpUser(t){const m=document.getElementById('cp-msgs'),d=document.createE
 function cpTypingOn(){const m=document.getElementById('cp-msgs'),d=document.createElement('div');d.className='cp-msg bot';d.id='cp-typing';d.innerHTML=`<div class="cp-av b">🔧</div><div class="cp-bubble"><div class="cp-typing"><span></span><span></span><span></span></div></div>`;m.appendChild(d);m.scrollTop=m.scrollHeight}
 function cpTypingOff(){const e=document.getElementById('cp-typing');if(e)e.remove()}
 function cpRender(t){
-  // 1. Extract **Action:** section — trigger UI actions before rendering
+  // Helper — build action card HTML and fire modal
   let actionHtml='';
-  t=t.replace(/\*\*Action:\*\*\s*([\s\S]*?)(?=\*\*(?:Status|Assets|Details|Action Required|Reference):\*\*|$)/,(_, body)=>{
-    const line=body.split('\n').map(l=>l.trim()).find(l=>l.startsWith('create_report'));
-    if(line){
-      const parts=line.replace(/^create_report\s*\|?\s*/i,'').split('|').map(s=>s.trim());
-      const [assetId='', assetType='', station=''] = parts;
-      if(assetId){
-        // Fire report modal after a short delay so chat bubble renders first
-        setTimeout(()=>openFleetReport(assetId, assetType||'diesel_engine', station), 120);
-        const typeLabel=(assetType||'').replace(/_/g,' ');
-        actionHtml=`<div class="cp-action-card">
-          <div class="cp-action-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
-          <div class="cp-action-body">
-            <div class="cp-action-title">Report Form Opened</div>
-            <div class="cp-action-sub">${esc(assetId)}${typeLabel?' · '+typeLabel:''}</div>
-          </div>
-          <button class="cp-action-btn" onclick="openFleetReport('${esc(assetId)}','${esc(assetType)}','${esc(station)}')">Re-open</button>
-        </div>`;
-      }
-    }
-    return ''; // remove raw action block from text
+  function cpTriggerAction(line){
+    const parts=line.replace(/^create_report\s*\|?\s*/i,'').split('|').map(s=>s.trim());
+    const [assetId='',assetType='',station=''] = parts;
+    if(!assetId) return;
+    setTimeout(()=>openFleetReport(assetId,assetType||'diesel_engine',station),150);
+    const typeLabel=(assetType||'').replace(/_/g,' ');
+    actionHtml=`<div class="cp-action-card">
+      <div class="cp-action-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
+      <div class="cp-action-body">
+        <div class="cp-action-title">Report Form Opened</div>
+        <div class="cp-action-sub">${esc(assetId)}${typeLabel?' · '+typeLabel:''}</div>
+      </div>
+      <button class="cp-action-btn" onclick="openFleetReport('${esc(assetId)}','${esc(assetType)}','${esc(station)}')">Re-open</button>
+    </div>`;
+  }
+
+  // 1a. Extract structured **Action:** block (tolerates 1 or 2 asterisks from LLM)
+  t=t.replace(/\*{1,2}Action:\*{1,2}\s*([\s\S]*?)(?=\*{1,2}(?:Status|Assets|Details|Action Required|Reference):\*{0,2}|$)/i,(_,body)=>{
+    const line=body.split('\n').map(l=>l.trim()).find(l=>/^create_report/i.test(l));
+    if(line) cpTriggerAction(line);
+    return '';
   });
+  // 1b. Fallback: scan for bare "create_report |" line anywhere in text (when section header was malformed)
+  if(!actionHtml){
+    const lines=t.split('\n');
+    const idx=lines.findIndex(l=>/^create_report\s*\|/i.test(l.trim()));
+    if(idx>-1){
+      cpTriggerAction(lines[idx].trim());
+      lines.splice(idx,1);
+      t=lines.join('\n');
+    }
+  }
 
   // 2. Extract **Assets:** section and render as fleet card
   let assetHtml='';
