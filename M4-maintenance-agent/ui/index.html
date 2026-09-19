@@ -195,11 +195,10 @@ body.dark .logout-btn:hover{background:#2d1515;color:#f87171;border-color:#7f1d1
 .dist-fill{height:100%;border-radius:20px;transition:width 0.7s ease}
 .dist-count{font-size:0.76rem;font-weight:700;color:var(--text);width:26px;text-align:right;flex-shrink:0}
 
-/* ── Metrics ── */
-.metric-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:0.81rem}
-.metric-row:last-child{border-bottom:none}
-.metric-label{color:var(--text-muted)}
-.metric-val{font-weight:700}
+/* ── Sidebar model metrics ── */
+.sb-metrics-divider{height:1px;background:var(--border);margin:7px 0 5px}
+.sb-metrics-sublabel{font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-light);padding:0 0 3px}
+.sb-metrics-val{font-size:0.69rem;font-weight:700;color:var(--text);white-space:nowrap}
 
 /* ── Fleet table ── */
 .fleet-stats-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
@@ -724,9 +723,6 @@ body.dark .rpt-tag{background:#1e3a5f;border-color:#1e40af;color:#93c5fd}
     <button class="nav-item" data-page="predict" onclick="nav('predict',this)">
       <span class="nav-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span> Health Prediction
     </button>
-    <button class="nav-item" data-page="metrics" onclick="nav('metrics',this)">
-      <span class="nav-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span> Model Metrics
-    </button>
     <div class="nav-section">Support</div>
     <a href="/chat-ui" class="nav-item" style="text-decoration:none;">
       <span class="nav-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span> Engineer Chatbot
@@ -777,6 +773,20 @@ body.dark .rpt-tag{background:#1e3a5f;border-color:#1e40af;color:#93c5fd}
           Agent Hub
         </span>
         <span class="badge badge-gray" id="sys-hub">checking…</span>
+      </div>
+      <div class="sb-metrics-divider"></div>
+      <div class="sb-metrics-sublabel">Model Metrics</div>
+      <div class="sb-status-row">
+        <span class="sb-status-name">ML · MAE / R²</span>
+        <span class="sb-metrics-val" id="ss-ml-vals">—</span>
+      </div>
+      <div class="sb-status-row">
+        <span class="sb-status-name">NLP Accuracy</span>
+        <span class="sb-metrics-val" id="ss-nlp-acc">—</span>
+      </div>
+      <div class="sb-status-row" style="border-bottom:none">
+        <span class="sb-status-name">RAG P@1</span>
+        <span class="sb-metrics-val" id="ss-rag-p1">—</span>
       </div>
     </div>
   </div>
@@ -1243,25 +1253,6 @@ body.dark .rpt-tag{background:#1e3a5f;border-color:#1e40af;color:#93c5fd}
     </div>
   </div>
 
-  <!-- ═══ PAGE: Metrics ═══ -->
-  <div class="page" id="page-metrics">
-    <div class="page-content">
-      <div class="grid-3">
-        <div class="card">
-          <div class="sec-lbl">🤖 ML Model (GradientBoosting)</div>
-          <div id="ml-metrics"><div class="empty-state"><span class="empty-icon">🤖</span>Train model to see metrics</div></div>
-        </div>
-        <div class="card">
-          <div class="sec-lbl">📝 NLP Classification</div>
-          <div id="nlp-metrics"><div class="empty-state"><span class="empty-icon">📝</span>Run evaluate_nlp.py</div></div>
-        </div>
-        <div class="card">
-          <div class="sec-lbl">📚 RAG Retrieval Quality</div>
-          <div id="rag-metrics"><div class="empty-state"><span class="empty-icon">📚</span>Run evaluate_retrieval.py</div></div>
-        </div>
-      </div>
-    </div>
-  </div>
 
 </div><!-- /main -->
 
@@ -1465,7 +1456,6 @@ const PAGE_META = {
   trains:  { title:'Trains',            sub:'Sri Lanka Railways fleet — locomotive health & details' },
   fleet:   { title:'Asset Fleet',       sub:'All tracked railway assets with live health scores' },
   predict: { title:'Health Prediction', sub:'ML model · GradientBoostingRegressor' },
-  metrics: { title:'Model Metrics',     sub:'ML · NLP · RAG evaluation performance' },
 };
 
 function nav(page, btn) {
@@ -1848,9 +1838,9 @@ function renderTypeDist(dist){
   const max=Math.max(...entries.map(([,v])=>v))||1;
   el.innerHTML=entries.map(([k,v])=>`<div class="dist-row"><div class="dist-name">${esc(k.replace(/_/g,' '))}</div><div class="dist-track"><div class="dist-fill" style="width:${(v/max*100).toFixed(1)}%;background:var(--primary-light)"></div></div><div class="dist-count">${v}</div></div>`).join('');
 }
-function renderMLMetrics(m){const el=document.getElementById('ml-metrics');if(!m||!m.mae){el.innerHTML='<div class="empty-state"><span class="empty-icon">🤖</span>Run train_health_model.py</div>';return}el.innerHTML=[['Model',m.model||'GBR'],['Version',m.version||'v1'],['MAE',m.mae],['RMSE',m.rmse],['R²',m.r2],['Test Samples',m.test_samples]].map(([l,v])=>`<div class="metric-row"><span class="metric-label">${l}</span><span class="metric-val">${v}</span></div>`).join('')}
-function renderNLPMetrics(m){const el=document.getElementById('nlp-metrics');if(!m||!m.accuracy){el.innerHTML='<div class="empty-state"><span class="empty-icon">📝</span>Run evaluate_nlp.py</div>';return}el.innerHTML=[['Accuracy',(m.accuracy*100).toFixed(1)+'%'],['Macro F1',(m.macro_f1*100).toFixed(1)+'%'],['Samples',m.total_samples]].map(([l,v])=>`<div class="metric-row"><span class="metric-label">${l}</span><span class="metric-val">${v}</span></div>`).join('')}
-function renderRAGMetrics(m){const el=document.getElementById('rag-metrics');if(!m||m.precision_at_1==null){el.innerHTML='<div class="empty-state"><span class="empty-icon">📚</span>Run evaluate_retrieval.py</div>';return}el.innerHTML=[['P@1',m.precision_at_1],['P@3',m.precision_at_3],['P@5',m.precision_at_5],['Backend',m.label||'local_tfidf']].map(([l,v])=>`<div class="metric-row"><span class="metric-label">${l}</span><span class="metric-val">${v}</span></div>`).join('')}
+function renderMLMetrics(m){const el=document.getElementById('ss-ml-vals');if(!el)return;if(!m||!m.mae){el.textContent='—';return;}el.textContent=m.mae+' / '+m.r2;}
+function renderNLPMetrics(m){const el=document.getElementById('ss-nlp-acc');if(!el)return;if(!m||!m.accuracy){el.textContent='—';return;}el.textContent=(m.accuracy*100).toFixed(1)+'%';}
+function renderRAGMetrics(m){const el=document.getElementById('ss-rag-p1');if(!el)return;if(!m||m.precision_at_1==null){el.textContent='—';return;}el.textContent=m.precision_at_1;}
 function renderAlerts(events){
   const el=document.getElementById('alerts-list');
   const a=events.filter(e=>e.event_type==='maintenance_alert');
