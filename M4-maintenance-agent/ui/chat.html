@@ -598,6 +598,49 @@
   }
   .clear-btn:hover { color: var(--red); background: #fef2f2; }
 
+  /* ── Action CTA card (from chatbot **Action:** tag) ── */
+  .ac-cta {
+    background: var(--white);
+    border: 1.5px solid #bfdbfe;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(37,99,235,0.08);
+  }
+  .ac-cta-header {
+    display: flex; align-items: center; gap: 8px;
+    padding: 9px 16px;
+    background: linear-gradient(90deg, #eff6ff 0%, #dbeafe 100%);
+    border-bottom: 1px solid #bfdbfe;
+    font-size: 0.69rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.7px; color: #1d4ed8;
+  }
+  .ac-cta-header svg { width: 13px; height: 13px; color: #2563eb; flex-shrink: 0; }
+  .ac-cta-body { padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .ac-cta-info { min-width: 0; }
+  .ac-cta-asset { font-size: 0.95rem; font-weight: 800; color: var(--text); letter-spacing: -0.3px; }
+  .ac-cta-sub { font-size: 0.76rem; color: var(--text-muted); margin-top: 2px; text-transform: capitalize; }
+  .ac-cta-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 9px 16px; border-radius: 10px;
+    background: var(--primary); color: white;
+    font-size: 0.78rem; font-weight: 700;
+    text-decoration: none; white-space: nowrap; flex-shrink: 0;
+    transition: background 0.15s, transform 0.12s;
+  }
+  .ac-cta-btn:hover { background: var(--primary-dark); transform: translateY(-1px); }
+  .ac-cta-btn svg { width: 12px; height: 12px; }
+
+  /* Report button inside fleet asset chips */
+  .ac-fleet-rpt-btn {
+    display: block; width: 100%; margin-top: 8px;
+    padding: 5px 0; border-radius: 6px; border: 1px solid #bfdbfe;
+    background: #eff6ff; color: #1d4ed8;
+    font-size: 0.65rem; font-weight: 700; text-align: center;
+    cursor: pointer; font-family: inherit;
+    transition: background 0.12s;
+  }
+  .ac-fleet-rpt-btn:hover { background: #dbeafe; }
+
   /* ── Animated gradient ── */
   @keyframes gradient-shift {
     from { transform: rotate(0deg) scale(1); }
@@ -787,13 +830,8 @@
           <select id="asset-type-select">
             <option value="">Auto-detect</option>
             <option value="diesel_engine">Diesel Engine</option>
-            <option value="electric_loco">Electric Loco</option>
             <option value="bogie">Bogie</option>
             <option value="brake_system">Brake System</option>
-            <option value="signal_unit">Signal Unit</option>
-            <option value="track_section">Track Section</option>
-            <option value="level_crossing">Level Crossing</option>
-            <option value="platform_gate">Platform Gate</option>
           </select>
         </span>
         <button class="clear-btn" onclick="clearChat()">Clear chat</button>
@@ -1030,11 +1068,42 @@ function renderMarkdown(text) {
 
 // ── Answer card renderer ──
 function renderAnswerCards(text) {
+  // Extract **Action:** block before card parsing (tolerates 1-2 asterisks from LLM)
+  let actionHtml = '';
+  text = text.replace(/\*{1,2}Action:\*{1,2}\s*([\s\S]*?)(?=\*{1,2}(?:Status|Assets|Details|Action Required|Reference):\*{0,2}|$)/i, (_, body) => {
+    const line = (body.trim().split('\n')[0] || '').trim();
+    if (/^create_report/i.test(line)) {
+      const parts = line.replace(/^create_report\s*\|?\s*/i, '').split('|').map(s => s.trim());
+      const [assetId = '', assetType = '', station = ''] = parts;
+      if (assetId) {
+        const typeLbl = assetType.replace(/_/g, ' ');
+        const dashUrl = '/' + (assetId ? '?highlight=' + encodeURIComponent(assetId) : '');
+        actionHtml = `<div class="ac-cta">
+          <div class="ac-cta-header">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+            Log Field Observation
+          </div>
+          <div class="ac-cta-body">
+            <div class="ac-cta-info">
+              <div class="ac-cta-asset">${escHtml(assetId)}</div>
+              <div class="ac-cta-sub">${escHtml(typeLbl)}${station ? ' · ' + escHtml(station) : ''}</div>
+            </div>
+            <a class="ac-cta-btn" href="${escHtml(dashUrl)}" target="_blank">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              Open on Dashboard
+            </a>
+          </div>
+        </div>`;
+      }
+    }
+    return '';
+  });
+
   const pattern = /\*\*(Status|Assets|Details|Action Required|Reference):\*\*\s*([\s\S]*?)(?=\*\*(?:Status|Assets|Details|Action Required|Reference):\*\*|$)/g;
   const found = {};
   let m;
   while ((m = pattern.exec(text)) !== null) found[m[1]] = m[2].trim();
-  if (!Object.keys(found).length) return null;
+  if (!Object.keys(found).length && !actionHtml) return null;
 
   function bullets(str) {
     return str.split('\n')
@@ -1091,6 +1160,7 @@ function renderAnswerCards(text) {
       const badgeCls  = isg ? 'fg'  : isr ? 'fr'  : 'fa';
       const barCls    = isg ? 'bg'  : isr ? 'br'  : 'ba';
       const badgeLabel = isg ? 'GREEN' : isr ? 'RED' : 'AMBER';
+      const dashUrl = '/?highlight=' + encodeURIComponent(id);
       return `<div class="ac-fleet-asset ${accentCls}">
         <div class="ac-fleet-asset-id">${escHtml(id)}</div>
         <div class="ac-fleet-asset-type">${escHtml(type)}</div>
@@ -1099,6 +1169,7 @@ function renderAnswerCards(text) {
           <span class="ac-fleet-badge ${badgeCls}">${badgeLabel}</span>
         </div>
         <div class="ac-fleet-bar-track"><div class="ac-fleet-bar-fill ${barCls}" style="width:${Math.min(score,100)}%"></div></div>
+        <a class="ac-fleet-rpt-btn" href="${escHtml(dashUrl)}" target="_blank">+ Report</a>
       </div>`;
     }).filter(Boolean).join('');
 
@@ -1151,8 +1222,9 @@ function renderAnswerCards(text) {
     </div>`;
   }
 
+  html += actionHtml;
   html += '</div>';
-  return html;
+  return (Object.keys(found).length || actionHtml) ? html : null;
 }
 
 function buildCitations(citations) {
