@@ -114,6 +114,53 @@ def fetch_recent_events(limit: int = 20) -> list[dict]:
         return []
 
 
+def get_train_from_registry(train_id: str) -> Optional[dict]:
+    """Look up a canonical train in the shared trains table.
+
+    Returns the train row dict, or None if not found or Supabase unavailable.
+    Best-effort: callers must degrade gracefully when this returns None.
+    """
+    client = get_client()
+    if client is None:
+        return None
+    clean_id = (train_id or "").strip().upper()
+    if not clean_id:
+        return None
+    try:
+        result = (
+            client.table("trains")
+            .select("train_id,train_name,active,maintenance_status,route")
+            .eq("train_id", clean_id)
+            .limit(1)
+            .execute()
+        )
+        return result.data[0] if result.data else None
+    except Exception:
+        return None
+
+
+def update_train_maintenance_status(train_id: str, maintenance_status: Optional[str]) -> bool:
+    """Write maintenance_status to the shared canonical trains table.
+
+    Used when an engineer flags or clears a train so M3 Booking Agent sees the
+    restriction immediately on the next booking attempt.
+    Best-effort: returns False silently on any error.
+    """
+    client = get_client()
+    if client is None:
+        return False
+    clean_id = (train_id or "").strip().upper()
+    if not clean_id:
+        return False
+    try:
+        client.table("trains").update(
+            {"maintenance_status": maintenance_status}
+        ).eq("train_id", clean_id).execute()
+        return True
+    except Exception:
+        return False
+
+
 def match_manual_sections(query_vector: list[float], match_count: int = 3) -> list[dict]:
     """Call pgvector RPC to retrieve similar manual sections."""
     client = get_client()

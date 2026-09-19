@@ -170,6 +170,81 @@ All inter-agent traffic is **hub-mediated** using standard MCP-style JSON envelo
 
 ---
 
+## 🗄️ Shared Train Identity Architecture (PART 2–4)
+
+All four agents resolve train identity against a single canonical Supabase
+`trains` table. No agent invents or caches train facts independently.
+
+```
+                         SUPABASE
+                            │
+                 ┌──────────┴──────────┐
+                 │  trains              │  train_schedules
+                 │  train_id (PK)       │  (FK → trains.id)
+                 │  train_name          │  first/second capacity
+                 │  active              │  travel_date, route
+                 │  maintenance_status  │  departure/arrival
+                 │  route               │
+                 └──────┬──────┬───────┘
+                        │      │
+          ┌─────────────┼──────┼─────────────┐
+          │             │      │             │
+          ▼             ▼      ▼             ▼
+         M1            M2     M3            M4
+    Passenger       Operations  Booking   Maintenance
+```
+
+### One train_id, one source of truth
+
+| Agent | How it uses the shared source |
+|---|---|
+| **M1** | `shared.train_repository.get_train()` before `train_info` and `train_status` intents |
+| **M2** | `_canonical_train_or_error()` validates every `predict_delay` call |
+| **M3** | `get_train_by_public_id()` reads `trains.active` and `trains.maintenance_status` |
+| **M4** | `supabase_store.get_train_from_registry()` validates flags; writes `trains.maintenance_status` |
+
+### Maintenance → booking restriction
+
+When a maintenance engineer flags a train via `POST /api/flag-train` on M4:
+
+1. M4 validates the `train_id` exists in the canonical `trains` table.
+2. M4 writes `maintenance_status = 'OUT_OF_SERVICE'` to `trains`.
+3. M4 stores the detailed flag (reason, severity, ETA) in its in-memory `_train_flags`.
+4. Any subsequent booking request for that train via M3 is rejected with
+   `TRAIN_UNDER_MAINTENANCE` (HTTP 409).
+5. When the engineer clears the flag, M4 sets `maintenance_status = NULL` and
+   M3 resumes accepting bookings.
+
+### Booking availability is shared
+
+`train_schedules.first_class_capacity` and `second_class_capacity` are the
+source of truth. Available seats = capacity − confirmed bookings in the
+`bookings` table. Cancellations set `bookings.status = CANCELLED`, restoring
+capacity automatically. All agents read the same live count.
+
+### Specialised data remains separate
+
+```
+M1  → FAQ / RAG corpus (ChromaDB), chat history (Supabase)
+M2  → 3,000 operations history records, ML delay model, incident RAG
+M3  → bookings, cancellations, fraud reviews, audit trail (Supabase PostgreSQL)
+M4  → 600 asset telemetry records, five equipment manuals (TF-IDF + pgvector RAG)
+```
+
+Only canonical train identity and shared operational state (availability,
+maintenance_status) are centralised.
+
+### Integration test scripts
+
+| Script | Coverage |
+|---|---|
+| `scripts/test_m1_m2_integration.py` | M1 → M2 shared registry (7 scenarios) |
+| `scripts/test_m3_booking_integration.py` | M3 booking validation (10 scenarios) |
+| `scripts/test_m4_cross_agent_integration.py` | Full M1+M2+M3+M4 cross-agent (14 scenarios) |
+| `scripts/validate_shared_train_links.py` | M2 CSV coverage vs canonical trains |
+
+---
+
 ## 🧩 Comprehensive Module Breakdown
 
 ---
