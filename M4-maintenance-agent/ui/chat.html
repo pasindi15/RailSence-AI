@@ -273,6 +273,45 @@
     color: #1e40af;
   }
 
+  /* ── Answer cards ── */
+  .answer-cards { display: flex; flex-direction: column; gap: 9px; min-width: 380px; }
+  .ac { border-radius: 12px; overflow: hidden; font-size: 0.855rem; line-height: 1.65; }
+  .ac-header { display: flex; align-items: center; gap: 7px; padding: 7px 13px; font-size: 0.69rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; }
+  .ac-body { padding: 11px 14px; }
+  .ac-body p { margin: 0; }
+  .ac-body ul, .ac-body ol { padding-left: 18px; margin: 0; }
+  .ac-body li { margin-bottom: 5px; }
+  .ac-body li:last-child { margin-bottom: 0; }
+
+  /* Status card */
+  .ac.ac-status            { border: 1.5px solid #bfdbfe; background: #eff6ff; }
+  .ac.ac-status.ac-green   { border-color: #6ee7b7; background: #ecfdf5; }
+  .ac.ac-status.ac-red     { border-color: #fca5a5; background: #fef2f2; }
+  .ac.ac-status.ac-amber   { border-color: #fcd34d; background: #fffbeb; }
+  .ac.ac-status            .ac-header { background: #dbeafe; color: #1e40af; }
+  .ac.ac-status.ac-green   .ac-header { background: #d1fae5; color: #065f46; }
+  .ac.ac-status.ac-red     .ac-header { background: #fee2e2; color: #991b1b; }
+  .ac.ac-status.ac-amber   .ac-header { background: #fef3c7; color: #92400e; }
+  .ac.ac-status .ac-body   { font-weight: 500; }
+
+  /* Details card */
+  .ac.ac-details           { border: 1px solid var(--border); background: var(--white); }
+  .ac.ac-details .ac-header{ background: #f8fafc; color: var(--text-muted); border-bottom: 1px solid var(--border); }
+
+  /* Action Required card */
+  .ac.ac-action            { border: 1.5px solid #fcd34d; background: #fffbeb; }
+  .ac.ac-action .ac-header { background: #fef3c7; color: #92400e; }
+  .ac.ac-action .ac-body li{ color: #78350f; font-weight: 500; }
+
+  /* Reference card */
+  .ac.ac-ref               { border: 1px solid var(--border); background: #f8fafc; }
+  .ac.ac-ref .ac-header    { background: #f1f5f9; color: var(--text-muted); border-bottom: 1px solid var(--border); }
+  .ac.ac-ref .ac-body      { font-size: 0.82rem; color: var(--text-muted); }
+
+  /* Transparent bubble wrapper when cards are present */
+  .bubble.card-bubble { padding: 0; background: transparent !important; border: none !important; box-shadow: none !important; }
+  .bubble.card-bubble .citations { margin-top: 6px; }
+
   /* ── Citations ── */
   .citations { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); }
   .citations-label {
@@ -748,10 +787,13 @@ function appendBotBubble(data) {
   const w = document.getElementById('chat-window');
   const div = document.createElement('div');
   div.className = 'msg bot';
+  const cards = renderAnswerCards(data.answer);
+  const bodyHtml = cards || renderMarkdown(data.answer);
+  const bubbleClass = cards ? 'bubble card-bubble' : 'bubble';
   div.innerHTML = `
     <div class="avatar bot-av">🔧</div>
-    <div class="bubble">
-      ${renderMarkdown(data.answer)}
+    <div class="${bubbleClass}">
+      ${bodyHtml}
       ${buildCitations(data.citations || [])}
     </div>`;
   w.appendChild(div);
@@ -817,6 +859,81 @@ function renderMarkdown(text) {
     return `<p>${block.replace(/\n/g, '<br>')}</p>`;
   }).filter(Boolean).join('');
 
+  return html;
+}
+
+// ── Answer card renderer ──
+function renderAnswerCards(text) {
+  const SECTIONS = ['Status', 'Details', 'Action Required', 'Reference'];
+  const pattern = /\*\*(Status|Details|Action Required|Reference):\*\*\s*([\s\S]*?)(?=\*\*(?:Status|Details|Action Required|Reference):\*\*|$)/g;
+  const found = {};
+  let m;
+  while ((m = pattern.exec(text)) !== null) found[m[1]] = m[2].trim();
+  if (!Object.keys(found).length) return null; // fall back to markdown
+
+  function parseBullets(str) {
+    const lines = str.split('\n').filter(l => /^[-•*]/.test(l.trim()));
+    if (!lines.length) return `<p>${escHtml(str.replace(/\n/g,' ').trim())}</p>`;
+    return `<ul>${lines.map(l=>`<li>${escHtml(l.replace(/^[-•*]\s*/,'').trim())}</li>`).join('')}</ul>`;
+  }
+  function parseSteps(str) {
+    const lines = str.split('\n').filter(l => /^[-•*]/.test(l.trim()));
+    if (!lines.length) return `<p>${escHtml(str.replace(/\n/g,' ').trim())}</p>`;
+    return `<ol>${lines.map(l=>`<li>${escHtml(l.replace(/^[-•*]\s*/,'').trim())}</li>`).join('')}</ol>`;
+  }
+
+  let html = '<div class="answer-cards">';
+
+  // Status card — colour by keywords
+  if (found['Status']) {
+    const s = found['Status'];
+    let col = '';
+    if (/\bGREEN\b|healthy|good condition|no fault|cleared/i.test(s)) col = 'ac-green';
+    else if (/\bRED\b|critical|out of service|failure|severe|danger/i.test(s)) col = 'ac-red';
+    else if (/\bAMBER\b|caution|warning|approaching|degraded|overdue/i.test(s)) col = 'ac-amber';
+    html += `<div class="ac ac-status ${col}">
+      <div class="ac-header">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Status
+      </div>
+      <div class="ac-body"><p>${escHtml(s)}</p></div>
+    </div>`;
+  }
+
+  // Details card
+  if (found['Details']) {
+    html += `<div class="ac ac-details">
+      <div class="ac-header">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        Details
+      </div>
+      <div class="ac-body">${parseBullets(found['Details'])}</div>
+    </div>`;
+  }
+
+  // Action Required card
+  if (found['Action Required']) {
+    html += `<div class="ac ac-action">
+      <div class="ac-header">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Action Required
+      </div>
+      <div class="ac-body">${parseSteps(found['Action Required'])}</div>
+    </div>`;
+  }
+
+  // Reference card
+  if (found['Reference']) {
+    html += `<div class="ac ac-ref">
+      <div class="ac-header">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        Reference
+      </div>
+      <div class="ac-body"><p>${escHtml(found['Reference'])}</p></div>
+    </div>`;
+  }
+
+  html += '</div>';
   return html;
 }
 
