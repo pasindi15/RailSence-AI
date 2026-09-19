@@ -1306,7 +1306,7 @@ body::after {
   <!-- ==================== SECTION 4: MAINTENANCE ==================== -->
   <main id="view-maintenance" class="view-panel">
     <div class="sub-nav">
-      <button class="sub-chip active" id="chip-maint-fleet" onclick="switchSubSection('maintenance', 'fleet')">🚂 Asset Intelligence Dashboard (Port 8006)</button>
+      <button class="sub-chip active" id="chip-maint-fleet" onclick="switchSubSection('maintenance', 'fleet')">🚂 Asset Intelligence Dashboard (Port 3002 → 8006)</button>
       <button class="sub-chip" id="chip-maint-chat" onclick="switchSubSection('maintenance', 'chat')">💬 Maintenance Engineer Chatbot (Port 8006/chat-ui)</button>
     </div>
 
@@ -1314,8 +1314,8 @@ body::after {
     <div id="subview-maint-fleet">
       <div class="embedded-frame-container">
         <div class="frame-top-bar">
-          <span>Connected to: <code>http://localhost:8006/</code> (M4 Asset Intelligence Dashboard)</span>
-          <a href="http://localhost:8006" target="_blank" class="btn-portal-switch" style="font-size:11px;padding:3px 8px;">Open Standalone ↗</a>
+          <span>Login: <code>http://localhost:3002/</code> → Dashboard: <code>http://localhost:8006/</code> (M4 Asset Intelligence)</span>
+          <a href="http://localhost:3002" target="_blank" class="btn-portal-switch" style="font-size:11px;padding:3px 8px;">Open Login ↗</a>
         </div>
         <iframe class="embedded-frame" id="frame-maint-fleet" src="about:blank"></iframe>
       </div>
@@ -1608,7 +1608,7 @@ function switchSection(secName) {
     if (f && f.src === 'about:blank') f.src = 'http://localhost:8005';
   } else if (secName === 'maintenance') {
     const f = $('frame-maint-fleet');
-    if (f && f.src === 'about:blank') f.src = 'http://localhost:8006';
+    if (f && f.src === 'about:blank') f.src = 'http://localhost:3002';
   } else if (secName === 'bookings') {
     loadAdminFraudReviews();
     loadAdminCancellations();
@@ -1657,7 +1657,7 @@ function switchSubSection(parent, sub) {
 
     if (sub === 'fleet') {
       const f = $('frame-maint-fleet');
-      if (f.src === 'about:blank') f.src = 'http://localhost:8006';
+      if (f.src === 'about:blank') f.src = 'http://localhost:3002';
     } else if (sub === 'chat') {
       const f = $('frame-maint-chat');
       if (f.src === 'about:blank') f.src = 'http://localhost:8006/chat-ui';

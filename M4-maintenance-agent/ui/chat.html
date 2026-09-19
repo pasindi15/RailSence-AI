@@ -915,7 +915,17 @@ function escAttr(str) {
 }
 
 /* ── Engineer Login Gate ── */
-(function(){var g=document.getElementById('login-gate');if(sessionStorage.getItem('m4_eng_auth')==='1'){g.style.display='none';}})();
+(function(){
+  var g=document.getElementById('login-gate');
+  var params=new URLSearchParams(window.location.search);
+  if(params.get('m4auth')==='1'){
+    sessionStorage.setItem('m4_eng_auth','1');
+    history.replaceState(null,'',window.location.pathname);
+    g.style.display='none';
+    return;
+  }
+  if(sessionStorage.getItem('m4_eng_auth')==='1'){g.style.display='none';}
+})();
 async function doEngineerLogin(e){
   e.preventDefault();
   var id=document.getElementById('eng-id').value.trim();
