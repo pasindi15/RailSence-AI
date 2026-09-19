@@ -53,13 +53,7 @@ export default function LoginPage() {
 
         {/* Top logo */}
         <div className="relative z-10 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-white/10 backdrop-blur flex items-center justify-center border border-white/15">
-            <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-              <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-              <path d="M2 17l10 5 10-5"/>
-              <path d="M2 12l10 5 10-5"/>
-            </svg>
-          </div>
+          <img src="/logo.png" alt="RailSense Logo" className="h-10 w-auto object-contain drop-shadow-lg" />
           <div>
             <p className="text-white font-bold text-sm">RailSense AI</p>
             <p className="text-blue-300/60 text-[10px] tracking-widest uppercase">Maintenance Agent</p>
