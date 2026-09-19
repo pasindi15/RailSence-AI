@@ -11,6 +11,8 @@ existing sources, then upserts by the canonical train_id.
 
 from __future__ import annotations
 
+from typing import Any
+
 import argparse
 import csv
 import json
@@ -28,14 +30,151 @@ DEFAULT_REPORT = ROOT / "shared_train_ids_report.json"
 KNOWN_TRAINS: dict[str, dict[str, Any]] = {
     "PM-4082": {
         "train_name": "Intercity Express",
-        "origin_station": "Colombo",
+        "origin_station": "Colombo Fort",
         "destination_station": "Kandy",
-        "route": "Colombo - Kandy",
+        "route": "Colombo Fort - Kandy",
         "train_type": "intercity",
         "active": True,
         "source": "M3 booking seed",
         "class_capacities": {"First Class": 40, "Second Class": 120},
         "current_class_availability": {"First Class": 40, "Second Class": 120},
+        "metadata": {
+            "source": "M3 booking seed",
+            "stops": ["Colombo Fort", "Ragama", "Gampaha", "Veyangoda", "Polgahawela", "Rambukkana", "Kandy"],
+            "stop_times": {
+                "Colombo Fort": {"dep": "14:35"},
+                "Ragama": {"arr": "14:55", "dep": "14:57"},
+                "Gampaha": {"arr": "15:10", "dep": "15:12"},
+                "Veyangoda": {"arr": "15:25", "dep": "15:27"},
+                "Polgahawela": {"arr": "16:05", "dep": "16:08"},
+                "Rambukkana": {"arr": "16:25", "dep": "16:28"},
+                "Kandy": {"arr": "17:10"}
+            },
+            "operating_days": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+        },
+    },
+    "IC-8746": {
+        "train_name": "Intercity Express",
+        "origin_station": "Colombo Fort",
+        "destination_station": "Kandy",
+        "route": "Colombo Fort - Kandy",
+        "train_type": "intercity",
+        "active": True,
+        "source": "M2 operations history",
+        "class_capacities": {"First Class": 45, "Second Class": 130},
+        "current_class_availability": {"First Class": 45, "Second Class": 130},
+        "metadata": {
+            "source": "M2 operations history",
+            "stops": ["Colombo Fort", "Ragama", "Gampaha", "Polgahawela", "Peradeniya", "Kandy"],
+            "stop_times": {
+                "Colombo Fort": {"dep": "06:00"},
+                "Ragama": {"arr": "06:18", "dep": "06:20"},
+                "Gampaha": {"arr": "06:33", "dep": "06:35"},
+                "Polgahawela": {"arr": "07:22", "dep": "07:25"},
+                "Peradeniya": {"arr": "08:18", "dep": "08:21"},
+                "Kandy": {"arr": "08:35"}
+            },
+            "operating_days": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+        },
+    },
+    "YD-9337": {
+        "train_name": "Historical YD-9337",
+        "origin_station": "Colombo Fort",
+        "destination_station": "Kandy",
+        "route": "Colombo Fort - Kandy",
+        "train_type": "passenger_service",
+        "active": True,
+        "source": "M2 operations history",
+        "class_capacities": {"First Class": 30, "Second Class": 100},
+        "current_class_availability": {"First Class": 30, "Second Class": 100},
+        "metadata": {
+            "source": "M2 operations history",
+            "stops": ["Colombo Fort", "Gampaha", "Veyangoda", "Polgahawela", "Kadugannawa", "Peradeniya", "Kandy"],
+            "stop_times": {
+                "Colombo Fort": {"dep": "10:30"},
+                "Gampaha": {"arr": "11:05", "dep": "11:08"},
+                "Veyangoda": {"arr": "11:22", "dep": "11:25"},
+                "Polgahawela": {"arr": "12:00", "dep": "12:04"},
+                "Kadugannawa": {"arr": "12:45", "dep": "12:48"},
+                "Peradeniya": {"arr": "13:00", "dep": "13:03"},
+                "Kandy": {"arr": "13:15"}
+            },
+            "operating_days": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+        },
+    },
+    "PM-8056": {
+        "train_name": "Podi Menike",
+        "origin_station": "Colombo Fort",
+        "destination_station": "Badulla",
+        "route": "Colombo Fort - Badulla",
+        "train_type": "passenger_service",
+        "active": True,
+        "source": "M2 operations dashboard",
+        "class_capacities": {"First Class": 40, "Second Class": 120},
+        "current_class_availability": {"First Class": 40, "Second Class": 120},
+        "metadata": {
+            "source": "M2 operations dashboard",
+            "stops": ["Colombo Fort", "Ragama", "Polgahawela", "Peradeniya", "Nanu Oya", "Ella", "Badulla"],
+            "stop_times": {
+                "Colombo Fort": {"dep": "05:55"},
+                "Ragama": {"arr": "06:15", "dep": "06:17"},
+                "Polgahawela": {"arr": "07:18", "dep": "07:22"},
+                "Peradeniya": {"arr": "08:35", "dep": "08:40"},
+                "Nanu Oya": {"arr": "12:45", "dep": "12:50"},
+                "Ella": {"arr": "14:40", "dep": "14:45"},
+                "Badulla": {"arr": "15:15"}
+            },
+            "operating_days": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+        },
+    },
+    "IC-1001": {
+        "train_name": "Intercity Express",
+        "origin_station": "Colombo Fort",
+        "destination_station": "Kandy",
+        "route": "Colombo Fort - Kandy",
+        "train_type": "intercity",
+        "active": True,
+        "source": "M2 operations dashboard",
+        "class_capacities": {"First Class": 40, "Second Class": 120},
+        "current_class_availability": {"First Class": 40, "Second Class": 120},
+        "metadata": {
+            "source": "M2 operations dashboard",
+            "stops": ["Colombo Fort", "Ragama", "Gampaha", "Polgahawela", "Peradeniya", "Kandy"],
+            "stop_times": {
+                "Colombo Fort": {"dep": "16:35"},
+                "Ragama": {"arr": "16:55", "dep": "16:57"},
+                "Gampaha": {"arr": "17:12", "dep": "17:15"},
+                "Polgahawela": {"arr": "18:05", "dep": "18:08"},
+                "Peradeniya": {"arr": "19:20", "dep": "19:23"},
+                "Kandy": {"arr": "19:40"}
+            },
+            "operating_days": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+        },
+    },
+    "DM-8055": {
+        "train_name": "Night Mail",
+        "origin_station": "Colombo Fort",
+        "destination_station": "Batticaloa",
+        "route": "Colombo Fort - Batticaloa",
+        "train_type": "night_service",
+        "active": True,
+        "source": "M2 operations dashboard",
+        "class_capacities": {"First Class": 25, "Second Class": 90},
+        "current_class_availability": {"First Class": 25, "Second Class": 90},
+        "metadata": {
+            "source": "M2 operations dashboard",
+            "stops": ["Colombo Fort", "Ragama", "Polgahawela", "Kurunegala", "Maho", "Habarana", "Batticaloa"],
+            "stop_times": {
+                "Colombo Fort": {"dep": "19:15"},
+                "Ragama": {"arr": "19:35", "dep": "19:37"},
+                "Polgahawela": {"arr": "20:45", "dep": "20:48"},
+                "Kurunegala": {"arr": "21:15", "dep": "21:18"},
+                "Maho": {"arr": "22:00", "dep": "22:03"},
+                "Habarana": {"arr": "23:30", "dep": "23:33"},
+                "Batticaloa": {"arr": "04:30"}
+            },
+            "operating_days": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+        },
     },
     "INACT-9999": {
         "train_name": "Maintenance Railcar",
@@ -46,33 +185,6 @@ KNOWN_TRAINS: dict[str, dict[str, Any]] = {
         "active": False,
         "maintenance_status": "DECOMMISSIONED",
         "source": "M3 booking seed",
-    },
-    "PM-8056": {
-        "train_name": "Podi Menike",
-        "origin_station": "Colombo Fort",
-        "destination_station": "Badulla",
-        "route": "Colombo Fort - Badulla",
-        "train_type": "passenger_service",
-        "active": True,
-        "source": "M2 operations dashboard",
-    },
-    "IC-1001": {
-        "train_name": "Intercity Express",
-        "origin_station": "Colombo Fort",
-        "destination_station": "Kandy",
-        "route": "Colombo Fort - Kandy",
-        "train_type": "intercity",
-        "active": True,
-        "source": "M2 operations dashboard",
-    },
-    "DM-8055": {
-        "train_name": "Night Mail",
-        "origin_station": "Colombo Fort",
-        "destination_station": "Batticaloa",
-        "route": "Colombo Fort - Batticaloa",
-        "train_type": "night_service",
-        "active": True,
-        "source": "M2 operations dashboard",
     },
     "PM-5000": {
         "train_name": "City Express",
@@ -177,8 +289,14 @@ def build_train_records(rows: list[dict[str, str]]) -> tuple[list[dict[str, Any]
                 "metadata": {"source": known.get("source", "known project registry")},
             },
         )
-        record.update({key: value for key, value in known.items() if key not in {"source"}})
-        record.setdefault("metadata", {})["source"] = known.get("source", "known project registry")
+        # Deep-merge: apply KNOWN_TRAINS fields, preserving CSV observations in metadata
+        existing_metadata = record.get("metadata", {})
+        known_metadata = known.get("metadata", {})
+        record.update({key: value for key, value in known.items() if key not in {"source", "metadata"}})
+        # Merge metadata: KNOWN_TRAINS values take priority, but keep CSV observation data
+        merged_metadata = {**existing_metadata, **known_metadata}
+        merged_metadata["source"] = known.get("source", "known project registry")
+        record["metadata"] = merged_metadata
 
     return sorted(records.values(), key=lambda row: row["train_id"]), {
         "m2_operation_distinct_ids": len(by_train),
@@ -230,33 +348,115 @@ def main() -> None:
         raise SystemExit("SUPABASE_URL and SUPABASE_SECRET_KEY are required")
 
     client = create_client(url, key)
-    client.table("trains").upsert(records, on_conflict="train_id").execute()
 
-    pm = (
+    # Batch the trains upsert to stay within Supabase row-per-request limits
+    BATCH_SIZE = 500
+    for i in range(0, len(records), BATCH_SIZE):
+        client.table("trains").upsert(records[i : i + BATCH_SIZE], on_conflict="train_id").execute()
+
+    target_trains = (
         client.table("trains")
-        .select("id")
-        .eq("train_id", "PM-4082")
-        .limit(1)
+        .select("id, train_id")
+        .in_("train_id", ["PM-4082", "IC-8746", "YD-9337", "PM-8056", "IC-1001", "DM-8055"])
         .execute()
+        .data or []
     )
-    if pm.data:
+    # pyrefly: ignore [bad-index, unsupported-operation]
+    train_id_map = {t["train_id"]: t["id"] for t in target_trains}
+
+    from datetime import date, timedelta
+    start_dt = date(2026, 9, 18)
+    date_list = [(start_dt + timedelta(days=i)).isoformat() for i in range(25)]
+    date_list.append("2026-12-03")
+
+    schedule_templates = [
+        {
+            "train_key": "PM-4082",
+            "from_station": "Colombo Fort",
+            "to_station": "Kandy",
+            "departure_time": "14:35:00",
+            "arrival_time": "17:10:00",
+            "first_class_capacity": 40,
+            "second_class_capacity": 120,
+            "service_status": "SCHEDULED",
+        },
+        {
+            "train_key": "IC-8746",
+            "from_station": "Colombo Fort",
+            "to_station": "Kandy",
+            "departure_time": "06:00:00",
+            "arrival_time": "08:35:00",
+            "first_class_capacity": 45,
+            "second_class_capacity": 130,
+            "service_status": "SCHEDULED",
+        },
+        {
+            "train_key": "YD-9337",
+            "from_station": "Colombo Fort",
+            "to_station": "Kandy",
+            "departure_time": "10:30:00",
+            "arrival_time": "13:15:00",
+            "first_class_capacity": 30,
+            "second_class_capacity": 100,
+            "service_status": "SCHEDULED",
+        },
+        {
+            "train_key": "IC-1001",
+            "from_station": "Colombo Fort",
+            "to_station": "Kandy",
+            "departure_time": "16:35:00",
+            "arrival_time": "19:40:00",
+            "first_class_capacity": 40,
+            "second_class_capacity": 120,
+            "service_status": "SCHEDULED",
+        },
+        {
+            "train_key": "PM-8056",
+            "from_station": "Colombo Fort",
+            "to_station": "Badulla",
+            "departure_time": "05:55:00",
+            "arrival_time": "15:15:00",
+            "first_class_capacity": 40,
+            "second_class_capacity": 120,
+            "service_status": "SCHEDULED",
+        },
+        {
+            "train_key": "DM-8055",
+            "from_station": "Colombo Fort",
+            "to_station": "Batticaloa",
+            "departure_time": "19:15:00",
+            "arrival_time": "04:30:00",
+            "first_class_capacity": 25,
+            "second_class_capacity": 90,
+            "service_status": "SCHEDULED",
+        },
+    ]
+
+    schedules_to_upsert = []
+    for d in date_list:
+        for tmpl in schedule_templates:
+            pk = train_id_map.get(tmpl["train_key"])
+            if not pk:
+                continue
+            # Colombo Fort schedule
+            row: dict[str, Any] = dict(tmpl)
+            del row["train_key"]
+            row["train_id"] = pk
+            row["travel_date"] = d
+            schedules_to_upsert.append(row)
+            # Colombo alias schedule for backwards compatibility
+            alias_row = dict(row)
+            alias_row["from_station"] = "Colombo"
+            schedules_to_upsert.append(alias_row)
+
+    for i in range(0, len(schedules_to_upsert), 100):
         client.table("train_schedules").upsert(
-            [{
-                "train_id": pm.data[0]["id"],
-                "from_station": "Colombo",
-                "to_station": "Kandy",
-                "travel_date": "2026-12-03",
-                "departure_time": "07:00:00",
-                "arrival_time": "10:15:00",
-                "first_class_capacity": 40,
-                "second_class_capacity": 120,
-                "service_status": "SCHEDULED",
-            }],
+            schedules_to_upsert[i : i + 100],
             on_conflict="train_id,travel_date,from_station,to_station",
         ).execute()
 
     print(f"Upserted {len(records)} canonical train identities")
-    print("Upserted the existing PM-4082 booking schedule")
+    print(f"Upserted {len(schedules_to_upsert)} canonical train schedules across {len(date_list)} dates")
 
 
 if __name__ == "__main__":

@@ -29,7 +29,7 @@ if GEMINI_API_KEY and genai is not None:
 # Extend this dict as you confirm real station names with your dataset.
 # Each canonical (English) name maps to its English/Sinhala/Tamil aliases.
 STATION_ALIASES = {
-    "Colombo Fort": ["colombo fort", "කොළඹ කොටුව", "கொழும்பு கோட்டை"],
+    "Colombo Fort": ["colombo fort", "colombo", "කොළඹ කොටුව", "කොළඹ", "கொழும்பு கோட்டை", "கொழும்பு"],
     "Kandy": ["kandy", "මහනුවර", "கண்டி"],
     "Galle": ["galle", "ගාල්ල", "காலி"],
     "Jaffna": ["jaffna", "යාපනය", "யாழ்ப்பாணம்"],
@@ -51,6 +51,11 @@ MONTH_MAP = {
     "january": 1, "february": 2, "march": 3, "april": 4, "may": 5, "june": 6,
     "july": 7, "august": 8, "september": 9, "october": 10, "november": 11, "december": 12,
     "jan": 1, "feb": 2, "mar": 3, "apr": 4, "jun": 6, "jul": 7, "aug": 8, "sep": 9, "oct": 10, "nov": 11, "dec": 12
+}
+
+DAYS_MAP = {
+    "monday": 0, "tuesday": 1, "wednesday": 2, "thursday": 3, "friday": 4, "saturday": 5, "sunday": 6,
+    "mon": 0, "tue": 1, "wed": 2, "thu": 3, "fri": 4, "sat": 5, "sun": 6
 }
 
 
@@ -86,11 +91,22 @@ def _llm_extract_stations(text: str) -> list[str]:
 
 def extract_entities(text: str) -> dict:
     lowered_text = text.lower()
-    found_stations = [
-        canonical
-        for canonical, aliases in STATION_ALIASES.items()
-        if any(alias.lower() in lowered_text for alias in aliases)
-    ]
+    found_matches = []
+    for canonical, aliases in STATION_ALIASES.items():
+        # Sort aliases by descending length to match "colombo fort" before "colombo"
+        sorted_aliases = sorted(aliases, key=len, reverse=True)
+        for alias in sorted_aliases:
+            pos = lowered_text.find(alias.lower())
+            if pos != -1:
+                found_matches.append((pos, canonical))
+                break
+    found_matches.sort(key=lambda item: item[0])
+    # Deduplicate while preserving order
+    found_stations = []
+    for _, st in found_matches:
+        if st not in found_stations:
+            found_stations.append(st)
+
     if not found_stations:
         found_stations = _llm_extract_stations(text)
 
@@ -130,6 +146,26 @@ def extract_entities(text: str) -> dict:
             travel_date = (date.today() + timedelta(days=1)).isoformat()
         elif "today" in lowered:
             travel_date = date.today().isoformat()
+        else:
+            # Check day of week (e.g. Monday, Saturday)
+            for day_name, day_idx in DAYS_MAP.items():
+                if re.search(rf"\b{day_name}\b", lowered):
+                    today = date.today()
+                    days_ahead = (day_idx - today.weekday()) % 7
+                    if days_ahead == 0 and ("next" in lowered or day_name in ("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday") and "today" not in lowered):
+                        # If the day requested is today or past, target that day or today
+                        pass
+                    travel_date = (today + timedelta(days=days_ahead)).isoformat()
+                    break
+
+    # Determine time of day / time constraint
+    time_of_day = None
+    if "evening" in lowered or "night" in lowered:
+        time_of_day = "evening"
+    elif "morning" in lowered:
+        time_of_day = "morning"
+    elif "afternoon" in lowered:
+        time_of_day = "afternoon"
 
     # Extract cancellation reason if applicable
     reason = None
@@ -156,6 +192,7 @@ def extract_entities(text: str) -> dict:
         "train_id": train_id_match.group(0) if train_id_match else None,
         "booking_reference": booking_ref,
         "reason": reason,
+        "time_of_day": time_of_day,
         "seat_class": next((keyword.title() for keyword in SEAT_CLASS_KEYWORDS if keyword in lowered), None),
         "passenger_count": int(passenger_count_match.group(1)) if passenger_count_match else 1,
     }

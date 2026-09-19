@@ -81,9 +81,14 @@ def sanitize_db_url(url: str) -> str:
 
 
 raw_db_url = os.getenv("DATABASE_URL")
-if is_test_environment() and os.getenv("USE_LIVE_DB") != "1":
+use_sqlite = (
+    is_test_environment()
+    or os.getenv("HUB_USE_SQLITE", "true").lower() in ("1", "true")
+) and os.getenv("USE_LIVE_DB") != "1"
+
+if use_sqlite:
     DATABASE_URL = "sqlite:///./railsense_hub_audit.db"
-    print("[Hub Database] Active Backend: SQLite (offline test environment)")
+    print("[Hub Database] Active Backend: SQLite (local fast audit store)")
 elif raw_db_url and raw_db_url.strip():
     DATABASE_URL = sanitize_db_url(raw_db_url)
     print(f"[Hub Database] Active Backend: PostgreSQL/Supabase ({mask_connection_url(DATABASE_URL)})")
@@ -134,8 +139,9 @@ def init_db() -> None:
         # Avoid crashing startup if remote database is not yet ready
         pass
 
-# Initialize audit tables immediately for SQLite or local databases
-init_db()
+# Initialize audit tables immediately for SQLite; PostgreSQL/Supabase is initialized during lifespan
+if DATABASE_URL.startswith("sqlite"):
+    init_db()
 
 
 def get_db() -> Generator[Session, None, None]:

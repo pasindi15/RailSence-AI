@@ -1,0 +1,12 @@
+
+project-includes = ['**/*.py*']
+search-path = [
+    'M1-passenger_assistant/backend',
+    'M2-operations-agent',
+    'M3-Comunication-Hub&Booking-Agent/agent-hub',
+    'M3-Comunication-Hub&Booking-Agent/booking-agent',
+    'M4-maintenance-agent',
+    'security-agent',
+    'frontend',
+    '.'
+]

@@ -96,11 +96,12 @@ def retrieve_similar_incidents(
     station: Optional[str] = None,
     incident_type: Optional[str] = None,
     exclude_record_id: Optional[str] = None,
-    use_cloud: bool = True,
+    use_cloud: bool = False,
 ) -> dict:
     """Return top historical incidents and the retrieval method used."""
     top_k = max(1, min(top_k, 5))
-    cloud_results = _search_supabase(query, top_k) if use_cloud else None
+    enable_cloud = use_cloud or os.getenv("ENABLE_PGVECTOR_RAG", "false").lower() in ("true", "1")
+    cloud_results = _search_supabase(query, top_k) if enable_cloud else None
     if cloud_results is not None:
         return {"incidents": cloud_results, "method": "supabase_pgvector"}
 

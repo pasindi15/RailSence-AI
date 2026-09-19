@@ -15,7 +15,7 @@ import sys
 import uuid
 import asyncio
 from pathlib import Path
-from datetime import datetime, timezone
+from datetime import datetime, timezone, date
 
 # Needed to import the shared/ package (train_repository) from the monorepo
 # root, which isn't on sys.path by default when uvicorn runs from backend/.
@@ -28,9 +28,10 @@ if str(ROOT_DIR) not in sys.path:
 # logs below) then raises UnicodeEncodeError and 500s the whole request
 # before NLU/RAG/Gemini even run. Force UTF-8 so logging never crashes on
 # non-ASCII input.
-if hasattr(sys.stdout, "reconfigure"):
-    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+for stream in (sys.stdout, sys.stderr):
+    reconfigure = getattr(stream, "reconfigure", None)
+    if callable(reconfigure):
+        reconfigure(encoding="utf-8", errors="replace")
 
 try:
     # pyrefly: ignore [missing-import]
@@ -146,6 +147,7 @@ def get_recent_history(session_id: str, turns: int = 3) -> list[dict]:
             .limit(turns * 2)
             .execute()
         )
+        # pyrefly: ignore [bad-return]
         return list(reversed(result.data))
     except Exception as e:
         print(f"Supabase history fetch failed: {e}")
@@ -319,10 +321,41 @@ async def chat(req: ChatRequest):
     cancellation = None
 
     if intent in ("schedule_query", "fare_query"):
-        reply, source = compose_rag_answer(
-            text, language, req.session_id,
-            source_filter=INTENT_SOURCE_DOC[intent], intent=intent, entities=entities,
-        )
+        from_st = entities.get("from_station")
+        to_st = entities.get("to_station")
+        if intent == "schedule_query" and from_st and to_st:
+            travel_date = entities.get("travel_date") or date.today().isoformat()
+            try:
+                from shared.train_repository import get_services_for_date
+                services = await asyncio.to_thread(get_services_for_date, from_st, to_st, travel_date)
+                if services:
+                    day_label = "Today's Services" if travel_date == date.today().isoformat() else f"Services for {travel_date}"
+                    lines = [f"**{from_st} → {to_st} — {day_label}**\n"]
+                    for s in services:
+                        tid = s.get("train_id")
+                        dep = s.get("departure_time", "N/A")
+                        arr = s.get("arrival_time", "N/A")
+                        name = s.get("train_name")
+                        name_str = f" ({name})" if name else ""
+                        status = s.get("status", "On time")
+                        lines.append(f"• **{tid}**{name_str} — {dep} (Arrival: {arr}) | Status: {status}")
+                    lines.append("\nAvailability and live status are based on the shared railway database. Complete stopping stations and live tracking are available on the Train Board.")
+                    reply = "\n".join(lines)
+                    source = "via Shared Train Registry"
+                else:
+                    reply = f"No scheduled services found from {from_st} to {to_st} for {travel_date} in the shared train database."
+                    source = "via Shared Train Registry"
+            except Exception as e:
+                print(f"Schedule lookup fallback: {e}")
+                reply, source = compose_rag_answer(
+                    text, language, req.session_id,
+                    source_filter=INTENT_SOURCE_DOC[intent], intent=intent, entities=entities,
+                )
+        else:
+            reply, source = compose_rag_answer(
+                text, language, req.session_id,
+                source_filter=INTENT_SOURCE_DOC[intent], intent=intent, entities=entities,
+            )
 
     elif intent == "train_info":
         train_id = entities.get("train_id")
@@ -355,12 +388,12 @@ async def chat(req: ChatRequest):
                 reply = "The canonical train registry is temporarily unavailable."
                 source = "via Shared Train Registry"
 
-    elif intent == "delay_check":
+    elif intent in ("delay_check", "historical_incidents", "operational_alert"):
         stations = entities.get("stations", [])
         route = " - ".join(stations) if isinstance(stations, list) and len(stations) >= 2 else "Colombo Fort - Kandy"
-        train_id = entities.get("train_id")
+        train_id = entities.get("train_id") or _extract_train_id(text)
         if not train_id:
-            reply = "TRAIN_NOT_FOUND: provide a train ID so Operations can validate it."
+            reply = "Please provide a train ID (e.g. PM-4082) so Operations can analyze the service."
             source = "via Operations Agent (Hub)"
             save_message(req.session_id, "user", text)
             save_message(req.session_id, "assistant", reply)
@@ -374,57 +407,57 @@ async def chat(req: ChatRequest):
                 "raw_text": text,
                 "route": route,
                 "train_id": train_id,
+                "query_type": intent,
+                "travel_date": entities.get("travel_date"),
             },
         )
         hub_response = await send_to_hub(envelope)
         if hub_response.status == "ok":
             p = hub_response.payload
-            # Operations' /hub/message hands back structured fields, not one
-            # composed sentence (unlike Maintenance/Booking below) - this
-            # assembles them, it doesn't re-run anything through an LLM.
             delay = p.get("predicted_delay_minutes", 0)
             delay_minutes = float(delay)
-            reason = p.get("reason") or p.get("explanation", "Operational congestion")
-            similar = p.get("similar_incident")
-            if not similar and p.get("similar_past_incidents"):
-                similar = p["similar_past_incidents"][0]
-            if not similar:
-                similar = "No similar historical incident recorded"
+            if p.get("reply"):
+                reply = p.get("reply")
+                source = "via Operations Agent (Hub)"
+            else:
+                reason = p.get("reason") or p.get("explanation", "Operational congestion")
+                similar = p.get("similar_incident")
+                if not similar and p.get("similar_past_incidents"):
+                    similar = p["similar_past_incidents"][0]
+                if not similar:
+                    similar = "No similar historical incident recorded"
 
-            # When M2 flags a maintenance-related cause, also query M4 via
-            # Hub — the passenger gets the live maintenance record (reason,
-            # ETA) in the same reply, not just the delay prediction.
-            _MAINT_KEYWORDS = {"maintenance", "repair", "fault", "breakdown", "mechanical", "out of service"}
-            maintenance_context = ""
-            if train_id and any(kw in reason.lower() for kw in _MAINT_KEYWORDS):
-                try:
-                    maint_envelope = build_envelope(
-                        receiver_agent="maintenance-agent",
-                        intent="train_status_query",
-                        payload={"train_id": train_id, "raw_text": text},
-                    )
-                    maint_response = await send_to_hub(maint_envelope)
-                    if maint_response.status == "ok":
-                        mp = maint_response.payload
-                        if mp.get("under_maintenance"):
-                            eta_note = (
-                                f" Expected back in service by {mp['estimated_clear']}."
-                                if mp.get("estimated_clear")
-                                else ""
-                            )
-                            maintenance_context = (
-                                f" Maintenance update: "
-                                f"{mp.get('reason', 'Technical issue under investigation')}.{eta_note}"
-                            )
-                except Exception:
-                    pass
+                _MAINT_KEYWORDS = {"maintenance", "repair", "fault", "breakdown", "mechanical", "out of service"}
+                maintenance_context = ""
+                if train_id and any(kw in reason.lower() for kw in _MAINT_KEYWORDS):
+                    try:
+                        maint_envelope = build_envelope(
+                            receiver_agent="maintenance-agent",
+                            intent="train_status_query",
+                            payload={"train_id": train_id, "raw_text": text},
+                        )
+                        maint_response = await send_to_hub(maint_envelope)
+                        if maint_response.status == "ok":
+                            mp = maint_response.payload
+                            if mp.get("under_maintenance"):
+                                eta_note = (
+                                    f" Expected back in service by {mp['estimated_clear']}."
+                                    if mp.get("estimated_clear")
+                                    else ""
+                                )
+                                maintenance_context = (
+                                    f" Maintenance update: "
+                                    f"{mp.get('reason', 'Technical issue under investigation')}.{eta_note}"
+                                )
+                    except Exception:
+                        pass
 
-            reply = (
-                f"Expected delay: {delay} minutes. "
-                f"Reason: {reason}.{maintenance_context} "
-                f"Similar past incident: {similar}."
-            )
-            source = "via Operations Agent + Maintenance Agent (Hub)" if maintenance_context else "via Operations Agent (Hub)"
+                reply = (
+                    f"Expected delay: {delay} minutes. "
+                    f"Reason: {reason}.{maintenance_context} "
+                    f"Similar past incident: {similar}."
+                )
+                source = "via Operations Agent + Maintenance Agent (Hub)" if maintenance_context else "via Operations Agent (Hub)"
         else:
             message = hub_response.message or "I couldn't reach the Operations Agent right now."
             reply = message if "TRAIN_NOT_FOUND" in message else "I couldn't reach the Operations Agent right now."
@@ -657,6 +690,7 @@ def get_session_or_404(session_id: str):
     of a message that tells the caller what to actually go fix.
     """
     try:
+        assert supabase is not None
         existing = (
             supabase.table("chat_sessions").select("session_id").eq("session_id", session_id).limit(1).execute()
         )

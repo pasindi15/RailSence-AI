@@ -32,7 +32,7 @@ load_dotenv(Path(__file__).parent / ".env")
 # than introducing a second one for the same thing.
 AGENT_HUB_URL = os.getenv("AGENT_HUB_URL", "http://localhost:8002")
 HUB_ROUTE_PATH = os.getenv("HUB_ROUTE_PATH", "messages")
-HUB_TIMEOUT_SECONDS = float(os.getenv("HUB_TIMEOUT_SECONDS", "5"))
+HUB_TIMEOUT_SECONDS = float(os.getenv("HUB_TIMEOUT_SECONDS", "20.0"))
 USE_MOCK_HUB = os.getenv("USE_MOCK_HUB", "false").strip().lower() in ("1", "true", "yes")
 
 HUB_UNREACHABLE_MESSAGE = "I couldn't reach that service right now — please try again shortly."
@@ -57,7 +57,7 @@ class HubResponse(BaseModel):
     message: str | None = None
 
 
-def generate_auth_token(sender_agent: str = "passenger-agent") -> str:
+def generate_auth_token(sender_agent: str = "passenger-agent", receiver_agent: str = "railsense-services") -> str:
     """Generate valid JWT token signed with JWT_SECRET_KEY for Hub authentication."""
     try:
         import jwt
@@ -66,6 +66,8 @@ def generate_auth_token(sender_agent: str = "passenger-agent") -> str:
         now = datetime.now(timezone.utc)
         payload = {
             "sub": sender_agent,
+            "iss": "railsense-hub",
+            "aud": receiver_agent,
             "iat": int(now.timestamp()),
             "exp": int((now + timedelta(hours=2)).timestamp()),
         }
@@ -75,7 +77,7 @@ def generate_auth_token(sender_agent: str = "passenger-agent") -> str:
 
 
 def build_envelope(receiver_agent: str, intent: str, payload: dict, auth_token: str | None = None) -> HubMessage:
-    token = auth_token or generate_auth_token("passenger-agent")
+    token = auth_token or generate_auth_token("passenger-agent", receiver_agent=receiver_agent)
     return HubMessage(
         message_id=str(uuid.uuid4()),
         sender_agent="passenger-agent",

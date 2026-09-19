@@ -61,6 +61,7 @@ body {
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px 24px 60px;
+  position: relative;
 }
 
 /* ── Top Header Navigation ─────────────────────────────────────────── */
@@ -176,34 +177,182 @@ body {
   box-shadow: 0 3px 8px var(--primary-glow);
 }
 
-/* ── Navigation View Tabs ──────────────────────────────────────────── */
-.nav-tabs {
-  display: flex;
-  gap: 6px;
-  margin-bottom: 22px;
-  background: #FFFFFF;
-  padding: 6px;
-  border-radius: var(--r-card);
-  border: 1px solid var(--border-light);
-  box-shadow: var(--shadow-sm);
-}
-
-.tab-btn {
-  flex: 1;
+/* ── Sidebar Toggle (Hamburger) ────────────────────────────────────── */
+.sidebar-toggle {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 11px 16px;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: var(--primary-light);
+  border: 1.5px solid #A7F3D0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.sidebar-toggle:hover {
+  background: var(--primary-grad);
+  border-color: transparent;
+  box-shadow: 0 4px 14px var(--primary-glow);
+}
+
+.sidebar-toggle:hover .hamburger-icon span {
+  background: #FFFFFF;
+}
+
+.hamburger-icon {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 18px;
+}
+
+.hamburger-icon span {
+  display: block;
+  height: 2px;
+  width: 100%;
+  background: var(--primary);
+  border-radius: 2px;
+  transition: all 0.3s ease;
+}
+
+/* ── Sidebar Overlay ──────────────────────────────────────────────── */
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(3px);
+  z-index: 999;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.sidebar-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ── Collapsible Vertical Side Panel ──────────────────────────────── */
+.nav-sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 280px;
+  height: 100vh;
+  background: #FFFFFF;
+  border-right: 1px solid var(--border-light);
+  box-shadow: 8px 0 30px rgba(0, 0, 0, 0.12);
+  z-index: 1000;
+  transform: translateX(-100%);
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.nav-sidebar.open {
+  transform: translateX(0);
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sidebar-brand-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--primary-grad);
+  display: grid;
+  place-items: center;
+  font-size: 17px;
+  box-shadow: 0 3px 8px var(--primary-glow);
+}
+
+.sidebar-brand-text {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text-dark);
+  letter-spacing: -0.3px;
+}
+
+.sidebar-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: #F3F4F6;
+  color: var(--text-sub);
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sidebar-close:hover {
+  background: #FEE2E2;
+  color: #EF4444;
+}
+
+.sidebar-label {
+  padding: 16px 20px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--text-placeholder);
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 12px 20px;
+}
+
+.tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 16px;
   border: 1.5px solid transparent;
   border-radius: 10px;
   background: transparent;
   color: var(--text-sub);
   font-family: inherit;
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
+  text-align: left;
+  width: 100%;
+}
+
+.tab-btn .tab-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  font-size: 15px;
+  background: #F3F4F6;
+  transition: all 0.2s;
+  flex-shrink: 0;
 }
 
 .tab-btn:hover {
@@ -212,12 +361,20 @@ body {
   border-color: #A7F3D0;
 }
 
+.tab-btn:hover .tab-icon {
+  background: #D1FAE5;
+}
+
 .tab-btn.active {
   background: var(--primary-grad);
   border-color: transparent;
   color: #FFFFFF;
   box-shadow: 0 4px 14px var(--primary-glow);
   font-weight: 700;
+}
+
+.tab-btn.active .tab-icon {
+  background: rgba(255,255,255,0.2);
 }
 
 /* ── View Panels ───────────────────────────────────────────────────── */
@@ -1546,6 +1703,11 @@ body {
   <!-- Top Navigation Header -->
   <header class="top-nav">
     <div class="brand-area">
+      <button class="sidebar-toggle" onclick="toggleSidebar()" title="Open Navigation Menu" aria-label="Toggle navigation">
+        <div class="hamburger-icon">
+          <span></span><span></span><span></span>
+        </div>
+      </button>
       <div class="brand-emblem">🚆</div>
       <div>
         <div class="brand-title">RailSense AI</div>
@@ -1567,20 +1729,33 @@ body {
     </div>
   </header>
 
-  <!-- Navigation View Tabs -->
-  <nav class="nav-tabs" role="tablist">
-    <button class="tab-btn active" id="tab-dashboard" onclick="navigateTo('/user')">
-      <span>⌂</span> Home Dashboard
-    </button>
-    <button class="tab-btn" id="tab-chat" onclick="navigateTo('/user/chat')">
-      <span>💬</span> Passenger Assistant
-    </button>
-    <button class="tab-btn" id="tab-booking" onclick="navigateTo('/user/booking')">
-      <span>🎫</span> Train Booking Desk
-    </button>
-    <button class="tab-btn" id="tab-confirmation" onclick="navigateTo('/user/confirmation')">
-      <span>📋</span> Ticket Confirmation
-    </button>
+  <!-- Sidebar Overlay -->
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+  <!-- Collapsible Vertical Side Panel -->
+  <nav class="nav-sidebar" id="nav-sidebar" role="tablist">
+    <div class="sidebar-header">
+      <div class="sidebar-brand">
+        <div class="sidebar-brand-icon">🚆</div>
+        <div class="sidebar-brand-text">Navigation</div>
+      </div>
+      <button class="sidebar-close" onclick="closeSidebar()" aria-label="Close navigation">✕</button>
+    </div>
+    <div class="sidebar-label">Main Menu</div>
+    <div class="sidebar-nav">
+      <button class="tab-btn active" id="tab-dashboard" onclick="navigateTo('/user'); closeSidebar();">
+        <span class="tab-icon">⌂</span> Home Dashboard
+      </button>
+      <button class="tab-btn" id="tab-chat" onclick="navigateTo('/user/chat'); closeSidebar();">
+        <span class="tab-icon">💬</span> Passenger Assistant
+      </button>
+      <button class="tab-btn" id="tab-booking" onclick="navigateTo('/user/booking'); closeSidebar();">
+        <span class="tab-icon">🎫</span> Train Booking Desk
+      </button>
+      <button class="tab-btn" id="tab-confirmation" onclick="navigateTo('/user/confirmation'); closeSidebar();">
+        <span class="tab-icon">📋</span> Ticket Confirmation
+      </button>
+    </div>
   </nav>
 
   <!-- ==================== VIEW 0: HOME DASHBOARD ==================== -->
@@ -1875,7 +2050,7 @@ body {
               </div>
               <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
                 <span style="font-weight:700;color:var(--text-sub);">Train Service:</span>
-                <span style="font-weight:800;color:var(--primary);" id="sum-review-train">1005 - Podi Menike Express</span>
+                <span style="font-weight:800;color:var(--primary);" id="sum-review-train">PM-4082 - Intercity Express</span>
               </div>
               <div style="display:flex;justify-content:space-between;">
                 <span style="font-weight:700;color:var(--text-sub);">Reserved Class:</span>
@@ -1988,7 +2163,7 @@ body {
                 </div>
                 <div>
                   <div class="receipt-item-label">Train Service</div>
-                  <div class="receipt-item-value" id="conf-train">1005 - Podi Menike Express</div>
+                  <div class="receipt-item-value" id="conf-train">PM-4082 - Intercity Express</div>
                 </div>
                 <div>
                   <div class="receipt-item-label">Seat Class</div>
@@ -2154,7 +2329,7 @@ body {
           </div>
           <div>
             <div class="receipt-item-label">Train Service</div>
-            <div class="receipt-item-value" id="view-conf-train">1005 - Podi Menike Express</div>
+            <div class="receipt-item-value" id="view-conf-train">PM-4082 - Intercity Express</div>
           </div>
           <div>
             <div class="receipt-item-label">Seat Class</div>
@@ -2222,6 +2397,20 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 window.addEventListener('popstate', handleUrlRouting);
+
+function toggleSidebar() {
+  const sidebar = document.getElementById('nav-sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  sidebar.classList.toggle('open');
+  overlay.classList.toggle('open');
+}
+
+function closeSidebar() {
+  const sidebar = document.getElementById('nav-sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  sidebar.classList.remove('open');
+  overlay.classList.remove('open');
+}
 
 function navigateTo(path) {
   history.pushState(null, '', path);
@@ -2294,106 +2483,106 @@ function switchView(viewName) {
 // ── Canonical Baseline for Instant Initial Render ───────────────────
 const CANONICAL_DEFAULT_SERVICES = [
   {
-    train_id: "1005",
-    train_name: "Podi Menike Express",
+    train_id: "PM-4082",
+    train_name: "Intercity Express",
+    from_station: "Colombo Fort",
+    to_station: "Kandy",
+    route: "Colombo Fort - Kandy",
+    departure_time: "14:35",
+    arrival_time: "17:10",
+    service_status: "SCHEDULED",
+    maintenance_status: "OPERATIONAL",
+    platform: "1",
+    stops: ["Colombo Fort", "Ragama", "Gampaha", "Veyangoda", "Polgahawela", "Rambukkana", "Kandy"],
+    live_status: "ON_SCHEDULE",
+    current_station: "Colombo Fort",
+    next_station: "Ragama",
+    progress_percent: 10
+  },
+  {
+    train_id: "IC-8746",
+    train_name: "Intercity Express",
+    from_station: "Colombo Fort",
+    to_station: "Kandy",
+    route: "Colombo Fort - Kandy",
+    departure_time: "06:00",
+    arrival_time: "08:35",
+    service_status: "SCHEDULED",
+    maintenance_status: "OPERATIONAL",
+    platform: "2",
+    stops: ["Colombo Fort", "Ragama", "Gampaha", "Polgahawela", "Peradeniya", "Kandy"],
+    live_status: "ON_SCHEDULE",
+    current_station: "Peradeniya",
+    next_station: "Kandy",
+    progress_percent: 85
+  },
+  {
+    train_id: "YD-9337",
+    train_name: "Yal Devi Express",
+    from_station: "Colombo Fort",
+    to_station: "Kandy",
+    route: "Colombo Fort - Kandy",
+    departure_time: "10:30",
+    arrival_time: "13:15",
+    service_status: "SCHEDULED",
+    maintenance_status: "OPERATIONAL",
+    platform: "3",
+    stops: ["Colombo Fort", "Ragama", "Gampaha", "Veyangoda", "Polgahawela", "Rambukkana", "Kadugannawa", "Peradeniya", "Kandy"],
+    live_status: "ON_SCHEDULE",
+    current_station: "Polgahawela",
+    next_station: "Rambukkana",
+    progress_percent: 50
+  },
+  {
+    train_id: "IC-1001",
+    train_name: "Intercity Express",
+    from_station: "Colombo Fort",
+    to_station: "Kandy",
+    route: "Colombo Fort - Kandy",
+    departure_time: "16:35",
+    arrival_time: "19:10",
+    service_status: "SCHEDULED",
+    maintenance_status: "OPERATIONAL",
+    platform: "1",
+    stops: ["Colombo Fort", "Ragama", "Polgahawela", "Kandy"],
+    live_status: "ON_SCHEDULE",
+    current_station: "Colombo Fort",
+    next_station: "Ragama",
+    progress_percent: 0
+  },
+  {
+    train_id: "PM-8056",
+    train_name: "Podi Menike",
     from_station: "Colombo Fort",
     to_station: "Badulla",
-    route: "Colombo - Badulla",
+    route: "Colombo Fort - Badulla",
     departure_time: "05:55",
     arrival_time: "15:15",
     service_status: "SCHEDULED",
     maintenance_status: "OPERATIONAL",
     platform: "3",
-    stops: ["Ragama", "Polgahawela", "Peradeniya", "Nanu Oya", "Ella", "Badulla"],
+    stops: ["Colombo Fort", "Ragama", "Gampaha", "Polgahawela", "Peradeniya", "Nanu Oya", "Ella", "Badulla"],
     live_status: "ON_SCHEDULE",
     current_station: "Peradeniya",
     next_station: "Nanu Oya",
     progress_percent: 45
   },
   {
-    train_id: "1015",
-    train_name: "Udarata Menike Express",
+    train_id: "DM-8055",
+    train_name: "Night Mail",
     from_station: "Colombo Fort",
-    to_station: "Badulla",
-    route: "Colombo - Badulla",
-    departure_time: "08:30",
-    arrival_time: "17:45",
+    to_station: "Batticaloa",
+    route: "Colombo Fort - Batticaloa",
+    departure_time: "19:15",
+    arrival_time: "04:30",
     service_status: "SCHEDULED",
     maintenance_status: "OPERATIONAL",
     platform: "4",
-    stops: ["Ragama", "Gampaha", "Polgahawela", "Kandy", "Hatton", "Nanu Oya", "Badulla"],
+    stops: ["Colombo Fort", "Ragama", "Gampaha", "Polgahawela", "Kurunegala", "Mahawa", "Habarana", "Polonnaruwa", "Valaichchenai", "Batticaloa"],
     live_status: "ON_SCHEDULE",
     current_station: "Colombo Fort",
     next_station: "Ragama",
     progress_percent: 5
-  },
-  {
-    train_id: "4085",
-    train_name: "Uttara Devi",
-    from_station: "Colombo Fort",
-    to_station: "Jaffna",
-    route: "Colombo - Jaffna",
-    departure_time: "05:45",
-    arrival_time: "12:45",
-    service_status: "SCHEDULED",
-    maintenance_status: "OPERATIONAL",
-    platform: "1",
-    stops: ["Gampaha", "Kurunegala", "Anuradhapura", "Vavuniya", "Kilinochchi", "Jaffna"],
-    live_status: "ON_SCHEDULE",
-    current_station: "Anuradhapura",
-    next_station: "Vavuniya",
-    progress_percent: 60
-  },
-  {
-    train_id: "4082",
-    train_name: "Yal Devi Express",
-    from_station: "Colombo Fort",
-    to_station: "Jaffna",
-    route: "Colombo - Jaffna",
-    departure_time: "06:35",
-    arrival_time: "13:30",
-    service_status: "DELAYED",
-    maintenance_status: "OPERATIONAL",
-    platform: "2",
-    stops: ["Ragama", "Polgahawela", "Kurunegala", "Anuradhapura", "Jaffna"],
-    live_status: "DELAYED_15_MIN",
-    current_station: "Kurunegala",
-    next_station: "Anuradhapura",
-    progress_percent: 35
-  },
-  {
-    train_id: "8050",
-    train_name: "Dakshina Intercity",
-    from_station: "Colombo Fort",
-    to_station: "Matara",
-    route: "Colombo - Matara",
-    departure_time: "06:50",
-    arrival_time: "09:05",
-    service_status: "SCHEDULED",
-    maintenance_status: "OPERATIONAL",
-    platform: "5",
-    stops: ["Panadura", "Aluthgama", "Ambalangoda", "Hikkaduwa", "Galle", "Matara"],
-    live_status: "ON_SCHEDULE",
-    current_station: "Galle",
-    next_station: "Matara",
-    progress_percent: 80
-  },
-  {
-    train_id: "8056",
-    train_name: "Rajarata Rejina",
-    from_station: "Vavuniya",
-    to_station: "Matara",
-    route: "Vavuniya - Matara",
-    departure_time: "03:45",
-    arrival_time: "13:10",
-    service_status: "SCHEDULED",
-    maintenance_status: "OPERATIONAL",
-    platform: "1",
-    stops: ["Anuradhapura", "Kurunegala", "Polgahawela", "Colombo Fort", "Galle", "Matara"],
-    live_status: "ON_SCHEDULE",
-    current_station: "Colombo Fort",
-    next_station: "Galle",
-    progress_percent: 70
   }
 ];
 
@@ -2407,20 +2596,24 @@ async function loadPassengerDashboard() {
   if (!dateInput.value) dateInput.value = new Date().toISOString().split('T')[0];
   const selectedDate = dateInput.value;
 
-  // 1. Instant Render: Check local cache first; otherwise render canonical baseline immediately (0ms latency)
+  // 1. Instant Render: Invalidate stale 1005/1015 cache and check local cache
   const cacheKey = 'railsense_board_' + selectedDate;
   let hasRendered = false;
   try {
     const cachedStr = localStorage.getItem(cacheKey);
     if (cachedStr) {
-      const cachedData = JSON.parse(cachedStr);
-      if (Array.isArray(cachedData.services) && cachedData.services.length) {
-        dashboardServices = cachedData.services;
-        renderDashboardServices(cachedData);
-        renderDashboardMap(dashboardServices);
-        if ($('dash-feed-status')) $('dash-feed-status').textContent = 'LIVE';
-        if ($('dash-last-updated')) $('dash-last-updated').textContent = 'Cached';
-        hasRendered = true;
+      if (cachedStr.includes('"1005"') || cachedStr.includes('"1015"') || cachedStr.includes('"4085"')) {
+        localStorage.removeItem(cacheKey);
+      } else {
+        const cachedData = JSON.parse(cachedStr);
+        if (Array.isArray(cachedData.services) && cachedData.services.length) {
+          dashboardServices = cachedData.services;
+          renderDashboardServices(cachedData);
+          renderDashboardMap(dashboardServices);
+          if ($('dash-feed-status')) $('dash-feed-status').textContent = 'LIVE';
+          if ($('dash-last-updated')) $('dash-last-updated').textContent = 'Cached';
+          hasRendered = true;
+        }
       }
     }
   } catch (e) {}
@@ -2457,7 +2650,6 @@ async function loadPassengerDashboard() {
     if ($('dash-last-updated')) $('dash-last-updated').textContent = `Updated ${new Date(data.updated_at || Date.now()).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' })}`;
   } catch (error) {
     console.warn('[train-board] background refresh note:', error.message);
-    // Even if background refresh timed out, the map & table are already rendered and fully functional
     if ($('dash-feed-status') && $('dash-feed-status').textContent === 'Synchronizing…') {
       $('dash-feed-status').textContent = 'LIVE';
       $('dash-last-updated').textContent = 'Operational';
@@ -2476,6 +2668,19 @@ function updateDashboardKpis(services) {
   if ($('dash-on-time')) $('dash-on-time').textContent = services.length ? `${Math.round(onTime / services.length * 100)}%` : '—';
 }
 
+function toggleRouteTimeline(trainId) {
+  const drawer = $('route-timeline-' + trainId);
+  const arrow = $('route-arrow-' + trainId);
+  if (!drawer) return;
+  if (drawer.style.display === 'none' || !drawer.style.display) {
+    drawer.style.display = 'block';
+    if (arrow) arrow.textContent = '▲';
+  } else {
+    drawer.style.display = 'none';
+    if (arrow) arrow.textContent = '▼';
+  }
+}
+
 function renderDashboardServices(data) {
   updateDashboardKpis(data.services || []);
   const list = $('dashboard-services');
@@ -2486,10 +2691,53 @@ function renderDashboardServices(data) {
   }
   list.innerHTML = `<table class="service-table"><thead><tr><th>Train</th><th>Route & stops</th><th>Time</th><th>Status</th></tr></thead><tbody>${data.services.map(service => {
     const status = String(service.service_status || 'SCHEDULED').toLowerCase();
-    const stops = Array.isArray(service.stops) && service.stops.length ? service.stops.join(' · ') : 'Stops: N/A';
+    const stopsList = Array.isArray(service.stops) && service.stops.length ? service.stops : [];
+    const stopsPreview = stopsList.length ? stopsList.join(' · ') : 'Stops: N/A';
     const position = service.current_station || service.next_station ? `Now: ${service.current_station || 'N/A'} → ${service.next_station || 'N/A'}` : 'Live position: N/A';
     const trainId = service.train_id || '';
-    return `<tr><td>${escapeHtml(trainId || 'N/A')}<br><small style="color:var(--text-sub);">${escapeHtml(service.train_name || 'N/A')}</small><div class="service-actions"><button class="service-action" type="button" onclick="askDashboardQuestion('Is ${escapeHtml(trainId)} delayed?')">Delay</button><button class="service-action" type="button" onclick="askDashboardQuestion('What is the current operational status of ${escapeHtml(trainId)}?')">Operations</button></div></td><td class="route-cell"><strong>${escapeHtml(service.from_station || 'N/A')} → ${escapeHtml(service.to_station || 'N/A')}</strong><span class="service-stops">Stops: ${escapeHtml(stops)}</span><span class="service-position">${escapeHtml(position)}</span></td><td>${escapeHtml(service.departure_time || 'N/A')}<br><small style="color:var(--text-sub);">Arrive ${escapeHtml(service.arrival_time || 'N/A')}</small></td><td><span class="service-status ${status}">${escapeHtml(status.replaceAll('_',' '))}</span></td></tr>`;
+    
+    const timelineHtml = stopsList.length > 0 ? `
+      <div id="route-timeline-${escapeHtml(trainId)}" class="route-timeline-drawer" style="display:none;margin-top:10px;padding:12px 16px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;">
+        <div style="font-size:11px;font-weight:700;color:var(--text-sub);text-transform:uppercase;margin-bottom:8px;letter-spacing:0.5px;">Complete Ordered Stopping Stations:</div>
+        <div class="timeline-stops" style="display:flex;flex-direction:column;gap:4px;">
+          ${stopsList.map((stop, idx) => {
+            const isFirst = idx === 0;
+            const isLast = idx === stopsList.length - 1;
+            const dotColor = isFirst ? '#10B981' : isLast ? '#EF4444' : '#6366F1';
+            const arrowHtml = isLast ? '' : '<div style="color:#94A3B8;font-size:11px;line-height:1;margin:2px 0 2px 4px;">↓</div>';
+            return `
+              <div style="display:flex;align-items:center;gap:8px;font-size:12px;">
+                <span style="width:10px;height:10px;border-radius:50%;background:${dotColor};display:inline-block;flex-shrink:0;"></span>
+                <strong style="color:var(--text-dark);">${escapeHtml(stop)}</strong>
+                ${isFirst ? '<span style="font-size:10px;background:#D1FAE5;color:#065F46;padding:1px 6px;border-radius:4px;font-weight:600;">Origin</span>' : ''}
+                ${isLast ? '<span style="font-size:10px;background:#FEE2E2;color:#991B1B;padding:1px 6px;border-radius:4px;font-weight:600;">Destination</span>' : ''}
+              </div>
+              ${arrowHtml}
+            `;
+          }).join('')}
+        </div>
+      </div>
+    ` : '';
+
+    return `<tr>
+      <td>
+        ${escapeHtml(trainId || 'N/A')}<br>
+        <small style="color:var(--text-sub);">${escapeHtml(service.train_name || 'N/A')}</small>
+        <div class="service-actions">
+          <button class="service-action" type="button" onclick="askDashboardQuestion('Is ${escapeHtml(trainId)} delayed?')">Delay</button>
+          <button class="service-action" type="button" onclick="askDashboardQuestion('What is the current operational status of ${escapeHtml(trainId)}?')">Operations</button>
+        </div>
+      </td>
+      <td class="route-cell">
+        <strong>${escapeHtml(service.from_station || 'N/A')} → ${escapeHtml(service.to_station || 'N/A')}</strong>
+        <span class="service-stops">Stops: ${escapeHtml(stopsPreview)}</span>
+        <span class="service-position">${escapeHtml(position)}</span>
+        ${stopsList.length > 0 ? `<div><button type="button" onclick="toggleRouteTimeline('${escapeHtml(trainId)}')" style="background:none;border:none;color:var(--primary);font-size:11.5px;font-weight:700;cursor:pointer;padding:4px 0 0 0;display:inline-flex;align-items:center;gap:4px;"><span>📍 View Complete Route Timeline (${stopsList.length} stops)</span> <span id="route-arrow-${escapeHtml(trainId)}">▼</span></button></div>` : ''}
+        ${timelineHtml}
+      </td>
+      <td>${escapeHtml(service.departure_time || 'N/A')}<br><small style="color:var(--text-sub);">Arrive ${escapeHtml(service.arrival_time || 'N/A')}</small></td>
+      <td><span class="service-status ${status}">${escapeHtml(status.replaceAll('_',' '))}</span></td>
+    </tr>`;
   }).join('')}</tbody></table>`;
 }
 

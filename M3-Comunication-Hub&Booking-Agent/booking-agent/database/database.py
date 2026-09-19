@@ -84,9 +84,14 @@ def sanitize_db_url(url: str) -> str:
 # Resolve and sanitize DATABASE_URL
 # ---------------------------------------------------------------------------
 raw_db_url = os.getenv("DATABASE_URL")
-if is_test_environment() and os.getenv("USE_LIVE_DB") != "1":
+use_sqlite = (
+    is_test_environment()
+    or os.getenv("BOOKING_USE_SQLITE", "true").lower() in ("1", "true")
+) and os.getenv("USE_LIVE_DB") != "1"
+
+if use_sqlite:
     DATABASE_URL = "sqlite:///./railsense_booking.db"
-    print("[Booking Agent Database] Active Backend: SQLite (offline test environment)")
+    print("[Booking Agent Database] Active Backend: SQLite (local fast booking store)")
 elif raw_db_url and raw_db_url.strip():
     DATABASE_URL = sanitize_db_url(raw_db_url)
     print(f"[Booking Agent Database] Active Backend: PostgreSQL/Supabase ({mask_connection_url(DATABASE_URL)})")

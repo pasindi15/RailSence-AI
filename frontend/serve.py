@@ -34,7 +34,6 @@ import jwt
 from fastapi import FastAPI, HTTPException, Query, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
-from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr, Field
 
 # ---------------------------------------------------------------------------
@@ -44,11 +43,41 @@ _CURRENT_DIR = Path(__file__).resolve().parent
 _WORKSPACE_ROOT = _CURRENT_DIR.parent
 _M3_ROOT = _WORKSPACE_ROOT / "M3-Comunication-Hub&Booking-Agent"
 
+# Ensure agent directories are discoverable on sys.path
+for _agent_dir in (
+    _M3_ROOT / "booking-agent",
+    _M3_ROOT / "agent-hub",
+    _WORKSPACE_ROOT / "M1-passenger_assistant" / "backend",
+    _WORKSPACE_ROOT / "M2-operations-agent",
+    _WORKSPACE_ROOT / "M4-maintenance-agent",
+    _WORKSPACE_ROOT / "security-agent",
+):
+    _dir_str = str(_agent_dir)
+    if _dir_str not in sys.path:
+        sys.path.insert(0, _dir_str)
+
 # Load environment variables
 for env_file in (_M3_ROOT / ".env", _WORKSPACE_ROOT / ".env"):
     if env_file.is_file():
         load_dotenv(dotenv_path=env_file, override=False)
 load_dotenv()
+
+from booking.exceptions import (
+    ConflictingActiveJourneyError,
+    DuplicateActiveTicketError,
+    DuplicateNICInBookingError,
+    InvalidBookingError,
+    ScheduleNotFoundError,
+    SeatsUnavailableError,
+    TrainNotFoundError,
+)
+from cancellation.service import (
+    BookingAlreadyCancelledError,
+    BookingNotFoundError,
+    CancellationAlreadyPendingError,
+    CancellationError,
+)
+from fraud.review_service import FraudReviewError
 
 def is_test_environment() -> bool:
     return (
@@ -124,7 +153,7 @@ class AdminReviewActionInput(BaseModel):
 
 
 @app.exception_handler(RequestValidationError)
-async def validation_exception_handler(request: Request, exc: RequestValidationError):
+async def validation_exception_handler(_request: Request, _exc: RequestValidationError):
     return JSONResponse(
         status_code=400,
         content={"error": "Please complete all booking details."},
@@ -272,17 +301,93 @@ _TRAIN_BOARD_CACHE_TTL = 30.0  # 30 seconds in-memory TTL
 
 _CANONICAL_FALLBACK_SERVICES: list[dict[str, Any]] = [
     {
-        "train_id": "1005",
-        "train_name": "Podi Menike Express",
+        "train_id": "PM-4082",
+        "train_name": "Intercity Express",
+        "from_station": "Colombo Fort",
+        "to_station": "Kandy",
+        "route": "Colombo Fort - Kandy",
+        "departure_time": "14:35",
+        "arrival_time": "17:10",
+        "service_status": "SCHEDULED",
+        "maintenance_status": "OPERATIONAL",
+        "platform": "1",
+        "stops": ["Colombo Fort", "Ragama", "Gampaha", "Veyangoda", "Polgahawela", "Rambukkana", "Kandy"],
+        "live_status": "ON_SCHEDULE",
+        "current_station": "Colombo Fort",
+        "next_station": "Ragama",
+        "progress_percent": 10,
+        "first_class_capacity": 40,
+        "second_class_capacity": 120,
+    },
+    {
+        "train_id": "IC-8746",
+        "train_name": "Intercity Express",
+        "from_station": "Colombo Fort",
+        "to_station": "Kandy",
+        "route": "Colombo Fort - Kandy",
+        "departure_time": "06:00",
+        "arrival_time": "08:35",
+        "service_status": "SCHEDULED",
+        "maintenance_status": "OPERATIONAL",
+        "platform": "2",
+        "stops": ["Colombo Fort", "Ragama", "Gampaha", "Polgahawela", "Peradeniya", "Kandy"],
+        "live_status": "ON_SCHEDULE",
+        "current_station": "Peradeniya",
+        "next_station": "Kandy",
+        "progress_percent": 85,
+        "first_class_capacity": 45,
+        "second_class_capacity": 130,
+    },
+    {
+        "train_id": "YD-9337",
+        "train_name": "Yal Devi Express",
+        "from_station": "Colombo Fort",
+        "to_station": "Kandy",
+        "route": "Colombo Fort - Kandy",
+        "departure_time": "10:30",
+        "arrival_time": "13:15",
+        "service_status": "SCHEDULED",
+        "maintenance_status": "OPERATIONAL",
+        "platform": "3",
+        "stops": ["Colombo Fort", "Ragama", "Gampaha", "Veyangoda", "Polgahawela", "Rambukkana", "Kadugannawa", "Peradeniya", "Kandy"],
+        "live_status": "ON_SCHEDULE",
+        "current_station": "Polgahawela",
+        "next_station": "Rambukkana",
+        "progress_percent": 50,
+        "first_class_capacity": 35,
+        "second_class_capacity": 140,
+    },
+    {
+        "train_id": "IC-1001",
+        "train_name": "Intercity Express",
+        "from_station": "Colombo Fort",
+        "to_station": "Kandy",
+        "route": "Colombo Fort - Kandy",
+        "departure_time": "16:35",
+        "arrival_time": "19:10",
+        "service_status": "SCHEDULED",
+        "maintenance_status": "OPERATIONAL",
+        "platform": "1",
+        "stops": ["Colombo Fort", "Ragama", "Polgahawela", "Kandy"],
+        "live_status": "ON_SCHEDULE",
+        "current_station": "Colombo Fort",
+        "next_station": "Ragama",
+        "progress_percent": 0,
+        "first_class_capacity": 50,
+        "second_class_capacity": 150,
+    },
+    {
+        "train_id": "PM-8056",
+        "train_name": "Podi Menike",
         "from_station": "Colombo Fort",
         "to_station": "Badulla",
-        "route": "Colombo - Badulla",
+        "route": "Colombo Fort - Badulla",
         "departure_time": "05:55",
         "arrival_time": "15:15",
         "service_status": "SCHEDULED",
         "maintenance_status": "OPERATIONAL",
         "platform": "3",
-        "stops": ["Ragama", "Polgahawela", "Peradeniya", "Nanu Oya", "Ella", "Badulla"],
+        "stops": ["Colombo Fort", "Ragama", "Gampaha", "Polgahawela", "Peradeniya", "Nanu Oya", "Ella", "Badulla"],
         "live_status": "ON_SCHEDULE",
         "current_station": "Peradeniya",
         "next_station": "Nanu Oya",
@@ -291,99 +396,23 @@ _CANONICAL_FALLBACK_SERVICES: list[dict[str, Any]] = [
         "second_class_capacity": 120,
     },
     {
-        "train_id": "1015",
-        "train_name": "Udarata Menike Express",
+        "train_id": "DM-8055",
+        "train_name": "Night Mail",
         "from_station": "Colombo Fort",
-        "to_station": "Badulla",
-        "route": "Colombo - Badulla",
-        "departure_time": "08:30",
-        "arrival_time": "17:45",
+        "to_station": "Batticaloa",
+        "route": "Colombo Fort - Batticaloa",
+        "departure_time": "19:15",
+        "arrival_time": "04:30",
         "service_status": "SCHEDULED",
         "maintenance_status": "OPERATIONAL",
         "platform": "4",
-        "stops": ["Ragama", "Gampaha", "Polgahawela", "Kandy", "Hatton", "Nanu Oya", "Badulla"],
+        "stops": ["Colombo Fort", "Ragama", "Gampaha", "Polgahawela", "Kurunegala", "Mahawa", "Habarana", "Polonnaruwa", "Valaichchenai", "Batticaloa"],
         "live_status": "ON_SCHEDULE",
         "current_station": "Colombo Fort",
         "next_station": "Ragama",
         "progress_percent": 5,
         "first_class_capacity": 30,
         "second_class_capacity": 140,
-    },
-    {
-        "train_id": "4085",
-        "train_name": "Uttara Devi",
-        "from_station": "Colombo Fort",
-        "to_station": "Jaffna",
-        "route": "Colombo - Jaffna",
-        "departure_time": "05:45",
-        "arrival_time": "12:45",
-        "service_status": "SCHEDULED",
-        "maintenance_status": "OPERATIONAL",
-        "platform": "1",
-        "stops": ["Gampaha", "Kurunegala", "Anuradhapura", "Vavuniya", "Kilinochchi", "Jaffna"],
-        "live_status": "ON_SCHEDULE",
-        "current_station": "Anuradhapura",
-        "next_station": "Vavuniya",
-        "progress_percent": 60,
-        "first_class_capacity": 45,
-        "second_class_capacity": 150,
-    },
-    {
-        "train_id": "4082",
-        "train_name": "Yal Devi Express",
-        "from_station": "Colombo Fort",
-        "to_station": "Jaffna",
-        "route": "Colombo - Jaffna",
-        "departure_time": "06:35",
-        "arrival_time": "13:30",
-        "service_status": "DELAYED",
-        "maintenance_status": "OPERATIONAL",
-        "platform": "2",
-        "stops": ["Ragama", "Polgahawela", "Kurunegala", "Anuradhapura", "Jaffna"],
-        "live_status": "DELAYED_15_MIN",
-        "current_station": "Kurunegala",
-        "next_station": "Anuradhapura",
-        "progress_percent": 35,
-        "first_class_capacity": 35,
-        "second_class_capacity": 130,
-    },
-    {
-        "train_id": "8050",
-        "train_name": "Dakshina Intercity",
-        "from_station": "Colombo Fort",
-        "to_station": "Matara",
-        "route": "Colombo - Matara",
-        "departure_time": "06:50",
-        "arrival_time": "09:05",
-        "service_status": "SCHEDULED",
-        "maintenance_status": "OPERATIONAL",
-        "platform": "5",
-        "stops": ["Panadura", "Aluthgama", "Ambalangoda", "Hikkaduwa", "Galle", "Matara"],
-        "live_status": "ON_SCHEDULE",
-        "current_station": "Galle",
-        "next_station": "Matara",
-        "progress_percent": 80,
-        "first_class_capacity": 50,
-        "second_class_capacity": 160,
-    },
-    {
-        "train_id": "8056",
-        "train_name": "Rajarata Rejina",
-        "from_station": "Vavuniya",
-        "to_station": "Matara",
-        "route": "Vavuniya - Matara",
-        "departure_time": "03:45",
-        "arrival_time": "13:10",
-        "service_status": "SCHEDULED",
-        "maintenance_status": "OPERATIONAL",
-        "platform": "1",
-        "stops": ["Anuradhapura", "Kurunegala", "Polgahawela", "Colombo Fort", "Galle", "Matara"],
-        "live_status": "ON_SCHEDULE",
-        "current_station": "Colombo Fort",
-        "next_station": "Galle",
-        "progress_percent": 70,
-        "first_class_capacity": 30,
-        "second_class_capacity": 150,
     },
 ]
 
@@ -406,13 +435,20 @@ def _fetch_train_board_data(parsed_date: date) -> dict[str, Any]:
 
     services = []
     for schedule in schedule_rows:
-        train = schedule.get("trains") or {}
+        if not isinstance(schedule, dict):
+            continue
+        train = schedule.get("trains") if isinstance(schedule.get("trains"), dict) else {}
+        train_id = str(train.get("train_id") or schedule.get("train_id") or "").strip().upper()
+        if not re.match(r"^[A-Z]{2,12}-\d{3,5}$", train_id):
+            continue
         train_metadata = train.get("metadata") if isinstance(train.get("metadata"), dict) else {}
         schedule_metadata = schedule.get("metadata") if isinstance(schedule.get("metadata"), dict) else {}
         stops = schedule.get("stops") or schedule_metadata.get("stops") or train_metadata.get("stops") or train_metadata.get("route_stops")
-        if not isinstance(stops, list):
-            stops = []
-        live_status = train_metadata.get("live_status") or train_metadata.get("movement_status")
+        if not isinstance(stops, list) or not stops:
+            # Fallback to route endpoints if stops missing
+            stops = [schedule.get("from_station") or train.get("origin_station"), schedule.get("to_station") or train.get("destination_station")]
+            stops = [s for s in stops if s]
+        live_status = train_metadata.get("live_status") or train_metadata.get("movement_status") or "ON_SCHEDULE"
         current_station = train_metadata.get("current_station")
         next_station = train_metadata.get("next_station")
         maintenance = str(train.get("maintenance_status") or "UNKNOWN").upper()
@@ -420,7 +456,7 @@ def _fetch_train_board_data(parsed_date: date) -> dict[str, Any]:
         if not train.get("active") or maintenance in {"OUT_OF_SERVICE", "DECOMMISSIONED"}:
             service_status = "OUT_OF_SERVICE"
         services.append({
-            "train_id": train.get("train_id") or schedule.get("train_id"),
+            "train_id": train_id,
             "train_name": train.get("train_name"),
             "from_station": schedule.get("from_station") or train.get("origin_station"),
             "to_station": schedule.get("to_station") or train.get("destination_station"),
@@ -429,7 +465,7 @@ def _fetch_train_board_data(parsed_date: date) -> dict[str, Any]:
             "arrival_time": schedule.get("arrival_time"),
             "service_status": service_status,
             "maintenance_status": maintenance,
-            "platform": schedule.get("platform"),
+            "platform": schedule.get("platform") or "1",
             "stops": stops,
             "live_status": live_status,
             "current_station": current_station,
@@ -729,7 +765,7 @@ async def confirm_booking_endpoint(req: ConfirmBookingInput) -> JSONResponse:
             "train_id": req.train_id.strip(),
             "seat_class": req.seat_class.strip(),
             "passenger_count": req.passenger_count,
-            "passenger_email": str(req.passenger_email).strip() if req.passenger_email else None,
+            "passenger_email": req.passenger_email.strip() if req.passenger_email else None,
             "user_id": req.user_id or "guest_passenger",
             "passengers": req.passengers,
         },
@@ -842,15 +878,6 @@ async def confirm_booking_endpoint(req: ConfirmBookingInput) -> JSONResponse:
             from database.database import SessionLocal
             from booking.service import BookingService
             from schemas.booking import BookingRequest, PassengerDetail
-            from booking.exceptions import (
-                ConflictingActiveJourneyError,
-                DuplicateActiveTicketError,
-                DuplicateNICInBookingError,
-                InvalidBookingError,
-                ScheduleNotFoundError,
-                SeatsUnavailableError,
-                TrainNotFoundError,
-            )
 
             passengers_list = None
             if req.passengers:
@@ -863,7 +890,7 @@ async def confirm_booking_endpoint(req: ConfirmBookingInput) -> JSONResponse:
                 train_id=req.train_id.strip(),
                 seat_class=req.seat_class.strip(),
                 passenger_count=req.passenger_count,
-                passenger_email=str(req.passenger_email).strip() if req.passenger_email else None,
+                passenger_email=req.passenger_email.strip() if req.passenger_email else None,
                 user_id=req.user_id or "guest_passenger",
                 passengers=passengers_list,
             )
@@ -1040,13 +1067,7 @@ async def confirm_cancellation_endpoint(req: ConfirmCancellationInput) -> JSONRe
         try:
             sys.path.insert(0, str(_M3_ROOT / "booking-agent"))
             from database.database import SessionLocal
-            from cancellation.service import (
-                CancellationService,
-                BookingNotFoundError,
-                BookingAlreadyCancelledError,
-                CancellationAlreadyPendingError,
-                CancellationError,
-            )
+            from cancellation.service import CancellationService
 
             with SessionLocal() as db:
                 service = CancellationService(db)
@@ -1069,7 +1090,7 @@ async def confirm_cancellation_endpoint(req: ConfirmCancellationInput) -> JSONRe
         except (BookingAlreadyCancelledError, CancellationAlreadyPendingError) as exc:
             return JSONResponse(
                 status_code=409,
-                content={"error": str(exc.message)},
+                content={"error": exc.message},
             )
         except Exception:
             return JSONResponse(
@@ -1137,7 +1158,7 @@ async def review_admin_cancellation(
     try:
         sys.path.insert(0, str(_M3_ROOT / "booking-agent"))
         from database.database import SessionLocal
-        from cancellation.service import CancellationService, CancellationError
+        from cancellation.service import CancellationService
         with SessionLocal() as db:
             service = CancellationService(db)
             res = service.review_cancellation(
@@ -1254,12 +1275,7 @@ async def review_admin_fraud_case(
     try:
         sys.path.insert(0, str(_M3_ROOT / "booking-agent"))
         from database.database import SessionLocal
-        from fraud.review_service import FraudReviewError, FraudReviewService
-        from booking.exceptions import (
-            ConflictingActiveJourneyError,
-            DuplicateActiveTicketError,
-            SeatsUnavailableError,
-        )
+        from fraud.review_service import FraudReviewService
 
         with SessionLocal() as db:
             service = FraudReviewService(db)
@@ -1451,7 +1467,7 @@ async def hub_timeline_proxy(limit: int = Query(default=20, ge=1, le=100)) -> JS
                         "receiver": l.receiver_agent,
                         "intent": l.intent,
                         "status": l.status.value if hasattr(l.status, "value") else str(l.status),
-                        "duration_ms": float(l.duration_ms) if getattr(l, "duration_ms", None) is not None else None,
+                        "duration_ms": float(dur) if (dur := getattr(l, "duration_ms", None)) is not None else None,
                         "timestamp": l.timestamp.isoformat() if l.timestamp else None,
                     }
                     for l in logs

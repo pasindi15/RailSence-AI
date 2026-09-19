@@ -170,7 +170,7 @@ def verify_agent_token(
             cleaned_token,
             secret,
             algorithms=[algorithm],
-            options={"require": ["exp"], "verify_exp": True},
+            options={"require": ["exp"], "verify_exp": True, "verify_aud": False},
         )
     except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
         raise HTTPException(

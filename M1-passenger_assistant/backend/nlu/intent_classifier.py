@@ -13,15 +13,18 @@ Intents:
 """
 
 INTENT_KEYWORDS = {
-    "train_status": [
-        "is train", "train running", "train available", "train cancelled", "train service",
-        "is the train", "will train", "train operating", "out of service", "under maintenance",
-        "train working", "train today", "service today", "train status",
-        "දුම්රිය ධාවනය", "දුම්රිය ක්‍රියාත්මකද",
-        "ரயில் இயங்குகிறதா", "ரயில் நிலை",
+    "operational_alert": [
+        "operational delay alert", "operational alert", "delay alert",
+        "require an operational", "require a delay alert", "require an alert",
+    ],
+    "historical_incidents": [
+        "historical incident", "historical incidents", "similar incident", "similar incidents",
+        "similar past incident", "similar to the delay", "past incident", "past incidents",
+        "incident history",
     ],
     "delay_check": [
-        "delay", "late", "on time", "on-time", "postpone",
+        "delay", "delayed", "late", "on time", "on-time", "how late", "expected delay",
+        "postpone", "running late",
         "ප්‍රමාද", "ප්‍රමාදයි", "ප්‍රමාදද",
         "தாமதம்", "தாமதமா",
     ],
@@ -37,13 +40,24 @@ INTENT_KEYWORDS = {
         "වෙන්කරව", "වෙන් කරගන්න", "ටිකට් එක",
         "முன்பதிவு", "டிக்கெட் வாங்க", "இட ஒதுக்கீடு",
     ],
+    "train_status": [
+        "is train", "train running", "train available", "train cancelled", "train service",
+        "is the train", "will train", "train operating", "out of service", "under maintenance",
+        "train working", "service today", "train status",
+        "දුම්රිය ධාවනය", "දුම්රිය ක්‍රියාත්මකද",
+        "ரயில் இயங்குகிறதா", "ரயில் நிலை",
+    ],
     "fare_query": [
         "fare", "price", "cost", "ticket price", "how much",
         "ගාස්තුව", "මිල", "කීයද",
         "கட்டணம்", "விலை", "எவ்வளவு",
     ],
     "schedule_query": [
-        "schedule", "time", "departs", "departure", "arrival", "next train",
+        "trains available", "available to travel", "trains go from", "trains run from",
+        "trains from", "trains to", "kandy trains", "colombo trains", "today's trains",
+        "available tomorrow", "available today", "which trains", "what trains",
+        "show me today", "show me kandy", "show me colombo",
+        "schedule", "time", "departs", "departure", "arrival", "next train", "timetable",
         "වේලාව", "වේලාසටහන", "ඊළඟ දුම්රිය",
         "நேரம்", "அட்டவணை", "அடுத்த ரயில்",
     ],
