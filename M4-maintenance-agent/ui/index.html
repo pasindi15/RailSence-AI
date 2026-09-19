@@ -199,28 +199,69 @@ body.dark .logout-btn:hover{background:#2d1515;color:#f87171;border-color:#7f1d1
 .metric-val{font-weight:700}
 
 /* ── Fleet table ── */
-.fleet-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.fleet-stats-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.fleet-stat{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:11px 14px;display:flex;flex-direction:column;gap:2px}
+.fleet-stat-val{font-size:1.35rem;font-weight:800;line-height:1}
+.fleet-stat-lbl{font-size:0.66rem;font-weight:600;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-muted);margin-top:2px}
+.fleet-stat.fs-green .fleet-stat-val{color:var(--green)}
+.fleet-stat.fs-amber .fleet-stat-val{color:var(--amber)}
+.fleet-stat.fs-red .fleet-stat-val{color:var(--red)}
+.fleet-controls-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.fleet-type-row{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border)}
+.fleet-type-row .type-label{font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-light);margin-right:2px}
 .filter-pill{padding:5px 13px;border-radius:20px;border:1.5px solid var(--border);background:var(--white);font-family:inherit;font-size:0.75rem;font-weight:600;cursor:pointer;transition:all 0.12s;color:var(--text-muted)}
 .filter-pill:hover{border-color:#94a3b8;color:var(--text)}
 .filter-pill.active{background:var(--primary);color:white;border-color:var(--primary)}
 .filter-pill.g.active{background:var(--green);border-color:var(--green)}
 .filter-pill.a.active{background:var(--amber);border-color:var(--amber)}
 .filter-pill.r.active{background:var(--red);border-color:var(--red)}
-.fleet-search input{border:1.5px solid var(--border);border-radius:10px;padding:6px 12px;font-size:0.78rem;font-family:inherit;color:var(--text);background:var(--bg);outline:none;width:200px;transition:border-color 0.15s}
+.filter-pill.tp.active{background:var(--primary);border-color:var(--primary);color:#fff}
+.fleet-search{position:relative}
+.fleet-search svg{position:absolute;left:9px;top:50%;transform:translateY(-50%);pointer-events:none}
+.fleet-search input{border:1.5px solid var(--border);border-radius:10px;padding:6px 12px 6px 30px;font-size:0.78rem;font-family:inherit;color:var(--text);background:var(--bg);outline:none;width:200px;transition:border-color 0.15s}
 .fleet-search input:focus{border-color:var(--border-focus);background:var(--white)}
+.fleet-train-sel{border:1.5px solid var(--border);border-radius:10px;padding:6px 10px;font-size:0.78rem;font-family:inherit;color:var(--text);background:var(--bg);outline:none;appearance:none;cursor:pointer;transition:border-color 0.15s}
+.fleet-train-sel:focus{border-color:var(--border-focus);background:var(--white)}
+.fleet-count{font-size:0.72rem;color:var(--text-muted);margin-left:auto;white-space:nowrap}
+.fleet-export-btn{display:inline-flex;align-items:center;gap:5px;background:transparent;border:1.5px solid var(--border);color:var(--text-muted);border-radius:9px;padding:5px 12px;font-size:0.74rem;font-weight:600;font-family:inherit;cursor:pointer;transition:all 0.12s;white-space:nowrap}
+.fleet-export-btn:hover{border-color:#94a3b8;color:var(--text);background:var(--bg)}
 .tbl-wrap{overflow-x:auto;border-radius:12px;border:1px solid var(--border)}
 table{width:100%;border-collapse:collapse;font-size:0.8rem}
 thead{background:#f8fafc}
 th{padding:10px 14px;text-align:left;font-size:0.68rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border);white-space:nowrap}
+th.sortable{cursor:pointer;user-select:none;transition:color 0.12s}
+th.sortable:hover{color:var(--primary)}
+th.sort-asc::after{content:' ↑';font-size:0.65rem}
+th.sort-desc::after{content:' ↓';font-size:0.65rem}
 td{padding:10px 14px;border-bottom:1px solid #f1f5f9;vertical-align:middle}
 tr:last-child td{border-bottom:none}
-tbody tr:hover td{background:#f8fafc}
+tbody tr.data-row{cursor:pointer;transition:background 0.1s}
+tbody tr.data-row:hover td{background:#f0f7ff}
+tbody tr.data-row.row-open td{background:var(--blue-bg)}
+tbody tr.detail-row td{padding:0;background:var(--bg)}
+.fleet-detail{padding:16px 18px 18px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;animation:fadeUp 0.18s ease}
+.fd-section{display:flex;flex-direction:column;gap:6px}
+.fd-section-title{font-size:0.63rem;font-weight:800;text-transform:uppercase;letter-spacing:0.6px;color:var(--text-light);margin-bottom:4px;display:flex;align-items:center;gap:5px}
+.fd-row{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;font-size:0.76rem;padding:3px 0;border-bottom:1px solid var(--border)}
+.fd-row:last-child{border-bottom:none}
+.fd-key{color:var(--text-muted);flex-shrink:0}
+.fd-val{font-weight:600;color:var(--text);text-align:right;word-break:break-word}
+.fd-note{font-size:0.74rem;color:var(--text-muted);line-height:1.55;background:var(--white);border:1px solid var(--border);border-radius:8px;padding:9px 11px;margin-top:2px}
+.fd-actions{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}
 .score-bar{display:flex;align-items:center;gap:8px}
-.score-track{width:56px;height:5px;background:#f1f5f9;border-radius:20px;overflow:hidden;flex-shrink:0}
+.score-track{width:60px;height:6px;background:#f1f5f9;border-radius:20px;overflow:hidden;flex-shrink:0}
 .score-fill{height:100%;border-radius:20px}
 .tbl-empty{text-align:center;padding:36px;color:var(--text-light);font-size:0.82rem}
 .quick-btn{background:var(--blue-bg);border:1px solid #bfdbfe;color:var(--primary);border-radius:8px;padding:4px 11px;font-size:0.73rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all 0.12s}
 .quick-btn:hover{background:#dbeafe;transform:translateY(-1px)}
+.quick-btn.rpt{background:var(--amber-bg);border-color:#fcd34d;color:#92400e}
+.quick-btn.rpt:hover{background:#fef3c7}
+body.dark thead{background:#162032}
+body.dark tbody tr.data-row:hover td{background:#1a2540}
+body.dark tbody tr.data-row.row-open td{background:#1e293b}
+body.dark tbody tr.detail-row td{background:#0f172a}
+body.dark .fleet-detail{background:#0f172a}
+body.dark .fd-note{background:#1e293b;border-color:#334155}
 
 /* ── Alerts / Reports ── */
 .alert-card{display:flex;gap:11px;padding:12px 0;border-bottom:1px solid #f1f5f9}
@@ -834,21 +875,72 @@ body.dark .rpt-select option{background:#1e293b}
   <div class="page" id="page-fleet">
     <div class="page-content">
       <div class="card">
-        <div class="card-hdr">
-          <div><div class="card-title">Asset Fleet</div><div class="card-sub">All tracked railway assets with live health scores</div></div>
-          <span style="font-size:1.2rem">🚂</span>
+        <div class="card-hdr" style="margin-bottom:16px">
+          <div>
+            <div class="card-title">Asset Fleet</div>
+            <div class="card-sub">24 tracked rolling-stock assets across 8 trains</div>
+          </div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-light)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-4 0v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
         </div>
-        <div class="fleet-controls">
+
+        <!-- Stats bar -->
+        <div class="fleet-stats-bar">
+          <div class="fleet-stat"><span class="fleet-stat-val" id="fs-total">—</span><span class="fleet-stat-lbl">Total Assets</span></div>
+          <div class="fleet-stat fs-green"><span class="fleet-stat-val" id="fs-green">—</span><span class="fleet-stat-lbl">Healthy</span></div>
+          <div class="fleet-stat fs-amber"><span class="fleet-stat-val" id="fs-amber">—</span><span class="fleet-stat-lbl">Maintenance Due</span></div>
+          <div class="fleet-stat fs-red"><span class="fleet-stat-val" id="fs-red">—</span><span class="fleet-stat-lbl">Critical</span></div>
+        </div>
+
+        <!-- Type filter -->
+        <div class="fleet-type-row">
+          <span class="type-label">Type</span>
+          <button class="filter-pill tp active" onclick="filterFleetType('ALL',this)">All Types</button>
+          <button class="filter-pill tp" onclick="filterFleetType('diesel_engine',this)">Diesel Engine</button>
+          <button class="filter-pill tp" onclick="filterFleetType('bogie',this)">Bogie</button>
+          <button class="filter-pill tp" onclick="filterFleetType('brake_system',this)">Brake System</button>
+        </div>
+
+        <!-- Controls row -->
+        <div class="fleet-controls-row">
           <button class="filter-pill active" onclick="filterFleet('ALL',this)">All</button>
-          <button class="filter-pill g" onclick="filterFleet('GREEN',this)">● Healthy</button>
-          <button class="filter-pill a" onclick="filterFleet('AMBER',this)">● Due</button>
-          <button class="filter-pill r" onclick="filterFleet('RED',this)">● Critical</button>
-          <div class="fleet-search" style="margin-left:auto"><input type="text" id="fleet-search" placeholder="Search asset ID or type…" oninput="renderFleet()"/></div>
+          <button class="filter-pill g" onclick="filterFleet('GREEN',this)">
+            <svg width="7" height="7" viewBox="0 0 8 8" style="display:inline-block;vertical-align:middle;margin-right:3px"><circle cx="4" cy="4" r="4" fill="var(--green)"/></svg>Healthy
+          </button>
+          <button class="filter-pill a" onclick="filterFleet('AMBER',this)">
+            <svg width="7" height="7" viewBox="0 0 8 8" style="display:inline-block;vertical-align:middle;margin-right:3px"><circle cx="4" cy="4" r="4" fill="var(--amber)"/></svg>Due
+          </button>
+          <button class="filter-pill r" onclick="filterFleet('RED',this)">
+            <svg width="7" height="7" viewBox="0 0 8 8" style="display:inline-block;vertical-align:middle;margin-right:3px"><circle cx="4" cy="4" r="4" fill="var(--red)"/></svg>Critical
+          </button>
+          <select class="fleet-train-sel" id="fleet-train-sel" onchange="renderFleet()" title="Filter by train">
+            <option value="">All Trains</option>
+          </select>
+          <div class="fleet-search">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--text-light)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="fleet-search" placeholder="Search asset, type…" oninput="renderFleet()"/>
+          </div>
+          <span class="fleet-count" id="fleet-count"></span>
+          <button class="fleet-export-btn" onclick="exportFleetCSV()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export CSV
+          </button>
         </div>
+
         <div class="tbl-wrap">
           <table>
-            <thead><tr><th>Asset ID</th><th>Type</th><th>Health Score</th><th>Status</th><th>Days Since Service</th><th>Faults (30d)</th><th>Action</th></tr></thead>
-            <tbody id="fleet-tbody"><tr><td colspan="7" class="tbl-empty">Loading fleet data…</td></tr></tbody>
+            <thead>
+              <tr>
+                <th>Asset ID</th>
+                <th>Train</th>
+                <th>Type</th>
+                <th class="sortable" id="th-score" onclick="sortFleet('health_score')">Health Score</th>
+                <th class="sortable" id="th-status" onclick="sortFleet('health_status')">Status</th>
+                <th class="sortable" id="th-days" onclick="sortFleet('days_since_service')">Days Since Svc</th>
+                <th class="sortable" id="th-faults" onclick="sortFleet('fault_count_30d')">Faults 30d</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="fleet-tbody"><tr><td colspan="8" class="tbl-empty">Loading fleet data…</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -1064,6 +1156,7 @@ function nav(page, btn) {
   document.getElementById('page-sub').textContent=m.sub||'';
   if(page==='trains') renderTrains();
   if(page==='overview' && fleetAll.length) renderFleetGlance();
+  if(page==='fleet'){ initFleetTrainSel(); renderFleet(); }
 }
 
 function toggleSbStatus(){
@@ -1407,6 +1500,7 @@ async function loadDashboard() {
     renderReports(dr.recent_reports||[]);
 
     fleetAll=ar.assets||[];
+    initFleetTrainSel();
     renderFleet();
     renderFleetGlance();
     if(document.getElementById('page-trains').classList.contains('active')) renderTrains();
@@ -1538,22 +1632,247 @@ async function submitReport(){
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeReportModal()});
 
 /* ═══ FLEET ═══ */
-let fleetFilter='ALL';
-function filterFleet(s,btn){fleetFilter=s;document.querySelectorAll('.filter-pill').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderFleet()}
+let fleetFilter='ALL', fleetTypeFilter='ALL', fleetSort={col:null,dir:1}, fleetOpenRow=null;
+
+function dedupeFleet(rows){
+  /* keep most-recent record per asset_id */
+  const map=new Map();
+  rows.forEach(r=>{
+    const cur=map.get(r.asset_id);
+    if(!cur||(r.last_service_date||'')>(cur.last_service_date||'')) map.set(r.asset_id,r);
+  });
+  return [...map.values()];
+}
+
+function fleetTrainName(assetId){
+  const t=TRAINS.find(tr=>(tr.assets||[]).includes(assetId));
+  return t?t.name:'—';
+}
+
+function initFleetTrainSel(){
+  const sel=document.getElementById('fleet-train-sel');
+  if(!sel)return;
+  sel.innerHTML='<option value="">All Trains</option>'+
+    TRAINS.map(t=>`<option value="${esc(t.name)}">${esc(t.name)}</option>`).join('');
+}
+
+function updateFleetStats(rows){
+  const g=rows.filter(r=>r.health_status==='GREEN').length;
+  const a=rows.filter(r=>r.health_status==='AMBER').length;
+  const rd=rows.filter(r=>r.health_status==='RED').length;
+  document.getElementById('fs-total').textContent=rows.length;
+  document.getElementById('fs-green').textContent=g;
+  document.getElementById('fs-amber').textContent=a;
+  document.getElementById('fs-red').textContent=rd;
+}
+
+function filterFleet(s,btn){
+  fleetFilter=s;
+  document.querySelectorAll('.fleet-controls-row .filter-pill').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderFleet();
+}
+
+function filterFleetType(s,btn){
+  fleetTypeFilter=s;
+  document.querySelectorAll('.fleet-type-row .filter-pill').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderFleet();
+}
+
+function sortFleet(col){
+  if(fleetSort.col===col) fleetSort.dir*=-1; else{fleetSort.col=col;fleetSort.dir=1}
+  document.querySelectorAll('th.sortable').forEach(th=>th.className='sortable');
+  const th=document.getElementById('th-'+{health_score:'score',health_status:'status',days_since_service:'days',fault_count_30d:'faults'}[col]);
+  if(th) th.className='sortable '+(fleetSort.dir===1?'sort-asc':'sort-desc');
+  renderFleet();
+}
+
 function renderFleet(){
   const q=(document.getElementById('fleet-search').value||'').toLowerCase();
-  let rows=fleetAll;
+  const trainFilter=(document.getElementById('fleet-train-sel')||{value:''}).value;
+  let rows=dedupeFleet(fleetAll);
+
+  // update stats on full dedupe
+  updateFleetStats(rows);
+
   if(fleetFilter!=='ALL') rows=rows.filter(r=>r.health_status===fleetFilter);
-  if(q) rows=rows.filter(r=>(r.asset_id||'').toLowerCase().includes(q)||(r.asset_type||'').toLowerCase().includes(q));
+  if(fleetTypeFilter!=='ALL') rows=rows.filter(r=>r.asset_type===fleetTypeFilter);
+  if(trainFilter) rows=rows.filter(r=>fleetTrainName(r.asset_id)===trainFilter);
+  if(q) rows=rows.filter(r=>(r.asset_id||'').toLowerCase().includes(q)||
+    (r.asset_type||'').toLowerCase().includes(q)||
+    fleetTrainName(r.asset_id).toLowerCase().includes(q)||
+    (r.station||'').toLowerCase().includes(q));
+
+  // sort
+  if(fleetSort.col){
+    rows=[...rows].sort((a,b)=>{
+      let av=a[fleetSort.col]??'', bv=b[fleetSort.col]??'';
+      if(fleetSort.col==='health_status'){const o={GREEN:0,AMBER:1,RED:2};av=o[av]??1;bv=o[bv]??1;}
+      return(av<bv?-1:av>bv?1:0)*fleetSort.dir;
+    });
+  }
+
+  const count=document.getElementById('fleet-count');
+  if(count) count.textContent=rows.length+' of 24 assets';
+
   const tbody=document.getElementById('fleet-tbody');
-  if(!rows.length){tbody.innerHTML='<tr><td colspan="7" class="tbl-empty">No assets match your filter</td></tr>';return}
+  if(!rows.length){tbody.innerHTML=`<tr><td colspan="8" class="tbl-empty">No assets match your filters</td></tr>`;return}
+
   tbody.innerHTML=rows.map(r=>{
-    const score=Math.round(r.health_score??0),status=r.health_status||'GREEN';
+    const score=Math.round(r.health_score??0);
+    const status=r.health_status||'GREEN';
     const c=status==='GREEN'?'var(--green)':status==='AMBER'?'var(--amber)':'var(--red)';
     const bc=status==='GREEN'?'badge-green':status==='AMBER'?'badge-amber':'badge-red';
-    return`<tr><td><strong>${esc(r.asset_id||'—')}</strong></td><td style="color:var(--text-muted)">${esc((r.asset_type||'').replace(/_/g,' '))}</td><td><div class="score-bar"><div class="score-track"><div class="score-fill" style="width:${score}%;background:${c}"></div></div><span style="font-weight:700;color:${c}">${score}</span></div></td><td><span class="badge ${bc}"><span class="badge-dot"></span>${status}</span></td><td>${r.days_since_service!=null?r.days_since_service+' d':'—'}</td><td>${r.fault_count_30d??'—'}</td><td><button class="quick-btn" onclick="quickPredict('${esc(r.asset_id)}','${esc(r.asset_type||'')}',${r.days_since_service||0},${r.fault_count_30d||0})">Predict →</button></td></tr>`;
+    const trainName=fleetTrainName(r.asset_id);
+    const typeLabel=(r.asset_type||'').replace(/_/g,' ');
+    return`<tr class="data-row" id="row-${esc(r.asset_id)}" onclick="toggleFleetRow('${esc(r.asset_id)}')">
+      <td><strong>${esc(r.asset_id||'—')}</strong></td>
+      <td style="font-size:0.76rem;color:var(--text-muted)">${esc(trainName)}</td>
+      <td style="color:var(--text-muted);text-transform:capitalize">${esc(typeLabel)}</td>
+      <td><div class="score-bar"><div class="score-track"><div class="score-fill" style="width:${score}%;background:${c}"></div></div><span style="font-weight:700;color:${c};min-width:22px">${score}</span></div></td>
+      <td><span class="badge ${bc}"><span class="badge-dot"></span>${status}</span></td>
+      <td>${r.days_since_service!=null?r.days_since_service+' d':'—'}</td>
+      <td>${r.fault_count_30d!=null?`<span style="font-weight:600;color:${r.fault_count_30d>3?'var(--red)':r.fault_count_30d>1?'var(--amber)':'var(--text)'}">${r.fault_count_30d}</span>`:'—'}</td>
+      <td onclick="event.stopPropagation()">
+        <div style="display:flex;gap:5px;flex-wrap:wrap">
+          <button class="quick-btn" onclick="quickPredict('${esc(r.asset_id)}','${esc(r.asset_type||'')}',${r.days_since_service||0},${r.fault_count_30d||0})">Predict</button>
+          <button class="quick-btn rpt" onclick="openFleetReport('${esc(r.asset_id)}','${esc(r.asset_type||'')}','${esc(r.station||'')}')">Report</button>
+        </div>
+      </td>
+    </tr>
+    <tr class="detail-row" id="detail-${esc(r.asset_id)}" style="display:none">
+      <td colspan="8">${buildDetailPanel(r,trainName)}</td>
+    </tr>`;
   }).join('');
 }
+
+function buildDetailPanel(r,trainName){
+  const st=r.health_status||'GREEN';
+  const stColor=st==='GREEN'?'var(--green)':st==='AMBER'?'var(--amber)':'var(--red)';
+  const train=TRAINS.find(t=>(t.assets||[]).includes(r.asset_id));
+  const route=(train&&train.route||[]).join(' → ');
+
+  // Sensor readings relevant to asset type
+  const sensorRows={
+    diesel_engine:[
+      ['Temperature','temperature_celsius','°C'],
+      ['Vibration','vibration_level','g'],
+      ['Oil Pressure','oil_pressure_bar','bar'],
+      ['Fuel Efficiency','fuel_efficiency_pct','%'],
+    ],
+    bogie:[
+      ['Vibration','vibration_level','g'],
+      ['Axle Temp','axle_temp_celsius','°C'],
+      ['Wheel Profile','wheel_profile_mm','mm'],
+    ],
+    brake_system:[
+      ['Pad Thickness','pad_thickness_mm','mm'],
+      ['Cylinder Pressure','brake_cylinder_pressure_bar','bar'],
+      ['Stopping Dist.','stopping_distance_m','m'],
+    ],
+  }[r.asset_type]||[];
+
+  const sensorHtml=sensorRows.map(([label,field,unit])=>{
+    const v=r[field];
+    return v!=null?`<div class="fd-row"><span class="fd-key">${label}</span><span class="fd-val">${parseFloat(v).toFixed(1)} ${unit}</span></div>`:'';
+  }).filter(Boolean).join('');
+
+  const fault=r.fault_type||'none';
+  const faultColor=fault==='none'?'var(--green)':'var(--amber)';
+
+  return`<div class="fleet-detail">
+    <div class="fd-section">
+      <div class="fd-section-title">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+        Asset Info
+      </div>
+      <div class="fd-row"><span class="fd-key">Train</span><span class="fd-val">${esc(trainName)}</span></div>
+      <div class="fd-row"><span class="fd-key">Route</span><span class="fd-val">${esc(route||'—')}</span></div>
+      <div class="fd-row"><span class="fd-key">Station</span><span class="fd-val">${esc(r.station||'—')}</span></div>
+      <div class="fd-row"><span class="fd-key">Last Service</span><span class="fd-val">${esc(r.last_service_date||'—')}</span></div>
+      <div class="fd-row"><span class="fd-key">Fault Detected</span><span class="fd-val" style="color:${faultColor}">${esc(fault.replace(/_/g,' '))}</span></div>
+      <div class="fd-row"><span class="fd-key">Health Score</span><span class="fd-val" style="color:${stColor}">${Math.round(r.health_score??0)} / 100</span></div>
+    </div>
+    <div class="fd-section">
+      <div class="fd-section-title">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Sensor Readings
+      </div>
+      ${sensorHtml||'<div style="font-size:0.74rem;color:var(--text-light)">No sensor data</div>'}
+    </div>
+    <div class="fd-section">
+      <div class="fd-section-title">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Technician Note
+      </div>
+      <div class="fd-note">${esc(r.technician_note||'No note recorded.')}</div>
+      <div style="font-size:0.7rem;font-weight:600;color:var(--text-muted);margin-top:10px">Recommended Action</div>
+      <div style="font-size:0.74rem;color:var(--text);margin-top:4px;line-height:1.5">${esc(r.recommended_action||'—')}</div>
+      <div class="fd-actions">
+        <button class="quick-btn" onclick="quickPredict('${esc(r.asset_id)}','${esc(r.asset_type||'')}',${r.days_since_service||0},${r.fault_count_30d||0})">Run Prediction →</button>
+        <button class="quick-btn rpt" onclick="openFleetReport('${esc(r.asset_id)}','${esc(r.asset_type||'')}','${esc(r.station||'')}')">Submit Report</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function toggleFleetRow(assetId){
+  if(fleetOpenRow&&fleetOpenRow!==assetId){
+    const prev=document.getElementById('detail-'+fleetOpenRow);
+    const prevRow=document.getElementById('row-'+fleetOpenRow);
+    if(prev) prev.style.display='none';
+    if(prevRow) prevRow.classList.remove('row-open');
+  }
+  const detail=document.getElementById('detail-'+assetId);
+  const row=document.getElementById('row-'+assetId);
+  if(!detail)return;
+  const opening=detail.style.display==='none';
+  detail.style.display=opening?'':'none';
+  if(row) row.classList.toggle('row-open',opening);
+  fleetOpenRow=opening?assetId:null;
+}
+
+function openFleetReport(assetId,assetType,station){
+  // Pre-fill modal with this asset then open
+  openReportModal();
+  setTimeout(()=>{
+    // find which train this asset belongs to
+    const train=TRAINS.find(t=>(t.assets||[]).includes(assetId));
+    if(train){
+      document.getElementById('rpt-train').value=train.id;
+      populateAssets();
+      setTimeout(()=>{
+        document.getElementById('rpt-asset').value=assetId;
+        populateAssetType();
+        if(station) document.getElementById('rpt-station').value=station;
+      },20);
+    }
+  },60);
+}
+
+function exportFleetCSV(){
+  const q=(document.getElementById('fleet-search').value||'').toLowerCase();
+  const trainFilter=(document.getElementById('fleet-train-sel')||{value:''}).value;
+  let rows=dedupeFleet(fleetAll);
+  if(fleetFilter!=='ALL') rows=rows.filter(r=>r.health_status===fleetFilter);
+  if(fleetTypeFilter!=='ALL') rows=rows.filter(r=>r.asset_type===fleetTypeFilter);
+  if(trainFilter) rows=rows.filter(r=>fleetTrainName(r.asset_id)===trainFilter);
+  if(q) rows=rows.filter(r=>(r.asset_id||'').toLowerCase().includes(q)||
+    (r.asset_type||'').toLowerCase().includes(q)||
+    fleetTrainName(r.asset_id).toLowerCase().includes(q));
+  const cols=['asset_id','asset_type','train','health_score','health_status','days_since_service','fault_count_30d','fault_type','station','last_service_date','recommended_action'];
+  const header=cols.join(',');
+  const csv_rows=rows.map(r=>cols.map(c=>{
+    const v=c==='train'?fleetTrainName(r.asset_id):(r[c]??'');
+    return`"${String(v).replace(/"/g,'""')}"`;
+  }).join(','));
+  const blob=new Blob([[header,...csv_rows].join('\n')],{type:'text/csv'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='railsense-fleet-'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();URL.revokeObjectURL(a.href);
+}
+
 function quickPredict(id,type,days,faults){
   document.getElementById('pred-asset-id').value=id;
   document.getElementById('pred-asset-type').value=type;
