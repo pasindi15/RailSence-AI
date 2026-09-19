@@ -48,6 +48,18 @@ function mapHistoryMessages(messages) {
   }));
 }
 
+const ChevronLeft = () => (
+  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="15 18 9 12 15 6"/>
+  </svg>
+);
+
+const ChevronRight = () => (
+  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="9 18 15 12 9 6"/>
+  </svg>
+);
+
 export default function App() {
   const [passenger, setPassenger] = useState(loadStoredPassenger);
   const [chats, setChats] = useState(loadStoredChats);
@@ -60,6 +72,13 @@ export default function App() {
   const [toastMessage, setToastMessage] = useState(null);
   const [detectedTrainId, setDetectedTrainId] = useState(null);
   const [delayMinutes, setDelayMinutes] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    return localStorage.getItem("railsense_sidebar") !== "false";
+  });
+
+  useEffect(() => {
+    localStorage.setItem("railsense_sidebar", sidebarOpen ? "true" : "false");
+  }, [sidebarOpen]);
 
   const activeChat = chats.find((c) => c.id === activeChatId);
 
@@ -343,7 +362,16 @@ export default function App() {
         onDeleteRequest={handleDeleteRequest}
         passenger={passenger}
         onLogout={handleLogout}
+        isOpen={sidebarOpen}
       />
+      <button
+        className="sidebar-toggle-btn"
+        onClick={() => setSidebarOpen((v) => !v)}
+        title={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
+        aria-label={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
+      >
+        {sidebarOpen ? <ChevronLeft /> : <ChevronRight />}
+      </button>
       <ChatWindow messages={activeChat?.messages || []} onSend={handleSend} loading={loading} />
       <TrainDetailsPanel messages={activeChat?.messages || []} detectedTrainId={detectedTrainId} delayMinutes={delayMinutes} />
       <ConfirmDialog
