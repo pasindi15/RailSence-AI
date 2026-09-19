@@ -25,6 +25,7 @@ import csv
 import json
 import logging
 import os
+import secrets
 import uuid
 from typing import Any, Optional
 
@@ -192,6 +193,11 @@ class TrainFlagRequest(BaseModel):
     severity: str = Field("RED", pattern="^(AMBER|RED)$")
     flagged_by: Optional[str] = Field(None, max_length=50)
     estimated_clear: Optional[str] = Field(None, max_length=50)  # e.g. "18:00" or ISO datetime
+
+
+class EngineerLoginRequest(BaseModel):
+    engineer_id: str = Field(..., min_length=1, max_length=50)
+    password: str = Field(..., min_length=1, max_length=100)
 
 
 # ---------------------------------------------------------------------------
@@ -534,6 +540,20 @@ async def manual_search(
             for s in sections
         ],
     }
+
+
+@app.post("/api/engineer-login")
+@limiter.limit("10/minute")
+async def engineer_login(request: Request, payload: EngineerLoginRequest):
+    """Validate engineer credentials. Credentials are set via ENGINEER_ID and ENGINEER_PASSWORD env vars."""
+    expected_id = os.getenv("ENGINEER_ID", "engineer")
+    expected_pw = os.getenv("ENGINEER_PASSWORD", "railsense2024")
+    client_ip = request.client.host if request.client else "unknown"
+    if payload.engineer_id.strip() == expected_id and payload.password == expected_pw:
+        _write_audit("engineer_login_success", client_ip, {"engineer_id": payload.engineer_id})
+        return {"success": True, "name": payload.engineer_id}
+    _write_audit("engineer_login_failed", client_ip, {"engineer_id": payload.engineer_id})
+    raise HTTPException(status_code=401, detail="Invalid engineer credentials. Please try again.")
 
 
 @app.get("/chat-ui")

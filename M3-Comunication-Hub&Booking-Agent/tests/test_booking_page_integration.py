@@ -48,7 +48,25 @@ serve_mod = importlib.util.module_from_spec(spec_serve)
 spec_serve.loader.exec_module(serve_mod)
 serve_app = serve_mod.app
 
-client = TestClient(serve_app)
+import asyncio
+import httpx
+
+class SyncASGITestClient:
+    def __init__(self, app):
+        self.app = app
+    def get(self, url, **kwargs):
+        return asyncio.run(self._req("GET", url, **kwargs))
+    def post(self, url, **kwargs):
+        return asyncio.run(self._req("POST", url, **kwargs))
+    def put(self, url, **kwargs):
+        return asyncio.run(self._req("PUT", url, **kwargs))
+    def delete(self, url, **kwargs):
+        return asyncio.run(self._req("DELETE", url, **kwargs))
+    async def _req(self, method, url, **kwargs):
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=self.app), base_url="http://testserver") as c:
+            return await c.request(method, url, **kwargs)
+
+client = SyncASGITestClient(serve_app)
 
 
 class TestPassengerChatExtraction:
