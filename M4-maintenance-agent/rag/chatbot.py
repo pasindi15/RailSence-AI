@@ -39,6 +39,13 @@ TRAIN_ASSET_MAP: dict[str, list[str]] = {
     "DE-2004": ["DE-2004", "BG-1009", "BR-1008"],
 }
 
+# ── Reverse map: any rolling-stock asset ID → its loco ID ────────────────────
+ASSET_TO_LOCO: dict[str, str] = {
+    asset_id: loco_id
+    for loco_id, assets in TRAIN_ASSET_MAP.items()
+    for asset_id in assets
+}
+
 # ── Train-list query detection ────────────────────────────────────────────────
 _TRAIN_LIST_KEYWORDS = [
     "train list", "list of trains", "list trains", "all trains", "show trains",
@@ -114,15 +121,24 @@ def _detect_asset_type(message: str) -> str:
 
 
 def _detect_train(message: str) -> Optional[dict]:
-    """Return train info if the message mentions a known SLR train name."""
+    """Return train info if the message mentions a known SLR train name, loco ID, train number, or any rolling-stock asset ID."""
     lower = message.lower()
+    # 1. Match by train name
     for name, info in TRAIN_NAME_MAP.items():
         if name in lower:
             return {"name": name.title(), **info}
-    # Also match by loco ID or train number
+    # 2. Match by loco ID or train number
     for name, info in TRAIN_NAME_MAP.items():
         if info["loco"].lower() in lower or info["number"] in lower:
             return {"name": name.title(), **info}
+    # 3. Match by any rolling-stock asset ID (BG-xxxx, BR-xxxx, DE-xxxx)
+    import re as _re
+    for asset_id in _re.findall(r'\b(?:DE|BG|BR)-\d{4}\b', message, _re.IGNORECASE):
+        loco_id = ASSET_TO_LOCO.get(asset_id.upper())
+        if loco_id:
+            for name, info in TRAIN_NAME_MAP.items():
+                if info["loco"] == loco_id:
+                    return {"name": name.title(), **info}
     return None
 
 
