@@ -364,6 +364,57 @@ tbody tr:hover td{background:#f8fafc}
 </head>
 <body>
 
+<!-- ═══ Engineer Login Gate ═══ -->
+<div id="login-gate" style="position:fixed;inset:0;z-index:9999;background:rgba(15,23,42,0.82);backdrop-filter:blur(14px);display:flex;align-items:center;justify-content:center;padding:20px;font-family:'DM Sans',system-ui,sans-serif;">
+  <div style="background:#fff;border-radius:22px;padding:40px 36px;width:100%;max-width:400px;box-shadow:0 32px 80px rgba(0,0,0,0.40);position:relative;overflow:hidden;">
+    <div style="position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#1d4ed8,#2563eb,#3b82f6,#60a5fa);"></div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:28px;">
+      <div style="width:46px;height:46px;border-radius:13px;background:linear-gradient(135deg,#1d4ed8,#2563eb);display:grid;place-items:center;flex-shrink:0;box-shadow:0 4px 16px rgba(37,99,235,0.35);">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="7" width="20" height="13" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+          <line x1="12" y1="12" x2="12" y2="16"/><line x1="8" y1="14" x2="16" y2="14"/>
+        </svg>
+      </div>
+      <div>
+        <div style="font-size:1.1rem;font-weight:800;color:#0f172a;letter-spacing:-0.3px;">RailSense AI</div>
+        <div style="font-size:0.7rem;color:#2563eb;font-weight:700;text-transform:uppercase;letter-spacing:0.9px;margin-top:1px;">Maintenance Portal · M4</div>
+      </div>
+    </div>
+    <h2 style="font-size:1.35rem;font-weight:800;color:#0f172a;margin-bottom:5px;letter-spacing:-0.4px;">Engineer Sign In</h2>
+    <p style="font-size:0.8rem;color:#64748b;margin-bottom:26px;line-height:1.55;">Access is restricted to authorised maintenance engineers. Enter your credentials to continue.</p>
+    <form id="login-form" onsubmit="doEngineerLogin(event)" style="display:flex;flex-direction:column;gap:14px;">
+      <div>
+        <label for="eng-id" style="display:block;font-size:0.77rem;font-weight:700;color:#374151;margin-bottom:5px;">Engineer ID</label>
+        <input id="eng-id" name="engineer_id" type="text" placeholder="e.g. engineer" autocomplete="username"
+          style="width:100%;padding:11px 14px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:0.88rem;font-family:inherit;background:#f8fafc;color:#0f172a;outline:none;transition:border-color 0.15s,box-shadow 0.15s;"
+          onfocus="this.style.borderColor='#3b82f6';this.style.boxShadow='0 0 0 3px rgba(59,130,246,0.12)'"
+          onblur="this.style.borderColor='#e2e8f0';this.style.boxShadow='none'"/>
+      </div>
+      <div>
+        <label for="eng-pw" style="display:block;font-size:0.77rem;font-weight:700;color:#374151;margin-bottom:5px;">Password</label>
+        <input id="eng-pw" name="password" type="password" placeholder="••••••••" autocomplete="current-password"
+          style="width:100%;padding:11px 14px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:0.88rem;font-family:inherit;background:#f8fafc;color:#0f172a;outline:none;transition:border-color 0.15s,box-shadow 0.15s;"
+          onfocus="this.style.borderColor='#3b82f6';this.style.boxShadow='0 0 0 3px rgba(59,130,246,0.12)'"
+          onblur="this.style.borderColor='#e2e8f0';this.style.boxShadow='none'"/>
+      </div>
+      <div id="login-error" style="display:none;padding:9px 13px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;font-size:0.78rem;color:#dc2626;font-weight:600;"></div>
+      <button type="submit" id="login-btn"
+        style="background:linear-gradient(135deg,#1d4ed8,#2563eb);color:#fff;border:none;border-radius:10px;padding:13px;font-size:0.92rem;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 4px 16px rgba(37,99,235,0.35);transition:all 0.15s;margin-top:2px;"
+        onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 6px 20px rgba(37,99,235,0.45)'"
+        onmouseout="this.style.transform='';this.style.boxShadow='0 4px 16px rgba(37,99,235,0.35)'">
+        Sign In
+      </button>
+    </form>
+    <div style="margin-top:20px;padding-top:16px;border-top:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;">
+      <div style="display:flex;align-items:center;gap:6px;">
+        <div style="width:7px;height:7px;border-radius:50%;background:#10b981;box-shadow:0 0 5px #10b981;flex-shrink:0;"></div>
+        <span style="font-size:0.7rem;color:#64748b;font-weight:500;">M4 Maintenance Agent · Port 8006</span>
+      </div>
+      <span style="font-size:0.68rem;color:#94a3b8;">Sri Lanka Railways</span>
+    </div>
+  </div>
+</div>
+
 <!-- ═══ Sidebar ═══ -->
 <aside class="sidebar">
   <div class="sb-logo">
@@ -877,7 +928,35 @@ function renderTrains() {
 /* ═══ UTILITIES ═══ */
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
 function toast(msg,ms=2600){const e=document.getElementById('toast');e.textContent=msg;e.style.display='block';setTimeout(()=>e.style.display='none',ms)}
-function handleLogout(){if(confirm('Log out of RailSense AI?')){window.location.href='http://localhost:3002';}}
+function handleLogout(){if(confirm('Sign out of the Maintenance Portal?')){sessionStorage.removeItem('m4_eng_auth');location.reload();}}
+
+/* ── Engineer Login Gate ── */
+(function(){var g=document.getElementById('login-gate');if(sessionStorage.getItem('m4_eng_auth')==='1'){g.style.display='none';}})();
+async function doEngineerLogin(e){
+  e.preventDefault();
+  var id=document.getElementById('eng-id').value.trim();
+  var pw=document.getElementById('eng-pw').value;
+  var err=document.getElementById('login-error');
+  var btn=document.getElementById('login-btn');
+  if(!id||!pw){err.textContent='Please enter both Engineer ID and password.';err.style.display='block';return;}
+  btn.disabled=true;btn.textContent='Signing in…';err.style.display='none';
+  try{
+    var res=await fetch('/api/engineer-login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({engineer_id:id,password:pw})});
+    if(res.ok){
+      sessionStorage.setItem('m4_eng_auth','1');
+      var g=document.getElementById('login-gate');
+      g.style.transition='opacity 0.35s ease';g.style.opacity='0';
+      setTimeout(function(){g.remove();},370);
+    }else{
+      var d=await res.json().catch(function(){return{};});
+      err.textContent=d.detail||'Invalid credentials. Please try again.';err.style.display='block';
+      btn.disabled=false;btn.textContent='Sign In';
+    }
+  }catch(ex){
+    err.textContent='Connection error. Make sure the M4 agent is running.';err.style.display='block';
+    btn.disabled=false;btn.textContent='Sign In';
+  }
+}
 function setBadge(id,ok,okL,failL){const e=document.getElementById(id);e.className='badge '+(ok?'badge-green':'badge-gray');e.innerHTML=(ok?'<span class="badge-dot"></span>':'')+esc(ok?okL:failL)}
 function setSbDot(id,vid,on,lbl){document.getElementById(id).className='sb-dot '+(on?'on':'off');if(vid)document.getElementById(vid).textContent=lbl||''}
 
