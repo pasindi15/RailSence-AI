@@ -7,6 +7,7 @@ Order of checks:
 Returns one of: "si" (Sinhala), "ta" (Tamil), "en" (English)
 """
 try:
+    # pyrefly: ignore [missing-import]
     from langdetect import detect, DetectorFactory
     DetectorFactory.seed = 0
 except ImportError:
