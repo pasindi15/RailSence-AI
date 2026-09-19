@@ -110,6 +110,9 @@ _trains_dir = UI_DIR / "trains"
 _trains_dir.mkdir(exist_ok=True)
 app.mount("/trains", StaticFiles(directory=str(_trains_dir)), name="trains")
 
+# Serve ui/ static assets (logo, icons, etc.)
+app.mount("/static", StaticFiles(directory=str(UI_DIR)), name="ui_static")
+
 app.add_exception_handler(
     RateLimitExceeded,
     lambda req, exc: JSONResponse({"detail": "Rate limit exceeded."}, status_code=429),
