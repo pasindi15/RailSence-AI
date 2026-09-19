@@ -139,6 +139,27 @@ def get_train_from_registry(train_id: str) -> Optional[dict]:
         return None
 
 
+def fetch_flagged_trains() -> list[dict]:
+    """Return all trains in the shared registry currently marked OUT_OF_SERVICE.
+
+    Used on startup to reconcile _train_flags against Supabase in case the
+    server restarted while a train was still flagged.
+    """
+    client = get_client()
+    if client is None:
+        return []
+    try:
+        result = (
+            client.table("trains")
+            .select("train_id,train_name,maintenance_status")
+            .eq("maintenance_status", "OUT_OF_SERVICE")
+            .execute()
+        )
+        return result.data or []
+    except Exception:
+        return []
+
+
 def update_train_maintenance_status(train_id: str, maintenance_status: Optional[str]) -> bool:
     """Write maintenance_status to the shared canonical trains table.
 

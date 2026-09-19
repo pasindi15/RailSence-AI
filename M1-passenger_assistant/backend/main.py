@@ -45,7 +45,7 @@ from pydantic import BaseModel, Field
 from supabase import create_client, Client
 
 from nlu.lang_detect import detect_language
-from nlu.intent_classifier import classify_intent
+from nlu.intent_classifier import classify_intent, is_greeting
 from nlu.ner_extractor import extract_entities
 from hub_client import build_envelope, send_to_hub
 from rag.retriever import retrieve_faq_chunks
@@ -160,6 +160,74 @@ INTENT_SOURCE_DOC = {
     "schedule_query": "schedules.md",
 }
 
+LANGUAGE_NAMES = {"si": "Sinhala", "ta": "Tamil", "en": "English"}
+
+# Fixed, non-LLM replies for FIX 1 (greetings) - deliberately not a Gemini
+# call, so this stays instant and free even under load. Written per-language
+# rather than relying on translation at request time, matching FIX 4's "no
+# English fallback" requirement for the small set of canned reply paths.
+GREETING_REPLIES = {
+    "en": "Hi! I'm the Sri Lanka Railways assistant — I can help with schedules, fares, delays, or booking. What do you need?",
+    "si": "ආයුබෝවන්! මම ශ්‍රී ලංකා දුම්රිය සහායකයා — කාලසටහන්, ගාස්තු, ප්‍රමාදවීම් හෝ වෙන්කිරීම් සම්බන්ධයෙන් මට ඔබට උදව් කළ හැක. ඔබට අවශ්‍ය කුමක්ද?",
+    "ta": "வணக்கம்! நான் இலங்கை ரயில்வே உதவியாளர் — அட்டவணைகள், கட்டணங்கள், தாமதங்கள் அல்லது முன்பதிவு குறித்து உங்களுக்கு உதவ முடியும். உங்களுக்கு என்ன தேவை?",
+}
+
+# Only used when gemini_model isn't configured at all (FIX 3's LLM-guided
+# decline path below covers the normal case) - still needs to be in-language
+# per FIX 4 rather than a hardcoded English string.
+OFF_TOPIC_FALLBACK = {
+    "en": "I can only help with railway schedules, fares, delays, or complaints — is there something about your journey I can help with?",
+    "si": "මට උදව් කළ හැක්කේ දුම්රිය කාලසටහන්, ගාස්තු, ප්‍රමාදවීම් හෝ පැමිණිලි සම්බන්ධයෙන් පමණි — ඔබේ ගමන සම්බන්ධයෙන් මට උදව් කළ හැකි දෙයක් තිබේද?",
+    "ta": "நான் ரயில் அட்டவணைகள், கட்டணங்கள், தாமதங்கள் அல்லது புகார்கள் தொடர்பாக மட்டுமே உதவ முடியும் — உங்கள் பயணம் தொடர்பாக நான் உதவக்கூடிய ஏதாவது உள்ளதா?",
+}
+
+# delay_check is Hub-routed and, per this project's established rule, its
+# successful reply is assembled from Operations' own structured fields and
+# never re-run through Gemini - so the "Expected delay: ..." reply itself
+# stays whatever language the Hub returns (currently English-only on M2's
+# side, out of scope here). This only localizes the *local* fallback text
+# used when the Hub can't be reached at all.
+DELAY_UNREACHABLE_REPLIES = {
+    "en": "I couldn't reach the Operations Agent right now.",
+    "si": "දැනට මෙහෙයුම් නියෝජිතයා අමතන්නට නොහැකි විය.",
+    "ta": "இப்போது இயக்க முகவரை தொடர்பு கொள்ள முடியவில்லை.",
+}
+
+# Calibrated against this project's embedding model (all-MiniLM-L6-v2) and
+# FAQ set, and ONLY applied when source_filter is None (see below) - a query
+# already keyword-classified as fare_query/schedule_query always searches
+# with a source_filter set, so it never hits this check at all; the keyword
+# match already confirmed it's on-topic. For the unclassified ("unknown"
+# intent) path this guards: on-topic-but-vaguely-phrased questions (e.g.
+# "can children travel free") measured ~0.99-1.56 against the full FAQ set;
+# clearly off-topic ones (weather, poems, trivia - bare greetings are caught
+# separately by FIX 1 before ever reaching here) measured ~1.74-1.90. 1.6
+# sits in that gap with margin on both sides. A single-station fare/schedule
+# query like "how much to Kandy" scores much worse (~1.4-1.8) purely because
+# a lone station name is a weak embedding query - that's exactly why this
+# check is skipped once intent_classifier has already confirmed relevance
+# via keywords, rather than re-litigating topicality on embedding distance
+# alone for every intent.
+RAG_DISTANCE_THRESHOLD = 1.6
+
+# Matches a fare doc line like "- 2nd Class Reserved: LKR 500".
+FARE_LINE_PATTERN = re.compile(r"^-\s*(?P<label>[^:]+):\s*LKR\s*(?P<amount>[\d,]+)", re.MULTILINE)
+
+
+def _compute_group_fares(chunks: list[dict], passenger_count: int) -> str:
+    """Multiply every per-person 'LKR N' fare line found in the retrieved fare
+    chunks by passenger_count, in code. The LLM is instructed to use these
+    totals verbatim in its reply instead of doing the multiplication itself -
+    it isn't reliable at arithmetic and shouldn't be trusted to get it right."""
+    lines = []
+    for chunk in chunks:
+        for m in FARE_LINE_PATTERN.finditer(chunk["text"]):
+            label = m.group("label").strip()
+            per_person = int(m.group("amount").replace(",", ""))
+            total = per_person * passenger_count
+            lines.append(f"- {label}: LKR {per_person} x {passenger_count} passengers = LKR {total}")
+    return "\n".join(lines)
+
 
 def compose_rag_answer(
     text: str,
@@ -189,30 +257,105 @@ def compose_rag_answer(
         return "I'm having trouble looking that up right now. Please try again in a moment.", ""
     print(f"[rag] retrieved {len(chunks)} chunk(s) for query={retrieval_query!r} (original text={text!r}) source_filter={source_filter!r}")
     if not chunks:
+        print(f"[offtopic] intent={intent} query={text!r} reason=no_chunks_retrieved")
         return (
             "I don't have that information in my current knowledge base. "
             "Could you rephrase, or ask about schedules, fares, delays, or bookings instead?"
         ), ""
 
-    sources = ", ".join(sorted({c["source"] for c in chunks}))
+    # Off-topic guardrail (FIX 3): even the closest match being a weak one
+    # means the retrieved chunks aren't actually relevant to this question
+    # (e.g. "what's the weather" still returns *some* chunk - ChromaDB always
+    # returns its top-k - just not a relevant one). Without this check the
+    # LLM would see that irrelevant chunk plus its own general knowledge and
+    # could still "answer" instead of declining. Only checked when
+    # source_filter is unset (the "unknown" intent path) - fare_query/
+    # schedule_query already searched with a source_filter, meaning
+    # intent_classifier's keyword match already confirmed relevance, and a
+    # single-station query genuinely scores a weak distance on its own (see
+    # RAG_DISTANCE_THRESHOLD above) without being off-topic.
+    off_topic = source_filter is None and chunks[0]["distance"] > RAG_DISTANCE_THRESHOLD
+    if off_topic:
+        print(f"[offtopic] intent={intent} query={text!r} top_distance={chunks[0]['distance']:.3f}")
+
+    sources = "" if off_topic else ", ".join(sorted({c["source"] for c in chunks}))
+
+    # Bug fix: this used to be computed further down, only reachable once the
+    # Gemini call actually succeeded - so the two raw-fallback returns below
+    # (no gemini_model configured, or the API call itself failing - e.g. a
+    # quota error) both bypassed it entirely and dumped the unmultiplied
+    # per-person chunk text, even though passenger_count was already known.
+    # Moved up so both fallback paths can use it too.
+    passenger_count = (entities or {}).get("passenger_count")
+
+    def _raw_fallback_text() -> str:
+        if intent == "fare_query" and passenger_count and passenger_count > 1:
+            computed = _compute_group_fares(chunks, passenger_count)
+            if computed:
+                return f"Here's what I found for {passenger_count} passengers:\n\n{computed}"
+        return f"Here's what I found:\n\n{chunks[0]['text'][:400]}"
 
     if not gemini_model:
+        if off_topic:
+            return OFF_TOPIC_FALLBACK.get(language, OFF_TOPIC_FALLBACK["en"]), ""
         print("[llm] SKIPPED - gemini_model is None (GEMINI_API_KEY missing/not loaded) - returning raw RAG chunk text")
-        return f"Here's what I found:\n\n{chunks[0]['text'][:400]}", sources
+        return _raw_fallback_text(), sources
 
     history = get_recent_history(session_id)
     history_text = "\n".join(f"{h['role']}: {h['message']}" for h in history) or "(no prior messages)"
-    context_text = "\n\n---\n\n".join(f"[{c['source']}] {c['text']}" for c in chunks)
     # Only surface entities the NLU actually found - an empty/None-filled dict
     # would just add noise to the prompt instead of useful grounding signal.
     known_details = ", ".join(f"{k}={v}" for k, v in (entities or {}).items() if v) or "none extracted"
 
+    # FIX 2: compute the group total in code rather than asking the LLM to
+    # multiply - it isn't reliable at arithmetic. Only meaningful for
+    # fare_query, and only when we actually know how many passengers.
+    # (passenger_count itself is computed above, before the raw-fallback
+    # returns, so it's available there too.)
+    fare_block = ""
+    if intent == "fare_query" and not off_topic:
+        if passenger_count and passenger_count > 1:
+            computed = _compute_group_fares(chunks, passenger_count)
+            if computed:
+                fare_block = (
+                    f"Pre-computed total fares for {passenger_count} passengers "
+                    f"(already multiplied in code - use these exact totals "
+                    f"verbatim, do not recalculate them yourself):\n{computed}\n\n"
+                )
+        elif not passenger_count:
+            fare_block = (
+                "PASSENGER_COUNT_UNKNOWN: true - the passenger did not say how "
+                "many people are travelling. State the per-person fare(s) "
+                "clearly and ask how many passengers are travelling before "
+                "giving a total - do not assume 1 passenger.\n\n"
+            )
+
+    if off_topic:
+        context_block = (
+            "OFF_TOPIC: true - the retrieved knowledge base has no relevant "
+            "railway information for this question. Politely decline and "
+            "redirect the passenger to what you can help with instead. Do "
+            "not attempt to answer using your own general knowledge, even if "
+            "you know the answer.\n\n"
+        )
+    else:
+        context_text = "\n\n---\n\n".join(f"[{c['source']}] {c['text']}" for c in chunks)
+        context_block = f"Retrieved knowledge base context:\n{context_text}\n\n"
+
+    # FIX 4: an explicit imperative instruction, not just the `language:`
+    # field below (which the system prompt also references) - makes the
+    # language requirement something the model is directed to do on this
+    # specific turn, not just background metadata it might deprioritize.
+    language_instruction = f"Respond only in {LANGUAGE_NAMES.get(language, 'English')}."
+
     prompt = (
+        f"{language_instruction}\n\n"
         f"language: {language}\n\n"
         f"Detected intent: {intent}\n"
         f"Extracted details from the passenger's message: {known_details}\n\n"
+        f"{fare_block}"
         f"Conversation history:\n{history_text}\n\n"
-        f"Retrieved knowledge base context:\n{context_text}\n\n"
+        f"{context_block}"
         f"Passenger's question: {text}"
     )
 
@@ -222,8 +365,12 @@ def compose_rag_answer(
         print(f"[llm] Gemini response received ({len(response.text)} chars)")
         return response.text.strip(), sources
     except Exception as e:
-        print(f"[llm] ERROR - Gemini generation failed ({type(e).__name__}): {e} - falling back to raw RAG chunk text")
-        return f"Here's what I found:\n\n{chunks[0]['text'][:400]}", sources
+        print(f"[llm] ERROR - Gemini generation failed ({type(e).__name__}): {e} - falling back")
+        if off_topic:
+            # Falling back to the raw chunk here would leak an irrelevant
+            # document instead of declining - use the canned redirect instead.
+            return OFF_TOPIC_FALLBACK.get(language, OFF_TOPIC_FALLBACK["en"]), ""
+        return _raw_fallback_text(), sources
 
 
 def touch_session(session_id: str, title_candidate: str | None = None):
@@ -305,6 +452,21 @@ async def chat(req: ChatRequest):
     print(f"[chat] received message={text!r} session_id={req.session_id}")
 
     language = detect_language(text)
+
+    # FIX 1: short-circuits before intent classification/NER/RAG entirely -
+    # a bare "hii" was previously falling through to classify_intent()'s
+    # "unknown" fallback and then compose_rag_answer(), which had nothing
+    # relevant to retrieve for it (see the off-topic guardrail below).
+    if is_greeting(text):
+        reply = GREETING_REPLIES.get(language, GREETING_REPLIES["en"])
+        print(f"[chat] greeting short-circuit language={language}")
+        save_message(req.session_id, "user", text)
+        save_message(req.session_id, "assistant", reply)
+        return ChatResponse(
+            session_id=req.session_id, reply=reply, intent="greeting",
+            language=language, entities={}, source="local",
+        )
+
     intent = classify_intent(text)
     entities = extract_entities(text)
     if entities.get("train_id") and intent == "schedule_query":
@@ -359,6 +521,20 @@ async def chat(req: ChatRequest):
         stations = entities.get("stations", [])
         route = " - ".join(stations) if isinstance(stations, list) and len(stations) >= 2 else "Colombo Fort - Kandy"
         train_id = entities.get("train_id")
+        if not train_id and isinstance(stations, list) and len(stations) >= 2:
+            # No explicit train ID (e.g. "Is the train from Colombo Fort to
+            # Kandy delayed?"), but a route is known - M2's PredictionRequest
+            # requires a train_id (Field(..., ...), no default), so this
+            # can't just be omitted from the Hub call. Look up a real train
+            # on that route via the shared registry instead of forcing the
+            # passenger to already know a specific train ID.
+            try:
+                matches = await asyncio.to_thread(search_trains, stations[0], stations[1])
+                if matches:
+                    train_id = matches[0]["train_id"]
+                    print(f"[chat] delay_check resolved train_id={train_id!r} for route={route!r} via shared registry")
+            except TrainRepositoryUnavailable as e:
+                print(f"[chat] delay_check registry lookup failed for route={route!r}: {e}")
         if not train_id:
             reply = "TRAIN_NOT_FOUND: provide a train ID so Operations can validate it."
             source = "via Operations Agent (Hub)"
@@ -426,8 +602,12 @@ async def chat(req: ChatRequest):
             )
             source = "via Operations Agent + Maintenance Agent (Hub)" if maintenance_context else "via Operations Agent (Hub)"
         else:
-            message = hub_response.message or "I couldn't reach the Operations Agent right now."
-            reply = message if "TRAIN_NOT_FOUND" in message else "I couldn't reach the Operations Agent right now."
+            fallback = DELAY_UNREACHABLE_REPLIES.get(language, DELAY_UNREACHABLE_REPLIES["en"])
+            message = hub_response.message or fallback
+            # TRAIN_NOT_FOUND is a cross-team sentinel M2 also emits - passed
+            # through verbatim rather than localized, since something downstream
+            # may match on that exact prefix.
+            reply = message if "TRAIN_NOT_FOUND" in message else fallback
             source = "via Operations Agent (Hub)"
 
     elif intent == "train_status":
@@ -512,7 +692,12 @@ async def chat(req: ChatRequest):
                 "travel_date": entities.get("travel_date"),
                 "train_id": entities.get("train_id"),
                 "seat_class": entities.get("seat_class"),
-                "passenger_count": entities.get("passenger_count", 1),
+                # ner_extractor now returns None (not 1) when no count was
+                # mentioned - booking_request isn't part of these fixes, so
+                # this preserves its prior default-to-1 behavior exactly.
+                # entities.get("passenger_count", 1) would NOT catch this,
+                # since the key is present with value None, not missing.
+                "passenger_count": entities.get("passenger_count") or 1,
             },
         )
         hub_response = await send_to_hub(envelope)
