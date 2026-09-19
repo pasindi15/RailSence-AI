@@ -33,9 +33,10 @@ from dotenv import load_dotenv
 load_dotenv(Path(__file__).parent / ".env")
 
 import bleach
-from fastapi import FastAPI, HTTPException, Request, status
+from fastapi import Depends, FastAPI, Header, HTTPException, Request, status
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+import httpx
 from pydantic import BaseModel, Field, field_validator
 from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
@@ -58,11 +59,80 @@ limiter = Limiter(key_func=get_remote_address, default_limits=["120/minute"])
 AGENT_DIR = Path(__file__).parent
 DATA_PATH = AGENT_DIR / "data" / "assets_history.csv"
 AUDIT_LOG = AGENT_DIR / "data" / "audit_log.jsonl"
+FLAGS_PATH = AGENT_DIR / "data" / "train_flags.jsonl"
+REPORTS_PATH = AGENT_DIR / "data" / "field_reports.jsonl"
 UI_DIR = AGENT_DIR / "ui"
 
 _in_memory_events: list[dict] = []
 _in_memory_reports: list[dict] = []
 _train_flags: dict[str, dict] = {}  # train_id -> maintenance flag record
+_active_tokens: set[str] = set()    # valid session tokens issued on engineer login
+
+
+async def _require_token(x_engineer_token: str = Header(default="")) -> None:
+    """FastAPI dependency — rejects requests that don't carry a valid session token."""
+    if not x_engineer_token or x_engineer_token not in _active_tokens:
+        raise HTTPException(
+            status_code=401,
+            detail="Engineer authentication required. Please log in via the dashboard.",
+        )
+
+
+def _persist_flags() -> None:
+    """Write _train_flags to disk so flags survive server restarts."""
+    try:
+        FLAGS_PATH.parent.mkdir(parents=True, exist_ok=True)
+        with open(FLAGS_PATH, "w", encoding="utf-8") as f:
+            for record in _train_flags.values():
+                f.write(json.dumps(record) + "\n")
+    except Exception as exc:
+        logger.warning("Could not persist train flags: %s", exc)
+
+
+def _load_flags_from_disk() -> None:
+    """Restore _train_flags from the JSONL file on startup."""
+    if not FLAGS_PATH.exists():
+        return
+    try:
+        with open(FLAGS_PATH, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    record = json.loads(line)
+                    train_id = record.get("train_id", "").upper()
+                    if train_id:
+                        _train_flags[train_id] = record
+        if _train_flags:
+            logger.info("Restored %d train flag(s) from disk: %s", len(_train_flags), list(_train_flags))
+    except Exception as exc:
+        logger.warning("Could not load train flags from disk: %s", exc)
+
+
+def _persist_report(record: dict) -> None:
+    """Append a single field report to disk so reports survive server restarts."""
+    try:
+        REPORTS_PATH.parent.mkdir(parents=True, exist_ok=True)
+        with open(REPORTS_PATH, "a", encoding="utf-8") as f:
+            f.write(json.dumps(record) + "\n")
+    except Exception as exc:
+        logger.warning("Could not persist field report: %s", exc)
+
+
+def _load_reports_from_disk() -> None:
+    """Restore _in_memory_reports from the JSONL file on startup."""
+    if not REPORTS_PATH.exists():
+        return
+    try:
+        with open(REPORTS_PATH, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    _in_memory_reports.append(json.loads(line))
+        if _in_memory_reports:
+            logger.info("Restored %d field report(s) from disk", len(_in_memory_reports))
+    except Exception as exc:
+        logger.warning("Could not load field reports from disk: %s", exc)
+
 
 # Simple cache — avoids hitting Supabase on every request
 _asset_cache: list[dict] = []
@@ -72,6 +142,32 @@ _CACHE_TTL = 60.0  # seconds
 
 @asynccontextmanager
 async def lifespan(_app):
+    # Restore maintenance flags and field reports from disk across restarts
+    _load_flags_from_disk()
+    _load_reports_from_disk()
+
+    # Reconcile: any train still OUT_OF_SERVICE in Supabase that isn't in our flag file
+    # gets a minimal stub entry so /api/train-status keeps returning the right answer.
+    try:
+        flagged_in_db = supabase_store.fetch_flagged_trains()
+        for row in flagged_in_db:
+            tid = row.get("train_id", "").upper()
+            if tid and tid not in _train_flags:
+                _train_flags[tid] = {
+                    "train_id": tid,
+                    "under_maintenance": True,
+                    "reason": row.get("maintenance_status", "OUT_OF_SERVICE"),
+                    "severity": "high",
+                    "flagged_by": "system-recovery",
+                    "estimated_clear": None,
+                    "flagged_at": datetime.now(timezone.utc).isoformat(),
+                }
+                logger.warning("Recovered flag for %s from Supabase (no local file entry)", tid)
+        if flagged_in_db:
+            _persist_flags()
+    except Exception as exc:
+        logger.warning("Supabase flag reconciliation failed: %s", exc)
+
     # Pre-warm the TF-IDF index and SentenceTransformer model so first request is fast
     try:
         manual_retriever._ensure_tfidf()
@@ -331,10 +427,18 @@ async def api_dashboard(request: Request):
         except Exception:
             audit_count = 0
 
-    recent_reports = _in_memory_reports[-10:]
+    recent_reports = _in_memory_reports[-20:]
     recent_events = supabase_store.fetch_recent_events(20) or _in_memory_events[-20:]
 
     manual_sections_count = len(manual_retriever._load_manual_sections())
+
+    hub_reachable = False
+    try:
+        async with httpx.AsyncClient(timeout=1.5) as _hc:
+            _hr = await _hc.get(f"{hub_client.HUB_BASE_URL.rstrip('/')}/health")
+            hub_reachable = _hr.status_code == 200
+    except Exception:
+        pass
 
     return {
         "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -348,6 +452,7 @@ async def api_dashboard(request: Request):
         "recent_events": recent_events,
         "hub_status": {
             "hub_url": hub_client.HUB_BASE_URL,
+            "hub_reachable": hub_reachable,
             "upstash_configured": bool(hub_client.UPSTASH_REDIS_URL),
             "supabase_configured": supabase_store.get_client() is not None,
         },
@@ -472,7 +577,7 @@ async def asset_status(request: Request, asset_id: str):
 
 @app.post("/maintenance-report")
 @limiter.limit("20/minute")
-async def maintenance_report(request: Request, payload: MaintenanceReportRequest):
+async def maintenance_report(request: Request, payload: MaintenanceReportRequest, _: None = Depends(_require_token)):
     extraction = note_extractor.extract_technician_note(payload.text)
     summary, nlp_method = report_summarizer.summarize_maintenance_report(payload.text)
 
@@ -500,6 +605,7 @@ async def maintenance_report(request: Request, payload: MaintenanceReportRequest
         "received_at": datetime.now(timezone.utc).isoformat(),
     }
     _in_memory_reports.append(report_record)
+    _persist_report(report_record)
 
     client_ip = request.client.host if request.client else "unknown"
     _write_audit("maintenance_report_submitted", client_ip, {
@@ -553,8 +659,10 @@ async def engineer_login(request: Request, payload: EngineerLoginRequest):
     expected_pw = os.getenv("ENGINEER_PASSWORD", "railsense2024")
     client_ip = request.client.host if request.client else "unknown"
     if payload.engineer_id.strip() == expected_id and payload.password == expected_pw:
+        token = secrets.token_hex(32)
+        _active_tokens.add(token)
         _write_audit("engineer_login_success", client_ip, {"engineer_id": payload.engineer_id})
-        return {"success": True, "name": payload.engineer_id}
+        return {"success": True, "name": payload.engineer_id, "token": token}
     _write_audit("engineer_login_failed", client_ip, {"engineer_id": payload.engineer_id})
     raise HTTPException(status_code=401, detail="Invalid engineer credentials. Please try again.")
 
@@ -587,7 +695,7 @@ async def chat(request: Request, payload: ChatRequest):
 
 @app.post("/api/flag-train")
 @limiter.limit("30/minute")
-async def flag_train(request: Request, payload: TrainFlagRequest):
+async def flag_train(request: Request, payload: TrainFlagRequest, _: None = Depends(_require_token)):
     """Engineer flags a train as under maintenance — validates against shared registry,
     syncs maintenance_status to Supabase so M3 Booking Agent blocks new bookings."""
     canonical_id = payload.train_id.strip().upper()
@@ -611,6 +719,7 @@ async def flag_train(request: Request, payload: TrainFlagRequest):
         "flagged_at": datetime.now(timezone.utc).isoformat(),
     }
     _train_flags[canonical_id] = record
+    _persist_flags()
 
     # Sync OUT_OF_SERVICE to shared trains table so M3 sees it on next booking attempt.
     supabase_store.update_train_maintenance_status(canonical_id, "OUT_OF_SERVICE")
@@ -627,13 +736,14 @@ async def flag_train(request: Request, payload: TrainFlagRequest):
 
 @app.delete("/api/flag-train/{train_id}")
 @limiter.limit("30/minute")
-async def clear_train_flag(request: Request, train_id: str):
+async def clear_train_flag(request: Request, train_id: str, _: None = Depends(_require_token)):
     """Engineer clears maintenance flag — train returns to service.
     Clears maintenance_status in shared Supabase trains table so M3 resumes bookings."""
     canonical_id = train_id.strip().upper()
     if canonical_id not in _train_flags:
         raise HTTPException(status_code=404, detail=f"No maintenance flag found for train '{canonical_id}'.")
     record = _train_flags.pop(canonical_id)
+    _persist_flags()
     # Clear maintenance restriction in shared trains table
     supabase_store.update_train_maintenance_status(canonical_id, None)
     client_ip = request.client.host if request.client else "unknown"

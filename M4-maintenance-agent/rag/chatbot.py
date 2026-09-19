@@ -39,6 +39,13 @@ TRAIN_ASSET_MAP: dict[str, list[str]] = {
     "DE-2004": ["DE-2004", "BG-1009", "BR-1008"],
 }
 
+# ── Reverse map: any rolling-stock asset ID → its loco ID ────────────────────
+ASSET_TO_LOCO: dict[str, str] = {
+    asset_id: loco_id
+    for loco_id, assets in TRAIN_ASSET_MAP.items()
+    for asset_id in assets
+}
+
 # ── Train-list query detection ────────────────────────────────────────────────
 _TRAIN_LIST_KEYWORDS = [
     "train list", "list of trains", "list trains", "all trains", "show trains",
@@ -60,6 +67,32 @@ ASSET_TYPE_HINTS: dict[str, list[str]] = {
     "level_crossing":["crossing", "barrier", "gate", "proximity sensor", "level crossing"],
     "platform_gate": ["platform gate", "door", "gate motor"],
 }
+
+CASUAL_SYSTEM_PROMPT = """You are a friendly railway maintenance assistant for Sri Lanka Railways (SLR).
+For greetings and casual messages respond naturally in 1-2 short sentences.
+Briefly introduce yourself and invite the engineer to ask a technical maintenance question.
+Never use structured formats like Status/Details/Action for casual conversation."""
+
+_CASUAL_WORDS = {
+    "hey", "hi", "hello", "howdy", "sup", "yo",
+    "thanks", "thank you", "cheers", "ty",
+    "bye", "goodbye", "cya", "ok", "okay", "alright", "sure",
+    "good morning", "good afternoon", "good evening", "good night",
+    "what can you do", "help", "who are you", "what are you",
+}
+
+def _is_casual_message(message: str) -> bool:
+    lower = message.strip().lower().rstrip(" !.?,")
+    if lower in _CASUAL_WORDS:
+        return True
+    words = lower.split()
+    if len(words) <= 3:
+        tech = {"engine","brake","bogie","track","signal","fault","maintenance",
+                "service","inspection","repair","oil","fuel","wheel","pad","cylinder",
+                "loco","train","asset","health","status","report","check"}
+        return not any(w in tech for w in words)
+    return False
+
 
 SYSTEM_PROMPT = """You are an expert railway maintenance engineer assistant for Sri Lanka Railways (SLR).
 
@@ -84,17 +117,24 @@ Example format (one line per asset, pipe-separated, no extra text):
 - Step 2
 - Step 3
 
+**Action:** (ONLY when the engineer explicitly asks to create, submit, file, or add a report for a specific asset — omit entirely otherwise)
+create_report | ASSET_ID | asset_type_snake_case | Station
+Example: create_report | BG-1003 | bogie | Kandy
+Rules for this section: use the exact asset_id from context; asset_type must be one of: diesel_engine, bogie, brake_system; station is the last known service station from the data.
+
 **Reference:** Manual section, threshold, or interval that applies.
 
 Rules:
 - When fleet/asset data is provided, ALWAYS output the **Assets:** section with one pipe-separated line per asset. Use the exact format: ASSET_ID | Asset Type | score | STATUS.
 - In **Details:**, describe findings (fault types, days since service, recommendations) — do NOT repeat the asset table here.
+- When the engineer asks to CREATE/SUBMIT/FILE/ADD a report for an asset, output the **Action:** section with the create_report line. ALSO provide a brief **Status:** confirming you are opening the report form.
 - When manual context is provided but does NOT match the question topic, IGNORE it and answer from expert knowledge. Label the Reference as "General guidance — SLR standard practice".
 - When manual context IS relevant, cite it in the Reference line.
 - Use only bullet points for lists — no tables, no numbered lists, no markdown headings.
 - Be concise. Each bullet should be one clear sentence.
 - If a question is outside railway maintenance, say so in the Status line and stop.
-- Never leave a section blank — write "None at this time" if nothing applies."""
+- Never leave a section blank — write "None at this time" if nothing applies.
+- For greetings or messages with no technical content (e.g. "hey", "hello", "thanks"), reply in plain conversational text — 1-2 sentences only, no structured format at all."""
 
 
 def _detect_asset_type(message: str) -> str:
@@ -108,15 +148,24 @@ def _detect_asset_type(message: str) -> str:
 
 
 def _detect_train(message: str) -> Optional[dict]:
-    """Return train info if the message mentions a known SLR train name."""
+    """Return train info if the message mentions a known SLR train name, loco ID, train number, or any rolling-stock asset ID."""
     lower = message.lower()
+    # 1. Match by train name
     for name, info in TRAIN_NAME_MAP.items():
         if name in lower:
             return {"name": name.title(), **info}
-    # Also match by loco ID or train number
+    # 2. Match by loco ID or train number
     for name, info in TRAIN_NAME_MAP.items():
         if info["loco"].lower() in lower or info["number"] in lower:
             return {"name": name.title(), **info}
+    # 3. Match by any rolling-stock asset ID (BG-xxxx, BR-xxxx, DE-xxxx)
+    import re as _re
+    for asset_id in _re.findall(r'\b(?:DE|BG|BR)-\d{4}\b', message, _re.IGNORECASE):
+        loco_id = ASSET_TO_LOCO.get(asset_id.upper())
+        if loco_id:
+            for name, info in TRAIN_NAME_MAP.items():
+                if info["loco"] == loco_id:
+                    return {"name": name.title(), **info}
     return None
 
 
@@ -243,6 +292,24 @@ def _template_answer(message: str, sections: list[dict], train: Optional[dict] =
     )
 
 
+def _llm_casual(message: str, history: list[dict]) -> str:
+    try:
+        from groq import Groq
+        client = Groq(api_key=os.environ["GROQ_API_KEY"])
+        messages: list[dict] = [{"role": "system", "content": CASUAL_SYSTEM_PROMPT}]
+        for turn in history[-4:]:
+            messages.append({"role": turn["role"], "content": turn["content"]})
+        messages.append({"role": "user", "content": message})
+        response = client.chat.completions.create(
+            model="qwen/qwen3.8-27b",
+            max_tokens=80,
+            messages=messages,
+        )
+        return response.choices[0].message.content.strip()
+    except Exception:
+        return "Hello! I'm your RailSense Maintenance Assistant. Ask me about engine maintenance, brake systems, bogie inspection, or any other railway equipment."
+
+
 def _llm_chat(message: str, history: list[dict]) -> str:
     try:
         from groq import Groq
@@ -309,13 +376,26 @@ def answer_engineer_question(
 ) -> dict[str, Any]:
     history = history or []
 
-    # 0. Short-circuit: train list query
+    # 0a. Short-circuit: train list query
     if _is_train_list_query(message):
         return {
             "answer": _build_train_list_answer(),
             "citations": [],
             "retrieval_method": "registry",
             "answer_method": "registry",
+            "detected_asset_type": "",
+            "detected_train": None,
+        }
+
+    # 0b. Short-circuit: casual / greeting message — no structured cards
+    if _is_casual_message(message):
+        casual_answer = _llm_casual(message, history) if os.getenv("GROQ_API_KEY") else \
+            "Hello! I'm your RailSense Maintenance Assistant. Ask me about engine maintenance, brake systems, bogie inspection, or any railway equipment."
+        return {
+            "answer": casual_answer,
+            "citations": [],
+            "retrieval_method": "none",
+            "answer_method": "llm_grounded",
             "detected_asset_type": "",
             "detected_train": None,
         }

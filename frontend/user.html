@@ -58,7 +58,7 @@ body {
 }
 
 .app-shell {
-  max-width: 1200px;
+  max-width: 1380px;
   margin: 0 auto;
   padding: 20px 24px 60px;
   position: relative;
@@ -333,7 +333,7 @@ body {
   border: 1.5px solid transparent;
   border-radius: 10px;
   background: transparent;
-  color: var(--text-sub);
+  color: var(--text-label);
   font-family: inherit;
   font-size: 13.5px;
   font-weight: 600;
@@ -359,6 +359,7 @@ body {
   color: var(--primary-hover);
   background: var(--primary-light);
   border-color: #A7F3D0;
+  transform: translateX(2px);
 }
 
 .tab-btn:hover .tab-icon {
@@ -371,6 +372,90 @@ body {
   color: #FFFFFF;
   box-shadow: 0 4px 14px var(--primary-glow);
   font-weight: 700;
+  transform: none;
+}
+
+.sidebar-divider {
+  height: 1px;
+  background: var(--border-light);
+  margin: 2px 4px;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text-sub);
+  font-size: 12.5px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.18s ease;
+}
+
+.sidebar-link .tab-icon {
+  font-size: 15px;
+  width: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.sidebar-link:hover {
+  background: var(--primary-light);
+  color: var(--primary-hover);
+  transform: translateX(2px);
+}
+
+.sidebar-link .external-mark {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--text-placeholder);
+}
+
+.sidebar-link:hover .external-mark {
+  color: var(--primary);
+}
+
+.sidebar-status-card {
+  margin-top: 4px;
+  padding: 12px;
+  background: #F9FAFB;
+  border-radius: 10px;
+  border: 1px solid var(--border-light);
+}
+
+.sidebar-status-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  font-family: 'Share Tech Mono', monospace;
+  color: #065F46;
+  margin-bottom: 4px;
+}
+
+.sidebar-status-pill .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #10B981;
+  box-shadow: 0 0 6px #10B981;
+}
+
+.sidebar-status-text {
+  font-size: 11px;
+  color: var(--text-sub);
+  line-height: 1.4;
+}
+
+.app-main-content {
+  flex: 1;
+  min-width: 0;
 }
 
 .tab-btn.active .tab-icon {
@@ -1666,6 +1751,13 @@ body {
 
 /* ── Responsive ────────────────────────────────────────────────────── */
 @media (max-width: 960px) {
+  .app-body {
+    flex-direction: column;
+  }
+  .sidebar-nav {
+    width: 100%;
+    position: static;
+  }
   .workflow-stepper {
     grid-template-columns: 1fr 1fr;
   }
@@ -1717,15 +1809,6 @@ body {
     <div class="header-status">
       <div class="clock-display" id="clock">12:00:00</div>
       <div class="badge-live">CENTRAL HUB CONNECTED</div>
-      <a href="http://localhost:5173" target="_blank" rel="noopener noreferrer" class="btn-portal-switch" title="Open M1 Passenger Assistant">
-        <span>💬 Passenger Assistant ↗</span>
-      </a>
-      <a href="/admin?tab=hub" class="btn-portal-switch" title="View Central Communication Hub Monitor">
-        <span>⚡ Hub Monitor</span>
-      </a>
-      <a href="/admin" class="btn-portal-switch">
-        <span>Staff & Admin Portal ➔</span>
-      </a>
     </div>
   </header>
 
@@ -2362,7 +2445,10 @@ body {
     </div>
   </main>
 
-</div>
+    </div> <!-- /.app-main-content -->
+  </div> <!-- /.app-body -->
+
+</div> <!-- /.app-shell -->
 
 <!-- ── Application Logic ───────────────────────────────────────────── -->
 <script>
