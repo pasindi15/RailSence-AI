@@ -29,26 +29,14 @@ METRICS_PATH = AGENT_DIR / "evaluation" / "ml" / "health_model_metrics.json"
 
 CATEGORICAL_FEATURES = ["asset_type"]
 NUMERIC_FEATURES = [
-    "days_since_service",
-    "fault_count_30d",
-    "temperature_celsius",
-    "vibration_level",
-    "oil_pressure_bar",
-    "fuel_efficiency_pct",
-    "axle_temp_celsius",
-    "wheel_profile_mm",
-    "pad_thickness_mm",
-    "brake_cylinder_pressure_bar",
-    "stopping_distance_m",
-    "response_time_ms",
-    "voltage_output_v",
-    "contact_resistance_ohm",
-    "rail_wear_mm",
-    "gauge_deviation_mm",
-    "ballast_void_pct",
-    "motor_current_a",
-    "cycle_time_seconds",
-    "sensor_reliability_pct",
+    # shared
+    "days_since_service", "fault_count_30d",
+    # diesel_engine
+    "temperature_celsius", "vibration_level", "oil_pressure_bar", "fuel_efficiency_pct",
+    # bogie
+    "axle_temp_celsius", "wheel_profile_mm",
+    # brake_system
+    "pad_thickness_mm", "brake_cylinder_pressure_bar", "stopping_distance_m",
 ]
 TARGET = "health_score"
 
