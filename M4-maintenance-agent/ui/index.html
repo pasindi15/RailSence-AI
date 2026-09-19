@@ -329,14 +329,17 @@ body.dark .fd-note{background:#1e293b;border-color:#334155}
 .ov-alert-time{font-size:0.67rem;color:var(--text-light);margin-top:3px}
 
 /* ── Overview: improved report card ── */
-.ov-report-card{display:flex;gap:11px;padding:11px 0;border-bottom:1px solid var(--border)}
+.ov-report-card{display:flex;gap:11px;padding:12px 0;border-bottom:1px solid var(--border)}
 .ov-report-card:last-child{border-bottom:none;padding-bottom:0}
-.ov-report-left{display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0}
-.ov-report-dot{width:8px;height:8px;border-radius:50%;margin-top:4px}
+.ov-report-left{display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;padding-top:3px}
+.ov-report-dot{width:8px;height:8px;border-radius:50%}
 .ov-report-body{flex:1;min-width:0}
-.ov-report-title{font-size:0.8rem;font-weight:600;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ov-report-hdr{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:2px}
+.ov-report-title{font-size:0.8rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
+.ov-report-time{font-size:0.67rem;color:var(--text-light);white-space:nowrap;flex-shrink:0}
 .ov-report-sum{font-size:0.75rem;color:var(--text-muted);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .ov-report-meta{display:flex;gap:6px;align-items:center;margin-top:5px;flex-wrap:wrap}
+.ov-report-pill{font-size:0.64rem;font-weight:600;padding:2px 7px;border-radius:20px;background:var(--surface);border:1px solid var(--border);color:var(--text-muted)}
 
 /* ── Field Observation Modal ── */
 .rpt-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:400;display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;pointer-events:none;transition:opacity 0.2s ease}
@@ -944,8 +947,8 @@ body.dark .rpt-tag{background:#1e3a5f;border-color:#1e40af;color:#93c5fd}
       <div class="card">
         <div class="card-hdr" style="margin-bottom:14px">
           <div>
-            <div class="card-title">Recent Technician Reports</div>
-            <div class="card-sub">Latest submitted field reports</div>
+            <div class="card-title">Field Observation Log</div>
+            <div class="card-sub">Latest submitted reports · <span id="rpt-feed-count">persisted across restarts</span></div>
           </div>
           <button class="btn-add-report" onclick="openReportModal()">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -1833,17 +1836,45 @@ function renderAlerts(events){
   if(!a.length){el.innerHTML='<div class="empty-state" style="padding:12px 0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:0 auto 6px"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>No alerts — fleet healthy</div>';return}
   el.innerHTML=a.slice(0,4).map(x=>`<div class="ov-alert-card"><div class="ov-alert-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div><div style="flex:1;min-width:0"><div class="ov-alert-title">${esc(x.asset_id||'?')} <span class="badge badge-red" style="font-size:0.62rem"><span class="badge-dot"></span>CRITICAL</span></div><div class="ov-alert-sub">${esc((x.asset_type||'').replace(/_/g,' '))} — health below threshold</div><div class="ov-alert-time">${esc(x.created_at||'')}</div></div></div>`).join('');
 }
+function _timeAgo(iso){
+  if(!iso) return '';
+  const diff=Date.now()-new Date(iso).getTime();
+  const m=Math.floor(diff/60000);
+  if(m<1) return 'just now';
+  if(m<60) return m+'m ago';
+  const h=Math.floor(m/60);
+  if(h<24) return h+'h ago';
+  return Math.floor(h/24)+'d ago';
+}
 function renderReports(reports){
   const el=document.getElementById('reports-list');
-  if(!reports.length){el.innerHTML='<div class="empty-state"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:5px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>No reports yet</div>';return}
-  el.innerHTML=reports.slice(0,5).map(r=>{
+  if(!reports||!reports.length){
+    el.innerHTML='<div class="empty-state"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:5px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>No reports yet — submit one with Log Observation</div>';
+    return;
+  }
+  const cntEl=document.getElementById('rpt-feed-count');
+  if(cntEl) cntEl.textContent=reports.length+' total · showing latest 10';
+  const sorted=[...reports].reverse().slice(0,10);
+  el.innerHTML=sorted.map(r=>{
     const hasFault=r.detected_fault_type&&r.detected_fault_type!=='none';
+    const dotColor=hasFault?'var(--amber)':'var(--green)';
+    const typeLbl=(r.asset_type||'').replace(/_/g,' ');
+    const parts=(r.parts_mentioned||[]).length;
+    const actions=(r.actions_taken||[]).length;
+    const timeStr=_timeAgo(r.received_at);
     return `<div class="ov-report-card">
-      <div class="ov-report-left"><div class="ov-report-dot" style="background:${hasFault?'var(--amber)':'var(--green)'}"></div></div>
+      <div class="ov-report-left"><div class="ov-report-dot" style="background:${dotColor}"></div></div>
       <div class="ov-report-body">
-        <div class="ov-report-title">${esc(r.asset_id)} · ${esc((r.asset_type||'').replace(/_/g,' '))} · ${esc(r.station)}</div>
+        <div class="ov-report-hdr">
+          <div class="ov-report-title">${esc(r.asset_id)} · ${esc(typeLbl)} · ${esc(r.station||'')}</div>
+          <div class="ov-report-time">${esc(timeStr)}</div>
+        </div>
         <div class="ov-report-sum">${esc(r.summary||'')}</div>
-        <div class="ov-report-meta"><span class="badge ${hasFault?'badge-amber':'badge-green'}">${esc(r.detected_fault_type||'none')}</span></div>
+        <div class="ov-report-meta">
+          <span class="badge ${hasFault?'badge-amber':'badge-green'}">${esc(r.detected_fault_type||'none')}</span>
+          ${parts>0?`<span class="ov-report-pill">${parts} part${parts>1?'s':''}</span>`:''}
+          ${actions>0?`<span class="ov-report-pill">${actions} action${actions>1?'s':''}</span>`:''}
+        </div>
       </div>
     </div>`;
   }).join('');
