@@ -58,7 +58,7 @@ body {
 }
 
 .app-shell {
-  max-width: 1200px;
+  max-width: 1380px;
   margin: 0 auto;
   padding: 20px 24px 60px;
 }
@@ -176,40 +176,80 @@ body {
   box-shadow: 0 3px 8px var(--primary-glow);
 }
 
-/* ── Navigation View Tabs ──────────────────────────────────────────── */
-.nav-tabs {
+/* ── Layout: Two-Column Sidebar & Content ──────────────────────────── */
+.app-body {
   display: flex;
-  gap: 6px;
-  margin-bottom: 22px;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.sidebar-nav {
+  width: 240px;
+  flex-shrink: 0;
   background: #FFFFFF;
-  padding: 6px;
   border-radius: var(--r-card);
   border: 1px solid var(--border-light);
   box-shadow: var(--shadow-sm);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: sticky;
+  top: 20px;
+}
+
+.sidebar-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sidebar-section-title {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text-placeholder);
+  padding: 4px 10px 2px;
+  font-family: 'Share Tech Mono', monospace;
 }
 
 .tab-btn {
-  flex: 1;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 11px 16px;
+  gap: 10px;
+  padding: 11px 14px;
   border: 1.5px solid transparent;
   border-radius: 10px;
   background: transparent;
-  color: var(--text-sub);
+  color: var(--text-label);
   font-family: inherit;
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.18s ease;
+  width: 100%;
+  text-align: left;
+}
+
+.tab-btn .tab-icon {
+  font-size: 16px;
+  width: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tab-btn .tab-text {
+  flex: 1;
 }
 
 .tab-btn:hover {
   color: var(--primary-hover);
   background: var(--primary-light);
   border-color: #A7F3D0;
+  transform: translateX(2px);
 }
 
 .tab-btn.active {
@@ -218,6 +258,90 @@ body {
   color: #FFFFFF;
   box-shadow: 0 4px 14px var(--primary-glow);
   font-weight: 700;
+  transform: none;
+}
+
+.sidebar-divider {
+  height: 1px;
+  background: var(--border-light);
+  margin: 2px 4px;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text-sub);
+  font-size: 12.5px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.18s ease;
+}
+
+.sidebar-link .tab-icon {
+  font-size: 15px;
+  width: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.sidebar-link:hover {
+  background: var(--primary-light);
+  color: var(--primary-hover);
+  transform: translateX(2px);
+}
+
+.sidebar-link .external-mark {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--text-placeholder);
+}
+
+.sidebar-link:hover .external-mark {
+  color: var(--primary);
+}
+
+.sidebar-status-card {
+  margin-top: 4px;
+  padding: 12px;
+  background: #F9FAFB;
+  border-radius: 10px;
+  border: 1px solid var(--border-light);
+}
+
+.sidebar-status-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  font-family: 'Share Tech Mono', monospace;
+  color: #065F46;
+  margin-bottom: 4px;
+}
+
+.sidebar-status-pill .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #10B981;
+  box-shadow: 0 0 6px #10B981;
+}
+
+.sidebar-status-text {
+  font-size: 11px;
+  color: var(--text-sub);
+  line-height: 1.4;
+}
+
+.app-main-content {
+  flex: 1;
+  min-width: 0;
 }
 
 /* ── View Panels ───────────────────────────────────────────────────── */
@@ -1509,6 +1633,13 @@ body {
 
 /* ── Responsive ────────────────────────────────────────────────────── */
 @media (max-width: 960px) {
+  .app-body {
+    flex-direction: column;
+  }
+  .sidebar-nav {
+    width: 100%;
+    position: static;
+  }
   .workflow-stepper {
     grid-template-columns: 1fr 1fr;
   }
@@ -1555,27 +1686,29 @@ body {
     <div class="header-status">
       <div class="clock-display" id="clock">12:00:00</div>
       <div class="badge-live">CENTRAL HUB CONNECTED</div>
-      <a href="http://localhost:5173" target="_blank" rel="noopener noreferrer" class="btn-portal-switch" title="Open M1 Passenger Assistant">
-        <span>💬 Passenger Assistant ↗</span>
-      </a>
-      <a href="/admin?tab=hub" class="btn-portal-switch" title="View Central Communication Hub Monitor">
-        <span>⚡ Hub Monitor</span>
-      </a>
-      <a href="/admin" class="btn-portal-switch">
-        <span>Staff & Admin Portal ➔</span>
-      </a>
     </div>
   </header>
 
-  <!-- Navigation View Tabs -->
-  <nav class="nav-tabs" role="tablist">
-    <button class="tab-btn active" id="tab-dashboard" onclick="navigateTo('/user')">
-      <span>⌂</span> Home Dashboard
-    </button>
-    <button class="tab-btn" id="tab-booking" onclick="navigateTo('/user/booking')">
-      <span>🎫</span> Train Booking Desk
-    </button>
-  </nav>
+  <!-- Application Body: Left Sidebar + Main Content -->
+  <div class="app-body">
+    <!-- Left Navigation Sidebar -->
+    <aside class="sidebar-nav" role="navigation" aria-label="Passenger Portal Navigation">
+      <button class="tab-btn active" id="tab-dashboard" onclick="navigateTo('/user')">
+        <span class="tab-icon">⌂</span>
+        <span class="tab-text">Home Dashboard</span>
+      </button>
+      <button class="tab-btn" id="tab-chat" onclick="navigateTo('/user/chat')">
+        <span class="tab-icon">💬</span>
+        <span class="tab-text">Passenger Assistant</span>
+      </button>
+      <button class="tab-btn" id="tab-booking" onclick="navigateTo('/user/booking')">
+        <span class="tab-icon">🎫</span>
+        <span class="tab-text">Train Booking Desk</span>
+      </button>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="app-main-content">
 
   <!-- ==================== VIEW 0: HOME DASHBOARD ==================== -->
   <main id="view-dashboard" class="view-panel active">
@@ -2181,7 +2314,10 @@ body {
     </div>
   </main>
 
-</div>
+    </div> <!-- /.app-main-content -->
+  </div> <!-- /.app-body -->
+
+</div> <!-- /.app-shell -->
 
 <!-- ── Application Logic ───────────────────────────────────────────── -->
 <script>
