@@ -84,11 +84,17 @@ Example format (one line per asset, pipe-separated, no extra text):
 - Step 2
 - Step 3
 
+**Action:** (ONLY when the engineer explicitly asks to create, submit, file, or add a report for a specific asset — omit entirely otherwise)
+create_report | ASSET_ID | asset_type_snake_case | Station
+Example: create_report | BG-1003 | bogie | Kandy
+Rules for this section: use the exact asset_id from context; asset_type must be one of: diesel_engine, bogie, brake_system; station is the last known service station from the data.
+
 **Reference:** Manual section, threshold, or interval that applies.
 
 Rules:
 - When fleet/asset data is provided, ALWAYS output the **Assets:** section with one pipe-separated line per asset. Use the exact format: ASSET_ID | Asset Type | score | STATUS.
 - In **Details:**, describe findings (fault types, days since service, recommendations) — do NOT repeat the asset table here.
+- When the engineer asks to CREATE/SUBMIT/FILE/ADD a report for an asset, output the **Action:** section with the create_report line. ALSO provide a brief **Status:** confirming you are opening the report form.
 - When manual context is provided but does NOT match the question topic, IGNORE it and answer from expert knowledge. Label the Reference as "General guidance — SLR standard practice".
 - When manual context IS relevant, cite it in the Reference line.
 - Use only bullet points for lists — no tables, no numbered lists, no markdown headings.
