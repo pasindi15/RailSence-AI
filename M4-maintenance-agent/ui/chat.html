@@ -1346,7 +1346,9 @@ async function doEngineerLogin(e){
   try{
     var res=await fetch('/api/engineer-login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({engineer_id:id,password:pw})});
     if(res.ok){
+      var d=await res.json().catch(function(){return{};});
       localStorage.setItem('m4_eng_auth','1');
+      if(d.token) localStorage.setItem('m4_eng_token',d.token);
       var g=document.getElementById('login-gate');
       g.style.transition='opacity 0.35s ease';g.style.opacity='0';
       setTimeout(function(){g.remove();},370);
@@ -1363,6 +1365,7 @@ async function doEngineerLogin(e){
 function engineerLogout(){
   if(confirm('Sign out of the Maintenance Portal?')){
     localStorage.removeItem('m4_eng_auth');
+    localStorage.removeItem('m4_eng_token');
     location.replace('http://localhost:3002');
   }
 }
