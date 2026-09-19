@@ -59,6 +59,7 @@ AGENT_DIR = Path(__file__).parent
 DATA_PATH = AGENT_DIR / "data" / "assets_history.csv"
 AUDIT_LOG = AGENT_DIR / "data" / "audit_log.jsonl"
 FLAGS_PATH = AGENT_DIR / "data" / "train_flags.jsonl"
+REPORTS_PATH = AGENT_DIR / "data" / "field_reports.jsonl"
 UI_DIR = AGENT_DIR / "ui"
 
 _in_memory_events: list[dict] = []
@@ -96,6 +97,32 @@ def _load_flags_from_disk() -> None:
         logger.warning("Could not load train flags from disk: %s", exc)
 
 
+def _persist_report(record: dict) -> None:
+    """Append a single field report to disk so reports survive server restarts."""
+    try:
+        REPORTS_PATH.parent.mkdir(parents=True, exist_ok=True)
+        with open(REPORTS_PATH, "a", encoding="utf-8") as f:
+            f.write(json.dumps(record) + "\n")
+    except Exception as exc:
+        logger.warning("Could not persist field report: %s", exc)
+
+
+def _load_reports_from_disk() -> None:
+    """Restore _in_memory_reports from the JSONL file on startup."""
+    if not REPORTS_PATH.exists():
+        return
+    try:
+        with open(REPORTS_PATH, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    _in_memory_reports.append(json.loads(line))
+        if _in_memory_reports:
+            logger.info("Restored %d field report(s) from disk", len(_in_memory_reports))
+    except Exception as exc:
+        logger.warning("Could not load field reports from disk: %s", exc)
+
+
 # Simple cache — avoids hitting Supabase on every request
 _asset_cache: list[dict] = []
 _asset_cache_ts: float = 0.0
@@ -104,8 +131,9 @@ _CACHE_TTL = 60.0  # seconds
 
 @asynccontextmanager
 async def lifespan(_app):
-    # Restore maintenance flags from disk so flagged trains stay blocked after restart
+    # Restore maintenance flags and field reports from disk across restarts
     _load_flags_from_disk()
+    _load_reports_from_disk()
 
     # Reconcile: any train still OUT_OF_SERVICE in Supabase that isn't in our flag file
     # gets a minimal stub entry so /api/train-status keeps returning the right answer.
@@ -388,7 +416,7 @@ async def api_dashboard(request: Request):
         except Exception:
             audit_count = 0
 
-    recent_reports = _in_memory_reports[-10:]
+    recent_reports = _in_memory_reports[-20:]
     recent_events = supabase_store.fetch_recent_events(20) or _in_memory_events[-20:]
 
     manual_sections_count = len(manual_retriever._load_manual_sections())
@@ -557,6 +585,7 @@ async def maintenance_report(request: Request, payload: MaintenanceReportRequest
         "received_at": datetime.now(timezone.utc).isoformat(),
     }
     _in_memory_reports.append(report_record)
+    _persist_report(report_record)
 
     client_ip = request.client.host if request.client else "unknown"
     _write_audit("maintenance_report_submitted", client_ip, {
