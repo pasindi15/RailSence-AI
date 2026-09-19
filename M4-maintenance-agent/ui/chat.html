@@ -919,12 +919,14 @@ function escAttr(str) {
   var g=document.getElementById('login-gate');
   var params=new URLSearchParams(window.location.search);
   if(params.get('m4auth')==='1'){
-    sessionStorage.setItem('m4_eng_auth','1');
+    localStorage.setItem('m4_eng_auth','1');
     history.replaceState(null,'',window.location.pathname);
     g.style.display='none';
     return;
   }
-  if(sessionStorage.getItem('m4_eng_auth')==='1'){g.style.display='none';}
+  if(localStorage.getItem('m4_eng_auth')==='1'){g.style.display='none';return;}
+  // Not authenticated — redirect to robot login
+  window.location.replace('http://localhost:3002');
 })();
 async function doEngineerLogin(e){
   e.preventDefault();
@@ -937,7 +939,7 @@ async function doEngineerLogin(e){
   try{
     var res=await fetch('/api/engineer-login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({engineer_id:id,password:pw})});
     if(res.ok){
-      sessionStorage.setItem('m4_eng_auth','1');
+      localStorage.setItem('m4_eng_auth','1');
       var g=document.getElementById('login-gate');
       g.style.transition='opacity 0.35s ease';g.style.opacity='0';
       setTimeout(function(){g.remove();},370);
@@ -953,8 +955,8 @@ async function doEngineerLogin(e){
 }
 function engineerLogout(){
   if(confirm('Sign out of the Maintenance Portal?')){
-    sessionStorage.removeItem('m4_eng_auth');
-    location.reload();
+    localStorage.removeItem('m4_eng_auth');
+    location.replace('http://localhost:3002');
   }
 }
 </script>
