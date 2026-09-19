@@ -8,23 +8,26 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Share+Tech+Mono&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg:           #080C14;
-  --panel-dark:   #0D121F;
-  --card:         rgba(17, 24, 39, 0.88);
-  --card-hi:      rgba(27, 36, 56, 0.95);
-  --border:       rgba(59, 130, 246, 0.22);
-  --border-hi:    rgba(96, 165, 250, 0.45);
-  --ink:          #E2E8F0;
+  --bg:           #060A12;
+  --panel-dark:   #0C1120;
+  --card:         rgba(14, 20, 36, 0.90);
+  --card-hi:      rgba(22, 32, 54, 0.97);
+  --border:       rgba(59, 130, 246, 0.20);
+  --border-hi:    rgba(96, 165, 250, 0.50);
+  --ink:          #CBD5E1;
   --ink-bright:   #FFFFFF;
-  --muted:        #64748B;
+  --muted:        #4B5563;
   --muted-hi:     #94A3B8;
   --brand:        #3B82F6;
+  --brand-light:  #60A5FA;
+  --brand-grad:   linear-gradient(135deg, #1D4ED8 0%, #3B82F6 55%, #60A5FA 100%);
   --brand-gold:   #C9A22A;
   --signal-g:     #10B981;
   --signal-a:     #F59E0B;
   --signal-r:     #EF4444;
-  --r:            10px;
-  --shadow:       0 8px 32px rgba(0, 0, 0, 0.85);
+  --r:            12px;
+  --shadow:       0 8px 32px rgba(0, 0, 0, 0.90), 0 2px 8px rgba(0,0,0,0.5);
+  --shadow-card:  0 4px 24px rgba(0, 0, 0, 0.70), 0 1px 4px rgba(59,130,246,0.06);
   --blur:         blur(20px);
   --ease:         cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -47,9 +50,9 @@ body::before {
   pointer-events: none;
   z-index: 0;
   background-image:
-    linear-gradient(rgba(59, 130, 246, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(59, 130, 246, 0.03) 1px, transparent 1px);
-  background-size: 32px 32px;
+    linear-gradient(rgba(59, 130, 246, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(59, 130, 246, 0.025) 1px, transparent 1px);
+  background-size: 40px 40px;
 }
 
 body::after {
@@ -59,16 +62,17 @@ body::after {
   pointer-events: none;
   z-index: 0;
   background:
-    radial-gradient(ellipse 900px 600px at 15% 10%, rgba(37, 99, 235, 0.08) 0%, transparent 65%),
-    radial-gradient(ellipse 700px 500px at 85% 85%, rgba(201, 162, 42, 0.05) 0%, transparent 60%);
+    radial-gradient(ellipse 1000px 700px at 10% 5%,  rgba(29, 78, 216, 0.12) 0%, transparent 60%),
+    radial-gradient(ellipse 800px 600px at 90% 90%,  rgba(201, 162, 42, 0.07) 0%, transparent 55%),
+    radial-gradient(ellipse 600px 400px at 60% 40%,  rgba(16, 185, 129, 0.04) 0%, transparent 50%);
 }
 
 .app-shell {
   position: relative;
   z-index: 1;
-  max-width: 1340px;
+  max-width: 1380px;
   margin: 0 auto;
-  padding: 16px 20px 60px;
+  padding: 16px 24px 60px;
 }
 
 /* ── Top Header ────────────────────────────────────────────────────── */
@@ -76,53 +80,72 @@ body::after {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 20px;
+  padding: 14px 22px;
   border-radius: var(--r);
-  background: var(--card);
+  background: linear-gradient(135deg, rgba(14, 20, 40, 0.96) 0%, rgba(18, 26, 48, 0.96) 100%);
   backdrop-filter: var(--blur);
   border: 1px solid var(--border);
+  border-bottom: 1px solid rgba(59, 130, 246, 0.30);
   box-shadow: var(--shadow);
-  margin-bottom: 16px;
+  margin-bottom: 14px;
+  position: relative;
+  overflow: hidden;
+}
+
+.top-nav::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(59,130,246,0.5) 30%, rgba(96,165,250,0.8) 50%, rgba(59,130,246,0.5) 70%, transparent 100%);
 }
 
 .brand-area {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 13px;
 }
 
 .brand-emblem {
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
-  background: linear-gradient(135deg, rgba(37, 99, 235, 0.3), rgba(30, 58, 138, 0.4));
-  border: 1px solid var(--border-hi);
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #1D4ED8 0%, #2563EB 50%, #3B82F6 100%);
+  border: 1px solid rgba(96, 165, 250, 0.5);
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4), inset 0 1px 0 rgba(255,255,255,0.15);
   display: grid;
   place-items: center;
-  font-size: 20px;
+  font-size: 21px;
 }
 
 .brand-title {
   font-family: 'Playfair Display', serif;
-  font-size: 18px;
+  font-size: 19px;
   font-weight: 700;
   color: var(--ink-bright);
   letter-spacing: 0.3px;
+  background: linear-gradient(90deg, #FFFFFF 0%, #BAD4FF 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .brand-subtitle {
-  font-size: 10.5px;
+  font-size: 10px;
   color: #60A5FA;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.8px;
+  letter-spacing: 1px;
   font-family: 'Share Tech Mono', monospace;
+  margin-top: 1px;
 }
 
 .header-status-grid {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
 }
 
@@ -130,56 +153,73 @@ body::after {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 3px 8px;
-  border-radius: 4px;
-  font-size: 10.5px;
+  padding: 4px 9px;
+  border-radius: 5px;
+  font-size: 10px;
   font-family: 'Share Tech Mono', monospace;
-  background: rgba(15, 23, 42, 0.8);
-  border: 1px solid var(--border);
+  background: rgba(10, 15, 30, 0.85);
+  border: 1px solid rgba(59, 130, 246, 0.18);
   color: var(--muted-hi);
+  transition: border-color 0.2s;
 }
+
+.service-pill:hover { border-color: rgba(59, 130, 246, 0.4); }
 
 .service-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #64748B;
+  background: #374151;
+  flex-shrink: 0;
 }
 
-.service-dot.online { background: #10B981; box-shadow: 0 0 5px #10B981; }
-.service-dot.offline { background: #EF4444; }
+.service-dot.online {
+  background: #10B981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25), 0 0 6px #10B981;
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+.service-dot.offline { background: #EF4444; box-shadow: 0 0 4px rgba(239,68,68,0.4); }
+
+@keyframes pulse-dot {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(16,185,129,0.25), 0 0 6px #10B981; }
+  50%       { box-shadow: 0 0 0 4px rgba(16,185,129,0.12), 0 0 10px #10B981; }
+}
 
 .btn-portal-switch {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 7px 14px;
-  border-radius: 6px;
-  background: rgba(201, 162, 42, 0.15);
-  border: 1px solid rgba(201, 162, 42, 0.4);
+  padding: 8px 16px;
+  border-radius: 7px;
+  background: linear-gradient(135deg, rgba(201, 162, 42, 0.18) 0%, rgba(180, 140, 30, 0.12) 100%);
+  border: 1px solid rgba(201, 162, 42, 0.45);
   color: #FDE68A;
   font-size: 12px;
   font-weight: 600;
   text-decoration: none;
-  transition: all 0.2s;
+  transition: all 0.2s var(--ease);
+  white-space: nowrap;
 }
 
 .btn-portal-switch:hover {
-  background: rgba(201, 162, 42, 0.28);
+  background: linear-gradient(135deg, rgba(201, 162, 42, 0.32) 0%, rgba(180, 140, 30, 0.22) 100%);
   border-color: #FBBF24;
+  box-shadow: 0 4px 14px rgba(201, 162, 42, 0.2);
   transform: translateY(-1px);
+  color: #FEF3C7;
 }
 
 /* ── Main Navigation Bar ───────────────────────────────────────────── */
 .admin-nav-bar {
   display: flex;
-  gap: 6px;
+  gap: 4px;
   margin-bottom: 20px;
-  background: rgba(13, 18, 31, 0.8);
-  padding: 6px;
+  background: rgba(10, 15, 28, 0.85);
+  padding: 5px;
   border-radius: var(--r);
   border: 1px solid var(--border);
   backdrop-filter: var(--blur);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
 }
 
 .admin-nav-tab {
@@ -187,29 +227,43 @@ body::after {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 11px 14px;
+  gap: 7px;
+  padding: 10px 12px;
   border: 1px solid transparent;
-  border-radius: 6px;
+  border-radius: 8px;
   background: transparent;
   color: var(--muted-hi);
   font-family: inherit;
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.18s;
+  transition: all 0.18s var(--ease);
+  position: relative;
 }
 
 .admin-nav-tab:hover {
   color: var(--ink-bright);
-  background: rgba(59, 130, 246, 0.09);
+  background: rgba(59, 130, 246, 0.08);
+  border-color: rgba(59, 130, 246, 0.15);
 }
 
 .admin-nav-tab.active {
-  background: linear-gradient(135deg, rgba(37, 99, 235, 0.25), rgba(30, 58, 138, 0.15));
-  border-color: var(--border-hi);
-  color: var(--ink-bright);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+  background: linear-gradient(135deg, rgba(29, 78, 216, 0.28) 0%, rgba(37, 99, 235, 0.18) 100%);
+  border-color: rgba(96, 165, 250, 0.45);
+  color: #FFFFFF;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255,255,255,0.06);
+}
+
+.admin-nav-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 20%;
+  right: 20%;
+  height: 2px;
+  border-radius: 2px 2px 0 0;
+  background: var(--brand-grad);
+  opacity: 0.9;
 }
 
 /* ── Sub Navigation ────────────────────────────────────────────────── */
@@ -217,15 +271,16 @@ body::after {
   display: flex;
   gap: 8px;
   margin-bottom: 16px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--border);
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(59, 130, 246, 0.15);
+  flex-wrap: wrap;
 }
 
 .sub-chip {
-  padding: 6px 14px;
+  padding: 6px 15px;
   border-radius: 20px;
-  background: rgba(15, 23, 42, 0.7);
-  border: 1px solid var(--border);
+  background: rgba(12, 17, 32, 0.85);
+  border: 1px solid rgba(59, 130, 246, 0.18);
   color: var(--muted-hi);
   font-size: 12px;
   font-weight: 600;
@@ -235,19 +290,21 @@ body::after {
 
 .sub-chip:hover {
   color: var(--ink-bright);
-  border-color: var(--border-hi);
+  border-color: rgba(96, 165, 250, 0.45);
+  background: rgba(37, 99, 235, 0.10);
 }
 
 .sub-chip.active {
-  background: #2563EB;
+  background: linear-gradient(135deg, #1D4ED8 0%, #2563EB 100%);
   border-color: #60A5FA;
   color: #fff;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
 }
 
 /* ── View Panels ───────────────────────────────────────────────────── */
 .view-panel {
   display: none;
-  animation: fadeIn 0.22s var(--ease);
+  animation: fadeIn 0.25s var(--ease);
 }
 
 .view-panel.active {
@@ -255,8 +312,8 @@ body::after {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(5px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 /* ── KPI Grid ──────────────────────────────────────────────────────── */
@@ -271,75 +328,126 @@ body::after {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--r);
-  padding: 16px 18px;
-  box-shadow: var(--shadow);
+  padding: 18px 20px 16px;
+  box-shadow: var(--shadow-card);
   backdrop-filter: var(--blur);
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 5px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
+
+.kpi-card:hover {
+  border-color: rgba(96, 165, 250, 0.35);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.7), 0 0 0 1px rgba(59,130,246,0.12);
+}
+
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  border-radius: var(--r) var(--r) 0 0;
+}
+
+.kpi-card:nth-child(1)::before { background: linear-gradient(90deg, #3B82F6, #60A5FA); }
+.kpi-card:nth-child(2)::before { background: linear-gradient(90deg, #059669, #34D399); }
+.kpi-card:nth-child(3)::before { background: linear-gradient(90deg, #D97706, #FBBF24); }
+.kpi-card:nth-child(4)::before { background: linear-gradient(90deg, #2563EB, #93C5FD); }
+.kpi-card:nth-child(5)::before { background: linear-gradient(90deg, #7C3AED, #A78BFA); }
+
+.kpi-card::after {
+  content: '';
+  position: absolute;
+  top: 0; right: 0;
+  width: 80px; height: 80px;
+  border-radius: 0 var(--r) 0 100%;
+  opacity: 0.04;
+}
+.kpi-card:nth-child(1)::after { background: #60A5FA; }
+.kpi-card:nth-child(2)::after { background: #34D399; }
+.kpi-card:nth-child(3)::after { background: #FBBF24; }
+.kpi-card:nth-child(4)::after { background: #93C5FD; }
+.kpi-card:nth-child(5)::after { background: #A78BFA; }
 
 .kpi-title {
-  font-size: 11px;
+  font-size: 10.5px;
   color: var(--muted-hi);
   text-transform: uppercase;
-  letter-spacing: 0.6px;
-  font-weight: 600;
-}
-
-.kpi-val {
-  font-size: 26px;
-  font-weight: 800;
-  color: var(--ink-bright);
+  letter-spacing: 0.7px;
+  font-weight: 700;
   font-family: 'Share Tech Mono', monospace;
 }
 
-.kpi-note {
-  font-size: 11px;
-  color: var(--muted);
+.kpi-val {
+  font-size: 30px;
+  font-weight: 800;
+  color: var(--ink-bright);
+  font-family: 'Share Tech Mono', monospace;
+  line-height: 1.1;
+  margin: 2px 0;
 }
 
-/* ── Service Matrix Table ──────────────────────────────────────────── */
+.kpi-note {
+  font-size: 10.5px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+/* ── Card Sections ─────────────────────────────────────────────────── */
 .card-section {
-  background: var(--card);
+  background: linear-gradient(135deg, rgba(14, 20, 38, 0.92) 0%, rgba(18, 26, 48, 0.90) 100%);
   border: 1px solid var(--border);
   border-radius: var(--r);
-  padding: 20px;
+  padding: 22px;
   margin-bottom: 20px;
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-card);
   backdrop-filter: var(--blur);
+  transition: border-color 0.2s;
+}
+
+.card-section:hover {
+  border-color: rgba(59, 130, 246, 0.30);
 }
 
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(59, 130, 246, 0.12);
 }
 
 .card-title {
   font-size: 15px;
   font-weight: 700;
   color: var(--ink-bright);
+  letter-spacing: -0.1px;
 }
 
 .btn-refresh {
-  background: rgba(30, 41, 59, 0.8);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  color: var(--ink);
-  padding: 6px 12px;
+  background: rgba(22, 32, 54, 0.9);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  border-radius: 7px;
+  color: var(--muted-hi);
+  padding: 7px 13px;
   font-size: 11.5px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s;
+  font-family: inherit;
 }
 
 .btn-refresh:hover {
   border-color: var(--brand);
   color: var(--ink-bright);
+  background: rgba(37, 99, 235, 0.12);
 }
 
+/* ── Status Table ──────────────────────────────────────────────────── */
 .status-table {
   width: 100%;
   border-collapse: collapse;
@@ -348,34 +456,43 @@ body::after {
 
 .status-table th {
   text-align: left;
-  padding: 10px 12px;
-  font-size: 11px;
-  color: var(--muted);
+  padding: 10px 14px;
+  font-size: 10.5px;
+  color: var(--muted-hi);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  border-bottom: 1px solid var(--border);
+  letter-spacing: 0.6px;
+  font-weight: 700;
+  border-bottom: 1px solid rgba(59, 130, 246, 0.20);
+  background: rgba(10, 15, 30, 0.4);
+  font-family: 'Share Tech Mono', monospace;
 }
 
 .status-table td {
-  padding: 11px 12px;
-  border-bottom: 1px solid rgba(59, 130, 246, 0.1);
+  padding: 11px 14px;
+  border-bottom: 1px solid rgba(59, 130, 246, 0.08);
   color: var(--ink);
+  transition: background 0.12s;
+}
+
+.status-table tbody tr:hover td {
+  background: rgba(59, 130, 246, 0.06);
 }
 
 .badge-tag {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 2px 7px;
-  border-radius: 4px;
-  font-size: 11px;
-  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 5px;
+  font-size: 10.5px;
+  font-weight: 700;
   font-family: 'Share Tech Mono', monospace;
+  letter-spacing: 0.3px;
 }
 
-.badge-green { background: rgba(16, 185, 129, 0.15); color: #34D399; border: 1px solid rgba(16, 185, 129, 0.35); }
-.badge-red { background: rgba(239, 68, 68, 0.15); color: #F87171; border: 1px solid rgba(239, 68, 68, 0.35); }
-.badge-yellow { background: rgba(245, 158, 11, 0.15); color: #FBBF24; border: 1px solid rgba(245, 158, 11, 0.35); }
+.badge-green  { background: rgba(16, 185, 129, 0.12); color: #34D399; border: 1px solid rgba(16, 185, 129, 0.30); }
+.badge-red    { background: rgba(239, 68, 68, 0.12);  color: #F87171; border: 1px solid rgba(239, 68, 68, 0.30); }
+.badge-yellow { background: rgba(245, 158, 11, 0.12); color: #FBBF24; border: 1px solid rgba(245, 158, 11, 0.30); }
 
 /* ── Embedded Frame Views ──────────────────────────────────────────── */
 .embedded-frame-container {
@@ -384,8 +501,9 @@ body::after {
   border-radius: var(--r);
   border: 1px solid var(--border);
   overflow: hidden;
-  background: #0D1117;
+  background: #0A0F1C;
   position: relative;
+  box-shadow: var(--shadow-card);
 }
 
 .embedded-frame {
@@ -398,13 +516,13 @@ body::after {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 16px;
-  background: #090D16;
+  padding: 9px 16px;
+  background: rgba(8, 12, 22, 0.95);
   border-bottom: 1px solid var(--border);
   font-size: 12px;
 }
 
-/* ── Admin Adjudication Cards (Fraud & Cancellations) ──────────────── */
+/* ── Admin Adjudication Cards ──────────────────────────────────────── */
 .admin-cases-grid {
   display: flex;
   flex-direction: column;
@@ -412,13 +530,21 @@ body::after {
 }
 
 .admin-case-card {
-  background: rgba(15, 23, 42, 0.7);
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  background: rgba(12, 18, 34, 0.80);
+  border: 1px solid rgba(59, 130, 246, 0.18);
+  border-left: 3px solid rgba(59, 130, 246, 0.55);
+  border-radius: 10px;
   padding: 16px 18px;
   display: flex;
   flex-direction: column;
   gap: 10px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.admin-case-card:hover {
+  border-color: rgba(96, 165, 250, 0.40);
+  border-left-color: var(--brand);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
 }
 
 .case-top-row {
@@ -429,9 +555,10 @@ body::after {
 
 .case-ref {
   font-family: 'Share Tech Mono', monospace;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
-  color: #60A5FA;
+  color: #93C5FD;
+  letter-spacing: 0.5px;
 }
 
 .case-grid-details {
@@ -439,9 +566,10 @@ body::after {
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 8px 16px;
   font-size: 12.5px;
-  padding: 10px 12px;
-  background: rgba(10, 14, 26, 0.7);
-  border-radius: 6px;
+  padding: 10px 14px;
+  background: rgba(8, 12, 24, 0.75);
+  border-radius: 8px;
+  border: 1px solid rgba(59, 130, 246, 0.10);
 }
 
 .case-actions-row {
@@ -450,43 +578,53 @@ body::after {
   gap: 10px;
   margin-top: 6px;
   padding-top: 10px;
-  border-top: 1px solid rgba(59, 130, 246, 0.15);
+  border-top: 1px solid rgba(59, 130, 246, 0.12);
 }
 
 .btn-approve {
-  background: #059669;
-  border: none;
+  background: linear-gradient(135deg, #065F46 0%, #059669 100%);
+  border: 1px solid rgba(16, 185, 129, 0.4);
   color: #fff;
-  padding: 7px 16px;
-  border-radius: 6px;
+  padding: 8px 18px;
+  border-radius: 7px;
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.15s;
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.25);
 }
 
-.btn-approve:hover { background: #10B981; }
+.btn-approve:hover {
+  background: linear-gradient(135deg, #047857 0%, #10B981 100%);
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+  transform: translateY(-1px);
+}
 
 .btn-reject {
-  background: rgba(220, 38, 38, 0.85);
-  border: none;
+  background: linear-gradient(135deg, rgba(153, 27, 27, 0.9) 0%, rgba(220, 38, 38, 0.85) 100%);
+  border: 1px solid rgba(239, 68, 68, 0.4);
   color: #fff;
-  padding: 7px 16px;
-  border-radius: 6px;
+  padding: 8px 18px;
+  border-radius: 7px;
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.15s;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.2);
 }
 
-.btn-reject:hover { background: #EF4444; }
+.btn-reject:hover {
+  background: linear-gradient(135deg, rgba(185, 28, 28, 0.95) 0%, #EF4444 100%);
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.35);
+  transform: translateY(-1px);
+}
 
 /* ── Modals ────────────────────────────────────────────────────────── */
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(8px);
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(10px);
   z-index: 999;
   display: none;
   place-items: center;
@@ -497,12 +635,12 @@ body::after {
 
 .modal-card {
   width: 100%;
-  max-width: 540px;
-  background: var(--card-hi);
-  border: 1px solid var(--border-hi);
-  border-radius: var(--r);
-  padding: 24px;
-  box-shadow: var(--shadow);
+  max-width: 560px;
+  background: linear-gradient(135deg, rgba(18, 26, 50, 0.98) 0%, rgba(22, 32, 60, 0.98) 100%);
+  border: 1px solid rgba(96, 165, 250, 0.40);
+  border-radius: 14px;
+  padding: 26px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(59,130,246,0.08);
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -510,18 +648,19 @@ body::after {
 
 .modal-textarea {
   width: 100%;
-  padding: 10px 12px;
-  background: rgba(10, 15, 26, 0.8);
-  border: 1px solid var(--border);
-  border-radius: 6px;
+  padding: 10px 13px;
+  background: rgba(8, 12, 24, 0.90);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  border-radius: 7px;
   color: var(--ink-bright);
   font-family: inherit;
   font-size: 13px;
   outline: none;
   resize: vertical;
+  transition: border-color 0.15s;
 }
 
-.modal-textarea:focus { border-color: var(--brand); }
+.modal-textarea:focus { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(59,130,246,0.10); }
 
 .quick-chips-row {
   display: flex;
@@ -530,22 +669,24 @@ body::after {
 }
 
 .chip-btn {
-  background: rgba(30, 41, 59, 0.7);
-  border: 1px solid var(--border);
-  border-radius: 4px;
+  background: rgba(22, 32, 54, 0.85);
+  border: 1px solid rgba(59, 130, 246, 0.22);
+  border-radius: 5px;
   color: var(--muted-hi);
-  padding: 4px 8px;
+  padding: 5px 10px;
   font-size: 11px;
   cursor: pointer;
+  transition: all 0.13s;
+  font-family: inherit;
 }
 
-.chip-btn:hover { color: var(--ink-bright); border-color: var(--brand); }
+.chip-btn:hover { color: var(--ink-bright); border-color: var(--brand); background: rgba(37,99,235,0.12); }
 
 .nlp-preview-card {
-  padding: 10px 14px;
-  border-radius: 6px;
-  background: rgba(37, 99, 235, 0.12);
-  border: 1px solid rgba(59, 130, 246, 0.35);
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: rgba(29, 78, 216, 0.10);
+  border: 1px solid rgba(59, 130, 246, 0.30);
   font-size: 12px;
 }
 </style>
@@ -662,26 +803,26 @@ body::after {
 
     <!-- Operational Shortcuts -->
     <div class="card-section">
-      <div class="card-title" style="margin-bottom:12px;">Quick Action Dispatch Desks</div>
+      <div class="card-title" style="margin-bottom:14px;">Quick Action Dispatch Desks</div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));gap:12px;">
-        <button class="btn-refresh" style="padding:12px;text-align:left;" onclick="navigateTo('/admin/operations'); switchSubSection('operations', 'control-room');">
-          <strong style="color:var(--ink-bright);display:block;">🚦 Operations Control Room</strong>
+        <button onclick="navigateTo('/admin/operations'); switchSubSection('operations', 'control-room');" style="padding:14px 16px;text-align:left;background:linear-gradient(135deg,rgba(37,99,235,0.14) 0%,rgba(14,20,38,0.9) 100%);border:1px solid rgba(59,130,246,0.28);border-radius:10px;cursor:pointer;transition:all 0.18s;font-family:inherit;">
+          <strong style="color:#93C5FD;display:block;font-size:13px;margin-bottom:4px;">Operations Control Room</strong>
           <span style="font-size:11.5px;color:var(--muted);">Live route delay heatmap &amp; crossing monitors</span>
         </button>
-        <button class="btn-refresh" style="padding:12px;text-align:left;" onclick="navigateTo('/admin/bookings'); switchSubSection('bookings', 'fraud');">
-          <strong style="color:var(--ink-bright);display:block;">🛡️ Fraud Review Adjudication</strong>
+        <button onclick="navigateTo('/admin/bookings'); switchSubSection('bookings', 'fraud');" style="padding:14px 16px;text-align:left;background:linear-gradient(135deg,rgba(220,38,38,0.12) 0%,rgba(14,20,38,0.9) 100%);border:1px solid rgba(239,68,68,0.25);border-radius:10px;cursor:pointer;transition:all 0.18s;font-family:inherit;">
+          <strong style="color:#FCA5A5;display:block;font-size:13px;margin-bottom:4px;">Fraud Review Adjudication</strong>
           <span style="font-size:11.5px;color:var(--muted);">Review flagged bookings &amp; authorize tickets</span>
         </button>
-        <button class="btn-refresh" style="padding:12px;text-align:left;" onclick="navigateTo('/admin/maintenance'); switchSubSection('maintenance', 'fleet');">
-          <strong style="color:var(--ink-bright);display:block;">🔧 Asset Intelligence Dashboard</strong>
+        <button onclick="navigateTo('/admin/maintenance'); switchSubSection('maintenance', 'fleet');" style="padding:14px 16px;text-align:left;background:linear-gradient(135deg,rgba(5,150,105,0.12) 0%,rgba(14,20,38,0.9) 100%);border:1px solid rgba(16,185,129,0.25);border-radius:10px;cursor:pointer;transition:all 0.18s;font-family:inherit;">
+          <strong style="color:#6EE7B7;display:block;font-size:13px;margin-bottom:4px;">Asset Intelligence Dashboard</strong>
           <span style="font-size:11.5px;color:var(--muted);">Fleet telemetry gauges &amp; RED status alerts</span>
         </button>
-        <button class="btn-refresh" style="padding:12px;text-align:left;" onclick="navigateTo('/admin/operations'); switchSubSection('operations', 'admin-console');">
-          <strong style="color:var(--ink-bright);display:block;">⚙️ M2 Model Retraining &amp; CRUD</strong>
+        <button onclick="navigateTo('/admin/operations'); switchSubSection('operations', 'admin-console');" style="padding:14px 16px;text-align:left;background:linear-gradient(135deg,rgba(124,58,237,0.12) 0%,rgba(14,20,38,0.9) 100%);border:1px solid rgba(139,92,246,0.25);border-radius:10px;cursor:pointer;transition:all 0.18s;font-family:inherit;">
+          <strong style="color:#C4B5FD;display:block;font-size:13px;margin-bottom:4px;">M2 Model Retraining &amp; CRUD</strong>
           <span style="font-size:11.5px;color:var(--muted);">Data quality check &amp; delay regressor rollback</span>
         </button>
-        <button class="btn-refresh" style="padding:12px;text-align:left;" onclick="navigateTo('/admin?tab=hub')">
-          <strong style="color:var(--ink-bright);display:block;">⚡ Communication Hub Monitor</strong>
+        <button onclick="navigateTo('/admin?tab=hub')" style="padding:14px 16px;text-align:left;background:linear-gradient(135deg,rgba(245,158,11,0.12) 0%,rgba(14,20,38,0.9) 100%);border:1px solid rgba(251,191,36,0.25);border-radius:10px;cursor:pointer;transition:all 0.18s;font-family:inherit;">
+          <strong style="color:#FDE68A;display:block;font-size:13px;margin-bottom:4px;">Communication Hub Monitor</strong>
           <span style="font-size:11.5px;color:var(--muted);">Live inter-agent routing telemetry &amp; timeline</span>
         </button>
       </div>
@@ -856,20 +997,20 @@ body::after {
       <div class="card-title">Security &amp; Fraud Agent (Port 8004)</div>
       <div style="font-size:12.5px;color:var(--muted);margin:4px 0 16px;">IsolationForest anomaly detection scoring passenger behavioral patterns</div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:12px;">
-        <div style="padding:14px;background:rgba(10,14,26,0.7);border:1px solid var(--border);border-radius:6px;">
-          <div style="font-size:11px;color:var(--muted);">ML Model Architecture</div>
-          <div style="font-size:16px;font-weight:700;color:var(--ink-bright);margin-top:4px;">IsolationForest</div>
-          <div style="font-size:11px;color:#34D399;margin-top:2px;">scikit-learn · 100 estimators</div>
+        <div style="padding:16px 18px;background:linear-gradient(135deg,rgba(5,150,105,0.10) 0%,rgba(10,14,26,0.85) 100%);border:1px solid rgba(16,185,129,0.22);border-left:3px solid #10B981;border-radius:10px;">
+          <div style="font-size:10.5px;color:var(--muted-hi);text-transform:uppercase;letter-spacing:0.5px;font-family:'Share Tech Mono',monospace;">ML Model Architecture</div>
+          <div style="font-size:16px;font-weight:800;color:#6EE7B7;margin-top:6px;">IsolationForest</div>
+          <div style="font-size:11px;color:var(--muted-hi);margin-top:3px;">scikit-learn · 100 estimators</div>
         </div>
-        <div style="padding:14px;background:rgba(10,14,26,0.7);border:1px solid var(--border);border-radius:6px;">
-          <div style="font-size:11px;color:var(--muted);">Feature Dimensions</div>
-          <div style="font-size:16px;font-weight:700;color:var(--ink-bright);margin-top:4px;">Behavioral Vectors</div>
-          <div style="font-size:11px;color:var(--muted-hi);margin-top:2px;">velocity, burst, conflict, time</div>
+        <div style="padding:16px 18px;background:linear-gradient(135deg,rgba(37,99,235,0.10) 0%,rgba(10,14,26,0.85) 100%);border:1px solid rgba(59,130,246,0.22);border-left:3px solid #3B82F6;border-radius:10px;">
+          <div style="font-size:10.5px;color:var(--muted-hi);text-transform:uppercase;letter-spacing:0.5px;font-family:'Share Tech Mono',monospace;">Feature Dimensions</div>
+          <div style="font-size:16px;font-weight:800;color:#93C5FD;margin-top:6px;">Behavioral Vectors</div>
+          <div style="font-size:11px;color:var(--muted-hi);margin-top:3px;">velocity, burst, conflict, time</div>
         </div>
-        <div style="padding:14px;background:rgba(10,14,26,0.7);border:1px solid var(--border);border-radius:6px;">
-          <div style="font-size:11px;color:var(--muted);">Adjudication Policy</div>
-          <div style="font-size:16px;font-weight:700;color:var(--ink-bright);margin-top:4px;">Human-in-the-Loop</div>
-          <div style="font-size:11px;color:#FBBF24;margin-top:2px;">ALLOW · REVIEW · REJECT</div>
+        <div style="padding:16px 18px;background:linear-gradient(135deg,rgba(245,158,11,0.10) 0%,rgba(10,14,26,0.85) 100%);border:1px solid rgba(251,191,36,0.22);border-left:3px solid #F59E0B;border-radius:10px;">
+          <div style="font-size:10.5px;color:var(--muted-hi);text-transform:uppercase;letter-spacing:0.5px;font-family:'Share Tech Mono',monospace;">Adjudication Policy</div>
+          <div style="font-size:16px;font-weight:800;color:#FDE68A;margin-top:6px;">Human-in-the-Loop</div>
+          <div style="font-size:11px;color:var(--muted-hi);margin-top:3px;">ALLOW · REVIEW · REJECT</div>
         </div>
       </div>
     </div>
@@ -878,11 +1019,11 @@ body::after {
     <div class="card-section">
       <div class="card-title">Agent Communication Hub (Port 8002) &amp; Audit Trail</div>
       <div style="font-size:12.5px;color:var(--muted);margin:4px 0 16px;">Central MCP-style message router, JWT verification, and audit ledger</div>
-      <div style="padding:14px;background:rgba(10,14,26,0.7);border:1px solid var(--border);border-radius:6px;font-family:'Share Tech Mono',monospace;font-size:12px;line-height:1.7;">
-        • Central Routing Target: <code>http://localhost:8002/messages</code><br>
-        • Database Store: <code>railsense_hub_audit.db</code> (SQLite) / Supabase <code>audit_logs</code><br>
-        • Message Lifecycle Statuses: <code>AUTHENTICATED</code> ➔ <code>ROUTED</code> ➔ <code>FAILED</code> ➔ <code>REJECTED</code><br>
-        • Rate Limiting: Per-agent token bucket flood protection active
+      <div style="padding:16px 18px;background:linear-gradient(135deg,rgba(245,158,11,0.07) 0%,rgba(8,12,24,0.88) 100%);border:1px solid rgba(245,158,11,0.18);border-left:3px solid #F59E0B;border-radius:10px;font-family:'Share Tech Mono',monospace;font-size:12px;line-height:1.9;color:var(--ink);">
+        <span style="color:#FDE68A;">•</span> Central Routing Target: <code style="color:#93C5FD;">http://localhost:8002/messages</code><br>
+        <span style="color:#FDE68A;">•</span> Database Store: <code style="color:#6EE7B7;">railsense_hub_audit.db</code> (SQLite) / Supabase <code style="color:#6EE7B7;">audit_logs</code><br>
+        <span style="color:#FDE68A;">•</span> Message Lifecycle: <code style="color:#34D399;">AUTHENTICATED</code> ➔ <code style="color:#60A5FA;">ROUTED</code> ➔ <code style="color:#F87171;">FAILED</code> ➔ <code style="color:#F87171;">REJECTED</code><br>
+        <span style="color:#FDE68A;">•</span> Rate Limiting: Per-agent token bucket flood protection active
       </div>
       <div style="margin-top:12px;">
         <button class="btn-refresh" onclick="navigateTo('/admin?tab=hub')">⚡ Open Live Communication Hub Monitor ➔</button>
@@ -908,49 +1049,49 @@ body::after {
 
       <!-- Hub Stat Cards -->
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin: 16px 0 24px;">
-        <div style="background: rgba(10,14,26,0.85); border: 1px solid var(--border); border-radius: 8px; padding: 16px;">
-          <div style="font-size: 11px; color: var(--muted); font-family: 'Share Tech Mono', monospace;">TOTAL MESSAGES ROUTED</div>
-          <div id="hub-stat-total" style="font-size: 26px; font-weight: 800; color: var(--ink-bright); margin-top: 4px;">0</div>
-          <div style="font-size: 11px; color: #34D399; margin-top: 4px;">Audited & Nonce-Protected</div>
+        <div style="background: linear-gradient(135deg,rgba(29,78,216,0.14) 0%,rgba(10,15,30,0.90) 100%); border: 1px solid rgba(59,130,246,0.28); border-top: 3px solid #3B82F6; border-radius: 10px; padding: 16px 18px; position:relative; overflow:hidden;">
+          <div style="font-size: 10.5px; color: var(--muted-hi); font-family: 'Share Tech Mono', monospace; letter-spacing:0.5px;">TOTAL MESSAGES ROUTED</div>
+          <div id="hub-stat-total" style="font-size: 30px; font-weight: 800; color: #93C5FD; margin-top: 5px; font-family:'Share Tech Mono',monospace;">0</div>
+          <div style="font-size: 10.5px; color: #34D399; margin-top: 4px;">Audited &amp; Nonce-Protected</div>
         </div>
-        <div style="background: rgba(10,14,26,0.85); border: 1px solid var(--border); border-radius: 8px; padding: 16px;">
-          <div style="font-size: 11px; color: var(--muted); font-family: 'Share Tech Mono', monospace;">DELIVERY SUCCESS RATE</div>
-          <div id="hub-stat-delivery" style="font-size: 26px; font-weight: 800; color: #34D399; margin-top: 4px;">100.0%</div>
-          <div style="font-size: 11px; color: var(--muted-hi); margin-top: 4px;"><span id="hub-stat-delivered">0</span> delivered / <span id="hub-stat-failed">0</span> failed</div>
+        <div style="background: linear-gradient(135deg,rgba(5,150,105,0.12) 0%,rgba(10,15,30,0.90) 100%); border: 1px solid rgba(16,185,129,0.25); border-top: 3px solid #10B981; border-radius: 10px; padding: 16px 18px;">
+          <div style="font-size: 10.5px; color: var(--muted-hi); font-family: 'Share Tech Mono', monospace; letter-spacing:0.5px;">DELIVERY SUCCESS RATE</div>
+          <div id="hub-stat-delivery" style="font-size: 30px; font-weight: 800; color: #34D399; margin-top: 5px; font-family:'Share Tech Mono',monospace;">100.0%</div>
+          <div style="font-size: 10.5px; color: var(--muted-hi); margin-top: 4px;"><span id="hub-stat-delivered">0</span> delivered / <span id="hub-stat-failed">0</span> failed</div>
         </div>
-        <div style="background: rgba(10,14,26,0.85); border: 1px solid var(--border); border-radius: 8px; padding: 16px;">
-          <div style="font-size: 11px; color: var(--muted); font-family: 'Share Tech Mono', monospace;">AVERAGE LATENCY</div>
-          <div id="hub-stat-latency" style="font-size: 26px; font-weight: 800; color: var(--brand); margin-top: 4px;">0.00 ms</div>
-          <div style="font-size: 11px; color: var(--muted-hi); margin-top: 4px;">Fast async dispatch</div>
+        <div style="background: linear-gradient(135deg,rgba(37,99,235,0.12) 0%,rgba(10,15,30,0.90) 100%); border: 1px solid rgba(96,165,250,0.25); border-top: 3px solid #60A5FA; border-radius: 10px; padding: 16px 18px;">
+          <div style="font-size: 10.5px; color: var(--muted-hi); font-family: 'Share Tech Mono', monospace; letter-spacing:0.5px;">AVERAGE LATENCY</div>
+          <div id="hub-stat-latency" style="font-size: 30px; font-weight: 800; color: #60A5FA; margin-top: 5px; font-family:'Share Tech Mono',monospace;">0.00 ms</div>
+          <div style="font-size: 10.5px; color: var(--muted-hi); margin-top: 4px;">Fast async dispatch</div>
         </div>
-        <div style="background: rgba(10,14,26,0.85); border: 1px solid var(--border); border-radius: 8px; padding: 16px;">
-          <div style="font-size: 11px; color: var(--muted); font-family: 'Share Tech Mono', monospace;">CIRCUIT BREAKER</div>
-          <div id="hub-stat-breaker" style="font-size: 18px; font-weight: 800; color: #34D399; margin-top: 8px;">● CLOSED (HEALTHY)</div>
-          <div style="font-size: 11px; color: var(--muted-hi); margin-top: 4px;">Fast-fail recovery enabled</div>
+        <div style="background: linear-gradient(135deg,rgba(5,150,105,0.10) 0%,rgba(10,15,30,0.90) 100%); border: 1px solid rgba(16,185,129,0.22); border-top: 3px solid #34D399; border-radius: 10px; padding: 16px 18px;">
+          <div style="font-size: 10.5px; color: var(--muted-hi); font-family: 'Share Tech Mono', monospace; letter-spacing:0.5px;">CIRCUIT BREAKER</div>
+          <div id="hub-stat-breaker" style="font-size: 17px; font-weight: 800; color: #34D399; margin-top: 10px; font-family:'Share Tech Mono',monospace;">● CLOSED (HEALTHY)</div>
+          <div style="font-size: 10.5px; color: var(--muted-hi); margin-top: 4px;">Fast-fail recovery enabled</div>
         </div>
       </div>
 
       <!-- Agent Registry Status -->
-      <div style="background: rgba(10,14,26,0.7); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 24px;">
-        <div style="font-weight: 700; font-size: 12.5px; color: var(--ink-bright); margin-bottom: 10px;">Registered Agent Network</div>
-        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-          <span style="display:flex;align-items:center;gap:6px;padding:6px 12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:20px;font-family:'Share Tech Mono',monospace;font-size:12px;">
-            <span style="width:8px;height:8px;border-radius:50%;background:#34D399;"></span> passenger-agent (Port 8001 / Gateway)
+      <div style="background: linear-gradient(135deg,rgba(10,15,30,0.90) 0%,rgba(14,20,40,0.88) 100%); border: 1px solid rgba(59,130,246,0.18); border-radius: 10px; padding: 16px 18px; margin-bottom: 24px;">
+        <div style="font-weight: 700; font-size: 12px; color: var(--muted-hi); text-transform:uppercase; letter-spacing:0.7px; font-family:'Share Tech Mono',monospace; margin-bottom: 12px;">Registered Agent Network</div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <span style="display:flex;align-items:center;gap:7px;padding:6px 13px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.22);border-radius:20px;font-family:'Share Tech Mono',monospace;font-size:11.5px;color:#6EE7B7;">
+            <span style="width:7px;height:7px;border-radius:50%;background:#34D399;box-shadow:0 0 6px #34D399;flex-shrink:0;"></span> passenger-agent · 8001
           </span>
-          <span style="display:flex;align-items:center;gap:6px;padding:6px 12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:20px;font-family:'Share Tech Mono',monospace;font-size:12px;">
-            <span style="width:8px;height:8px;border-radius:50%;background:#34D399;"></span> booking-agent (Port 8003)
+          <span style="display:flex;align-items:center;gap:7px;padding:6px 13px;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.22);border-radius:20px;font-family:'Share Tech Mono',monospace;font-size:11.5px;color:#93C5FD;">
+            <span style="width:7px;height:7px;border-radius:50%;background:#3B82F6;box-shadow:0 0 6px #3B82F6;flex-shrink:0;"></span> booking-agent · 8003
           </span>
-          <span style="display:flex;align-items:center;gap:6px;padding:6px 12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:20px;font-family:'Share Tech Mono',monospace;font-size:12px;">
-            <span style="width:8px;height:8px;border-radius:50%;background:#34D399;"></span> security-agent (Port 8004)
+          <span style="display:flex;align-items:center;gap:7px;padding:6px 13px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.22);border-radius:20px;font-family:'Share Tech Mono',monospace;font-size:11.5px;color:#FCA5A5;">
+            <span style="width:7px;height:7px;border-radius:50%;background:#EF4444;box-shadow:0 0 6px #EF4444;flex-shrink:0;"></span> security-agent · 8004
           </span>
-          <span style="display:flex;align-items:center;gap:6px;padding:6px 12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:20px;font-family:'Share Tech Mono',monospace;font-size:12px;">
-            <span style="width:8px;height:8px;border-radius:50%;background:#34D399;"></span> operations-agent (Port 8005)
+          <span style="display:flex;align-items:center;gap:7px;padding:6px 13px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.22);border-radius:20px;font-family:'Share Tech Mono',monospace;font-size:11.5px;color:#FDE68A;">
+            <span style="width:7px;height:7px;border-radius:50%;background:#F59E0B;box-shadow:0 0 6px #F59E0B;flex-shrink:0;"></span> operations-agent · 8005
           </span>
-          <span style="display:flex;align-items:center;gap:6px;padding:6px 12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:20px;font-family:'Share Tech Mono',monospace;font-size:12px;">
-            <span style="width:8px;height:8px;border-radius:50%;background:#34D399;"></span> maintenance-agent (Port 8006)
+          <span style="display:flex;align-items:center;gap:7px;padding:6px 13px;background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.22);border-radius:20px;font-family:'Share Tech Mono',monospace;font-size:11.5px;color:#C4B5FD;">
+            <span style="width:7px;height:7px;border-radius:50%;background:#7C3AED;box-shadow:0 0 6px #7C3AED;flex-shrink:0;"></span> maintenance-agent · 8006
           </span>
-          <span style="display:flex;align-items:center;gap:6px;padding:6px 12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:20px;font-family:'Share Tech Mono',monospace;font-size:12px;">
-            <span style="width:8px;height:8px;border-radius:50%;background:#34D399;"></span> hub-auditor (Internal Ledger)
+          <span style="display:flex;align-items:center;gap:7px;padding:6px 13px;background:rgba(16,185,129,0.06);border:1px solid rgba(59,130,246,0.18);border-radius:20px;font-family:'Share Tech Mono',monospace;font-size:11.5px;color:var(--muted-hi);">
+            <span style="width:7px;height:7px;border-radius:50%;background:#34D399;flex-shrink:0;"></span> hub-auditor · Ledger
           </span>
         </div>
       </div>
