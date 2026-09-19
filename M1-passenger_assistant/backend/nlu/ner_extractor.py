@@ -43,8 +43,16 @@ DATE_PATTERN = re.compile(r"\b\d{4}-\d{2}-\d{2}\b")
 TRAIN_ID_PATTERN = re.compile(r"\b[A-Z]{2,12}-\d{3,5}\b", re.IGNORECASE)
 BOOKING_REF_PATTERN = re.compile(r"\b(RS-[A-Za-z0-9]{4,10})\b", re.IGNORECASE)
 SEAT_CLASS_KEYWORDS = ["first class", "second class", "third class"]
+# "2 person"/"2 persons" were previously missing from the noun alternation, so
+# a query like "colombo to kandy 2 person" silently fell through as if no
+# count were given at all. "for 2" is a second, reversed phrasing (count
+# after the noun-less "for") that needs its own pattern since the number
+# comes second, not first.
 PASSENGER_COUNT_PATTERN = re.compile(
-    r"\b(\d+)\s*(passenger|passengers|people|seat|seats)\b", re.IGNORECASE
+    r"\b(\d+)\s*(passenger|passengers|person|persons|people|seat|seats)\b", re.IGNORECASE
+)
+PASSENGER_COUNT_FOR_PATTERN = re.compile(
+    r"\bfor\s+(\d+)\s*(?:passenger|passengers|person|persons|people)?\b", re.IGNORECASE
 )
 
 MONTH_MAP = {
@@ -98,7 +106,7 @@ def extract_entities(text: str) -> dict:
     date_match = DATE_PATTERN.search(text)
     train_id_match = TRAIN_ID_PATTERN.search(text)
     booking_ref_match = BOOKING_REF_PATTERN.search(text)
-    passenger_count_match = PASSENGER_COUNT_PATTERN.search(text)
+    passenger_count_match = PASSENGER_COUNT_PATTERN.search(text) or PASSENGER_COUNT_FOR_PATTERN.search(text)
     lowered = text.lower()
 
     # Determine travel date: ISO format first, then conversational formats
@@ -157,7 +165,10 @@ def extract_entities(text: str) -> dict:
         "booking_reference": booking_ref,
         "reason": reason,
         "seat_class": next((keyword.title() for keyword in SEAT_CLASS_KEYWORDS if keyword in lowered), None),
-        "passenger_count": int(passenger_count_match.group(1)) if passenger_count_match else 1,
+        # None (not 1) when no count is mentioned - the caller decides how to
+        # handle "unspecified" rather than this silently guessing a solo
+        # passenger for what might be a group fare question.
+        "passenger_count": int(passenger_count_match.group(1)) if passenger_count_match else None,
     }
 
 
