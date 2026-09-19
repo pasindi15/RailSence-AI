@@ -33,7 +33,7 @@ from dotenv import load_dotenv
 load_dotenv(Path(__file__).parent / ".env")
 
 import bleach
-from fastapi import FastAPI, HTTPException, Request, status
+from fastapi import Depends, FastAPI, Header, HTTPException, Request, status
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, field_validator
@@ -65,6 +65,16 @@ UI_DIR = AGENT_DIR / "ui"
 _in_memory_events: list[dict] = []
 _in_memory_reports: list[dict] = []
 _train_flags: dict[str, dict] = {}  # train_id -> maintenance flag record
+_active_tokens: set[str] = set()    # valid session tokens issued on engineer login
+
+
+async def _require_token(x_engineer_token: str = Header(default="")) -> None:
+    """FastAPI dependency — rejects requests that don't carry a valid session token."""
+    if not x_engineer_token or x_engineer_token not in _active_tokens:
+        raise HTTPException(
+            status_code=401,
+            detail="Engineer authentication required. Please log in via the dashboard.",
+        )
 
 
 def _persist_flags() -> None:
@@ -557,7 +567,7 @@ async def asset_status(request: Request, asset_id: str):
 
 @app.post("/maintenance-report")
 @limiter.limit("20/minute")
-async def maintenance_report(request: Request, payload: MaintenanceReportRequest):
+async def maintenance_report(request: Request, payload: MaintenanceReportRequest, _: None = Depends(_require_token)):
     extraction = note_extractor.extract_technician_note(payload.text)
     summary, nlp_method = report_summarizer.summarize_maintenance_report(payload.text)
 
@@ -639,8 +649,10 @@ async def engineer_login(request: Request, payload: EngineerLoginRequest):
     expected_pw = os.getenv("ENGINEER_PASSWORD", "railsense2024")
     client_ip = request.client.host if request.client else "unknown"
     if payload.engineer_id.strip() == expected_id and payload.password == expected_pw:
+        token = secrets.token_hex(32)
+        _active_tokens.add(token)
         _write_audit("engineer_login_success", client_ip, {"engineer_id": payload.engineer_id})
-        return {"success": True, "name": payload.engineer_id}
+        return {"success": True, "name": payload.engineer_id, "token": token}
     _write_audit("engineer_login_failed", client_ip, {"engineer_id": payload.engineer_id})
     raise HTTPException(status_code=401, detail="Invalid engineer credentials. Please try again.")
 
@@ -673,7 +685,7 @@ async def chat(request: Request, payload: ChatRequest):
 
 @app.post("/api/flag-train")
 @limiter.limit("30/minute")
-async def flag_train(request: Request, payload: TrainFlagRequest):
+async def flag_train(request: Request, payload: TrainFlagRequest, _: None = Depends(_require_token)):
     """Engineer flags a train as under maintenance — validates against shared registry,
     syncs maintenance_status to Supabase so M3 Booking Agent blocks new bookings."""
     canonical_id = payload.train_id.strip().upper()
@@ -714,7 +726,7 @@ async def flag_train(request: Request, payload: TrainFlagRequest):
 
 @app.delete("/api/flag-train/{train_id}")
 @limiter.limit("30/minute")
-async def clear_train_flag(request: Request, train_id: str):
+async def clear_train_flag(request: Request, train_id: str, _: None = Depends(_require_token)):
     """Engineer clears maintenance flag — train returns to service.
     Clears maintenance_status in shared Supabase trains table so M3 resumes bookings."""
     canonical_id = train_id.strip().upper()
