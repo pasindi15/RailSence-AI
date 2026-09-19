@@ -239,7 +239,15 @@ tbody tr.data-row{cursor:pointer;transition:background 0.1s}
 tbody tr.data-row:hover td{background:#f0f7ff}
 tbody tr.data-row.row-open td{background:var(--blue-bg)}
 tbody tr.detail-row td{padding:0;background:var(--bg)}
-.fleet-detail{padding:16px 18px 18px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;animation:fadeUp 0.18s ease}
+.fleet-detail{padding:16px 18px 18px;display:flex;flex-direction:column;gap:16px;animation:fadeUp 0.18s ease}
+.fleet-detail-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.fd-trend{border-top:1px solid var(--border);padding-top:14px}
+.fd-trend-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.fd-trend-title{font-size:0.63rem;font-weight:800;text-transform:uppercase;letter-spacing:0.6px;color:var(--text-light);display:flex;align-items:center;gap:5px}
+.fd-trend-legend{display:flex;gap:12px}
+.fd-trend-leg-item{display:flex;align-items:center;gap:4px;font-size:0.62rem;color:var(--text-muted);font-weight:600}
+.fd-trend-leg-dot{width:7px;height:7px;border-radius:50%}
+.fd-sparkline-wrap{width:100%;overflow:hidden;border-radius:8px;background:var(--surface, #f8fafc);border:1px solid var(--border);padding:10px 14px 6px}
 .fd-section{display:flex;flex-direction:column;gap:6px}
 .fd-section-title{font-size:0.63rem;font-weight:800;text-transform:uppercase;letter-spacing:0.6px;color:var(--text-light);margin-bottom:4px;display:flex;align-items:center;gap:5px}
 .fd-row{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;font-size:0.76rem;padding:3px 0;border-bottom:1px solid var(--border)}
@@ -2182,38 +2190,140 @@ function buildDetailPanel(r,trainName){
   const fault=r.fault_type||'none';
   const faultColor=fault==='none'?'var(--green)':'var(--amber)';
 
+  const trendHtml = buildTrendChart(r.asset_id);
   return`<div class="fleet-detail">
-    <div class="fd-section">
-      <div class="fd-section-title">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
-        Asset Info
+    <div class="fleet-detail-grid">
+      <div class="fd-section">
+        <div class="fd-section-title">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+          Asset Info
+        </div>
+        <div class="fd-row"><span class="fd-key">Train</span><span class="fd-val">${esc(trainName)}</span></div>
+        <div class="fd-row"><span class="fd-key">Route</span><span class="fd-val">${esc(route||'—')}</span></div>
+        <div class="fd-row"><span class="fd-key">Station</span><span class="fd-val">${esc(r.station||'—')}</span></div>
+        <div class="fd-row"><span class="fd-key">Last Service</span><span class="fd-val">${esc(r.last_service_date||'—')}</span></div>
+        <div class="fd-row"><span class="fd-key">Fault Detected</span><span class="fd-val" style="color:${faultColor}">${esc(fault.replace(/_/g,' '))}</span></div>
+        <div class="fd-row"><span class="fd-key">Health Score</span><span class="fd-val" style="color:${stColor}">${Math.round(r.health_score??0)} / 100</span></div>
       </div>
-      <div class="fd-row"><span class="fd-key">Train</span><span class="fd-val">${esc(trainName)}</span></div>
-      <div class="fd-row"><span class="fd-key">Route</span><span class="fd-val">${esc(route||'—')}</span></div>
-      <div class="fd-row"><span class="fd-key">Station</span><span class="fd-val">${esc(r.station||'—')}</span></div>
-      <div class="fd-row"><span class="fd-key">Last Service</span><span class="fd-val">${esc(r.last_service_date||'—')}</span></div>
-      <div class="fd-row"><span class="fd-key">Fault Detected</span><span class="fd-val" style="color:${faultColor}">${esc(fault.replace(/_/g,' '))}</span></div>
-      <div class="fd-row"><span class="fd-key">Health Score</span><span class="fd-val" style="color:${stColor}">${Math.round(r.health_score??0)} / 100</span></div>
+      <div class="fd-section">
+        <div class="fd-section-title">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          Sensor Readings
+        </div>
+        ${sensorHtml||'<div style="font-size:0.74rem;color:var(--text-light)">No sensor data</div>'}
+      </div>
+      <div class="fd-section">
+        <div class="fd-section-title">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Technician Note
+        </div>
+        <div class="fd-note">${esc(r.technician_note||'No note recorded.')}</div>
+        <div style="font-size:0.7rem;font-weight:600;color:var(--text-muted);margin-top:10px">Recommended Action</div>
+        <div style="font-size:0.74rem;color:var(--text);margin-top:4px;line-height:1.5">${esc(r.recommended_action||'—')}</div>
+        <div class="fd-actions">
+          <button class="quick-btn" onclick="quickPredict('${esc(r.asset_id)}','${esc(r.asset_type||'')}',${r.days_since_service||0},${r.fault_count_30d||0})">Run Prediction →</button>
+          <button class="quick-btn rpt" onclick="openFleetReport('${esc(r.asset_id)}','${esc(r.asset_type||'')}','${esc(r.station||'')}')">Submit Report</button>
+        </div>
+      </div>
     </div>
-    <div class="fd-section">
-      <div class="fd-section-title">
+    ${trendHtml}
+  </div>`;
+}
+
+function buildTrendChart(assetId){
+  // Gather all history records for this asset, sorted oldest → newest
+  const history = (fleetAll||[])
+    .filter(r=>r.asset_id===assetId && r.health_score!=null)
+    .sort((a,b)=>(a.last_service_date||'') < (b.last_service_date||'') ? -1 : 1);
+  if(history.length < 2) return '';
+
+  const W=500, H=72, PAD={t:8,r:12,b:24,l:28};
+  const iW=W-PAD.l-PAD.r, iH=H-PAD.t-PAD.b;
+  const n=history.length;
+
+  const scores=history.map(r=>parseFloat(r.health_score)||0);
+  const minS=Math.max(0, Math.min(...scores)-10);
+  const maxS=Math.min(100, Math.max(...scores)+10);
+  const range=maxS-minS||1;
+
+  const xOf=i=>PAD.l + (i/(n-1))*iW;
+  const yOf=s=>PAD.t + iH - ((s-minS)/range)*iH;
+
+  const statusColor=s=>s>=70?'#10b981':s>=40?'#f59e0b':'#ef4444';
+
+  // Polyline points
+  const pts=history.map((r,i)=>`${xOf(i).toFixed(1)},${yOf(parseFloat(r.health_score)).toFixed(1)}`).join(' ');
+
+  // Area fill path (close below the line)
+  const areaPath='M '+history.map((r,i)=>`${xOf(i).toFixed(1)},${yOf(parseFloat(r.health_score)).toFixed(1)}`).join(' L ')
+    +` L ${xOf(n-1).toFixed(1)},${(PAD.t+iH).toFixed(1)} L ${xOf(0).toFixed(1)},${(PAD.t+iH).toFixed(1)} Z`;
+
+  // Determine area fill color from trend direction
+  const trendUp=scores[scores.length-1]>=scores[0];
+  const areaColor=trendUp?'rgba(16,185,129,0.08)':'rgba(239,68,68,0.08)';
+  const lineColor=trendUp?'#10b981':'#f59e0b';
+
+  // Date labels (show month-day)
+  const dateLbls=history.map((r,i)=>{
+    const d=r.last_service_date||'';
+    const lbl=d.slice(5); // MM-DD
+    return `<text x="${xOf(i).toFixed(1)}" y="${H}" text-anchor="${i===0?'start':i===n-1?'end':'middle'}" fill="#94a3b8" font-size="8">${esc(lbl)}</text>`;
+  }).join('');
+
+  // Score labels on Y axis (min, max)
+  const yAxisLbls=`
+    <text x="${PAD.l-3}" y="${(PAD.t+2).toFixed(1)}" text-anchor="end" fill="#94a3b8" font-size="8">${maxS.toFixed(0)}</text>
+    <text x="${PAD.l-3}" y="${(PAD.t+iH).toFixed(1)}" text-anchor="end" fill="#94a3b8" font-size="8">${minS.toFixed(0)}</text>`;
+
+  // Dots with tooltips
+  const dots=history.map((r,i)=>{
+    const s=parseFloat(r.health_score);
+    const cx=xOf(i).toFixed(1), cy=yOf(s).toFixed(1);
+    const c=statusColor(s);
+    const ft=(r.fault_type||'none').replace(/_/g,' ');
+    return `<circle cx="${cx}" cy="${cy}" r="4" fill="${c}" stroke="#fff" stroke-width="1.5">
+      <title>${esc(r.last_service_date||'')} · ${s.toFixed(1)} · ${ft}</title>
+    </circle>`;
+  }).join('');
+
+  // Reference lines at 70 and 40
+  const y70=yOf(Math.min(maxS,Math.max(minS,70))).toFixed(1);
+  const y40=yOf(Math.min(maxS,Math.max(minS,40))).toFixed(1);
+  const refLines=`
+    ${parseFloat(y70)>PAD.t&&parseFloat(y70)<PAD.t+iH?`<line x1="${PAD.l}" y1="${y70}" x2="${PAD.l+iW}" y2="${y70}" stroke="#10b981" stroke-width="0.6" stroke-dasharray="3,3" opacity="0.5"/>
+    <text x="${PAD.l+iW+2}" y="${parseFloat(y70)+3}" fill="#10b981" font-size="7">70</text>`:''}
+    ${parseFloat(y40)>PAD.t&&parseFloat(y40)<PAD.t+iH?`<line x1="${PAD.l}" y1="${y40}" x2="${PAD.l+iW}" y2="${y40}" stroke="#f59e0b" stroke-width="0.6" stroke-dasharray="3,3" opacity="0.5"/>
+    <text x="${PAD.l+iW+2}" y="${parseFloat(y40)+3}" fill="#f59e0b" font-size="7">40</text>`:''}`;
+
+  const trendLabel=trendUp
+    ? `<span style="color:#10b981;font-weight:700">↑ Improving</span>`
+    : `<span style="color:#ef4444;font-weight:700">↓ Declining</span>`;
+  const delta=scores[n-1]-scores[0];
+  const deltaLabel=(delta>=0?'+':'')+delta.toFixed(1)+' pts over '+n+' records';
+
+  return `<div class="fd-trend">
+    <div class="fd-trend-hdr">
+      <div class="fd-trend-title">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-        Sensor Readings
+        Health Trend
       </div>
-      ${sensorHtml||'<div style="font-size:0.74rem;color:var(--text-light)">No sensor data</div>'}
+      <div style="font-size:0.68rem;color:var(--text-muted)">${trendLabel} &nbsp;·&nbsp; ${deltaLabel}</div>
     </div>
-    <div class="fd-section">
-      <div class="fd-section-title">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-        Technician Note
-      </div>
-      <div class="fd-note">${esc(r.technician_note||'No note recorded.')}</div>
-      <div style="font-size:0.7rem;font-weight:600;color:var(--text-muted);margin-top:10px">Recommended Action</div>
-      <div style="font-size:0.74rem;color:var(--text);margin-top:4px;line-height:1.5">${esc(r.recommended_action||'—')}</div>
-      <div class="fd-actions">
-        <button class="quick-btn" onclick="quickPredict('${esc(r.asset_id)}','${esc(r.asset_type||'')}',${r.days_since_service||0},${r.fault_count_30d||0})">Run Prediction →</button>
-        <button class="quick-btn rpt" onclick="openFleetReport('${esc(r.asset_id)}','${esc(r.asset_type||'')}','${esc(r.station||'')}')">Submit Report</button>
-      </div>
+    <div class="fd-sparkline-wrap">
+      <svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block;overflow:visible">
+        ${refLines}
+        <path d="${areaPath}" fill="${areaColor}"/>
+        <polyline points="${pts}" fill="none" stroke="${lineColor}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+        ${dots}
+        ${dateLbls}
+        ${yAxisLbls}
+      </svg>
+    </div>
+    <div class="fd-trend-legend" style="margin-top:6px">
+      <div class="fd-trend-leg-item"><div class="fd-trend-leg-dot" style="background:#10b981"></div>GREEN ≥70</div>
+      <div class="fd-trend-leg-item"><div class="fd-trend-leg-dot" style="background:#f59e0b"></div>AMBER 40–69</div>
+      <div class="fd-trend-leg-item"><div class="fd-trend-leg-dot" style="background:#ef4444"></div>RED &lt;40</div>
+      <div class="fd-trend-leg-item" style="margin-left:auto;color:var(--text-light)">hover dots for details</div>
     </div>
   </div>`;
 }
