@@ -29,3 +29,11 @@ data/chroma_store/
 *.db
 *.sqlite
 *.sqlite3
+
+# Node / Next.js build artifacts
+node_modules/
+.next/
+.nuxt/
+dist/
+out/
+*.node

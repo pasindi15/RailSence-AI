@@ -35,19 +35,30 @@ def _get_collection():
     return _collection
 
 
-def retrieve_faq_chunks(question: str, top_k: int = 3) -> list[dict]:
+def retrieve_faq_chunks(question: str, top_k: int = 3, source_filter: str | None = None) -> list[dict]:
     """
     Returns up to top_k chunks as:
         [{"text": "...", "source": "fares.md", "heading": "...", "distance": 0.12}, ...]
     Returns an empty list if the collection hasn't been built yet or has no
     documents (e.g. embed_documents.py hasn't been run).
+
+    source_filter: if given (e.g. "fares.md"), only search chunks from that
+    doc. Every doc's chunks are prefixed with its own H1 title, so a generic
+    query like "train fare" can otherwise rank schedules.md above fares.md;
+    when the caller already knows which doc is relevant (from intent), this
+    skips that ambiguity instead of relying on embedding similarity alone.
     """
     collection = _get_collection()
     if collection.count() == 0:
         return []
 
     query_embedding = _get_model().encode([question]).tolist()
-    results = collection.query(query_embeddings=query_embedding, n_results=min(top_k, collection.count()))
+    where = {"source": source_filter} if source_filter else None
+    results = collection.query(
+        query_embeddings=query_embedding,
+        n_results=min(top_k, collection.count()),
+        where=where,
+    )
 
     chunks = []
     documents = results.get("documents", [[]])[0]
