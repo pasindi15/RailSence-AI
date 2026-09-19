@@ -30,7 +30,7 @@ export default function LoginPage() {
       if (match) {
         setEngineer(match)
         setLoggedIn(true)
-        setTimeout(() => { window.location.href = 'http://localhost:8002' }, 1800)
+        setTimeout(() => { window.location.href = `${process.env.NEXT_PUBLIC_M4_URL || 'http://localhost:8006'}?m4auth=1` }, 1800)
       } else {
         setError('Invalid credentials. Check your username and password.')
         setLoading(false)
