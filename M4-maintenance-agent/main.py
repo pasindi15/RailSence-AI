@@ -58,11 +58,43 @@ limiter = Limiter(key_func=get_remote_address, default_limits=["120/minute"])
 AGENT_DIR = Path(__file__).parent
 DATA_PATH = AGENT_DIR / "data" / "assets_history.csv"
 AUDIT_LOG = AGENT_DIR / "data" / "audit_log.jsonl"
+FLAGS_PATH = AGENT_DIR / "data" / "train_flags.jsonl"
 UI_DIR = AGENT_DIR / "ui"
 
 _in_memory_events: list[dict] = []
 _in_memory_reports: list[dict] = []
 _train_flags: dict[str, dict] = {}  # train_id -> maintenance flag record
+
+
+def _persist_flags() -> None:
+    """Write _train_flags to disk so flags survive server restarts."""
+    try:
+        FLAGS_PATH.parent.mkdir(parents=True, exist_ok=True)
+        with open(FLAGS_PATH, "w", encoding="utf-8") as f:
+            for record in _train_flags.values():
+                f.write(json.dumps(record) + "\n")
+    except Exception as exc:
+        logger.warning("Could not persist train flags: %s", exc)
+
+
+def _load_flags_from_disk() -> None:
+    """Restore _train_flags from the JSONL file on startup."""
+    if not FLAGS_PATH.exists():
+        return
+    try:
+        with open(FLAGS_PATH, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    record = json.loads(line)
+                    train_id = record.get("train_id", "").upper()
+                    if train_id:
+                        _train_flags[train_id] = record
+        if _train_flags:
+            logger.info("Restored %d train flag(s) from disk: %s", len(_train_flags), list(_train_flags))
+    except Exception as exc:
+        logger.warning("Could not load train flags from disk: %s", exc)
+
 
 # Simple cache — avoids hitting Supabase on every request
 _asset_cache: list[dict] = []
@@ -72,6 +104,31 @@ _CACHE_TTL = 60.0  # seconds
 
 @asynccontextmanager
 async def lifespan(_app):
+    # Restore maintenance flags from disk so flagged trains stay blocked after restart
+    _load_flags_from_disk()
+
+    # Reconcile: any train still OUT_OF_SERVICE in Supabase that isn't in our flag file
+    # gets a minimal stub entry so /api/train-status keeps returning the right answer.
+    try:
+        flagged_in_db = supabase_store.fetch_flagged_trains()
+        for row in flagged_in_db:
+            tid = row.get("train_id", "").upper()
+            if tid and tid not in _train_flags:
+                _train_flags[tid] = {
+                    "train_id": tid,
+                    "under_maintenance": True,
+                    "reason": row.get("maintenance_status", "OUT_OF_SERVICE"),
+                    "severity": "high",
+                    "flagged_by": "system-recovery",
+                    "estimated_clear": None,
+                    "flagged_at": datetime.now(timezone.utc).isoformat(),
+                }
+                logger.warning("Recovered flag for %s from Supabase (no local file entry)", tid)
+        if flagged_in_db:
+            _persist_flags()
+    except Exception as exc:
+        logger.warning("Supabase flag reconciliation failed: %s", exc)
+
     # Pre-warm the TF-IDF index and SentenceTransformer model so first request is fast
     try:
         manual_retriever._ensure_tfidf()
@@ -611,6 +668,7 @@ async def flag_train(request: Request, payload: TrainFlagRequest):
         "flagged_at": datetime.now(timezone.utc).isoformat(),
     }
     _train_flags[canonical_id] = record
+    _persist_flags()
 
     # Sync OUT_OF_SERVICE to shared trains table so M3 sees it on next booking attempt.
     supabase_store.update_train_maintenance_status(canonical_id, "OUT_OF_SERVICE")
@@ -634,6 +692,7 @@ async def clear_train_flag(request: Request, train_id: str):
     if canonical_id not in _train_flags:
         raise HTTPException(status_code=404, detail=f"No maintenance flag found for train '{canonical_id}'.")
     record = _train_flags.pop(canonical_id)
+    _persist_flags()
     # Clear maintenance restriction in shared trains table
     supabase_store.update_train_maintenance_status(canonical_id, None)
     client_ip = request.client.host if request.client else "unknown"
