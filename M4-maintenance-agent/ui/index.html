@@ -1809,7 +1809,7 @@ async function loadDashboard() {
     const hub=dr.hub_status||{};
     setBadge('sys-llm',true,'Active · groq/compound','Offline');
     setBadge('sys-db',hub.supabase_configured,'Connected','Local fallback');
-    setBadge('sys-redis',hub.upstash_configured,'Online','Not configured');
+    setBadge('sys-redis',hub.upstash_configured,'Online','Not set · optional');
     setBadge('sys-rag',true,hub.supabase_configured?'pgvector active':'TF-IDF local','—');
     setBadge('sys-hub',hub.hub_reachable,'Online','Offline');
 
