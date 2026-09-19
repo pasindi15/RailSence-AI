@@ -64,29 +64,39 @@ body.dark .toggle-container::after{content:'Light mode'}
 body{font-family:"DM Sans",system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;-webkit-font-smoothing:antialiased}
 
 /* ── Sidebar ── */
-.sidebar{width:var(--sidebar-w);background:var(--white);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:100;box-shadow:2px 0 12px rgba(0,0,0,0.04)}
-.sb-logo{display:flex;align-items:center;gap:10px;padding:18px 20px 16px;border-bottom:1px solid var(--border)}
-.sb-logo svg{width:34px;height:34px;flex-shrink:0}
-.sb-brand{font-size:0.93rem;font-weight:800;color:var(--text);letter-spacing:-0.3px}
-.sb-sub{font-size:0.67rem;color:var(--text-muted);margin-top:1px}
-nav{flex:1;padding:12px 10px;overflow-y:auto}
-.nav-section{font-size:0.62rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text-light);padding:12px 14px 5px}
-.nav-item{display:flex;align-items:center;gap:11px;padding:9px 14px;border-radius:11px;cursor:pointer;font-size:0.84rem;font-weight:500;color:var(--text-muted);transition:all 0.15s;margin-bottom:1px;border:none;background:none;font-family:inherit;width:100%;text-align:left;position:relative}
+.sidebar{width:var(--sidebar-w);background:var(--white);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:100;box-shadow:2px 0 12px rgba(0,0,0,0.04);overflow:hidden;transition:width 280ms cubic-bezier(0.16,1,0.3,1),box-shadow 280ms}
+.sidebar.collapsed{width:0;border-right-color:transparent;box-shadow:none}
+.sb-logo{display:flex;align-items:center;gap:10px;padding:16px 14px 14px;border-bottom:1px solid var(--border);min-width:var(--sidebar-w)}
+.sb-logo-img{width:38px;height:38px;object-fit:contain;flex-shrink:0;border-radius:9px}
+.sb-brand{font-size:0.93rem;font-weight:800;color:var(--text);letter-spacing:-0.3px;white-space:nowrap}
+.sb-sub{font-size:0.67rem;color:var(--text-muted);margin-top:1px;white-space:nowrap}
+nav{flex:1;padding:12px 10px;overflow-y:auto;min-width:var(--sidebar-w)}
+.nav-section{font-size:0.62rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text-light);padding:12px 14px 5px;white-space:nowrap}
+.nav-item{display:flex;align-items:center;gap:11px;padding:9px 14px;border-radius:11px;cursor:pointer;font-size:0.84rem;font-weight:500;color:var(--text-muted);transition:all 0.15s;margin-bottom:1px;border:none;background:none;font-family:inherit;width:100%;text-align:left;position:relative;white-space:nowrap}
 .nav-item:hover{background:#f1f5f9;color:var(--text)}
 .nav-item.active{background:var(--blue-bg);color:var(--primary);font-weight:600}
 .nav-item.active::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:60%;background:var(--primary);border-radius:0 3px 3px 0}
 .nav-icon{width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0}
-.sb-footer{padding:14px 16px;border-top:1px solid var(--border);background:#fafbfc}
+.sb-footer{padding:14px 16px;border-top:1px solid var(--border);background:#fafbfc;min-width:var(--sidebar-w)}
 .sb-sys{display:flex;flex-direction:column;gap:7px}
 .sb-sys-row{display:flex;align-items:center;justify-content:space-between;font-size:0.72rem}
-.sb-sys-name{color:var(--text-muted);display:flex;align-items:center;gap:5px}
+.sb-sys-name{color:var(--text-muted);display:flex;align-items:center;gap:5px;white-space:nowrap}
 .sb-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
 .sb-dot.on{background:var(--green)}
 .sb-dot.off{background:#d1d5db}
 .sb-time{font-size:0.65rem;color:var(--text-light);margin-top:9px;padding-top:9px;border-top:1px solid var(--border);display:flex;justify-content:space-between}
 
+/* ── Sidebar toggle tab ── */
+.sb-toggle{position:fixed;top:50%;transform:translateY(-50%);left:var(--sidebar-w);z-index:101;width:18px;height:48px;background:var(--white);border:1px solid var(--border);border-left:none;border-radius:0 8px 8px 0;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:left 280ms cubic-bezier(0.16,1,0.3,1),background 0.15s,box-shadow 0.15s;box-shadow:2px 0 8px rgba(0,0,0,0.07);padding:0}
+.sb-toggle:hover{background:var(--blue-bg);box-shadow:2px 0 12px rgba(37,99,235,0.15)}
+.sb-toggle svg{width:10px;height:10px;color:var(--text-muted);transition:transform 280ms cubic-bezier(0.16,1,0.3,1),color 0.15s}
+.sb-toggle:hover svg{color:var(--primary)}
+.sidebar.collapsed ~ .sb-toggle{left:0;border-left:1px solid var(--border);border-radius:8px}
+.sidebar.collapsed ~ .sb-toggle svg{transform:rotate(180deg)}
+
 /* ── Main ── */
-.main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-height:100vh}
+.main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-height:100vh;transition:margin-left 280ms cubic-bezier(0.16,1,0.3,1)}
+.sidebar.collapsed ~ .sb-toggle ~ .main{margin-left:0}
 .topbar{background:var(--white);border-bottom:1px solid var(--border);padding:11px 28px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:50;box-shadow:0 1px 0 var(--border)}
 .topbar-title{font-size:0.97rem;font-weight:800;letter-spacing:-0.2px}
 .topbar-sub{font-size:0.7rem;color:var(--text-muted);margin-top:1px}
@@ -416,13 +426,9 @@ tbody tr:hover td{background:#f8fafc}
 </div>
 
 <!-- ═══ Sidebar ═══ -->
-<aside class="sidebar">
+<aside class="sidebar" id="sidebar">
   <div class="sb-logo">
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 200 200" width="34" height="34">
-      <g clip-path="url(#sb_c)"><mask id="sb_m" style="mask-type:alpha" width="200" height="200" x="0" y="0" maskUnits="userSpaceOnUse"><path fill="#fff" fill-rule="evenodd" d="M100 150c27.614 0 50-22.386 50-50s-22.386-50-50-50-50 22.386-50 50 22.386 50 50 50zm0 50c55.228 0 100-44.772 100-100S155.228 0 100 0 0 44.772 0 100s44.772 100 100 100z" clip-rule="evenodd"/></mask>
-      <g mask="url(#sb_m)"><path fill="#fff" d="M200 0H0v200h200V0z"/><path fill="#2563eb" fill-opacity=".28" d="M200 0H0v200h200V0z"/><g filter="url(#sb_b)" class="animate-gradient"><path fill="#2563eb" d="M110 32H18v68h92V32z"/><path fill="#1d4ed8" d="M188-24H15v98h173v-98z"/><path fill="#3b82f6" d="M175 70H5v156h170V70z"/><path fill="#60a5fa" d="M230 51H100v103h130V51z"/></g></g></g>
-      <defs><filter id="sb_b" width="385" height="410" x="-75" y="-104" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="b"/><feBlend in="SourceGraphic" in2="b" result="s"/><feGaussianBlur result="e" stdDeviation="40"/></filter><clipPath id="sb_c"><path fill="#fff" d="M0 0H200V200H0z"/></clipPath></defs>
-    </svg>
+    <img src="/static/logo.png" alt="RailSense" class="sb-logo-img"/>
     <div><div class="sb-brand">RailSense M4</div><div class="sb-sub">Maintenance Agent</div></div>
   </div>
 
@@ -456,8 +462,15 @@ tbody tr:hover td{background:#f8fafc}
   </div>
 </aside>
 
+<!-- ═══ Sidebar Toggle Tab ═══ -->
+<button class="sb-toggle" id="sb-toggle-btn" onclick="toggleSidebar()" title="Toggle sidebar" aria-label="Toggle sidebar">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="15 18 9 12 15 6"/>
+  </svg>
+</button>
+
 <!-- ═══ Main ═══ -->
-<div class="main">
+<div class="main" id="main-content">
 
   <!-- Topbar -->
   <div class="topbar">
@@ -929,6 +942,29 @@ function renderTrains() {
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
 function toast(msg,ms=2600){const e=document.getElementById('toast');e.textContent=msg;e.style.display='block';setTimeout(()=>e.style.display='none',ms)}
 function handleLogout(){if(confirm('Sign out of the Maintenance Portal?')){localStorage.removeItem('m4_eng_auth');location.replace('http://localhost:3002');}}
+
+/* ── Sidebar toggle ── */
+function _applySidebarState(collapsed){
+  const sb=document.getElementById('sidebar');
+  const main=document.getElementById('main-content');
+  if(collapsed){
+    sb.classList.add('collapsed');
+    main.style.marginLeft='0';
+  }else{
+    sb.classList.remove('collapsed');
+    main.style.marginLeft='var(--sidebar-w)';
+  }
+}
+(function(){
+  const collapsed=localStorage.getItem('m4_sidebar')==='false';
+  _applySidebarState(collapsed);
+})();
+function toggleSidebar(){
+  const sb=document.getElementById('sidebar');
+  const nowCollapsed=!sb.classList.contains('collapsed');
+  _applySidebarState(nowCollapsed);
+  localStorage.setItem('m4_sidebar',nowCollapsed?'false':'true');
+}
 
 /* ── Engineer Login Gate ── */
 (function(){
