@@ -67,7 +67,7 @@ body{font-family:"DM Sans",system-ui,sans-serif;background:var(--bg);color:var(-
 .sidebar{width:var(--sidebar-w);background:var(--white);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:100;box-shadow:2px 0 12px rgba(0,0,0,0.04);overflow:hidden;transition:width 280ms cubic-bezier(0.16,1,0.3,1),box-shadow 280ms}
 .sidebar.collapsed{width:0;border-right-color:transparent;box-shadow:none}
 .sb-logo{display:flex;align-items:center;justify-content:center;padding:20px 14px 18px;border-bottom:1px solid var(--border);min-width:var(--sidebar-w)}
-.sb-logo-img{width:54px;height:54px;object-fit:contain;flex-shrink:0}
+.sb-logo-img{width:90px;height:90px;object-fit:contain;flex-shrink:0}
 nav{flex:1;padding:12px 10px;overflow-y:auto;min-width:var(--sidebar-w)}
 .nav-section{font-size:0.62rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text-light);padding:12px 14px 5px;white-space:nowrap}
 .nav-item{display:flex;align-items:center;gap:11px;padding:9px 14px;border-radius:11px;cursor:pointer;font-size:0.84rem;font-weight:500;color:var(--text-muted);transition:all 0.15s;margin-bottom:1px;border:none;background:none;font-family:inherit;width:100%;text-align:left;position:relative;white-space:nowrap}
@@ -291,6 +291,20 @@ tbody tr:hover td{background:#f8fafc}
 .health-bar-fill{height:100%;border-radius:20px;transition:width 0.7s ease}
 .health-bar-labels{display:flex;justify-content:space-between;font-size:0.67rem;color:var(--text-light)}
 .train-loco-tag{display:inline-flex;align-items:center;gap:4px;background:var(--blue-bg);border:1px solid #bfdbfe;border-radius:20px;padding:3px 8px;font-size:0.68rem;color:var(--primary);font-weight:600;margin-top:7px}
+.train-linked-assets{margin-top:11px;padding-top:11px;border-top:1px solid var(--border)}
+.linked-assets-label{font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:var(--text-light);margin-bottom:7px}
+.linked-assets-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.la-chip{display:flex;align-items:center;gap:6px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:6px 8px;transition:border-color 0.15s,box-shadow 0.15s}
+.la-chip:hover{border-color:#bfdbfe;box-shadow:0 2px 8px rgba(37,99,235,0.07)}
+.la-chip-icon{font-size:0.9rem;flex-shrink:0;line-height:1}
+.la-chip-info{flex:1;min-width:0}
+.la-chip-id{font-size:0.69rem;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.la-chip-type{font-size:0.61rem;color:var(--text-muted);margin-top:1px}
+.la-chip-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.la-dot-green{background:var(--green)}
+.la-dot-amber{background:var(--amber)}
+.la-dot-red{background:var(--red)}
+.la-dot-unknown{background:#94a3b8}
 
 /* ── Empty ── */
 .empty-state{text-align:center;padding:28px 16px;color:var(--text-light);font-size:0.81rem}
@@ -335,6 +349,22 @@ tbody tr:hover td{background:#f8fafc}
 .cp-msg.user .cp-bubble{background:var(--primary);color:white;border-bottom-right-radius:4px}
 .cp-msg.bot .cp-bubble{background:var(--white);color:var(--text);border:1px solid var(--border);border-bottom-left-radius:4px;box-shadow:var(--shadow-sm)}
 .cp-bubble p{margin:0 0 6px 0}.cp-bubble p:last-child{margin-bottom:0}.cp-bubble strong{font-weight:700}.cp-bubble ul{padding-left:14px;margin:2px 0 6px 0}.cp-bubble li{margin-bottom:4px;line-height:1.45}.cp-bubble p.cp-label{margin-bottom:2px}.cp-bubble p.cp-label+ul{margin-top:0}
+.cp-fleet{background:var(--bg);border:1px solid var(--border);border-radius:9px;overflow:hidden;margin:6px 0}
+.cp-fleet-hdr{font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-light);padding:6px 10px 5px;border-bottom:1px solid var(--border);background:#f8fafc}
+.cp-fleet-row{display:flex;align-items:center;gap:9px;padding:7px 10px;border-bottom:1px solid var(--border)}
+.cp-fleet-row:last-child{border-bottom:none}
+.cp-fleet-row.fag{border-left:3px solid #10b981}
+.cp-fleet-row.faa{border-left:3px solid #f59e0b}
+.cp-fleet-row.far{border-left:3px solid #ef4444}
+.cp-fleet-info{flex:1;min-width:0}
+.cp-fleet-id{font-size:0.72rem;font-weight:800;color:var(--text)}
+.cp-fleet-type{font-size:0.6rem;color:var(--text-muted)}
+.cp-fleet-right{text-align:right;flex-shrink:0}
+.cp-fleet-score{font-size:0.78rem;font-weight:800;color:var(--text)}
+.cp-fleet-badge{font-size:0.58rem;font-weight:700;padding:1px 5px;border-radius:20px}
+.cp-fleet-badge.fg{background:#d1fae5;color:#065f46}
+.cp-fleet-badge.fa{background:#fef3c7;color:#92400e}
+.cp-fleet-badge.fr{background:#fee2e2;color:#991b1b}
 .cp-citations{margin-top:7px;padding-top:7px;border-top:1px solid var(--border)}
 .cp-cite-label{font-size:0.63rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-light);margin-bottom:4px}
 .cp-cite-chip{display:inline-flex;align-items:center;gap:3px;background:var(--blue-bg);border:1px solid #bfdbfe;border-radius:20px;padding:2px 8px;font-size:0.66rem;color:var(--primary);margin:2px 3px 2px 0;cursor:pointer;font-weight:600}
@@ -450,6 +480,10 @@ tbody tr:hover td{background:#f8fafc}
     <button class="nav-item" data-page="metrics" onclick="nav('metrics',this)">
       <span class="nav-icon">📊</span> Model Metrics
     </button>
+    <div class="nav-section">Support</div>
+    <a href="/chat-ui" class="nav-item" style="text-decoration:none;">
+      <span class="nav-icon">💬</span> Engineer Chatbot
+    </a>
   </nav>
 
   <div class="sb-footer">
@@ -487,10 +521,6 @@ tbody tr:hover td{background:#f8fafc}
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.27"/></svg>
         <span id="refresh-time">—</span>
       </div>
-      <a href="/chat-ui" class="chat-btn">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-        Full Chatbot
-      </a>
       <div class="toggle-container" title="Toggle dark mode" style="margin-left:8px;">
         <input class="toggle-input" type="checkbox" id="dm-lever" onchange="toggleDark(this.checked)" aria-label="Toggle dark mode"/>
         <div class="toggle-handle-wrapper">
@@ -741,14 +771,14 @@ tbody tr:hover td{background:#f8fafc}
 <script>
 /* ═══ TRAINS DATA ═══ */
 const TRAINS = [
-  { id:'T-001', name:'Udarata Menike',    number:'1015', cls:'Express',    route:['Colombo Fort','Badulla'],    loco:'DE-1001', gradient:['#1e3a5f','#2d6a9f'], img:'udarata-menike',   capacity:800,  speed:90,  ontime:94 },
-  { id:'T-002', name:'Intercity Express', number:'1083', cls:'IC Express', route:['Colombo Fort','Kandy'],     loco:'DE-1002', gradient:['#1a4731','#2d9b6f'], img:'intercity-express',capacity:1200, speed:120, ontime:91 },
-  { id:'T-003', name:'Yal Devi',          number:'1001', cls:'Express',    route:['Colombo Fort','Jaffna'],    loco:'DE-2001', gradient:['#4a1f1f','#a83232'], img:'yal-devi',         capacity:700,  speed:100, ontime:88 },
-  { id:'T-004', name:'Ruhunu Kumari',     number:'1078', cls:'Express',    route:['Colombo Fort','Matara'],    loco:'DE-2002', gradient:['#2a1f4a','#6b3fa0'], img:'ruhunu-kumari',    capacity:900,  speed:95,  ontime:92 },
-  { id:'T-005', name:'Podi Menike',       number:'1019', cls:'Express',    route:['Kandy','Badulla'],          loco:'DE-1003', gradient:['#1f3a4a','#2d7ea0'], img:'podi-menike',      capacity:600,  speed:65,  ontime:96 },
-  { id:'T-006', name:'Galu Kumari',       number:'1084', cls:'Express',    route:['Colombo Fort','Galle'],     loco:'DE-1004', gradient:['#1f4a2d','#3a8f5a'], img:'galu-kumari',      capacity:850,  speed:100, ontime:93 },
-  { id:'T-007', name:'Night Mail',        number:'1045', cls:'Mail',       route:['Colombo Fort','Matara'],    loco:'DE-2003', gradient:['#2a2a2a','#555555'], img:'night-mail',       capacity:500,  speed:80,  ontime:85 },
-  { id:'T-008', name:'Denuwara Menike',   number:'1087', cls:'IC Express', route:['Colombo Fort','Kandy'],     loco:'DE-2004', gradient:['#1f2a4a','#4a6fa0'], img:'denuwara-menike',  capacity:1100, speed:120, ontime:95 },
+  { id:'T-001', name:'Udarata Menike',    number:'1015', cls:'Express',    route:['Colombo Fort','Badulla'],    loco:'DE-1001', assets:['DE-1001','BG-1001','BR-1001'], gradient:['#1e3a5f','#2d6a9f'], img:'udarata-menike',   capacity:800,  speed:90,  ontime:94 },
+  { id:'T-002', name:'Intercity Express', number:'1083', cls:'IC Express', route:['Colombo Fort','Kandy'],     loco:'DE-1002', assets:['DE-1002','BG-1002','BR-1002'], gradient:['#1a4731','#2d9b6f'], img:'intercity-express',capacity:1200, speed:120, ontime:91 },
+  { id:'T-003', name:'Yal Devi',          number:'1001', cls:'Express',    route:['Colombo Fort','Jaffna'],    loco:'DE-2001', assets:['DE-2001','BG-1006','BR-1005'], gradient:['#4a1f1f','#a83232'], img:'yal-devi',         capacity:700,  speed:100, ontime:88 },
+  { id:'T-004', name:'Ruhunu Kumari',     number:'1078', cls:'Express',    route:['Colombo Fort','Matara'],    loco:'DE-2002', assets:['DE-2002','BG-1007','BR-1006'], gradient:['#2a1f4a','#6b3fa0'], img:'ruhunu-kumari',    capacity:900,  speed:95,  ontime:92 },
+  { id:'T-005', name:'Podi Menike',       number:'1019', cls:'Express',    route:['Kandy','Badulla'],          loco:'DE-1003', assets:['DE-1003','BG-1003','BR-1003'], gradient:['#1f3a4a','#2d7ea0'], img:'podi-menike',      capacity:600,  speed:65,  ontime:96 },
+  { id:'T-006', name:'Galu Kumari',       number:'1084', cls:'Express',    route:['Colombo Fort','Galle'],     loco:'DE-1004', assets:['DE-1004','BG-1004','BR-1004'], gradient:['#1f4a2d','#3a8f5a'], img:'galu-kumari',      capacity:850,  speed:100, ontime:93 },
+  { id:'T-007', name:'Night Mail',        number:'1045', cls:'Mail',       route:['Colombo Fort','Matara'],    loco:'DE-2003', assets:['DE-2003','BG-1008','BR-1007'], gradient:['#2a2a2a','#555555'], img:'night-mail',       capacity:500,  speed:80,  ontime:85 },
+  { id:'T-008', name:'Denuwara Menike',   number:'1087', cls:'IC Express', route:['Colombo Fort','Kandy'],     loco:'DE-2004', assets:['DE-2004','BG-1009','BR-1008'], gradient:['#1f2a4a','#4a6fa0'], img:'denuwara-menike',  capacity:1100, speed:120, ontime:95 },
 ];
 
 /* ═══ NAV META ═══ */
@@ -894,6 +924,27 @@ function trainSVG([c1,c2]) {
   </svg>`;
 }
 
+function trainLinkedAssets(assets) {
+  const typeLabel={'DE':'Locomotive','BG':'Bogie','BR':'Brake Sys.'};
+  const typeIcon={'DE':'🚂','BG':'⚙️','BR':'🔴'};
+  return (assets||[]).map(aid=>{
+    const prefix=aid.split('-')[0];
+    const label=typeLabel[prefix]||'Asset';
+    const icon=typeIcon[prefix]||'🔧';
+    const rec=fleetAll.find(a=>a.asset_id===aid);
+    const st=rec?(rec.health_status||'UNKNOWN'):'UNKNOWN';
+    const dotCls=st==='GREEN'?'la-dot-green':st==='AMBER'?'la-dot-amber':st==='RED'?'la-dot-red':'la-dot-unknown';
+    return `<div class="la-chip">
+      <span class="la-chip-icon">${icon}</span>
+      <div class="la-chip-info">
+        <div class="la-chip-id">${esc(aid)}</div>
+        <div class="la-chip-type">${label}</div>
+      </div>
+      <div class="la-chip-dot ${dotCls}" title="${esc(st)}"></div>
+    </div>`;
+  }).join('');
+}
+
 function renderTrains() {
   const grid=document.getElementById('train-grid');
   grid.innerHTML=TRAINS.map(t=>{
@@ -901,6 +952,11 @@ function renderTrains() {
     const rc=h.status==='GREEN'?'mini-green':h.status==='AMBER'?'mini-amber':'mini-red';
     const bc=h.status==='GREEN'?'badge-green':h.status==='AMBER'?'badge-amber':'badge-red';
     const barColor=h.status==='GREEN'?'var(--green)':h.status==='AMBER'?'var(--amber)':'var(--red)';
+    const linkedHtml=t.assets&&t.assets.length?`
+        <div class="train-linked-assets">
+          <div class="linked-assets-label">Rolling Stock</div>
+          <div class="linked-assets-grid">${trainLinkedAssets(t.assets)}</div>
+        </div>`:'';
     return `<div class="train-card">
       <div class="train-hero">
         <div class="train-hero-bg" style="background:linear-gradient(135deg,${t.gradient[0]},${t.gradient[1]})"></div>
@@ -933,6 +989,7 @@ function renderTrains() {
           <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
           Loco: ${esc(t.loco)}
         </div>
+        ${linkedHtml}
       </div>
     </div>`;
   }).join('');
@@ -1126,28 +1183,45 @@ function cpUser(t){const m=document.getElementById('cp-msgs'),d=document.createE
 function cpTypingOn(){const m=document.getElementById('cp-msgs'),d=document.createElement('div');d.className='cp-msg bot';d.id='cp-typing';d.innerHTML=`<div class="cp-av b">🔧</div><div class="cp-bubble"><div class="cp-typing"><span></span><span></span><span></span></div></div>`;m.appendChild(d);m.scrollTop=m.scrollHeight}
 function cpTypingOff(){const e=document.getElementById('cp-typing');if(e)e.remove()}
 function cpRender(t){
-  // Split into blocks by blank lines
+  // Extract **Assets:** section first and render as fleet card
+  let assetHtml='';
+  t=t.replace(/\*\*Assets:\*\*\s*([\s\S]*?)(?=\*\*(?:Status|Details|Action Required|Reference):\*\*|$)/,(_, body)=>{
+    const rows=body.split('\n').map(l=>l.trim()).filter(l=>/^[-•*]/.test(l))
+      .map(l=>l.replace(/^[-•*]\s*/,'').trim())
+      .map(line=>{
+        const p=line.split('|').map(s=>s.trim());
+        if(p.length<4)return '';
+        const[id,type,scoreStr,status]=p;
+        const score=parseFloat(scoreStr)||0;
+        const st=status.toUpperCase().replace(/[^A-Z]/g,'');
+        const isg=st==='GREEN',isr=st==='RED';
+        const ac=isg?'fag':isr?'far':'faa';
+        const bc=isg?'fg':isr?'fr':'fa';
+        const bl=isg?'GREEN':isr?'RED':'AMBER';
+        return `<div class="cp-fleet-row ${ac}"><div class="cp-fleet-info"><div class="cp-fleet-id">${esc(id)}</div><div class="cp-fleet-type">${esc(type)}</div></div><div class="cp-fleet-right"><div class="cp-fleet-score">${score.toFixed(0)}<span style="font-size:0.58rem;font-weight:400;color:var(--text-muted)">/100</span></div><span class="cp-fleet-badge ${bc}">${bl}</span></div></div>`;
+      }).filter(Boolean).join('');
+    if(rows) assetHtml=`<div class="cp-fleet"><div class="cp-fleet-hdr">Rolling Stock</div>${rows}</div>`;
+    return '';
+  });
+  // Split remaining text into blocks
   const blocks=t.split(/\n\n+/);
   let html='';
   for(let block of blocks){
     block=block.trim();
     if(!block)continue;
     const lines=block.split('\n');
-    // Detect bullet list block
     if(lines.every(l=>/^[-*•]\s/.test(l.trim()))){
       const items=lines.map(l=>`<li>${esc(l.replace(/^[-*•]\s/,'').trim()).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')}</li>`).join('');
       html+=`<ul>${items}</ul>`;
     } else if(lines.length===1&&/^\*\*[^*]+:\*\*/.test(lines[0].trim())){
-      // Bold label line like **Status:** text — render as label paragraph
       const rendered=esc(lines[0].trim()).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
       html+=`<p class="cp-label">${rendered}</p>`;
     } else {
-      // Regular paragraph — apply bold inside
       const rendered=lines.map(l=>esc(l).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')).join('<br>');
       html+=`<p>${rendered}</p>`;
     }
   }
-  return html;
+  return assetHtml+html;
 }
 function cpBot(data){const m=document.getElementById('cp-msgs'),d=document.createElement('div');d.className='cp-msg bot';const cites=(data.citations||[]).map(c=>`<span class="cp-cite-chip">${esc(c.section_title||c.manual||'Manual')}</span>`).join('');const ch=cites?`<div class="cp-citations"><div class="cp-cite-label">Sources</div>${cites}</div>`:'';d.innerHTML=`<div class="cp-av b">🔧</div><div class="cp-bubble">${cpRender(data.answer)}${ch}</div>`;m.appendChild(d);m.scrollTop=m.scrollHeight;const l=data.answer_method==='llm_grounded';document.getElementById('cp-mdot').style.background=l?'var(--primary-light)':'var(--green)';document.getElementById('cp-mlbl').textContent=`${l?'LLM':'Template'} · ${data.retrieval_method==='supabase_pgvector'?'pgvector':'TF-IDF'}`}
 async function cpSendMsg(){const inp=document.getElementById('cp-input'),text=inp.value.trim();if(!text||cpBusy)return;inp.value='';inp.style.height='auto';document.getElementById('cp-send').disabled=true;cpBusy=true;cpUser(text);cpTypingOn();try{const res=await fetch('/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,asset_type:'',history:cpHist.slice(-10)})});if(!res.ok)throw new Error(`HTTP ${res.status}`);const data=await res.json();cpTypingOff();cpBot(data);cpHist.push({role:'user',content:text},{role:'assistant',content:data.answer})}catch(err){cpTypingOff();const m=document.getElementById('cp-msgs'),d=document.createElement('div');d.className='cp-msg bot';d.innerHTML=`<div class="cp-av b">🔧</div><div class="cp-bubble" style="color:var(--red)">Error: ${esc(err.message)}</div>`;m.appendChild(d);m.scrollTop=m.scrollHeight}finally{cpBusy=false;document.getElementById('cp-send').disabled=false}}
