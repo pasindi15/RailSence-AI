@@ -1811,11 +1811,11 @@ async function loadDashboard() {
     setBadge('sys-db',hub.supabase_configured,'Connected','Local fallback');
     setBadge('sys-redis',hub.upstash_configured,'Online','Not configured');
     setBadge('sys-rag',true,hub.supabase_configured?'pgvector active':'TF-IDF local','—');
-    setBadge('sys-hub',hub.upstash_configured,'Online','Local mode');
+    setBadge('sys-hub',hub.hub_reachable,'Online','Offline');
 
     setSbDot('sdot-llm','sbv-llm',true,'Groq');
     setSbDot('sdot-db','sbv-db',hub.supabase_configured,hub.supabase_configured?'Cloud':'Local');
-    setSbDot('sdot-redis','sbv-redis',hub.upstash_configured,hub.upstash_configured?'Online':'—');
+    setSbDot('sdot-redis','sbv-redis',hub.upstash_configured,hub.upstash_configured?'Online':'Not set');
 
     renderStatusDist(dist);
     renderTypeDist(agg.asset_type_distribution||{});
