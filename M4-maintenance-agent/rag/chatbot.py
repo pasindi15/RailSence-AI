@@ -68,6 +68,32 @@ ASSET_TYPE_HINTS: dict[str, list[str]] = {
     "platform_gate": ["platform gate", "door", "gate motor"],
 }
 
+CASUAL_SYSTEM_PROMPT = """You are a friendly railway maintenance assistant for Sri Lanka Railways (SLR).
+For greetings and casual messages respond naturally in 1-2 short sentences.
+Briefly introduce yourself and invite the engineer to ask a technical maintenance question.
+Never use structured formats like Status/Details/Action for casual conversation."""
+
+_CASUAL_WORDS = {
+    "hey", "hi", "hello", "howdy", "sup", "yo",
+    "thanks", "thank you", "cheers", "ty",
+    "bye", "goodbye", "cya", "ok", "okay", "alright", "sure",
+    "good morning", "good afternoon", "good evening", "good night",
+    "what can you do", "help", "who are you", "what are you",
+}
+
+def _is_casual_message(message: str) -> bool:
+    lower = message.strip().lower().rstrip(" !.?,")
+    if lower in _CASUAL_WORDS:
+        return True
+    words = lower.split()
+    if len(words) <= 3:
+        tech = {"engine","brake","bogie","track","signal","fault","maintenance",
+                "service","inspection","repair","oil","fuel","wheel","pad","cylinder",
+                "loco","train","asset","health","status","report","check"}
+        return not any(w in tech for w in words)
+    return False
+
+
 SYSTEM_PROMPT = """You are an expert railway maintenance engineer assistant for Sri Lanka Railways (SLR).
 
 Always reply using EXACTLY this structure (use the bold labels as shown):
@@ -107,7 +133,8 @@ Rules:
 - Use only bullet points for lists — no tables, no numbered lists, no markdown headings.
 - Be concise. Each bullet should be one clear sentence.
 - If a question is outside railway maintenance, say so in the Status line and stop.
-- Never leave a section blank — write "None at this time" if nothing applies."""
+- Never leave a section blank — write "None at this time" if nothing applies.
+- For greetings or messages with no technical content (e.g. "hey", "hello", "thanks"), reply in plain conversational text — 1-2 sentences only, no structured format at all."""
 
 
 def _detect_asset_type(message: str) -> str:
@@ -265,6 +292,24 @@ def _template_answer(message: str, sections: list[dict], train: Optional[dict] =
     )
 
 
+def _llm_casual(message: str, history: list[dict]) -> str:
+    try:
+        from groq import Groq
+        client = Groq(api_key=os.environ["GROQ_API_KEY"])
+        messages: list[dict] = [{"role": "system", "content": CASUAL_SYSTEM_PROMPT}]
+        for turn in history[-4:]:
+            messages.append({"role": turn["role"], "content": turn["content"]})
+        messages.append({"role": "user", "content": message})
+        response = client.chat.completions.create(
+            model="qwen/qwen3.8-27b",
+            max_tokens=80,
+            messages=messages,
+        )
+        return response.choices[0].message.content.strip()
+    except Exception:
+        return "Hello! I'm your RailSense Maintenance Assistant. Ask me about engine maintenance, brake systems, bogie inspection, or any other railway equipment."
+
+
 def _llm_chat(message: str, history: list[dict]) -> str:
     try:
         from groq import Groq
@@ -331,13 +376,26 @@ def answer_engineer_question(
 ) -> dict[str, Any]:
     history = history or []
 
-    # 0. Short-circuit: train list query
+    # 0a. Short-circuit: train list query
     if _is_train_list_query(message):
         return {
             "answer": _build_train_list_answer(),
             "citations": [],
             "retrieval_method": "registry",
             "answer_method": "registry",
+            "detected_asset_type": "",
+            "detected_train": None,
+        }
+
+    # 0b. Short-circuit: casual / greeting message — no structured cards
+    if _is_casual_message(message):
+        casual_answer = _llm_casual(message, history) if os.getenv("GROQ_API_KEY") else \
+            "Hello! I'm your RailSense Maintenance Assistant. Ask me about engine maintenance, brake systems, bogie inspection, or any railway equipment."
+        return {
+            "answer": casual_answer,
+            "citations": [],
+            "retrieval_method": "none",
+            "answer_method": "llm_grounded",
             "detected_asset_type": "",
             "detected_train": None,
         }
