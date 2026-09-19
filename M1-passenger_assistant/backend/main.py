@@ -390,12 +390,41 @@ async def chat(req: ChatRequest):
                 similar = p["similar_past_incidents"][0]
             if not similar:
                 similar = "No similar historical incident recorded"
+
+            # When M2 flags a maintenance-related cause, also query M4 via
+            # Hub — the passenger gets the live maintenance record (reason,
+            # ETA) in the same reply, not just the delay prediction.
+            _MAINT_KEYWORDS = {"maintenance", "repair", "fault", "breakdown", "mechanical", "out of service"}
+            maintenance_context = ""
+            if train_id and any(kw in reason.lower() for kw in _MAINT_KEYWORDS):
+                try:
+                    maint_envelope = build_envelope(
+                        receiver_agent="maintenance-agent",
+                        intent="train_status_query",
+                        payload={"train_id": train_id, "raw_text": text},
+                    )
+                    maint_response = await send_to_hub(maint_envelope)
+                    if maint_response.status == "ok":
+                        mp = maint_response.payload
+                        if mp.get("under_maintenance"):
+                            eta_note = (
+                                f" Expected back in service by {mp['estimated_clear']}."
+                                if mp.get("estimated_clear")
+                                else ""
+                            )
+                            maintenance_context = (
+                                f" Maintenance update: "
+                                f"{mp.get('reason', 'Technical issue under investigation')}.{eta_note}"
+                            )
+                except Exception:
+                    pass
+
             reply = (
                 f"Expected delay: {delay} minutes. "
-                f"Reason: {reason}. "
+                f"Reason: {reason}.{maintenance_context} "
                 f"Similar past incident: {similar}."
             )
-            source = "via Operations Agent (Hub)"
+            source = "via Operations Agent + Maintenance Agent (Hub)" if maintenance_context else "via Operations Agent (Hub)"
         else:
             message = hub_response.message or "I couldn't reach the Operations Agent right now."
             reply = message if "TRAIN_NOT_FOUND" in message else "I couldn't reach the Operations Agent right now."
