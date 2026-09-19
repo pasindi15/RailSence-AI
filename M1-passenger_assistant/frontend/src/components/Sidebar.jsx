@@ -54,12 +54,12 @@ function ChatItem({ chat, isActive, onSelect, onPin, onDeleteRequest }) {
   );
 }
 
-export default function Sidebar({ chats, activeChatId, onNewChat, onSelectChat, onPin, onDeleteRequest, passenger, onLogout }) {
+export default function Sidebar({ chats, activeChatId, onNewChat, onSelectChat, onPin, onDeleteRequest, passenger, onLogout, isOpen = true }) {
   const pinned = chats.filter((c) => c.isPinned);
   const recent = chats.filter((c) => !c.isPinned);
 
   return (
-    <div className="sidebar">
+    <div className={`sidebar${isOpen ? "" : " sidebar--collapsed"}`}>
       <div className="sidebar-brand">
         <div className="sidebar-brand-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" width="14" height="14">
