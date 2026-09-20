@@ -27,11 +27,11 @@ JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY", "")
 JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM", "HS256")
 
 # ── Downstream agent service URLs ─────────────────────────────────────────────
-PASSENGER_AGENT_URL: str = os.getenv("PASSENGER_AGENT_URL", "http://localhost:8001")
-BOOKING_AGENT_URL: str = os.getenv("BOOKING_AGENT_URL", "http://localhost:8003")
-SECURITY_AGENT_URL: str = os.getenv("SECURITY_AGENT_URL", "http://localhost:8004")
-OPERATIONS_AGENT_URL: str = os.getenv("OPERATIONS_AGENT_URL", "http://localhost:8005")
-MAINTENANCE_AGENT_URL: str = os.getenv("MAINTENANCE_AGENT_URL", "http://localhost:8006")
+PASSENGER_AGENT_URL: str = os.getenv("PASSENGER_AGENT_URL", "http://127.0.0.1:8001")
+BOOKING_AGENT_URL: str = os.getenv("BOOKING_AGENT_URL", "http://127.0.0.1:8003")
+SECURITY_AGENT_URL: str = os.getenv("SECURITY_AGENT_URL", "http://127.0.0.1:8004")
+OPERATIONS_AGENT_URL: str = os.getenv("OPERATIONS_AGENT_URL", "http://127.0.0.1:8005")
+MAINTENANCE_AGENT_URL: str = os.getenv("MAINTENANCE_AGENT_URL", "http://127.0.0.1:8006")
 
 # ── Database / Audit Persistence ──────────────────────────────────────────────
 DATABASE_URL: str = os.getenv("DATABASE_URL", "")

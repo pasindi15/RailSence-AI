@@ -92,6 +92,10 @@ class BookingRequest(BaseModel):
         default=None,
         description="Opaque seat hold token if seats were reserved via temporary hold",
     )
+    schedule_id:     int | None       = Field(
+        default=None,
+        description="Direct TrainSchedule ID if pre-selected from frontend options",
+    )
 
     model_config = {"str_strip_whitespace": True}
 
@@ -102,10 +106,24 @@ class BookingRequest(BaseModel):
     @field_validator("travel_date")
     @classmethod
     def travel_date_not_in_past(cls, v: date) -> date:
-        """Reject travel dates that are strictly in the past."""
-        from datetime import date as _date
-        if v < _date.today():
-            raise ValueError("travel_date must be today or a future date")
+        """Reject travel dates that are strictly in the past or exceed the booking horizon."""
+        import os
+        from datetime import datetime, timedelta, timezone
+        try:
+            from zoneinfo import ZoneInfo
+            colombo_tz = ZoneInfo("Asia/Colombo")
+        except Exception:
+            colombo_tz = timezone(timedelta(hours=5, minutes=30))
+
+        if os.getenv("ALLOW_PAST_TRAVEL_DATES", "").lower() in ("true", "1", "yes"):
+            return v
+
+        now_colombo = datetime.now(colombo_tz).date()
+        if v < now_colombo:
+            raise ValueError(f"travel_date must be today or a future date ({now_colombo.isoformat()} in Asia/Colombo)")
+        max_horizon = now_colombo + timedelta(days=90)
+        if v > max_horizon:
+            raise ValueError(f"travel_date exceeds advance booking limit of 90 days ({max_horizon.isoformat()})")
         return v
 
     @field_validator("seat_class")

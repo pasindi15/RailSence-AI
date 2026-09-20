@@ -67,6 +67,11 @@ async def lifespan(_app):
         logger.info("Registered with agent Hub")
     except Exception as exc:
         logger.warning("Hub unavailable during startup: %s", exc)
+    try:
+        admin_db.seed_initial_admin_if_needed()
+        logger.info("Bootstrapped M2 operations RBAC admin")
+    except Exception as exc:
+        logger.warning("RBAC bootstrap skipped: %s", exc)
     yield
 
 app = FastAPI(

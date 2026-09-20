@@ -32,7 +32,7 @@ load_dotenv(Path(__file__).parent / ".env")
 # than introducing a second one for the same thing.
 AGENT_HUB_URL = os.getenv("AGENT_HUB_URL", "http://localhost:8002")
 HUB_ROUTE_PATH = os.getenv("HUB_ROUTE_PATH", "messages")
-HUB_TIMEOUT_SECONDS = float(os.getenv("HUB_TIMEOUT_SECONDS", "5"))
+HUB_TIMEOUT_SECONDS = float(os.getenv("HUB_TIMEOUT_SECONDS", "15"))
 USE_MOCK_HUB = os.getenv("USE_MOCK_HUB", "false").strip().lower() in ("1", "true", "yes")
 
 HUB_UNREACHABLE_MESSAGE = "I couldn't reach that service right now — please try again shortly."
@@ -142,9 +142,9 @@ def send_to_hub_mock(message: HubMessage) -> HubResponse:
             status="ok",
             sender_agent="operations-agent",
             payload={
-                "predicted_delay_minutes": 9.0,
-                "reason": "Historical congestion + weather conditions",
-                "similar_incident": "Signal failure occurred on same route previously",
+                "predicted_delay_minutes": 25.0,
+                "reason": "Mechanical fault — brake system maintenance in progress",
+                "similar_incident": "Similar brake maintenance delay recorded on same route 3 weeks ago",
             },
         )
     if message.intent == "train_status_query":
@@ -154,9 +154,11 @@ def send_to_hub_mock(message: HubMessage) -> HubResponse:
             sender_agent="maintenance-agent",
             payload={
                 "train_id": train_id,
-                "under_maintenance": False,
+                "under_maintenance": True,
                 "found": True,
-                "message": f"Train {train_id} has no active maintenance issues and is cleared for service.",
+                "reason": "Brake system inspection and component replacement",
+                "estimated_clear": "14:30 today",
+                "message": f"Train {train_id} is currently under maintenance — brake system inspection.",
             },
         )
     if message.intent == "issue_report":

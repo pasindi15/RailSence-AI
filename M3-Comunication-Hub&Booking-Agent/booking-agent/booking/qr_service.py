@@ -64,7 +64,7 @@ def generate_qr_svg(data_text: str) -> str:
         import qrcode
         import qrcode.image.svg
         factory = qrcode.image.svg.SvgImage
-        img = qrcode.make(data_text, image_factory=factory)
+        img = qrcode.make(data_text, image_factory=factory, box_size=20)
         return img.to_string(encoding="unicode")
     except Exception:
         # Fallback to SVG representation containing the verification token & badge

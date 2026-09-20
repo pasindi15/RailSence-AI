@@ -1,38 +1,62 @@
 """
-M2 Admin Dashboard — API router.
+M2 Admin Dashboard & Operations RBAC API Router.
 
-Integration (main.py), two lines:
+Prefix: /admin/api
 
-    from admin.admin_router import router as admin_router
-    app.include_router(admin_router)
+Endpoints:
+    Auth:
+        POST /login             -> Authenticates officer, returns JWT token & user profile
+        POST /logout            -> Audits officer logout
+        GET  /me                -> Returns current officer identity, role, permissions
 
-Then serve the UI (also two lines, put near your existing "/" mount):
+    Officers & Access (Admin Only):
+        GET    /officers                   -> List officers (paginated, filtered, searched)
+        POST   /officers                   -> Create officer (hashed password, audited)
+        GET    /officers/{id}              -> Officer details
+        PUT    /officers/{id}              -> Update officer (role change & lockout guards)
+        POST   /officers/{id}/reset-password -> Reset temporary password
+        POST   /officers/{id}/status       -> Toggle active/inactive with lockout guard
+        GET    /officers/audit             -> Security audit trail
+        GET    /roles/matrix               -> RBAC capability matrix
 
-    from fastapi.staticfiles import StaticFiles
-    app.mount("/admin", StaticFiles(directory="admin_ui", html=True), name="admin_ui")
-
-(Adjust the StaticFiles `directory=` path to wherever you place the ui/admin
-folder from this package — see the top-level README.md for the exact layout.)
-
-All routes are prefixed with /admin/api so they never collide with your
-existing passenger-facing routes (/predict-delay, /incident-report, etc).
+    M2 Admin Console Features (Admin Only):
+        System Health & Config (/health/*)
+        Data Management (/data/*)
+        Incident Reports Queue (/incident-reports/*)
+        Model Operations (/model/*)
+        Hub & Event Control (/hub/*)
+        General Audit Logs (/audit/*)
 """
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
 import os
+from pathlib import Path
 import subprocess
 import sys
 import time
-from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 import httpx
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
-from pydantic import BaseModel, Field
+from fastapi import APIRouter, Body, Depends, File, HTTPException, Header, Query, Request, UploadFile, status
+from pydantic import BaseModel, EmailStr, Field
 
 from . import admin_db
-from .admin_auth import check_login, create_admin_token, require_admin
+from .admin_auth import (
+    ROLE_ADMIN,
+    ROLE_OPERATIONS_ENGINEER,
+    ROLE_PERMISSIONS,
+    ROLE_DISPLAY_NAMES,
+    create_officer_token,
+    get_current_officer,
+    get_permissions_for_role,
+    hash_password,
+    require_admin,
+    require_authenticated_officer,
+    require_role,
+    verify_password,
+)
 
 router = APIRouter(prefix="/admin/api", tags=["admin"])
 
@@ -41,29 +65,420 @@ ML_DIR = ROOT_DIR / "ml"
 
 
 # ============================================================================
-# AUTH
+# Schemas
 # ============================================================================
 
 class LoginRequest(BaseModel):
-    username: str
+    email: Optional[str] = None
+    username: Optional[str] = None
     password: str
 
 
-@router.post("/login")
-def login(body: LoginRequest):
-    if not check_login(body.username, body.password):
-        raise HTTPException(status_code=401, detail="Invalid username or password")
-    token = create_admin_token(body.username)
-    return {"token": token, "expires_in_seconds": 8 * 3600}
+class OfficerCreateRequest(BaseModel):
+    full_name: str = Field(..., min_length=2, max_length=255)
+    email: EmailStr
+    password: str = Field(..., min_length=6, max_length=128)
+    role: str = Field(default=ROLE_OPERATIONS_ENGINEER)
+    status: str = Field(default="active")
 
 
-@router.get("/me")
-def me(identity: dict = Depends(require_admin)):
-    return {"username": identity.get("sub")}
+class OfficerUpdateRequest(BaseModel):
+    full_name: Optional[str] = Field(None, min_length=2, max_length=255)
+    email: Optional[EmailStr] = None
+    role: Optional[str] = None
+    status: Optional[str] = None
+
+
+class OfficerPasswordResetRequest(BaseModel):
+    new_password: str = Field(..., min_length=6, max_length=128)
+
+
+class OfficerStatusRequest(BaseModel):
+    status: str = Field(..., pattern="^(active|inactive)$")
 
 
 # ============================================================================
-# 1. SYSTEM HEALTH & CONFIG
+# AUTH ENDPOINTS
+# ============================================================================
+
+@router.post("/login")
+def login(body: LoginRequest, request: Request):
+    """Authenticate officer via email (or username) and password. Issues JWT."""
+    admin_db.seed_initial_admin_if_needed()
+
+    login_identifier = (body.email or body.username or "").strip()
+    if not login_identifier or not body.password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email and password are required.",
+        )
+
+    officer = admin_db.get_officer_by_email(login_identifier)
+
+    # If user used a username instead of an email, try adding @railsense.lk
+    if not officer and "@" not in login_identifier:
+        officer = admin_db.get_officer_by_email(f"{login_identifier}@railsense.lk")
+
+    client_ip = request.client.host if request.client else "127.0.0.1"
+
+    if not officer:
+        admin_db.record_officer_audit(
+            action="UNAUTHORIZED_ACCESS_ATTEMPT",
+            actor={"name": "Unknown", "email": login_identifier, "role": "anonymous"},
+            details={"reason": "User not found", "attempted_identifier": login_identifier},
+            ip_address=client_ip,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password.",
+        )
+
+    # Check active status first
+    if officer.get("status") == "inactive":
+        admin_db.record_officer_audit(
+            action="UNAUTHORIZED_ACCESS_ATTEMPT",
+            actor={"id": officer.get("id"), "name": officer.get("full_name"), "email": officer.get("email"), "role": officer.get("role")},
+            details={"reason": "Account is inactive"},
+            target={"id": officer.get("id"), "email": officer.get("email")},
+            ip_address=client_ip,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Account inactive. Please contact an administrator.",
+        )
+
+    # Verify password hash
+    password_hash = officer.get("password_hash", "")
+    if not verify_password(body.password, password_hash):
+        admin_db.record_officer_audit(
+            action="UNAUTHORIZED_ACCESS_ATTEMPT",
+            actor={"id": officer.get("id"), "name": officer.get("full_name"), "email": officer.get("email"), "role": officer.get("role")},
+            details={"reason": "Password mismatch"},
+            target={"id": officer.get("id"), "email": officer.get("email")},
+            ip_address=client_ip,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password.",
+        )
+
+    # Update last_login_at
+    now_iso = datetime.now(timezone.utc).isoformat()
+    admin_db.update_officer(officer["id"], {"last_login_at": now_iso})
+
+    # Record successful login in audit log
+    admin_db.record_officer_audit(
+        action="LOGIN",
+        actor={"id": officer["id"], "name": officer["full_name"], "email": officer["email"], "role": officer["role"]},
+        details={"status": "success"},
+        target={"id": officer["id"], "email": officer["email"]},
+        ip_address=client_ip,
+    )
+
+    token = create_officer_token(officer)
+    role = officer.get("role", ROLE_OPERATIONS_ENGINEER)
+
+    return {
+        "token": token,
+        "officer": {
+            "id": officer["id"],
+            "name": officer["full_name"],
+            "email": officer["email"],
+            "role": role,
+            "role_display": ROLE_DISPLAY_NAMES.get(role, role.capitalize()),
+            "status": officer["status"],
+            "last_login_at": now_iso,
+            "permissions": list(get_permissions_for_role(role)),
+        },
+        "expires_in_seconds": 8 * 3600,
+    }
+
+
+@router.post("/logout")
+def logout(request: Request, current_officer: dict = Depends(get_current_officer)):
+    """Logs out officer and records an audit log entry."""
+    client_ip = request.client.host if request.client else "127.0.0.1"
+    admin_db.record_officer_audit(
+        action="LOGOUT",
+        actor=current_officer,
+        details={"status": "officer_initiated_logout"},
+        ip_address=client_ip,
+    )
+    return {"ok": True, "message": "Logged out successfully."}
+
+
+@router.get("/me")
+def me(current_officer: dict = Depends(get_current_officer)):
+    """Returns current officer profile and capability set."""
+    role = current_officer.get("role", ROLE_OPERATIONS_ENGINEER)
+    return {
+        "id": current_officer.get("sub"),
+        "name": current_officer.get("name"),
+        "email": current_officer.get("email"),
+        "role": role,
+        "role_display": ROLE_DISPLAY_NAMES.get(role, role.capitalize()),
+        "status": current_officer.get("status", "active"),
+        "permissions": list(get_permissions_for_role(role)),
+        "can_access_admin_console": role == ROLE_ADMIN,
+        "can_access_control_room": True,
+        "can_access_prediction": True,
+    }
+
+
+# ============================================================================
+# OFFICER & ACCESS MANAGEMENT (ADMIN ONLY)
+# ============================================================================
+
+@router.get("/officers")
+def list_officers_endpoint(
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+    role: Optional[str] = Query(None),
+    status: Optional[str] = Query(None),
+    search: Optional[str] = Query(None),
+    admin: dict = Depends(require_admin),
+):
+    """List all officers with optional role, status, and text search filters."""
+    result = admin_db.list_officers(limit=limit, offset=offset, role=role, status=status, search=search)
+    return result
+
+
+@router.post("/officers", status_code=status.HTTP_201_CREATED)
+def create_officer_endpoint(
+    body: OfficerCreateRequest,
+    request: Request,
+    admin: dict = Depends(require_admin),
+):
+    """Create a new officer account with bcrypt hashed password. Audited."""
+    clean_email = body.email.strip().lower()
+    existing = admin_db.get_officer_by_email(clean_email)
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"An officer with email '{clean_email}' already exists.",
+        )
+
+    if body.role not in ROLE_PERMISSIONS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid role '{body.role}'. Supported roles: {list(ROLE_PERMISSIONS.keys())}",
+        )
+
+    hashed_pw = hash_password(body.password)
+    officer_record = {
+        "full_name": body.full_name.strip(),
+        "email": clean_email,
+        "password_hash": hashed_pw,
+        "role": body.role,
+        "status": body.status,
+        "created_by": admin.get("email") or admin.get("name") or "Administrator",
+    }
+
+    created = admin_db.create_officer(officer_record)
+
+    client_ip = request.client.host if request.client else "127.0.0.1"
+    admin_db.record_officer_audit(
+        action="OFFICER_CREATED",
+        actor=admin,
+        details={"name": body.full_name, "email": clean_email, "role": body.role, "status": body.status},
+        target={"id": created.get("id"), "email": clean_email},
+        ip_address=client_ip,
+    )
+
+    # Exclude password hash from response
+    safe_officer = {k: v for k, v in created.items() if k != "password_hash"}
+    return safe_officer
+
+
+@router.get("/officers/audit")
+def list_officer_audits_endpoint(
+    limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0),
+    action: Optional[str] = Query(None),
+    admin: dict = Depends(require_admin),
+):
+    """Returns security audit logs (LOGIN, LOGOUT, OFFICER_CREATED, ROLE_CHANGED, etc.)."""
+    return admin_db.list_officer_audits(limit=limit, offset=offset, action=action)
+
+
+@router.get("/officers/{officer_id}")
+def get_officer_endpoint(officer_id: str, admin: dict = Depends(require_admin)):
+    officer = admin_db.get_officer_by_id(officer_id)
+    if not officer:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Officer not found.")
+    return {k: v for k, v in officer.items() if k != "password_hash"}
+
+
+@router.put("/officers/{officer_id}")
+def update_officer_endpoint(
+    officer_id: str,
+    body: OfficerUpdateRequest,
+    request: Request,
+    admin: dict = Depends(require_admin),
+):
+    """Update officer details, role, or status with lockout prevention guards."""
+    officer = admin_db.get_officer_by_id(officer_id)
+    if not officer:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Officer not found.")
+
+    patch: dict[str, Any] = {}
+    client_ip = request.client.host if request.client else "127.0.0.1"
+
+    if body.full_name:
+        patch["full_name"] = body.full_name.strip()
+
+    if body.email:
+        clean_email = body.email.strip().lower()
+        if clean_email != officer.get("email"):
+            existing = admin_db.get_officer_by_email(clean_email)
+            if existing:
+                raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already in use.")
+            patch["email"] = clean_email
+
+    # Lockout guard: deactivating last active admin
+    if body.status:
+        if body.status not in ("active", "inactive"):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid status value.")
+        if officer.get("role") == ROLE_ADMIN and officer.get("status") == "active" and body.status == "inactive":
+            if admin_db.count_active_admins() <= 1:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Cannot deactivate the last active Administrator account. Another active admin must exist first.",
+                )
+        patch["status"] = body.status
+
+    # Lockout guard: demoting last active admin
+    if body.role and body.role != officer.get("role"):
+        if body.role not in ROLE_PERMISSIONS:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid role specified.")
+        if officer.get("role") == ROLE_ADMIN and body.role != ROLE_ADMIN:
+            if admin_db.count_active_admins() <= 1:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Cannot change role of the last active Administrator. Another active admin must exist first.",
+                )
+        patch["role"] = body.role
+
+    if not patch:
+        return {k: v for k, v in officer.items() if k != "password_hash"}
+
+    updated = admin_db.update_officer(officer_id, patch)
+    if not updated:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to update officer.")
+
+    # Audit specific actions
+    if "role" in patch and patch["role"] != officer.get("role"):
+        admin_db.record_officer_audit(
+            action="ROLE_CHANGED",
+            actor=admin,
+            details={"old_role": officer.get("role"), "new_role": patch["role"], "officer_name": officer.get("full_name")},
+            target={"id": officer_id, "email": officer.get("email")},
+            ip_address=client_ip,
+        )
+
+    if "status" in patch and patch["status"] != officer.get("status"):
+        action = "OFFICER_DEACTIVATED" if patch["status"] == "inactive" else "OFFICER_ACTIVATED"
+        admin_db.record_officer_audit(
+            action=action,
+            actor=admin,
+            details={"old_status": officer.get("status"), "new_status": patch["status"], "officer_name": officer.get("full_name")},
+            target={"id": officer_id, "email": officer.get("email")},
+            ip_address=client_ip,
+        )
+
+    admin_db.record_officer_audit(
+        action="OFFICER_UPDATED",
+        actor=admin,
+        details={"updated_fields": list(patch.keys())},
+        target={"id": officer_id, "email": officer.get("email")},
+        ip_address=client_ip,
+    )
+
+    return {k: v for k, v in updated.items() if k != "password_hash"}
+
+
+@router.post("/officers/{officer_id}/reset-password")
+def reset_password_endpoint(
+    officer_id: str,
+    body: OfficerPasswordResetRequest,
+    request: Request,
+    admin: dict = Depends(require_admin),
+):
+    """Admin triggers password reset for an officer. Hashes with bcrypt and audits."""
+    officer = admin_db.get_officer_by_id(officer_id)
+    if not officer:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Officer not found.")
+
+    new_hash = hash_password(body.new_password)
+    updated = admin_db.update_officer(officer_id, {"password_hash": new_hash})
+    if not updated:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to reset password.")
+
+    client_ip = request.client.host if request.client else "127.0.0.1"
+    admin_db.record_officer_audit(
+        action="PASSWORD_RESET",
+        actor=admin,
+        details={"target_officer": officer.get("email"), "reason": "Admin initiated reset"},
+        target={"id": officer_id, "email": officer.get("email")},
+        ip_address=client_ip,
+    )
+
+    return {"ok": True, "message": f"Password reset successfully for {officer.get('email')}."}
+
+
+@router.post("/officers/{officer_id}/status")
+def toggle_officer_status_endpoint(
+    officer_id: str,
+    body: OfficerStatusRequest,
+    request: Request,
+    admin: dict = Depends(require_admin),
+):
+    """Toggle officer account status (active/inactive) with lockout guard."""
+    officer = admin_db.get_officer_by_id(officer_id)
+    if not officer:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Officer not found.")
+
+    if officer.get("role") == ROLE_ADMIN and officer.get("status") == "active" and body.status == "inactive":
+        if admin_db.count_active_admins() <= 1:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot deactivate the last active Administrator account.",
+            )
+
+    updated = admin_db.update_officer(officer_id, {"status": body.status})
+    client_ip = request.client.host if request.client else "127.0.0.1"
+
+    action = "OFFICER_DEACTIVATED" if body.status == "inactive" else "OFFICER_ACTIVATED"
+    admin_db.record_officer_audit(
+        action=action,
+        actor=admin,
+        details={"old_status": officer.get("status"), "new_status": body.status},
+        target={"id": officer_id, "email": officer.get("email")},
+        ip_address=client_ip,
+    )
+
+    return {k: v for k, v in updated.items() if k != "password_hash"}
+
+
+@router.get("/roles/matrix")
+def get_roles_matrix_endpoint(current_officer: dict = Depends(get_current_officer)):
+    """Returns RBAC roles, capability assignments, and descriptions for UI inspection."""
+    return {
+        "roles": [
+            {
+                "role": r,
+                "display_name": ROLE_DISPLAY_NAMES.get(r, r.capitalize()),
+                "permissions": list(perms),
+                "is_current_officer_role": current_officer.get("role") == r,
+            }
+            for r, perms in ROLE_PERMISSIONS.items()
+        ],
+        "all_capabilities": sorted(list({p for perms in ROLE_PERMISSIONS.values() for p in perms})),
+    }
+
+
+# ============================================================================
+# 1. SYSTEM HEALTH & CONFIG (ADMIN ONLY)
 # ============================================================================
 
 @router.get("/health/status")
@@ -94,7 +509,6 @@ def health_status(identity: dict = Depends(require_admin)):
 
 @router.get("/health/data-sources")
 def health_data_sources(identity: dict = Depends(require_admin)):
-    """Which dashboard cards are currently live vs. falling back."""
     supabase_ok = admin_db.supabase_reachable()
     csv_exists = admin_db.CSV_FALLBACK_PATH.exists()
 
@@ -115,7 +529,6 @@ def health_data_sources(identity: dict = Depends(require_admin)):
 
 @router.get("/health/config")
 def health_config(identity: dict = Depends(require_admin)):
-    """Masked view of the important env vars actually in use."""
     def mask(v: Optional[str]) -> str:
         if not v:
             return "(not set)"
@@ -133,7 +546,7 @@ def health_config(identity: dict = Depends(require_admin)):
 
 
 # ============================================================================
-# 2. DATA MANAGEMENT (operations_history CRUD)
+# 2. DATA MANAGEMENT (ADMIN ONLY)
 # ============================================================================
 
 class OperationsRecord(BaseModel):
@@ -150,203 +563,118 @@ class OperationsRecord(BaseModel):
     delay_minutes: float = Field(ge=0, le=600)
 
 
-@router.get("/data/operations")
-def list_operations(
-    limit: int = 50,
-    offset: int = 0,
-    route: Optional[str] = None,
-    incident_type: Optional[str] = None,
-    identity: dict = Depends(require_admin),
-):
-    filters = {}
-    if route:
-        filters["route"] = route
-    if incident_type:
-        filters["incident_type"] = incident_type
-
-    result = admin_db.fetch_table(
-        "operations_history", limit=limit, offset=offset,
-        order_by="scheduled_time", filters=filters,
-    )
+@router.get("/data/records")
+def list_operations_records(limit: int = 50, offset: int = 0, identity: dict = Depends(require_admin)):
+    result = admin_db.fetch_table("operations_history", limit=limit, offset=offset, order_by="scheduled_time")
     if result["source"] == "unavailable":
-        result = admin_db.fetch_operations_history_csv_fallback(limit=limit, offset=offset)
+        return admin_db.fetch_operations_history_csv_fallback(limit=limit, offset=offset)
     return result
 
 
-@router.post("/data/operations")
-def create_operation(record: OperationsRecord, identity: dict = Depends(require_admin)):
-    row = record.model_dump(exclude_none=True)
-    result = admin_db.insert_row("operations_history", row)
+@router.post("/data/records")
+def create_operations_record(record: OperationsRecord, identity: dict = Depends(require_admin)):
+    data = record.model_dump()
+    if not data.get("record_id"):
+        data["record_id"] = f"REC-{int(time.time() * 1000)}"
+    result = admin_db.insert_row("operations_history", data)
     if not result["ok"]:
-        raise HTTPException(status_code=400, detail=result["error"])
-    return result
+        raise HTTPException(status_code=500, detail=result.get("error", "Insert failed"))
+    return result["row"]
 
 
-@router.put("/data/operations/{record_id}")
-def update_operation(record_id: str, patch: dict, identity: dict = Depends(require_admin)):
-    patch.pop("record_id", None)
+@router.put("/data/records/{record_id}")
+def update_operations_record(record_id: str, patch: dict = Body(...), identity: dict = Depends(require_admin)):
     result = admin_db.update_row("operations_history", "record_id", record_id, patch)
     if not result["ok"]:
-        raise HTTPException(status_code=400, detail=result["error"])
-    return result
+        raise HTTPException(status_code=500, detail=result.get("error", "Update failed"))
+    return result["row"]
 
 
-@router.delete("/data/operations/{record_id}")
-def delete_operation(record_id: str, identity: dict = Depends(require_admin)):
+@router.delete("/data/records/{record_id}")
+def delete_operations_record(record_id: str, identity: dict = Depends(require_admin)):
     result = admin_db.delete_row("operations_history", "record_id", record_id)
     if not result["ok"]:
-        raise HTTPException(status_code=400, detail=result["error"])
+        raise HTTPException(status_code=500, detail=result.get("error", "Delete failed"))
+    return {"deleted": record_id}
+
+
+@router.post("/data/upload-csv")
+async def upload_csv(file: UploadFile = File(...), identity: dict = Depends(require_admin)):
+    if not file.filename.endswith(".csv"):
+        raise HTTPException(status_code=400, detail="Only CSV files accepted")
+    content = await file.read()
+    dest = ROOT_DIR / "data" / f"uploaded_{int(time.time())}_{file.filename}"
+    dest.write_bytes(content)
+    return {"filename": dest.name, "size_bytes": len(content), "saved_to": str(dest)}
+
+
+# ============================================================================
+# 3. INCIDENT REPORTS REVIEW QUEUE (ADMIN ONLY)
+# ============================================================================
+
+class IncidentReviewPatch(BaseModel):
+    review_status: str = Field(pattern="^(pending|approved|rejected|corrected)$")
+    corrected_type: Optional[str] = None
+    note: Optional[str] = None
+
+
+@router.get("/incidents/queue")
+def list_incident_queue(status: Optional[str] = None, limit: int = 50, offset: int = 0, identity: dict = Depends(require_admin)):
+    filters = {"review_status": status} if status else None
+    result = admin_db.fetch_table("incident_reports", limit=limit, offset=offset, order_by="received_at", filters=filters)
     return result
 
 
-@router.post("/data/operations/import-csv")
-async def import_operations_csv(file: UploadFile = File(...), identity: dict = Depends(require_admin)):
-    import csv as _csv
-    import io
-
-    content = (await file.read()).decode("utf-8")
-    reader = _csv.DictReader(io.StringIO(content))
-    inserted, failed = 0, []
-    for i, row in enumerate(reader):
-        clean = {k: v for k, v in row.items() if v not in (None, "")}
-        result = admin_db.insert_row("operations_history", clean)
-        if result["ok"]:
-            inserted += 1
-        else:
-            failed.append({"row": i, "error": result["error"]})
-    return {"inserted": inserted, "failed_count": len(failed), "failures": failed[:20]}
+@router.patch("/incidents/queue/{incident_id}")
+def review_incident(incident_id: str, patch: IncidentReviewPatch, identity: dict = Depends(require_admin)):
+    update_data = {
+        "review_status": patch.review_status,
+        "reviewed_by": identity.get("email") or identity.get("name") or "admin",
+        "reviewed_at": time.time(),
+    }
+    if patch.corrected_type:
+        update_data["classified_type"] = patch.corrected_type
+    result = admin_db.update_row("incident_reports", "incident_id", incident_id, update_data)
+    if not result["ok"]:
+        raise HTTPException(status_code=500, detail=result.get("error", "Review update failed"))
+    return result["row"]
 
 
-@router.get("/data/quality-check")
-def data_quality_check(identity: dict = Depends(require_admin)):
-    result = admin_db.fetch_table("operations_history", limit=5000, order_by="scheduled_time")
-    rows = result["rows"]
-    if not rows:
-        return {"checked_rows": 0, "issues": [], "source": result["source"]}
+# ============================================================================
+# 4. MODEL OPERATIONS (ADMIN ONLY)
+# ============================================================================
 
-    seen_ids = set()
-    duplicates, missing_fields, out_of_range = [], [], []
-    required = ["route", "station", "train_id", "scheduled_time", "delay_minutes"]
+@router.get("/model/metrics")
+def model_metrics(identity: dict = Depends(require_admin)):
+    eval_dir = ROOT_DIR / "evaluation"
+    delay_path = eval_dir / "ml" / "delay_model_metrics.json"
+    nlp_path = eval_dir / "nlp" / "classification_metrics.json"
+    rag_path = eval_dir / "rag" / "retrieval_metrics.json"
 
-    for row in rows:
-        rid = row.get("record_id")
-        if rid in seen_ids:
-            duplicates.append(rid)
-        seen_ids.add(rid)
-
-        missing = [f for f in required if not row.get(f) and row.get(f) != 0]
-        if missing:
-            missing_fields.append({"record_id": rid, "missing": missing})
-
-        delay = row.get("delay_minutes")
-        try:
-            if delay is not None and (float(delay) < 0 or float(delay) > 300):
-                out_of_range.append({"record_id": rid, "delay_minutes": delay})
-        except (TypeError, ValueError):
-            pass
+    import json
+    def read_json(p: Path) -> dict:
+        return json.loads(p.read_text(encoding="utf-8")) if p.exists() else {}
 
     return {
-        "checked_rows": len(rows),
-        "source": result["source"],
-        "duplicate_ids": duplicates[:50],
-        "duplicate_count": len(duplicates),
-        "missing_field_rows": missing_fields[:50],
-        "missing_field_count": len(missing_fields),
-        "out_of_range_rows": out_of_range[:50],
-        "out_of_range_count": len(out_of_range),
+        "delay_model": read_json(delay_path),
+        "nlp_classification": read_json(nlp_path),
+        "rag_retrieval": read_json(rag_path),
     }
-
-
-# ============================================================================
-# 3. INCIDENT REVIEW QUEUE
-# ============================================================================
-
-class IncidentCorrection(BaseModel):
-    classified_type: Optional[str] = None
-    summary: Optional[str] = None
-    review_status: Optional[str] = None  # "approved" | "rejected" | "corrected"
-
-
-@router.get("/incidents")
-def list_incidents(
-    status: Optional[str] = None,
-    limit: int = 50,
-    offset: int = 0,
-    identity: dict = Depends(require_admin),
-):
-    filters = {"review_status": status} if status else None
-    result = admin_db.fetch_table(
-        "incident_reports", limit=limit, offset=offset,
-        order_by="received_at", filters=filters,
-    )
-    return result
-
-
-@router.post("/incidents/{incident_id}/review")
-def review_incident(incident_id: str, correction: IncidentCorrection, identity: dict = Depends(require_admin)):
-    patch = correction.model_dump(exclude_none=True)
-    patch["reviewed_by"] = identity.get("sub")
-    patch["reviewed_at"] = time.time()
-    result = admin_db.update_row("incident_reports", "incident_id", incident_id, patch)
-    if not result["ok"]:
-        raise HTTPException(status_code=400, detail=result["error"])
-    return result
-
-
-@router.delete("/incidents/{incident_id}")
-def delete_incident(incident_id: str, identity: dict = Depends(require_admin)):
-    result = admin_db.delete_row("incident_reports", "incident_id", incident_id)
-    if not result["ok"]:
-        raise HTTPException(status_code=400, detail=result["error"])
-    return result
-
-
-# ============================================================================
-# 4. MODEL OPERATIONS
-# ============================================================================
-
-@router.get("/model/metrics-history")
-def model_metrics_history(identity: dict = Depends(require_admin)):
-    runs = admin_db.get_training_runs()
-    current_metrics_path = ROOT_DIR / "evaluation" / "ml" / "delay_model_metrics.json"
-    current = None
-    if current_metrics_path.exists():
-        import json
-        current = json.loads(current_metrics_path.read_text(encoding="utf-8"))
-    return {"runs": runs, "current_metrics": current}
-
-
-@router.get("/model/feature-importances")
-def model_feature_importances(identity: dict = Depends(require_admin)):
-    path = ROOT_DIR / "ml" / "feature_importances.json"
-    if not path.exists():
-        return {"available": False, "features": []}
-    import json
-    return {"available": True, "features": json.loads(path.read_text(encoding="utf-8"))}
 
 
 @router.post("/model/retrain")
 def retrain_model(identity: dict = Depends(require_admin)):
-    """Backs up the current model, retrains, and logs the resulting metrics."""
-    import json
-    import shutil
-
-    pkl_path = ML_DIR / "delay_model.pkl"
-    versions_dir = ROOT_DIR / "ml" / "model_versions"
-    versions_dir.mkdir(parents=True, exist_ok=True)
-
-    if pkl_path.exists():
-        backup_name = f"delay_model_{int(time.time())}.pkl"
-        shutil.copy2(pkl_path, versions_dir / backup_name)
-
-    train_script = ML_DIR / "train_delay_model.py"
+    train_script = ML_DIR / "train.py"
     if not train_script.exists():
-        raise HTTPException(status_code=500, detail=f"train_delay_model.py not found at {train_script}")
+        raise HTTPException(status_code=404, detail="train.py not found")
 
+    import json
     proc = subprocess.run(
         [sys.executable, str(train_script)],
-        cwd=str(ML_DIR),
-        capture_output=True, text=True, timeout=600,
+        cwd=str(ROOT_DIR),
+        capture_output=True,
+        text=True,
+        timeout=300,
     )
 
     metrics_path = ROOT_DIR / "evaluation" / "ml" / "delay_model_metrics.json"
@@ -355,7 +683,7 @@ def retrain_model(identity: dict = Depends(require_admin)):
         metrics = json.loads(metrics_path.read_text(encoding="utf-8"))
 
     run_record = {
-        "triggered_by": identity.get("sub"),
+        "triggered_by": identity.get("email") or identity.get("name") or "admin",
         "returncode": proc.returncode,
         "metrics": metrics,
         "stdout_tail": proc.stdout[-2000:],
@@ -376,7 +704,6 @@ def model_versions(identity: dict = Depends(require_admin)):
 @router.post("/model/rollback/{filename}")
 def rollback_model(filename: str, identity: dict = Depends(require_admin)):
     import shutil
-
     versions_dir = ROOT_DIR / "ml" / "model_versions"
     src = versions_dir / filename
     if not src.exists() or not filename.startswith("delay_model_"):
@@ -388,7 +715,7 @@ def rollback_model(filename: str, identity: dict = Depends(require_admin)):
     shutil.copy2(src, current_pkl)
 
     admin_db.log_training_run({
-        "triggered_by": identity.get("sub"),
+        "triggered_by": identity.get("email") or identity.get("name") or "admin",
         "action": "rollback",
         "restored_from": filename,
     })
@@ -396,7 +723,7 @@ def rollback_model(filename: str, identity: dict = Depends(require_admin)):
 
 
 # ============================================================================
-# 5. HUB & EVENT CONTROL
+# 5. HUB & EVENT CONTROL (ADMIN ONLY)
 # ============================================================================
 
 @router.get("/hub/status")
@@ -421,17 +748,15 @@ def hub_events(limit: int = 50, identity: dict = Depends(require_admin)):
 
 @router.post("/hub/test-alert")
 def trigger_test_alert(identity: dict = Depends(require_admin)):
-    """Publishes a synthetic delay_alert so you can demo the Hub round-trip on demand."""
     event = {
         "event_type": "delay_alert",
         "route": "Colombo Fort - Kandy",
         "train_id": "TEST-ADMIN",
         "predicted_delay_minutes": 12.0,
-        "triggered_by": identity.get("sub"),
+        "triggered_by": identity.get("email") or identity.get("name") or "admin",
         "source": "admin_test_alert",
         "created_at": time.time(),
     }
-
     published_to = []
 
     upstash_url = os.getenv("UPSTASH_REDIS_URL")
@@ -475,14 +800,13 @@ def set_alert_threshold(body: ThresholdUpdate, identity: dict = Depends(require_
 
 
 # ============================================================================
-# 6. AUDIT & ACCESS CONTROL
+# 6. GENERAL AUDIT TRAILS (ADMIN ONLY)
 # ============================================================================
 
 @router.get("/audit/events")
 def audit_events(limit: int = 100, offset: int = 0, identity: dict = Depends(require_admin)):
     result = admin_db.fetch_table("audit_events", limit=limit, offset=offset, order_by="created_at")
     if result["source"] == "unavailable":
-        # local jsonl fallback
         import json
         log_path = ROOT_DIR / "data" / "audit_log.jsonl"
         if log_path.exists():
