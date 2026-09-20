@@ -12,7 +12,7 @@ SECURITY_PORT=9004
 M2_PORT=9005
 M4_PORT=9006
 GATEWAY_PORT=4000
-REACT_PORT=5274
+REACT_PORT=5280
 M4_LOGIN_PORT=3002
 
 # ── Derived URLs (passed as env overrides so .env files are untouched) ────────
