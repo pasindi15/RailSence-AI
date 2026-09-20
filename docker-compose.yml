@@ -1,15 +1,29 @@
 version: "3.9"
 
-# RailSense AI — all 5 stateless services.
+# RailSense AI — all 6 stateless services.
 # Data layer (Postgres/pgvector, Redis) is cloud-hosted on Supabase + Upstash.
 # Prerequisites: copy .env.example → .env and fill in secrets.
+#
+# Port map (Docker):
+#   8000 — M3 Communication Hub
+#   8001 — M1 Passenger Assistant
+#   8002 — M3 Booking Agent
+#   8003 — M4 Maintenance Agent login portal (Next.js) — not in compose
+#   8004 — Security Agent
+#   8005 — M2 Operations Agent
+#   8006 — M4 Maintenance Agent
+#
+# NOTE: M1, M2, M3 hub, M3 booking, and security-agent do not yet have
+# Dockerfiles — add one per service before running `docker compose up --build`.
 
 services:
 
   agent-hub:
-    build: ./agent-hub
+    build: ./M3-Comunication-Hub&Booking-Agent/agent-hub
     ports:
       - "8000:8000"
+    environment:
+      APP_PORT: "8000"
     env_file: .env
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
@@ -18,7 +32,7 @@ services:
       retries: 3
 
   passenger-agent:
-    build: ./passenger-agent
+    build: ./M1-passenger_assistant/backend
     ports:
       - "8001:8001"
     env_file: .env
@@ -26,10 +40,12 @@ services:
       agent-hub:
         condition: service_healthy
 
-  operations-agent:
-    build: ./M2-operations-agent
+  booking-agent:
+    build: ./M3-Comunication-Hub&Booking-Agent/booking-agent
     ports:
-      - "8001:8001"
+      - "8002:8002"
+    environment:
+      APP_PORT: "8002"
     env_file: .env
     depends_on:
       agent-hub:
@@ -38,7 +54,20 @@ services:
   security-agent:
     build: ./security-agent
     ports:
-      - "8003:8003"
+      - "8004:8004"
+    environment:
+      SECURITY_AGENT_PORT: "8004"
+    env_file: .env
+    depends_on:
+      agent-hub:
+        condition: service_healthy
+
+  operations-agent:
+    build: ./M2-operations-agent
+    ports:
+      - "8005:8005"
+    environment:
+      PORT: "8005"
     env_file: .env
     depends_on:
       agent-hub:
@@ -47,7 +76,12 @@ services:
   maintenance-agent:
     build: ./M4-maintenance-agent
     ports:
-      - "8002:8002"
+      - "8006:8006"
+    environment:
+      PORT: "8006"
+      MAINTENANCE_AGENT_PORT: "8006"
+      MAINTENANCE_AGENT_URL: "http://localhost:8006"
+      HUB_BASE_URL: "http://agent-hub:8000"
     env_file: .env
     depends_on:
       agent-hub:
