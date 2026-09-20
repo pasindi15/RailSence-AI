@@ -1697,10 +1697,6 @@ body {
         <span class="tab-icon">⌂</span>
         <span class="tab-text">Home Dashboard</span>
       </button>
-      <button class="tab-btn" id="tab-chat" onclick="navigateTo('/user/chat')">
-        <span class="tab-icon">💬</span>
-        <span class="tab-text">Passenger Assistant</span>
-      </button>
       <button class="tab-btn" id="tab-booking" onclick="navigateTo('/user/booking')">
         <span class="tab-icon">🎫</span>
         <span class="tab-text">Train Booking Desk</span>
@@ -1737,7 +1733,7 @@ body {
           <div class="map-legend"><span><i class="route"></i>Scheduled line</span><span><i></i>Station hub</span><span><i class="live"></i>Active service</span></div>
         </section>
         <section class="dashboard-card">
-          <div class="dashboard-card-header"><div><div class="dashboard-card-title">Today's services</div><div class="dashboard-card-subtitle">Select a service to continue in chat</div></div><button class="btn-refresh-admin" type="button" onclick="loadPassengerDashboard()" title="Refresh Train Board">↻</button></div>
+          <div class="dashboard-card-header"><div><div class="dashboard-card-title">Today's services</div><div class="dashboard-card-subtitle">Daily scheduled services and live operational status</div></div><button class="btn-refresh-admin" type="button" onclick="loadPassengerDashboard()" title="Refresh Train Board">↻</button></div>
           <div class="service-table-wrap" id="dashboard-services"><div class="dashboard-empty">Loading services…</div></div>
         </section>
       </div>
@@ -1748,28 +1744,6 @@ body {
       </section>
       <div class="dashboard-note">Service data, schedules, and availability are read from the shared railway source of truth. Live operational positions are shown only when the network provides them; unavailable values remain marked as N/A.</div>
     </section>
-  </main>
-
-  <!-- ==================== VIEW 1: PASSENGER CHAT ==================== -->
-  <main id="view-chat" class="view-panel">
-    <!-- View Mode Bar (Integrated vs Standalone React UI) -->
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-      <div style="font-size:12.5px;color:var(--text-sub);">
-        Powered by <strong>M1 Passenger Assistant</strong> (Multilingual NLU, ChromaDB FAQ RAG, delay & complaint dispatch)
-      </div>
-      <div class="chat-mode-toggle">
-        <button class="mode-btn active" id="btn-mode-react" type="button" style="background:var(--primary-light);color:var(--primary-hover);border:1px solid #A7F3D0;padding:5px 12px;border-radius:6px;font-weight:700;font-size:11.5px;">M1 React App (Live)</button>
-      </div>
-    </div>
-
-    <!-- Standalone M1 React UI Embed Container -->
-    <div id="m1-react-container" style="display:block; min-height:600px; border-radius:var(--r-card); overflow:hidden; border:1px solid var(--border-light); box-shadow:var(--shadow-sm); background:#FFFFFF;">
-      <iframe id="m1-react-iframe" src="http://localhost:5173" title="M1 React/Vite UI" style="width:100%; height:640px; border:none;"></iframe>
-      <div id="m1-react-unavailable" class="m1-react-unavailable" hidden style="padding:40px; text-align:center; color:var(--text-sub);">
-        The live React assistant is not running on port 5173. <br>
-        <span style="font-size:12px;">Start the M1 Vite app with <code>npm run dev</code> in <code>M1-passenger_assistant/frontend</code> and refresh this page.</span>
-      </div>
-    </div>
   </main>
 
   <!-- ==================== VIEW 2: TRAIN BOOKING DESK ==================== -->
@@ -2411,8 +2385,6 @@ function handleUrlRouting() {
     }
   } else if (path.includes('/confirmation')) {
     switchView('confirmation');
-  } else if (path.includes('/chat')) {
-    switchView('chat');
   } else {
     switchView('dashboard');
   }

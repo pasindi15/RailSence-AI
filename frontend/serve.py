@@ -270,7 +270,6 @@ def get_index():
 
 @app.get("/user", include_in_schema=False)
 @app.get("/user/dashboard", include_in_schema=False)
-@app.get("/user/chat", include_in_schema=False)
 @app.get("/user/booking", include_in_schema=False)
 @app.get("/user/confirmation", include_in_schema=False)
 def get_user_portal():
@@ -279,6 +278,11 @@ def get_user_portal():
     if HTML_FILE.is_file():
         return FileResponse(HTML_FILE)
     raise HTTPException(status_code=404, detail="user.html not found")
+
+
+@app.get("/user/chat", include_in_schema=False)
+def redirect_user_chat():
+    return RedirectResponse(url="/user", status_code=status.HTTP_302_FOUND)
 
 
 _TRAIN_BOARD_CACHE: dict[str, tuple[float, dict[str, Any]]] = {}
