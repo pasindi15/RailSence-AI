@@ -857,6 +857,26 @@ async def hub_message(request: Request, payload: HubMessageRequest):
         _write_audit("hub_issue_report", client_ip, {
             "ticket_id": ticket_id, "sender": payload.sender_agent, "description": description
         })
+        report_record = {
+            "report_id": ticket_id,
+            "asset_id": train_id.upper() if train_id else "—",
+            "asset_type": "passenger_report",
+            "station": payload.payload.get("station", ""),
+            "summary": description,
+            "detected_fault_type": "passenger_report",
+            "parts_mentioned": [],
+            "actions_taken": [],
+            "measurements_found": [],
+            "extraction_method": "passenger_report",
+            "nlp_method": "n/a",
+            "retrieval_method": "n/a",
+            "manual_sections_cited": [],
+            "received_at": datetime.now(timezone.utc).isoformat(),
+            "source": "passenger",
+            "ticket_id": ticket_id,
+        }
+        _in_memory_reports.append(report_record)
+        _persist_report(report_record)
         return {
             "message_id": str(uuid.uuid4()),
             "sender_agent": "maintenance-agent",
