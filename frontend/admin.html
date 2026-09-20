@@ -1056,6 +1056,27 @@ body::after {
     </div>
 
     <div style="display:flex;align-items:center;gap:10px;">
+      <!-- Officer Profile Widget -->
+      <div style="position:relative;">
+        <button id="officer-profile-btn" onclick="toggleOfficerPopover()" style="display:flex;align-items:center;gap:8px;padding:6px 12px;background:rgba(30,41,59,0.7);border:1px solid var(--border);border-radius:20px;cursor:pointer;color:#E2E8F0;font-family:inherit;font-size:12.5px;">
+          <span>👤</span>
+          <span id="officer-header-name">Sign In</span>
+          <span id="officer-header-role" class="badge-tag" style="font-size:10px;padding:1px 6px;background:#1E3A8A;color:#93C5FD;">Guest</span>
+        </button>
+
+        <div id="officer-popover" style="display:none;position:absolute;top:calc(100% + 8px);right:0;width:240px;background:#0F172A;border:1px solid var(--border);border-radius:12px;padding:16px;box-shadow:var(--shadow);z-index:1000;text-align:left;">
+          <div style="font-weight:700;color:#fff;font-size:14px;margin-bottom:2px;" id="pop-officer-name">Guest Officer</div>
+          <div style="font-size:11.5px;color:var(--muted);margin-bottom:8px;word-break:break-all;" id="pop-officer-email">Not signed in</div>
+          <div style="margin-bottom:12px;">
+            <span class="badge-tag" id="pop-officer-role" style="font-size:11px;background:#1E3A8A;color:#93C5FD;">Operations</span>
+          </div>
+          <div style="font-size:11px;color:var(--muted);border-top:1px solid rgba(255,255,255,0.08);padding-top:8px;margin-bottom:12px;" id="pop-officer-login">
+            Last Login: Active session
+          </div>
+          <button onclick="handleOfficerLogout()" class="btn-reject" style="width:100%;text-align:center;padding:7px;border-radius:6px;font-size:12px;">Sign Out</button>
+        </div>
+      </div>
+
       <button id="theme-toggle" class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle light / dark mode">☀️</button>
       <a href="/user" class="btn-portal-switch">
         <span>Train Booking Desk</span>
@@ -1195,9 +1216,30 @@ body::after {
       <div class="embedded-frame-container">
         <div class="frame-top-bar">
           <span>Connected to: <code>http://localhost:8005/admin</code> (M2 Operations Admin Suite)</span>
-          <a href="http://localhost:8005/admin" target="_blank" class="btn-portal-switch" style="font-size:11px;padding:3px 8px;">Open Standalone ↗</a>
+          <a href="http://localhost:8005/admin" target="_blank" class="btn-portal-switch" style="font-size:11px;padding:3px 8px;" id="link-ops-admin">Open Standalone ↗</a>
         </div>
         <iframe class="embedded-frame" id="frame-ops-admin" src="about:blank"></iframe>
+      </div>
+    </div>
+
+    <!-- View Restricted: 403 Access Restricted Screen -->
+    <div id="subview-ops-restricted" style="display:none;">
+      <div class="card-section" style="max-width:580px;margin:30px auto;text-align:center;padding:36px 28px;">
+        <div style="font-size:42px;margin-bottom:12px;">🛡️</div>
+        <h2 style="color:#EF4444;font-size:20px;margin-bottom:8px;">403 — Access Restricted</h2>
+        <p style="color:var(--muted);font-size:13px;line-height:1.6;margin-bottom:20px;">
+          Your account role (<strong id="restricted-role-label" style="color:#60A5FA;">Operations Engineer</strong>) is restricted from accessing the M2 Admin Console and administrative operations.
+        </p>
+        <div style="background:rgba(15,23,42,0.6);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:24px;text-align:left;">
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:700;margin-bottom:8px;">Authorized Operations Features:</div>
+          <div style="font-size:12.5px;display:flex;flex-direction:column;gap:6px;">
+            <div>✅ <strong>Control Room Dashboard</strong> (Live trains, routes, active alerts)</div>
+            <div>✅ <strong>Interactive Delay Prediction</strong> (Live ML inference &amp; triage)</div>
+          </div>
+        </div>
+        <button class="btn-approve" onclick="navigateTo('/admin/operations'); switchSubSection('operations', 'control-room');">
+          Return to Control Room ➔
+        </button>
       </div>
     </div>
 
@@ -1560,12 +1602,131 @@ window.addEventListener('DOMContentLoaded', () => {
   document.documentElement.setAttribute('data-theme', saved);
   updateThemeIcon(saved === 'light');
 
+  checkOfficerAuth();
   handleUrlRouting();
   pollSystemHealth();
   setInterval(pollSystemHealth, 30000);
 });
 
 window.addEventListener('popstate', handleUrlRouting);
+
+// ── Officer Authentication & RBAC Session State ──────────────────────
+function getOfficerToken() {
+  return localStorage.getItem('railsense_m2_token') || '';
+}
+
+function getOfficerData() {
+  try {
+    return JSON.parse(localStorage.getItem('railsense_m2_officer') || 'null');
+  } catch (_) {
+    return null;
+  }
+}
+
+function checkOfficerAuth() {
+  const token = getOfficerToken();
+  const officer = getOfficerData();
+  const path = window.location.pathname;
+
+  if (officer) {
+    updateOfficerHeaderDisplay(officer);
+    applyRBACToUI(officer);
+  }
+
+  // If visiting operations without token -> redirect to /login
+  if (path.includes('/operations') && !token) {
+    window.location.href = '/login?redirect=' + encodeURIComponent(path);
+    return false;
+  }
+
+  // Verify token with server if present
+  if (token) {
+    fetch('/api/auth/me', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    }).then(r => {
+      if (r.ok) return r.json();
+      throw new Error('Session invalid');
+    }).then(me => {
+      localStorage.setItem('railsense_m2_officer', JSON.stringify(me));
+      updateOfficerHeaderDisplay(me);
+      applyRBACToUI(me);
+    }).catch(() => {
+      if (path.includes('/operations')) {
+        localStorage.removeItem('railsense_m2_token');
+        localStorage.removeItem('railsense_m2_officer');
+        window.location.href = '/login?redirect=' + encodeURIComponent(path);
+      }
+    });
+  }
+  return true;
+}
+
+function updateOfficerHeaderDisplay(officer) {
+  const nameEl = $('officer-header-name');
+  const roleEl = $('officer-header-role');
+  if (nameEl) nameEl.textContent = officer.name || officer.email || 'Officer';
+  if (roleEl) {
+    const isAdmin = officer.role === 'admin';
+    roleEl.textContent = isAdmin ? 'Administrator' : 'Operations Engineer';
+    roleEl.style.background = isAdmin ? '#4C1D95' : '#1E3A8A';
+    roleEl.style.color = isAdmin ? '#DDD6FE' : '#93C5FD';
+  }
+
+  if ($('pop-officer-name')) $('pop-officer-name').textContent = officer.name || 'Officer';
+  if ($('pop-officer-email')) $('pop-officer-email').textContent = officer.email || '';
+  if ($('pop-officer-role')) {
+    const isAdmin = officer.role === 'admin';
+    $('pop-officer-role').textContent = isAdmin ? 'Administrator' : 'Operations Engineer';
+    $('pop-officer-role').style.background = isAdmin ? '#4C1D95' : '#1E3A8A';
+    $('pop-officer-role').style.color = isAdmin ? '#DDD6FE' : '#93C5FD';
+  }
+  if ($('pop-officer-login') && officer.last_login_at) {
+    $('pop-officer-login').textContent = `Last Login: ${new Date(officer.last_login_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`;
+  }
+}
+
+function applyRBACToUI(officer) {
+  const isAdmin = officer && officer.role === 'admin';
+  const chipAdmin = $('chip-ops-admin');
+  if (chipAdmin) {
+    // Dynamic navigation: Hide Admin Console tab for Operations Engineers
+    chipAdmin.style.display = isAdmin ? 'inline-flex' : 'none';
+  }
+  if ($('restricted-role-label')) {
+    $('restricted-role-label').textContent = officer.role === 'admin' ? 'Administrator' : 'Operations Engineer';
+  }
+}
+
+function toggleOfficerPopover() {
+  const token = getOfficerToken();
+  if (!token) {
+    window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname);
+    return;
+  }
+  const pop = $('officer-popover');
+  if (pop) pop.style.display = pop.style.display === 'none' ? 'block' : 'none';
+}
+
+document.addEventListener('click', (e) => {
+  const pop = $('officer-popover');
+  const btn = $('officer-profile-btn');
+  if (pop && btn && !pop.contains(e.target) && !btn.contains(e.target)) {
+    pop.style.display = 'none';
+  }
+});
+
+async function handleOfficerLogout() {
+  const token = getOfficerToken();
+  try {
+    await fetch('/api/auth/logout', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+  } catch (_) {}
+  localStorage.removeItem('railsense_m2_token');
+  localStorage.removeItem('railsense_m2_officer');
+  window.location.href = '/login';
+}
 
 function navigateTo(path) {
   history.pushState(null, '', path);
@@ -1576,9 +1737,30 @@ function handleUrlRouting() {
   const path = window.location.pathname;
   const hash = window.location.hash;
   const search = window.location.search;
+  const officer = getOfficerData();
+  const token = getOfficerToken();
+
+  // Authentication check on protected routes
+  if (path.includes('/operations') && !token) {
+    window.location.href = '/login?redirect=' + encodeURIComponent(path);
+    return;
+  }
 
   if (path.includes('/operations') || hash === '#operations' || search.includes('tab=operations')) {
     switchSection('operations');
+
+    // Route-level RBAC authorization
+    if (path.includes('/operations/admin')) {
+      if (!officer || officer.role !== 'admin') {
+        switchSubSection('operations', 'restricted');
+      } else {
+        switchSubSection('operations', 'admin-console');
+      }
+    } else if (path.includes('/operations/prediction')) {
+      switchSubSection('operations', 'predict-tool');
+    } else if (path.includes('/operations/control-room')) {
+      switchSubSection('operations', 'control-room');
+    }
   } else if (path.includes('/bookings') || hash === '#bookings' || search.includes('tab=bookings')) {
     switchSection('bookings');
   } else if (path.includes('/maintenance') || hash === '#maintenance' || search.includes('tab=maintenance')) {
@@ -1603,9 +1785,16 @@ function switchSection(secName) {
   if (viewEl) viewEl.classList.add('active');
   if (navEl) navEl.classList.add('active');
 
+  const token = getOfficerToken();
+  const tokenParam = token ? `?token=${encodeURIComponent(token)}` : '';
+
   if (secName === 'operations') {
     const f = $('frame-ops-control');
-    if (f && f.src === 'about:blank') f.src = 'http://localhost:8005';
+    if (f && f.src === 'about:blank') {
+      f.src = `http://localhost:8005/${tokenParam}`;
+    }
+    const linkCtrl = $('link-ops-control');
+    if (linkCtrl) linkCtrl.href = `http://localhost:8005/${tokenParam}`;
   } else if (secName === 'maintenance') {
     const f = $('frame-maint-fleet');
     if (f && f.src === 'about:blank') f.src = 'http://localhost:3002';
@@ -1621,21 +1810,33 @@ function switchSection(secName) {
 }
 
 function switchSubSection(parent, sub) {
+  const token = getOfficerToken();
+  const tokenParam = token ? `?token=${encodeURIComponent(token)}` : '';
+  const officer = getOfficerData();
+
   if (parent === 'operations') {
+    // RBAC Protection: Non-admin trying to access admin console
+    if (sub === 'admin-console' && (!officer || officer.role !== 'admin')) {
+      sub = 'restricted';
+    }
+
     $('subview-ops-control').style.display = sub === 'control-room' ? 'block' : 'none';
     $('subview-ops-admin').style.display = sub === 'admin-console' ? 'block' : 'none';
+    $('subview-ops-restricted').style.display = sub === 'restricted' ? 'block' : 'none';
     $('subview-ops-predict').style.display = sub === 'predict-tool' ? 'block' : 'none';
 
     $('chip-ops-control').classList.toggle('active', sub === 'control-room');
-    $('chip-ops-admin').classList.toggle('active', sub === 'admin-console');
+    if ($('chip-ops-admin')) $('chip-ops-admin').classList.toggle('active', sub === 'admin-console');
     $('chip-ops-predict').classList.toggle('active', sub === 'predict-tool');
 
     if (sub === 'control-room') {
       const f = $('frame-ops-control');
-      if (f.src === 'about:blank') f.src = 'http://localhost:8005';
+      if (f.src === 'about:blank') f.src = `http://localhost:8005/${tokenParam}`;
     } else if (sub === 'admin-console') {
       const f = $('frame-ops-admin');
-      if (f.src === 'about:blank') f.src = 'http://localhost:8005/admin';
+      if (f.src === 'about:blank') f.src = `http://localhost:8005/admin${tokenParam}`;
+      const linkAdmin = $('link-ops-admin');
+      if (linkAdmin) linkAdmin.href = `http://localhost:8005/admin${tokenParam}`;
     }
   } else if (parent === 'bookings') {
     $('subview-book-fraud').style.display = sub === 'fraud' ? 'block' : 'none';
@@ -2063,10 +2264,14 @@ async function testDelayPrediction() {
   resEl.style.display = 'block';
   resEl.textContent = 'Calling M2 Operations Agent at http://localhost:8005/predict-delay...';
 
+  const token = getOfficerToken();
+  const headers = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
   try {
     const resp = await fetch('http://localhost:8005/predict-delay', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: headers,
       body: JSON.stringify({
         route: route,
         train_id: train,

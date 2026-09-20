@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>RailSense AI — Operations Admin</title>
+<title>RailSense AI — Operations & Admin Suite</title>
 <link rel="stylesheet" href="css/admin.css" />
 </head>
 <body>
@@ -11,21 +11,24 @@
 <!-- ==================== LOGIN SCREEN ==================== -->
 <div id="login-screen">
   <div class="login-card">
-    <span class="brand-mark">RAILSENSE AI · OPERATIONS</span>
-    <h1>Admin Dashboard</h1>
-    <p class="sub">Sign in to manage data, incidents, models, and integrations.</p>
+    <span class="brand-mark">RAILSENSE AI · CENTRAL OPERATIONS</span>
+    <h1 style="font-size:20px;line-height:1.3;margin-bottom:8px;">RailSense AI Central Operations &amp; Admin Suite</h1>
+    <p class="sub" style="margin-bottom:16px;">Sign in to access Control Room, incident triage, and administrative consoles.</p>
     <div class="error-msg" id="login-error"></div>
     <form id="login-form">
       <div class="field">
-        <label>Username</label>
-        <input id="login-username" type="text" autocomplete="username" required value="admin" />
+        <label>Email</label>
+        <input id="login-email" type="email" autocomplete="email" required placeholder="officer@railsense.lk" />
       </div>
       <div class="field">
         <label>Password</label>
-        <input id="login-password" type="password" autocomplete="current-password" required />
+        <input id="login-password" type="password" autocomplete="current-password" required placeholder="••••••••••••" />
       </div>
-      <button class="btn btn-primary btn-block" type="submit" id="login-submit">Sign in</button>
+      <button class="btn btn-primary btn-block" type="submit" id="login-submit" style="margin-top:6px;">Sign In</button>
     </form>
+    <div style="margin-top:20px;padding-top:14px;border-top:1px solid var(--border);text-align:center;">
+      <span style="font-size:11.5px;color:var(--muted);font-weight:600;letter-spacing:0.5px;">🔒 Secure Operations Access</span>
+    </div>
   </div>
 </div>
 
@@ -36,26 +39,43 @@
       <div class="mark">🚦</div>
       <div>
         <div class="name">RailSense AI</div>
-        <div class="subtitle">Operations Admin</div>
+        <div class="subtitle">Operations &amp; RBAC</div>
       </div>
     </div>
     <nav id="sidebar-nav"></nav>
-    <div class="sidebar-footer">
-      <div class="user-row">
-        <span class="username" id="current-username">…</span>
-        <a id="logout-link">Log out</a>
+    <div class="sidebar-footer" style="position:relative;">
+      <!-- Profile Popover -->
+      <div class="user-profile-popover" id="user-profile-popover">
+        <div class="profile-name" id="popover-name">Officer Name</div>
+        <div class="profile-email" id="popover-email">email@example.com</div>
+        <span class="profile-role" id="popover-role">Role</span>
+        <div class="profile-login" id="popover-last-login">Last Login: Today, 13:42</div>
+        <button class="btn btn-danger btn-sm btn-block" id="popover-logout-btn">Log Out</button>
+      </div>
+
+      <div class="user-row" id="user-badge" style="cursor:pointer;" title="Click to view officer profile">
+        <span class="username" id="current-username">👤 Officer</span>
+        <span class="badge active" id="current-role-badge" style="font-size:10px;padding:2px 6px;">…</span>
       </div>
     </div>
   </aside>
 
   <div class="main">
     <div class="topbar">
-      <h2 id="topbar-title">Home</h2>
-      <div class="status-pills" id="topbar-pills"></div>
+      <div>
+        <h2 id="topbar-title" style="margin-bottom:2px;">Home</h2>
+        <div id="topbar-crumb" style="font-size:11.5px;color:var(--muted);">M2 Operations &amp; Admin Suite</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div class="status-pills" id="topbar-pills"></div>
+        <button class="btn btn-ghost btn-sm" id="header-logout-btn" title="Sign out of RailSense Operations">Log Out</button>
+      </div>
     </div>
 
     <div class="content">
       <div class="view active" id="view-home"></div>
+      <div class="view" id="view-officers"></div>
+      <div class="view" id="view-roles"></div>
       <div class="view" id="view-data"></div>
       <div class="view" id="view-incidents"></div>
       <div class="view" id="view-health"></div>
@@ -74,6 +94,8 @@
 <script src="js/api.js"></script>
 <script src="js/modal.js"></script>
 <script src="js/views/home.js"></script>
+<script src="js/views/officers.js"></script>
+<script src="js/views/roles.js"></script>
 <script src="js/views/data.js"></script>
 <script src="js/views/incidents.js"></script>
 <script src="js/views/health.js"></script>
