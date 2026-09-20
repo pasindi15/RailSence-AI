@@ -45,7 +45,7 @@ def test_complaint_routes_to_maintenance_stub(monkeypatch):
     assert "Maintenance Agent" in body["source"]
 
 
-def test_booking_request_routes_to_booking_stub_with_entities(monkeypatch):
+def test_booking_request_generates_link_with_entities_without_hub(monkeypatch):
     import main
     monkeypatch.setattr(main, "send_to_hub", _mock_send_to_hub)
     r = client.post(
@@ -59,13 +59,15 @@ def test_booking_request_routes_to_booking_stub_with_entities(monkeypatch):
     )
     body = r.json()
     assert body["intent"] == "booking_request"
-    assert body["source"] == "via Booking Agent"
+    assert body["source"] == "Passenger Assistant booking link"
     assert body["entities"]["from_station"] == "Colombo Fort"
     assert body["entities"]["to_station"] == "Kandy"
     assert body["entities"]["travel_date"] == "2026-12-03"
     assert body["entities"]["train_id"] == "PM-4082"
     assert body["entities"]["seat_class"] == "Second Class"
     assert body["entities"]["passenger_count"] == 2
+    assert body["action"]["prefill"]["train_id"] == "PM-4082"
+    assert "train_id=PM-4082" in body["action"]["url"]
 
 
 def test_sinhala_language_detection():

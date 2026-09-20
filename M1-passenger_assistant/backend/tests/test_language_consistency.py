@@ -234,15 +234,13 @@ def test_the_sinhala_clarifying_question_matches_the_required_wording():
 
 
 @pytest.mark.parametrize("lang", ["si", "en", "ta"])
-def test_booking_with_both_stations_calls_the_booking_agent_with_language(lang, monkeypatch, _isolate):
+def test_booking_with_both_stations_generates_action_button_with_language(lang, _isolate):
     _, hub = _isolate
-    monkeypatch.setattr(main, "send_to_hub", HubSpy(hub_client.HubResponse(status="error", error_kind="rejected")))
-    spy = main.send_to_hub
     body = chat(QUESTIONS[lang]["book_full"])
-    sent = spy.to("booking-agent")[0]
-    assert sent.payload["from_station"] == "Colombo Fort" and sent.payload["to_station"] == "Kandy"
-    assert sent.payload["language"] == lang
+    assert hub.sent == []
     assert in_language(body["reply"], lang) and body["action"]["type"] == "continue_to_booking"
+    assert body["action"]["prefill"]["from_station"] == "Colombo Fort"
+    assert body["action"]["prefill"]["to_station"] == "Kandy"
     if lang == "en":
         assert body["reply"].startswith("I found your booking request from **Colombo Fort** to **Kandy**")
 
@@ -456,11 +454,11 @@ def test_every_hub_call_carries_the_detected_language(monkeypatch):
     monkeypatch.setattr(main, "send_to_hub", spy)
     monkeypatch.setattr(main, "get_train", lambda tid: {"train_id": tid})
     monkeypatch.setattr(main, "gemini_model", None)
-    for q in (QUESTIONS["si"]["delay"], "PM-4082 දුම්රිය ධාවනය වෙනවාද?", QUESTIONS["si"]["book_full"], "මගේ මැදිරියේ ඒසී එක කැඩිලා"):
+    for q in (QUESTIONS["si"]["delay"], "PM-4082 දුම්රිය ධාවනය වෙනවාද?", "මගේ මැදිරියේ ඒසී එක කැඩිලා"):
         chat(q)
     assert spy.sent, "no hub calls were made"
     assert {m.payload.get("language") for m in spy.sent} == {"si"}
-    assert {m.receiver_agent for m in spy.sent} >= {"operations-agent", "booking-agent", "maintenance-agent"}
+    assert {m.receiver_agent for m in spy.sent} >= {"operations-agent", "maintenance-agent"}
 
 
 # --------------------------------------------------------- 9. the catalog ---

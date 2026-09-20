@@ -1323,45 +1323,10 @@ async def chat(req: ChatRequest):
                 reply = t("booking_ask_both", language)
             source = "local"
         else:
-            envelope = build_envelope(
-                receiver_agent="booking-agent",
-                intent="booking_request",
-                payload={
-                    "from_station": from_st,
-                    "to_station": to_st,
-                    "travel_date": entities.get("travel_date"),
-                    "train_id": entities.get("train_id"),
-                    "seat_class": entities.get("seat_class"),
-                    # ner_extractor now returns None (not 1) when no count was
-                    # mentioned - booking_request isn't part of these fixes, so
-                    # this preserves its prior default-to-1 behavior exactly.
-                    # entities.get("passenger_count", 1) would NOT catch this,
-                    # since the key is present with value None, not missing.
-                    "passenger_count": entities.get("passenger_count") or 1,
-                    "language": language,  # travels with the request; M1 writes the final reply in it
-                },
-            )
-            hub_response = await send_to_hub(envelope)
-            if hub_response.status == "ok":
-                bp = hub_response.payload
-                agent_message = bp.get("message", "Booking request processed.")
-                if language == "en":
-                    reply = agent_message
-                else:
-                    presented = await asyncio.to_thread(
-                        present_agent_result, language, text, "Booking Agent result",
-                        {k: v for k, v in bp.items() if isinstance(v, (str, int, float, bool)) and v not in ("", None)},
-                        [str(bp["booking_reference"])] if bp.get("booking_reference") else [],
-                    )
-                    # No localized template exists for an arbitrary Booking Agent message,
-                    # so if Gemini cannot present it, say so rather than silently show English.
-                    reply = presented or (FALLBACK_STRINGS[language]["english_only_notice"] + chr(10) * 2 + agent_message)
-                source = "via Booking Agent"
-            else:
-                date_part = t("booking_date_part", language, date=t_date) if t_date else ""
-                reply = t("booking_found", language, origin=_disp(from_st, language),
-                          destination=_disp(to_st, language), date_part=date_part)
-                source = "via Booking Agent"
+            date_part = t("booking_date_part", language, date=t_date) if t_date else ""
+            reply = t("booking_found", language, origin=_disp(from_st, language),
+                      destination=_disp(to_st, language), date_part=date_part)
+            source = "Passenger Assistant booking link"
     elif intent == "cancel_booking":
         booking_ref = entities.get("booking_reference") or _extract_train_id(text)
         reason = entities.get("reason") or "No reason provided"  # API value sent to the Booking Agent

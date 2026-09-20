@@ -137,6 +137,30 @@ export default function MessageBubble({
                   </span>
                 </div>
               )}
+              {(prefill?.train_id || action?.prefill?.train_id) && (
+                <div className="action-chip">
+                  <span className="chip-label">TRAIN</span>
+                  <span className="chip-value">
+                    {prefill?.train_id || action?.prefill?.train_id}
+                  </span>
+                </div>
+              )}
+              {(prefill?.seat_class || action?.prefill?.seat_class) && (
+                <div className="action-chip">
+                  <span className="chip-label">CLASS</span>
+                  <span className="chip-value">
+                    {prefill?.seat_class || action?.prefill?.seat_class}
+                  </span>
+                </div>
+              )}
+              {(prefill?.passenger_count || action?.prefill?.passenger_count) && (
+                <div className="action-chip">
+                  <span className="chip-label">SEATS</span>
+                  <span className="chip-value">
+                    {prefill?.passenger_count || action?.prefill?.passenger_count}
+                  </span>
+                </div>
+              )}
             </div>
 
             <button
