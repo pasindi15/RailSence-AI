@@ -73,6 +73,8 @@ ALLOWED_INTERACTIONS: set[tuple[str, str, str]] = {
     # Operations <-> Maintenance
     ("operations-agent", "maintenance-agent", "issue_report"),
     ("maintenance-agent", "operations-agent", "incident_report"),
+    # Passenger -> Maintenance (passenger-reported complaints, e.g. "AC is broken")
+    ("passenger-agent", "maintenance-agent", "issue_report"),
     # Acknowledgements
     ("booking-agent", "passenger-agent", "ack"),
     ("security-agent", "booking-agent", "ack"),

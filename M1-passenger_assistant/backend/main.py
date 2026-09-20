@@ -214,18 +214,45 @@ RAG_DISTANCE_THRESHOLD = 1.6
 FARE_LINE_PATTERN = re.compile(r"^-\s*(?P<label>[^:]+):\s*LKR\s*(?P<amount>[\d,]+)", re.MULTILINE)
 
 
-def _compute_group_fares(chunks: list[dict], passenger_count: int) -> str:
-    """Multiply every per-person 'LKR N' fare line found in the retrieved fare
-    chunks by passenger_count, in code. The LLM is instructed to use these
-    totals verbatim in its reply instead of doing the multiplication itself -
-    it isn't reliable at arithmetic and shouldn't be trusted to get it right."""
-    lines = []
+def _label_matches_fare_class(label: str, class_keywords: list[str]) -> bool:
+    """True if every requested keyword ("1st"/"2nd"/"3rd"/"ac"/"reserved"/
+    "unreserved"/"observation saloon") appears in the fare line's label as a
+    whole word. Word-boundary matching (not a plain substring check) matters
+    here specifically because "reserved" is a literal substring of
+    "unreserved" - a naive `in` check would make "2nd class reserved" also
+    match the "2nd Class Unreserved" line, which is exactly the bug this is
+    fixing."""
+    lowered_label = label.lower()
+    return all(re.search(rf"\b{re.escape(kw)}\b", lowered_label) for kw in class_keywords)
+
+
+def _matching_fare_lines(chunks: list[dict], class_keywords: list[str]) -> list[tuple[str, int]]:
+    """All (label, per_person_amount) fare lines from the retrieved chunks, in
+    order, narrowed to class_keywords when given. Deliberately not
+    deduplicated by label - retrieval can (and does) pull in more than one
+    route's section at once, and different routes reuse the same class label
+    (e.g. "2nd Class Reserved") at different prices, so collapsing by label
+    would silently keep one route's price and drop another's."""
+    lines: list[tuple[str, int]] = []
     for chunk in chunks:
         for m in FARE_LINE_PATTERN.finditer(chunk["text"]):
             label = m.group("label").strip()
-            per_person = int(m.group("amount").replace(",", ""))
-            total = per_person * passenger_count
-            lines.append(f"- {label}: LKR {per_person} x {passenger_count} passengers = LKR {total}")
+            if class_keywords and not _label_matches_fare_class(label, class_keywords):
+                continue
+            lines.append((label, int(m.group("amount").replace(",", ""))))
+    return lines
+
+
+def _compute_group_fares(chunks: list[dict], passenger_count: int, class_keywords: list[str] | None = None) -> str:
+    """Multiply every matching per-person 'LKR N' fare line found in the
+    retrieved fare chunks by passenger_count, in code. The LLM is instructed
+    to use these totals verbatim in its reply instead of doing the
+    multiplication itself - it isn't reliable at arithmetic and shouldn't be
+    trusted to get it right."""
+    lines = []
+    for label, per_person in _matching_fare_lines(chunks, class_keywords or []):
+        total = per_person * passenger_count
+        lines.append(f"- {label}: LKR {per_person} x {passenger_count} passengers = LKR {total}")
     return "\n".join(lines)
 
 
@@ -287,10 +314,46 @@ def compose_rag_answer(
     # per-person chunk text, even though passenger_count was already known.
     # Moved up so both fallback paths can use it too.
     passenger_count = (entities or {}).get("passenger_count")
+    # Only meaningful for fare_query - narrows which fares.md line(s) are
+    # relevant when the passenger named a class (e.g. "1st class", "AC").
+    fare_class_keywords = (entities or {}).get("fare_class_keywords") or []
+
+    # Fare-line extraction below must not mix in a different route's fares
+    # that happened to also land in the top-k retrieval - fares.md has one
+    # section per route, and a query only weakly favours the right one, so
+    # e.g. a Colombo Fort-Badulla question can still retrieve the Kandy and
+    # Anuradhapura sections too. Narrow to chunks whose text actually names
+    # both stations when NER found a full route; fall back to every
+    # retrieved chunk otherwise (e.g. a single-station "fare to Kandy").
+    route_stations = (entities or {}).get("stations") or []
+    if len(route_stations) >= 2:
+        route_chunks = [
+            c for c in chunks
+            if all(s.lower() in c["text"].lower() for s in route_stations[:2])
+        ]
+        fare_chunks = route_chunks or chunks
+    else:
+        fare_chunks = chunks
 
     def _raw_fallback_text() -> str:
+        if intent == "fare_query" and fare_class_keywords:
+            matched = _matching_fare_lines(fare_chunks, fare_class_keywords)
+            requested = " ".join(fare_class_keywords)
+            if matched:
+                if passenger_count and passenger_count > 1:
+                    computed = "\n".join(
+                        f"- {label}: LKR {amt} x {passenger_count} passengers = LKR {amt * passenger_count}"
+                        for label, amt in matched
+                    )
+                    return f"Here's what I found for {passenger_count} passengers:\n\n{computed}"
+                computed = "\n".join(f"- {label}: LKR {amt} per person" for label, amt in matched)
+                return f"Here's what I found:\n\n{computed}"
+            return (
+                f"I couldn't find a \"{requested}\" fare listed for this route. "
+                f"Here's what is available:\n\n{fare_chunks[0]['text'][:400]}"
+            )
         if intent == "fare_query" and passenger_count and passenger_count > 1:
-            computed = _compute_group_fares(chunks, passenger_count)
+            computed = _compute_group_fares(fare_chunks, passenger_count)
             if computed:
                 return f"Here's what I found for {passenger_count} passengers:\n\n{computed}"
         return f"Here's what I found:\n\n{chunks[0]['text'][:400]}"
@@ -314,8 +377,47 @@ def compose_rag_answer(
     # returns, so it's available there too.)
     fare_block = ""
     if intent == "fare_query" and not off_topic:
-        if passenger_count and passenger_count > 1:
-            computed = _compute_group_fares(chunks, passenger_count)
+        if fare_class_keywords:
+            # The passenger named a class - constrain the answer to just the
+            # matching fares.md line(s) instead of every class on the route.
+            matched = _matching_fare_lines(fare_chunks, fare_class_keywords)
+            requested = " ".join(fare_class_keywords)
+            if not matched:
+                fare_block = (
+                    f"FARE_CLASS_NOT_FOUND: true - the passenger specifically "
+                    f'asked about a "{requested}" fare, but no such fare line '
+                    f"exists for this route in the retrieved context below. Say "
+                    f"that class isn't available for this route and list the "
+                    f"class(es) that ARE, instead of guessing.\n\n"
+                )
+            else:
+                lines_text = "\n".join(f"- {label}: LKR {amt}" for label, amt in matched)
+                fare_block = (
+                    f"FARE_CLASS_FILTER: true - the passenger specifically asked "
+                    f'about a "{requested}" fare. Only report the matching fare '
+                    f"line(s) below - do NOT mention any other class from the "
+                    f"retrieved context even though it appears there too (kept "
+                    f"only for route verification):\n{lines_text}\n\n"
+                )
+                if passenger_count and passenger_count > 1:
+                    computed = "\n".join(
+                        f"- {label}: LKR {amt} x {passenger_count} passengers = LKR {amt * passenger_count}"
+                        for label, amt in matched
+                    )
+                    fare_block += (
+                        f"Pre-computed total fares for {passenger_count} passengers "
+                        f"(already multiplied in code - use these exact totals "
+                        f"verbatim, do not recalculate them yourself):\n{computed}\n\n"
+                    )
+                elif not passenger_count:
+                    fare_block += (
+                        "PASSENGER_COUNT_UNKNOWN: true - state the per-person "
+                        "fare(s) above clearly and ask how many passengers are "
+                        "travelling before giving a total - do not assume 1 "
+                        "passenger.\n\n"
+                    )
+        elif passenger_count and passenger_count > 1:
+            computed = _compute_group_fares(fare_chunks, passenger_count)
             if computed:
                 fare_block = (
                     f"Pre-computed total fares for {passenger_count} passengers "
@@ -521,6 +623,7 @@ async def chat(req: ChatRequest):
         stations = entities.get("stations", [])
         route = " - ".join(stations) if isinstance(stations, list) and len(stations) >= 2 else "Colombo Fort - Kandy"
         train_id = entities.get("train_id")
+        resolved_via_registry = False
         if not train_id and isinstance(stations, list) and len(stations) >= 2:
             # No explicit train ID (e.g. "Is the train from Colombo Fort to
             # Kandy delayed?"), but a route is known - M2's PredictionRequest
@@ -532,6 +635,7 @@ async def chat(req: ChatRequest):
                 matches = await asyncio.to_thread(search_trains, stations[0], stations[1])
                 if matches:
                     train_id = matches[0]["train_id"]
+                    resolved_via_registry = True
                     print(f"[chat] delay_check resolved train_id={train_id!r} for route={route!r} via shared registry")
             except TrainRepositoryUnavailable as e:
                 print(f"[chat] delay_check registry lookup failed for route={route!r}: {e}")
@@ -541,13 +645,21 @@ async def chat(req: ChatRequest):
             save_message(req.session_id, "user", text)
             save_message(req.session_id, "assistant", reply)
             return ChatResponse(session_id=req.session_id, reply=reply, intent=intent, language=language, entities=entities, source=source)
+        # Operations' own /hub/message contract (M2, unmodified) only trusts a
+        # payload train_id when it's also evidenced by a matching token in
+        # raw_text - an anti-fabrication guard against a caller defaulting to
+        # a placeholder ID with no real basis. When we resolved train_id
+        # ourselves via the shared registry rather than the passenger naming
+        # one, the verbatim chat text won't contain it, so surface it as
+        # explicit evidence here rather than touching M2's validation.
+        raw_text_for_hub = f"{text} (train {train_id})" if resolved_via_registry else text
         envelope = build_envelope(
             receiver_agent="operations-agent",
             intent="delay_check",
             payload={
                 "stations": stations,
                 "time": entities.get("time"),
-                "raw_text": text,
+                "raw_text": raw_text_for_hub,
                 "route": route,
                 "train_id": train_id,
             },
