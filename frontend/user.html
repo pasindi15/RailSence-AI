@@ -2204,10 +2204,10 @@ body {
               <div class="route-service-detail" id="sum-train-detail">No train selected · Second Class</div>
             </div>
 
-            <!-- Currency Toggle Button (₹ ↔ $) -->
+            <!-- Currency Toggle Button (Rs. ↔ $) -->
             <div class="currency-badge-wrap">
-              <button type="button" class="currency-badge-btn" onclick="toggleCurrency()">
-                <span id="currency-label">₹ ↔ $</span>
+              <button type="button" class="currency-badge-btn" onclick="toggleCurrency()" title="Toggle between Sri Lankan Rupees (Rs.) and USD ($)">
+                <span id="currency-label">Rs. ↔ $</span>
               </button>
             </div>
 
@@ -2223,7 +2223,7 @@ body {
             </div>
 
             <div class="summary-line-item">
-              <span>GST <span class="pill-tag-gst">18%</span></span>
+              <span>VAT <span class="pill-tag-gst">18%</span></span>
               <span id="sum-tax-amount">—</span>
             </div>
 
@@ -2327,7 +2327,7 @@ let selectedScheduleId = null;
 let latestTrainRequestId = 0;
 let isSubmitting = false;
 let currentStep = 1;
-let currentCurrency = 'INR';
+let currentCurrency = 'LKR';
 
 // Passenger Model: starts with Passenger 1
 let passengerData = [
@@ -3337,8 +3337,8 @@ function selectPaymentMethod(method) {
 
 // ── Currency Toggle ─────────────────────────────────────────────────
 function toggleCurrency() {
-  currentCurrency = currentCurrency === 'INR' ? 'USD' : 'INR';
-  if ($('currency-label')) $('currency-label').textContent = currentCurrency === 'INR' ? '₹ ↔ $' : '$ ↔ ₹';
+  currentCurrency = currentCurrency === 'LKR' ? 'USD' : 'LKR';
+  if ($('currency-label')) $('currency-label').textContent = currentCurrency === 'LKR' ? 'Rs. ↔ $' : '$ ↔ Rs.';
   updateSummary();
 }
 
@@ -3373,8 +3373,8 @@ function updateSummary() {
   const tax = Math.round(subtotal * 0.18);
   const grandTotal = subtotal + tax;
 
-  const symbol = currentCurrency === 'USD' ? '$ ' : '₹ ';
-  const rate = currentCurrency === 'USD' ? 0.012 : 1;
+  const symbol = currentCurrency === 'USD' ? '$ ' : 'Rs. ';
+  const rate = currentCurrency === 'USD' ? (1 / 300) : 1;
 
   if ($('sum-route-fare')) $('sum-route-fare').textContent = trainId ? `${symbol}${Math.round(unitFare * rate).toLocaleString()}` : '—';
   if ($('sum-pax-count')) $('sum-pax-count').textContent = count;
