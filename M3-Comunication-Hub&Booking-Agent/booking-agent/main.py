@@ -76,8 +76,12 @@ load_dotenv()
 async def lifespan(app: FastAPI):
     # Ensure database tables exist on startup (seed test schedules in test environments)
     try:
-        from database.database import is_test_environment
+        from database.database import is_test_environment, SessionLocal
         init_db(seed=is_test_environment())
+        # Warm up database connection pool
+        with SessionLocal() as db:
+            import sqlalchemy as sa
+            db.execute(sa.text("SELECT 1"))
     except Exception:
         pass
     yield
@@ -127,10 +131,21 @@ async def health_check() -> dict:
     return {"service": "booking-agent", "status": "ok"}
 
 
+# In-memory route options cache with 15-second TTL
+_options_cache: dict[tuple[str, str, str], tuple[float, list[dict]]] = {}
+
+def invalidate_options_cache() -> None:
+    _options_cache.clear()
+
+
 @app.get(
     "/booking-options",
     tags=["schedules"],
     summary="Get available train schedules and seat counts for route and date",
+)
+@app.get(
+    "/api/booking-options",
+    include_in_schema=False,
 )
 def get_booking_options(
     from_station: str,
@@ -138,13 +153,24 @@ def get_booking_options(
     travel_date: str,
     db: Session = Depends(get_db),
 ) -> JSONResponse:
+    import time
+    t0 = time.time()
     from booking.availability import get_schedules_for_route
     try:
         d = date.fromisoformat(travel_date)
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid date format, expected YYYY-MM-DD")
+
+    cache_key = (from_station.strip().lower(), to_station.strip().lower(), travel_date.strip())
+    now = time.time()
+    cached_entry = _options_cache.get(cache_key)
+    if cached_entry and (now - cached_entry[0]) < 15.0:
+        return JSONResponse(status_code=200, content=cached_entry[1])
+
     options = get_schedules_for_route(db, from_station, to_station, d)
-    return JSONResponse(status_code=200, content={"trains": options})
+    _options_cache[cache_key] = (now, options)
+    print(f"[get_booking_options] Elapsed: {time.time() - t0:.3f}s for {from_station}->{to_station} on {travel_date}")
+    return JSONResponse(status_code=200, content=options)
 
 
 # ---------------------------------------------------------------------------
@@ -195,6 +221,7 @@ async def receive_internal_message(
         service = BookingService(db)
         try:
             booking_result = service.process_booking(booking_req)
+            invalidate_options_cache()
         except (TrainNotFoundError, ScheduleNotFoundError, FareNotFoundError) as exc:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -328,31 +355,7 @@ async def receive_internal_message(
 # Booking Options & Schedule Discovery
 # ---------------------------------------------------------------------------
 
-@app.get(
-    "/booking-options",
-    tags=["bookings"],
-    summary="Retrieve available train schedules and live seat availability for a route and date",
-    response_description="List of available train options",
-)
-async def get_booking_options(
-    from_station: str,
-    to_station: str,
-    travel_date: date,
-    db: Session = Depends(get_db),
-) -> JSONResponse:
-    """
-    Query real train schedules matching the route and date,
-    with dynamically derived available seat counts and fare information.
-    """
-    from booking.availability import get_schedules_for_route
 
-    options = get_schedules_for_route(
-        db=db,
-        from_station=from_station,
-        to_station=to_station,
-        travel_date=travel_date,
-    )
-    return JSONResponse(status_code=200, content=options)
 
 
 # ---------------------------------------------------------------------------

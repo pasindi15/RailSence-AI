@@ -165,7 +165,7 @@ class TestTrainOptionsDiscovery:
         """6. Route with no trains returns empty list."""
         resp = client.get("/api/booking-options", params={
             "from_station": "Colombo",
-            "to_station": "Jaffna",
+            "to_station": "Batticaloa",
             "travel_date": "2026-12-03",
         })
         assert resp.status_code == 200

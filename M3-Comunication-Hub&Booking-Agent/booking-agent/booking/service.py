@@ -182,6 +182,7 @@ class BookingService:
             IdempotencyRecord,
             IdempotencyStatus,
             SeatHold,
+            TrainSchedule,
         )
         from datetime import datetime, timezone
         import hashlib
@@ -199,6 +200,9 @@ class BookingService:
                 "passenger_email": str(request.passenger_email).strip() if request.passenger_email else None,
                 "passengers": [{"nic": p.nic, "name": p.name} for p in (request.passengers or [])],
             }
+            if getattr(request, "schedule_id", None) is not None:
+                payload_repr["schedule_id"] = request.schedule_id
+
             req_hash = hashlib.sha256(json.dumps(payload_repr, sort_keys=True).encode("utf-8")).hexdigest()
             existing_rec = (
                 self.db.query(IdempotencyRecord)
@@ -206,7 +210,8 @@ class BookingService:
                 .first()
             )
             if existing_rec:
-                if existing_rec.payload_hash != req_hash:
+                curr_hash = getattr(existing_rec, "payload_hash", None) or getattr(existing_rec, "request_hash", None)
+                if curr_hash != req_hash:
                     from booking.exceptions import IdempotencyConflictError
                     raise IdempotencyConflictError(request.idempotency_key)
                 if existing_rec.status in (IdempotencyStatus.COMPLETED, IdempotencyStatus.CONFIRMED, IdempotencyStatus.COMMITTED, "COMPLETED", "CONFIRMED", "COMMITTED") and existing_rec.response_payload:
@@ -227,13 +232,25 @@ class BookingService:
         # 3. Find active train
         train = self.find_train(request.train_id)
 
-        # 4. Find matching schedule
-        schedule = self.find_schedule(
-            train_id=request.train_id,
-            from_station=request.from_station,
-            to_station=request.to_station,
-            travel_date=request.travel_date,
-        )
+        # 4. Find matching schedule (by schedule_id if provided, else route+train+date)
+        schedule = None
+        if getattr(request, "schedule_id", None):
+            sched_by_id = self.db.query(TrainSchedule).filter(TrainSchedule.id == request.schedule_id).first()
+            if sched_by_id and sched_by_id.train_id == train.id and sched_by_id.travel_date == request.travel_date:
+                schedule = sched_by_id
+
+        if not schedule:
+            schedule = self.find_schedule(
+                train_id=request.train_id,
+                from_station=request.from_station,
+                to_station=request.to_station,
+                travel_date=request.travel_date,
+            )
+
+        # Check explicitly cancelled status
+        sched_status = (getattr(schedule, "service_status", "SCHEDULED") or "SCHEDULED").upper()
+        if sched_status == "CANCELLED":
+            raise ValueError(f"Train service '{train.train_id}' on {request.travel_date} has been cancelled.")
 
         # 4b. Validate Seat Hold if provided
         active_hold = None

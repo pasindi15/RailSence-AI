@@ -2091,19 +2091,27 @@ async function inspectSchedules() {
   try {
     const resp = await fetch(`/api/booking-options?from_station=${encodeURIComponent(from)}&to_station=${encodeURIComponent(to)}&travel_date=${encodeURIComponent(dateVal)}`);
     const data = await resp.json();
+    const trains = Array.isArray(data) ? data : (data.trains || []);
 
-    if (Array.isArray(data) && data.length > 0) {
-      let html = '<table class="status-table"><thead><tr><th>Train</th><th>Service</th><th>Times</th><th>First Class</th><th>Second Class</th></tr></thead><tbody>';
-      data.forEach(s => {
+    if (trains.length > 0) {
+      let html = '<table class="status-table"><thead><tr><th>Train</th><th>Service</th><th>Times</th><th>First Class</th><th>Second Class</th><th>Status</th></tr></thead><tbody>';
+      trains.forEach(s => {
         const fc = s.available_classes ? s.available_classes.find(c => c.seat_class === 'First Class') : null;
         const sc = s.available_classes ? s.available_classes.find(c => c.seat_class === 'Second Class') : null;
+        const statusStr = (s.service_status || 'SCHEDULED').toUpperCase();
+        const statusBadge = statusStr === 'CANCELLED'
+          ? '<span style="color:#EF4444;font-weight:700;">CANCELLED</span>'
+          : '<span style="color:#10B981;font-weight:600;">ACTIVE</span>';
+        const overnight = s.is_overnight ? ' <span style="font-size:11px;color:#818CF8;">(Overnight)</span>' : '';
+
         html += `
           <tr>
             <td><strong>${escapeHtml(s.train_id)}</strong></td>
-            <td>${escapeHtml(s.train_name)}</td>
+            <td>${escapeHtml(s.train_name)}${overnight}</td>
             <td>${escapeHtml(s.departure_time)} → ${escapeHtml(s.arrival_time)}</td>
             <td>${fc ? `${fc.available_seats} seats (Rs. ${fc.base_fare})` : 'N/A'}</td>
             <td>${sc ? `${sc.available_seats} seats (Rs. ${sc.base_fare})` : 'N/A'}</td>
+            <td>${statusBadge}</td>
           </tr>
         `;
       });

@@ -20,10 +20,18 @@ from typing import Any
 import httpx
 
 
-SECURITY_AGENT_URL = os.getenv("SECURITY_AGENT_URL", "http://localhost:8004").rstrip("/")
-HUB_URL = os.getenv("HUB_URL", "http://localhost:8002").rstrip("/")
+SECURITY_AGENT_URL = os.getenv("SECURITY_AGENT_URL", "http://127.0.0.1:8004").rstrip("/")
+HUB_URL = os.getenv("HUB_URL", "http://127.0.0.1:8002").rstrip("/")
 
 _test_transport: httpx.BaseTransport | None = None
+_shared_client: httpx.Client | None = None
+
+
+def _get_shared_client(timeout: float = 4.0) -> httpx.Client:
+    global _shared_client
+    if _shared_client is None or _shared_client.is_closed:
+        _shared_client = httpx.Client(timeout=timeout)
+    return _shared_client
 
 
 def set_security_client_transport(transport: httpx.BaseTransport | None) -> None:
@@ -56,26 +64,26 @@ def request_fraud_score_via_hub(
     }
 
     try:
-        with httpx.Client(timeout=timeout) as client:
-            resp = client.post(hub_endpoint, json=message_payload)
-            if resp.status_code == 200:
-                data = resp.json()
-                if "result" in data:
-                    return data["result"]
-                return data
-            elif resp.status_code == 202:
-                # Async acknowledged
-                return {
-                    "risk_score": 0.10,
-                    "risk_level": "LOW",
-                    "recommended_action": "ALLOW",
-                    "reasons": ["ASYNC_HUB_EVALUATION"],
-                    "model": "HubAsyncRouter",
-                }
+        client = httpx.Client(transport=_test_transport, timeout=timeout) if _test_transport else _get_shared_client(timeout)
+        resp = client.post(hub_endpoint, json=message_payload)
+        if _test_transport:
+            client.close()
+        if resp.status_code == 200:
+            data = resp.json()
+            if "result" in data:
+                return data["result"]
+            return data
+        elif resp.status_code == 202:
+            return {
+                "risk_score": 0.10,
+                "risk_level": "LOW",
+                "recommended_action": "ALLOW",
+                "reasons": ["ASYNC_HUB_EVALUATION"],
+                "model": "HubAsyncRouter",
+            }
     except Exception:
         pass
 
-    # Fail closed on hub failure
     return {
         "risk_score": 0.50,
         "risk_level": "MEDIUM",
@@ -110,22 +118,23 @@ def request_fraud_score(
     }
 
     try:
-        client_kwargs: dict[str, Any] = {"timeout": timeout}
         if _test_transport is not None:
-            client_kwargs["transport"] = _test_transport
-
-        with httpx.Client(**client_kwargs) as client:
+            with httpx.Client(transport=_test_transport, timeout=timeout) as client:
+                resp = client.post(endpoint, json=payload)
+        else:
+            client = _get_shared_client(timeout)
             resp = client.post(endpoint, json=payload)
-            if resp.status_code == 200:
-                return resp.json()
-            else:
-                return {
-                    "risk_score": 0.65,
-                    "risk_level": "MEDIUM",
-                    "recommended_action": "REVIEW",
-                    "reasons": [f"SECURITY_AGENT_ERROR: Security Agent returned HTTP {resp.status_code}."],
-                    "model": "SecurityAgentGateway",
-                }
+
+        if resp.status_code == 200:
+            return resp.json()
+        else:
+            return {
+                "risk_score": 0.65,
+                "risk_level": "MEDIUM",
+                "recommended_action": "REVIEW",
+                "reasons": [f"SECURITY_AGENT_ERROR: Security Agent returned HTTP {resp.status_code}."],
+                "model": "SecurityAgentGateway",
+            }
     except (httpx.ConnectError, httpx.TimeoutException, Exception) as exc:
         # Multi-Agent Boundary: Fail-closed fallback to human review (never silently approve)
         return {
