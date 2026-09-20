@@ -39,24 +39,13 @@ STATION_ALIASES = {
     # "කොළඹ"/"கொழும்பு" are the same everyday shorthand as bare "colombo" - without
     # them "කොළඹ ඉඳන් මහනුවරට ..." found only Kandy, so a route fare answer was
     # built from a one-station query instead of Colombo Fort - Kandy.
-    "Colombo Fort": ["colombo fort", "colombo", "fort", "කොළඹ කොටුව", "கொழும்பு கோட்டை", "කොළඹ", "கொழும்பு", "கொழும்ப"],
+    "Colombo Fort": ["colombo fort", "colombo", "කොළඹ කොටුව", "கொழும்பு கோட்டை", "කොළඹ", "கொழும்பு", "கொழும்ப"],
     "Kandy": ["kandy", "මහනුවර", "கண்டி"],
     "Galle": ["galle", "ගාල්ල", "காலி"],
     "Jaffna": ["jaffna", "යාපනය", "யாழ்ப்பாணம்", "யாழ்ப்பாண"],
-    "Anuradhapura": ["anuradhapura", "අනුරාධපුරය", "අනුරාධපුර", "அனுராதபுரம்", "அனுராதபுர"],
+    "Anuradhapura": ["anuradhapura", "අනුරාධපුරය", "அனுராதபுரம்", "அனுராதபுர"],
     "Matara": ["matara", "මාතර", "மாத்தறை"],
     "Badulla": ["badulla", "බදුල්ල", "பதுளை"],
-    "Nanu Oya": ["nanu oya", "nanuoya", "නානුඔය", "நானு ஓயா"],
-    "Ella": ["ella", "ඇල්ල", "எல்ல"],
-    "Maradana": ["maradana", "මරදාන", "மருதானை"],
-    "Kurunegala": ["kurunegala", "කුරුණෑගල", "குருணாகல்"],
-    "Vavuniya": ["vavuniya", "වවුනියාව", "வவுனியா"],
-    "Peradeniya": ["peradeniya", "පේරාදෙණිය", "பேராதனை"],
-    "Polgahawela": ["polgahawela", "පොල්ගහවෙල", "பொல்கஹவெல"],
-    "Avissawella": ["avissawella", "අවිස්සාවේල්ල", "அவிசாவளை"],
-    "Beliatta": ["beliatta", "බෙලිඅත්ත", "பெலியத்த"],
-    "Trincomalee": ["trincomalee", "ත්‍රිකුණාමලය", "திருகோணமலை"],
-    "Batticaloa": ["batticaloa", "මඩකලපුව", "மட்டக்களப்பு"],
 }
 
 TIME_PATTERN = re.compile(r"\b([01]?\d|2[0-3]):[0-5]\d\b")
@@ -208,113 +197,15 @@ def _extract_fare_class_keywords(text: str) -> list[str]:
     return keywords
 
 
-def _resolve_station_entities(text: str) -> tuple[list[str], str | None, str | None]:
-    """
-    Extract station mentions with their correct directional roles (from_station, to_station).
-    Handles:
-    - Prepositions in English: 'from X to Y', 'to Y from X', 'X to Y', 'X - Y'
-    - Sinhala postpositions/suffixes: 'කොළඹින්'/'කොටුවෙන්' (from), 'මහනුවරට' (to), 'සිට' (from), 'දක්වා' (to)
-    - Tamil postpositions/suffixes: 'இருந்து'/'லிருந்து' (from), 'க்கு'/'விற்கு' (to)
-    - Order of appearance fallback: X then Y -> from X to Y
-    - Gemini fallback if no aliases match.
-    """
-    lowered = text.lower()
-    raw_matches = []
-    for canonical, aliases in STATION_ALIASES.items():
-        for alias in aliases:
-            calias = alias.lower()
-            if calias.isascii():
-                pat = rf"\b{re.escape(calias)}\b"
-            else:
-                pat = re.escape(calias)
-            for m in re.finditer(pat, lowered):
-                raw_matches.append({
-                    "start": m.start(),
-                    "end": m.end(),
-                    "canonical": canonical,
-                    "alias": calias,
-                    "length": m.end() - m.start(),
-                })
-
-    # Longer matches take precedence (e.g. "colombo fort" over "colombo")
-    raw_matches.sort(key=lambda x: x["length"], reverse=True)
-    non_overlapping = []
-    for m in raw_matches:
-        if any(not (m["end"] <= acc["start"] or m["start"] >= acc["end"]) for acc in non_overlapping):
-            continue
-        non_overlapping.append(m)
-
-    # Sort in order of appearance in the text
-    non_overlapping.sort(key=lambda x: x["start"])
-
-    if not non_overlapping:
-        llm_stations = _llm_extract_stations(text)
-        from_st = llm_stations[0] if len(llm_stations) >= 1 else None
-        to_st = llm_stations[1] if len(llm_stations) >= 2 else None
-        return llm_stations, from_st, to_st
-
-    labeled = []
-    for m in non_overlapping:
-        prefix = lowered[max(0, m["start"] - 25):m["start"]].strip()
-        suffix = lowered[m["end"]:min(len(lowered), m["end"] + 25)].strip()
-        role = None
-
-        # Departure (origin) indicators
-        if re.search(r"\b(from|departing|departure|departs|leaving|leaves|start(?:ing)?\s+from|out\s+of)\s*$", prefix):
-            role = "from"
-        elif re.search(r"\b(සිට|සිටන්|වෙතින්)\s*$", prefix) or re.search(r"^(?:ෙන්|ින්|සිට|සිටන්|වෙතින්)", suffix):
-            role = "from"
-        elif re.search(r"^(?:லிருந்து|இருந்து)", suffix) or re.search(r"\b(?:இருந்து)\s*$", prefix):
-            role = "from"
-        # Arrival (destination) indicators
-        elif re.search(r"\b(to|towards|into|reaching|reaches|destined\s+for|arriving\s+(?:at|in)?)\s*$", prefix):
-            role = "to"
-        elif re.search(r"\b(දක්වා|වෙත)\s*$", prefix) or re.search(r"^(?:ට|දක්වා|වෙත)", suffix):
-            role = "to"
-        elif re.search(r"^(?:க்கு|விற்கு|நோக்கி)", suffix):
-            role = "to"
-
-        labeled.append((m["canonical"], role))
-
-    from_st = None
-    to_st = None
-    for can, role in labeled:
-        if role == "from" and not from_st:
-            from_st = can
-        elif role == "to" and not to_st:
-            to_st = can
-
-    if len(labeled) == 1:
-        can, role = labeled[0]
-        if role == "to":
-            to_st = can
-        else:
-            from_st = can
-    elif len(labeled) >= 2:
-        can1, role1 = labeled[0]
-        can2, role2 = labeled[1]
-        if from_st and not to_st:
-            to_st = can2 if can1 == from_st else can1
-        elif to_st and not from_st:
-            from_st = can1 if can2 == to_st else can2
-        elif not from_st and not to_st:
-            from_st = can1
-            to_st = can2
-
-    ordered_stations = []
-    if from_st:
-        ordered_stations.append(from_st)
-    if to_st and to_st not in ordered_stations:
-        ordered_stations.append(to_st)
-    for can, _ in labeled:
-        if can not in ordered_stations:
-            ordered_stations.append(can)
-
-    return ordered_stations, from_st, to_st
-
-
 def extract_entities(text: str) -> dict:
-    found_stations, from_station, to_station = _resolve_station_entities(text)
+    lowered_text = text.lower()
+    found_stations = [
+        canonical
+        for canonical, aliases in STATION_ALIASES.items()
+        if any(alias.lower() in lowered_text for alias in aliases)
+    ]
+    if not found_stations:
+        found_stations = _llm_extract_stations(text)
 
     route_origin, route_destination = resolve_route_roles(text, found_stations)
 
@@ -373,8 +264,8 @@ def extract_entities(text: str) -> dict:
 
     return {
         "stations": found_stations,
-        "from_station": from_station or route_origin,
-        "to_station": to_station or route_destination,
+        "from_station": route_origin,
+        "to_station": route_destination,
         "time": time_match.group(0) if time_match else None,
         "travel_date": travel_date,
         "train_id": train_id_match.group(0) if train_id_match else None,
