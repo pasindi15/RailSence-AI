@@ -1735,17 +1735,21 @@ async def hub_dashboard_proxy() -> JSONResponse:
         )
 
 
-def humanize_hub_error(raw_err: str | None, intent: str = "", receiver: str = "") -> dict[str, Any]:
+def humanize_hub_error(raw_err: str | None, intent: str = "", receiver: str = "") -> dict[str, Any] | None:
     """Translate raw technical error logs into clear, human/LLM-understandable explanations."""
     if not raw_err:
-        return {
-            "summary": "Unknown Error",
-            "details": "No specific failure reason was returned by the receiving agent.",
-            "missing_fields": [],
-        }
+        return None
 
     err = str(raw_err).strip()
     lowered = err.lower()
+
+    # Administrative review decisions are successful human adjudications, not system failures
+    if (
+        intent in ("cancellation_review_rejection", "cancellation_review_approval", "cancellation_review", "fraud_review")
+        or "admin decision" in lowered
+        or "admin rejection" in lowered
+    ):
+        return None
 
     # Case 1: Incomplete booking parameters (Pydantic validation errors on BookingRequest)
     if "validation error" in lowered and ("bookingrequest" in lowered or intent == "booking_request"):
@@ -1854,15 +1858,23 @@ async def hub_timeline_proxy(limit: int = Query(default=20, ge=1, le=100)) -> JS
                         raw_err = i.get("error_message")
                         intent = i.get("intent", "")
                         receiver = i.get("receiver_agent") or i.get("receiver", "")
-                        h = humanize_hub_error(raw_err, intent=intent, receiver=receiver) if raw_err else None
+                        sender = i.get("sender_agent") or i.get("sender", "")
+                        raw_status = i.get("status", "ROUTED")
+                        is_admin_decision = (
+                            sender == "admin-adjudicator"
+                            or "cancellation_review" in intent
+                            or "fraud_review" in intent
+                        )
+                        status = "ROUTED" if is_admin_decision else raw_status
+                        h = None if is_admin_decision else (humanize_hub_error(raw_err, intent=intent, receiver=receiver) if raw_err else None)
                         result_items.append({
                             "message_id": i.get("message_id"),
                             "correlation_id": i.get("correlation_id"),
-                            "sender": i.get("sender_agent") or i.get("sender", ""),
+                            "sender": sender,
                             "receiver": receiver,
                             "intent": intent,
-                            "status": i.get("status", "ROUTED"),
-                            "error_message": raw_err,
+                            "status": status,
+                            "error_message": None if is_admin_decision else raw_err,
                             "error_summary": h["summary"] if h else None,
                             "error_details": h["details"] if h else None,
                             "missing_fields": h["missing_fields"] if h else [],
@@ -1883,15 +1895,23 @@ async def hub_timeline_proxy(limit: int = Query(default=20, ge=1, le=100)) -> JS
                 raw_err = getattr(l, "error_message", None)
                 intent = l.intent or ""
                 receiver = l.receiver_agent or ""
-                h = humanize_hub_error(raw_err, intent=intent, receiver=receiver) if raw_err else None
+                sender = l.sender_agent or ""
+                raw_status = l.status.value if hasattr(l.status, "value") else str(l.status)
+                is_admin_decision = (
+                    sender == "admin-adjudicator"
+                    or "cancellation_review" in intent
+                    or "fraud_review" in intent
+                )
+                status = "ROUTED" if is_admin_decision else raw_status
+                h = None if is_admin_decision else (humanize_hub_error(raw_err, intent=intent, receiver=receiver) if raw_err else None)
                 result_items.append({
                     "message_id": l.message_id,
                     "correlation_id": getattr(l, "correlation_id", None),
-                    "sender": l.sender_agent,
+                    "sender": sender,
                     "receiver": receiver,
                     "intent": intent,
-                    "status": l.status.value if hasattr(l.status, "value") else str(l.status),
-                    "error_message": raw_err,
+                    "status": status,
+                    "error_message": None if is_admin_decision else raw_err,
                     "error_summary": h["summary"] if h else None,
                     "error_details": h["details"] if h else None,
                     "missing_fields": h["missing_fields"] if h else [],

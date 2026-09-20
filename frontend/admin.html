@@ -2481,14 +2481,18 @@ async function loadAdminHubDashboard() {
           tbody.innerHTML = logs.map(l => {
             const sAgent = l.sender || l.sender_agent || 'unknown';
             const rAgent = l.receiver || l.receiver_agent || 'unknown';
-            const st = (l.status || 'ROUTED').toLowerCase();
-            const isFailed = st === 'failed' || st === 'rejected';
+            const intent = (l.intent || '').toLowerCase();
+            const isAdminDecision = sAgent === 'admin-adjudicator' || intent.includes('cancellation_review') || intent.includes('review_decision') || intent.includes('fraud_review');
+
+            const rawStatus = (l.status || 'ROUTED').toUpperCase();
+            const displayStatus = isAdminDecision ? 'ROUTED' : rawStatus;
+            const isFailed = !isAdminDecision && (displayStatus === 'FAILED' || displayStatus === 'REJECTED');
             const badgeClass = isFailed ? 'badge-red' : 'badge-green';
             const timeStr = l.timestamp ? new Date(l.timestamp).toLocaleTimeString() : 'N/A';
             const durStr = l.duration_ms ? Number(l.duration_ms).toFixed(1) + ' ms' : '< 1 ms';
 
             let errorHtml = '<span style="color:var(--muted);font-size:11px;">—</span>';
-            if (isFailed || l.error_message || l.error_summary) {
+            if (isFailed && (l.error_message || l.error_summary)) {
               const summary = l.error_summary || 'Request Failed';
               const details = l.error_details || l.error_message || '';
               const missing = Array.isArray(l.missing_fields) ? l.missing_fields : [];
@@ -2528,7 +2532,7 @@ async function loadAdminHubDashboard() {
                 <td style="color:var(--brand);font-weight:600;font-size:11px;">${escapeHtml(l.message_id || 'N/A')}</td>
                 <td style="white-space:nowrap;"><span style="color:#93C5FD;">${escapeHtml(sAgent)}</span> ➔ <span style="color:#A7F3D0;">${escapeHtml(rAgent)}</span></td>
                 <td style="color:var(--ink-bright);">${escapeHtml(l.intent || '')}</td>
-                <td><span class="badge-tag ${badgeClass}">${escapeHtml(l.status || 'ROUTED')}</span></td>
+                <td><span class="badge-tag ${badgeClass}">${escapeHtml(displayStatus)}</span></td>
                 <td>${errorHtml}</td>
                 <td style="color:var(--muted-hi);white-space:nowrap;">${durStr}</td>
               </tr>

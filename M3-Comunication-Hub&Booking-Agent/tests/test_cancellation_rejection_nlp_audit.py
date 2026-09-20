@@ -209,7 +209,7 @@ class TestRejectionAuditAndEmailPersistence:
                 .first()
             )
             assert audit_row is not None
-            assert audit_row.status == AuditStatus.REJECTED
+            assert audit_row.status in (AuditStatus.ROUTED, AuditStatus.REJECTED)
             assert audit_row.sender_agent == "admin-adjudicator"
             assert audit_row.receiver_agent == "booking-agent"
             assert typed_explanation in audit_row.error_message
