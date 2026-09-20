@@ -32,7 +32,7 @@ load_dotenv(Path(__file__).parent / ".env")
 # than introducing a second one for the same thing.
 AGENT_HUB_URL = os.getenv("AGENT_HUB_URL", "http://localhost:8002")
 HUB_ROUTE_PATH = os.getenv("HUB_ROUTE_PATH", "messages")
-HUB_TIMEOUT_SECONDS = float(os.getenv("HUB_TIMEOUT_SECONDS", "5"))
+HUB_TIMEOUT_SECONDS = float(os.getenv("HUB_TIMEOUT_SECONDS", "15"))
 USE_MOCK_HUB = os.getenv("USE_MOCK_HUB", "false").strip().lower() in ("1", "true", "yes")
 
 HUB_UNREACHABLE_MESSAGE = "I couldn't reach that service right now — please try again shortly."
