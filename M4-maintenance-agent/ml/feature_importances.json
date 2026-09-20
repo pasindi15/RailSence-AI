@@ -1,58 +1,58 @@
 [
   {
     "feature": "fault_count_30d",
-    "importance": 0.607516
+    "importance": 0.413492
   },
   {
     "feature": "days_since_service",
-    "importance": 0.280311
+    "importance": 0.264664
   },
   {
     "feature": "vibration_level",
-    "importance": 0.057957
+    "importance": 0.181152
   },
   {
     "feature": "stopping_distance_m",
-    "importance": 0.016472
-  },
-  {
-    "feature": "wheel_profile_mm",
-    "importance": 0.009937
-  },
-  {
-    "feature": "oil_pressure_bar",
-    "importance": 0.008472
-  },
-  {
-    "feature": "fuel_efficiency_pct",
-    "importance": 0.005706
-  },
-  {
-    "feature": "temperature_celsius",
-    "importance": 0.005173
-  },
-  {
-    "feature": "brake_cylinder_pressure_bar",
-    "importance": 0.003106
-  },
-  {
-    "feature": "axle_temp_celsius",
-    "importance": 0.002814
+    "importance": 0.067779
   },
   {
     "feature": "pad_thickness_mm",
-    "importance": 0.002406
+    "importance": 0.020705
+  },
+  {
+    "feature": "wheel_profile_mm",
+    "importance": 0.012076
+  },
+  {
+    "feature": "axle_temp_celsius",
+    "importance": 0.012033
+  },
+  {
+    "feature": "oil_pressure_bar",
+    "importance": 0.010622
+  },
+  {
+    "feature": "brake_cylinder_pressure_bar",
+    "importance": 0.007641
+  },
+  {
+    "feature": "fuel_efficiency_pct",
+    "importance": 0.006155
+  },
+  {
+    "feature": "temperature_celsius",
+    "importance": 0.003499
   },
   {
     "feature": "asset_type_diesel_engine",
-    "importance": 0.000123
+    "importance": 0.000159
   },
   {
     "feature": "asset_type_bogie",
-    "importance": 4e-06
+    "importance": 2.5e-05
   },
   {
     "feature": "asset_type_brake_system",
-    "importance": 1e-06
+    "importance": 0.0
   }
 ]

@@ -37,6 +37,7 @@ from fastapi import Depends, FastAPI, Header, HTTPException, Request, status
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 import httpx
+import jwt as pyjwt
 from pydantic import BaseModel, Field, field_validator
 from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
@@ -76,6 +77,28 @@ async def _require_token(x_engineer_token: str = Header(default="")) -> None:
             status_code=401,
             detail="Engineer authentication required. Please log in via the dashboard.",
         )
+
+
+def _verify_hub_token(auth_token: str) -> None:
+    """Best-effort JWT verification for messages from the Hub.
+
+    Skipped when JWT_SECRET_KEY is not configured (keeps demo demoable offline).
+    Raises HTTP 401 if the secret is set but the token is invalid/expired.
+    """
+    secret = os.getenv("JWT_SECRET_KEY", "")
+    if not secret:
+        return
+    token = auth_token.strip()
+    if token.lower().startswith("bearer "):
+        token = token[7:].strip()
+    if not token:
+        raise HTTPException(status_code=401, detail="Missing Hub authentication token.")
+    try:
+        pyjwt.decode(token, secret, algorithms=["HS256"], options={"verify_exp": True})
+    except pyjwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Hub token has expired.")
+    except pyjwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid Hub authentication token.")
 
 
 def _persist_flags() -> None:
@@ -801,6 +824,7 @@ async def get_trains_under_maintenance(request: Request):
 
 @app.post("/hub/message")
 async def hub_message(request: Request, payload: HubMessageRequest):
+    _verify_hub_token(payload.auth_token)
     if payload.intent == "maintenance_check":
         asset_id = payload.payload.get("asset_id", "unknown")
         asset_type = payload.payload.get("asset_type", "diesel_engine")

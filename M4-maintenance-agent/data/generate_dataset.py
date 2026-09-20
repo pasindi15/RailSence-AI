@@ -3,7 +3,7 @@
 Produces exactly 24 assets (3 per train × 8 trains):
   diesel_engine (DE-xxxx), bogie (BG-xxxx), brake_system (BR-xxxx)
 
-5 history records per asset = 120 rows total.
+25 history records per asset = 600 rows total (matches Supabase import).
 The most-recent record per asset represents current health.
 """
 
@@ -147,22 +147,22 @@ def generate_sensor_readings(asset_type: str, health_score: float) -> dict:
     return base
 
 
-def generate_asset_history(asset: dict, n_records: int = 5) -> list[dict]:
+def generate_asset_history(asset: dict, n_records: int = 25) -> list[dict]:
     """Generate n_records history entries for one asset, most recent first."""
     records = []
-    # Spread records over last 6 months; most-recent within last 60 days
+    # Spread records over last 2 years; most-recent within last 60 days
     now = datetime.now()
     service_days = sorted(
-        [random.randint(1, 60)] + [random.randint(61, 180) for _ in range(n_records - 1)]
+        [random.randint(1, 60)] + [random.randint(61, 730) for _ in range(n_records - 1)]
     )
 
     for days_ago in service_days:
-        days_since = days_ago
+        days_since = int(days_ago)
         fault_options = FAULT_TYPES[asset["asset_type"]]
         fault_weights = [3] * (len(fault_options) - 1) + [40]
         fault_type = random.choices(fault_options, weights=fault_weights, k=1)[0]
 
-        base_score = 95 - (days_since / 180) * 30
+        base_score = 95 - (days_since / 730) * 30
         if fault_type != "none":
             base_score -= random.uniform(10, 40)
         health_score = max(5.0, min(100.0, base_score + random.gauss(0, 5)))
@@ -200,7 +200,7 @@ def generate_asset_history(asset: dict, n_records: int = 5) -> list[dict]:
 if __name__ == "__main__":
     all_records: list[dict] = []
     for asset in TRAIN_ASSETS:
-        all_records.extend(generate_asset_history(asset, n_records=5))
+        all_records.extend(generate_asset_history(asset, n_records=25))
 
     out_path = Path(__file__).parent / "assets_history.csv"
     if all_records:

@@ -20,6 +20,14 @@ function loadStoredPassenger() {
   }
 }
 
+// The backend is unreachable here, so it cannot localize this message. Match the
+// passenger's own script instead (Sinhala / Tamil / otherwise English).
+function networkErrorText(userText) {
+  if (/[඀-෿]/.test(userText || "")) return "යම් දෝෂයක් සිදු විය. කරුණාකර නැවත උත්සාහ කරන්න.";
+  if (/[஀-௿]/.test(userText || "")) return "ஏதோ தவறு ஏற்பட்டது. மீண்டும் முயற்சிக்கவும்.";
+  return "Something went wrong. Please try again.";
+}
+
 function newChatId() {
   return crypto.randomUUID();
 }
@@ -213,8 +221,11 @@ export default function App() {
       let botPrefill = res.prefill || null;
       let botCancellation = res.cancellation || null;
 
-      // Fallback client-side synthesis for booking request if not populated by backend
-      if (!botAction && (res.intent === "booking_request" || /\b(book|reserve|reservation)\b/i.test(text))) {
+      // Fallback client-side synthesis for booking request if not populated by backend.
+      // Keyed on the backend's intent only: matching the raw text for words like
+      // "reserve"/"refund" attached a booking/cancellation card to policy
+      // questions ("How does reserved seating work?", "Can I get a refund?").
+      if (!botAction && res.intent === "booking_request") {
         const fromMatch = text.match(/\b(?:from)\s+([A-Za-z\s]+?)(?=\s+(?:to|on|at|\d)|$)/i);
         const toMatch = text.match(/\b(?:to)\s+([A-Za-z\s]+?)(?=\s+(?:on|at|from|\d)|$)/i);
         const dateMatch = text.match(/\b(\d{4}-\d{2}-\d{2})\b/);
@@ -232,7 +243,7 @@ export default function App() {
       }
 
       // Fallback client-side synthesis for cancellation if not populated by backend
-      if (!botAction && (res.intent === "cancel_booking" || /\b(cancel|cancellation|refund)\b/i.test(text))) {
+      if (!botAction && res.intent === "cancel_booking") {
         const refMatch = text.match(/\b(RS-[A-Za-z0-9]{4,10})\b/i);
         const reasonMatch = text.match(/\b(?:because|due to|as|reason:)\s+(.+)$/i);
         botAction = {
@@ -271,7 +282,7 @@ export default function App() {
       setChats((prev) =>
         prev.map((c) =>
           c.id === activeChatId
-            ? { ...c, messages: [...c.messages, { role: "bot", text: "Something went wrong. Please try again." }] }
+            ? { ...c, messages: [...c.messages, { role: "bot", text: networkErrorText(text) }] }
             : c
         )
       );

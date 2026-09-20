@@ -747,6 +747,21 @@ textarea:focus-visible,
   box-shadow: var(--shadow-bubble);
 }
 
+/* System-style notice for questions outside this railway's passenger services. */
+.bubble.bot.notice {
+  border-left-color: #d97706;
+  background: color-mix(in srgb, #d97706 8%, var(--surface));
+}
+
+.notice-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #b45309;
+  margin-bottom: 4px;
+}
+
 .lang-tag {
   display: inline-block;
   font-size: 9px;

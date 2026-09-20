@@ -79,8 +79,8 @@ def test_fare_query_uses_rag_and_llm_composition(monkeypatch):
 
     class _FakeResponse:
         text = (
-            "A one-way fare from Colombo Fort to Kandy ranges from LKR 130 "
-            "(3rd class) up to LKR 1500 (1st class observation saloon)."
+            "A one-way fare from Colombo Fort to Kandy is LKR 1200 "
+            "(Second Class) or LKR 2500 (First Class)."
         )
 
     class _FakeGeminiModel:
@@ -184,7 +184,9 @@ def test_fare_query_with_passenger_count_computes_total_in_code(monkeypatch):
     body = r.json()
 
     assert body["entities"]["passenger_count"] == 2
-    assert "LKR 500 x 2 passengers = LKR 1000" in fake_model.last_prompt
+    # Values come from the Booking Agent's fare table (Colombo-Kandy: First 2500, Second 1200).
+    assert "Second Class: LKR 1200 x 2 passengers = LKR 2400" in fake_model.last_prompt
+    assert "First Class: LKR 2500 x 2 passengers = LKR 5000" in fake_model.last_prompt
     assert "do not recalculate" in fake_model.last_prompt
 
 
@@ -204,16 +206,17 @@ def test_fare_query_without_passenger_count_asks_instead_of_assuming(monkeypatch
 # FIX 3 - a clearly non-railway question through the unclassified ("unknown"
 # intent) path must be flagged off-topic instead of handing the LLM
 # irrelevant context it could still try to answer from.
-def test_offtopic_query_gets_decline_flag_not_context(monkeypatch):
-    fake_model = _CapturingGeminiModel("I can only help with railway questions.")
+def test_offtopic_query_gets_fixed_out_of_scope_notice_without_calling_llm(monkeypatch):
+    fake_model = _CapturingGeminiModel("A general-knowledge answer that must never be shown.")
     monkeypatch.setattr(main, "gemini_model", fake_model)
 
     r = client.post("/chat", json={"message": "write me a poem about the ocean"})
     body = r.json()
 
-    assert body["intent"] == "unknown"
-    assert "OFF_TOPIC: true" in fake_model.last_prompt
+    assert body["intent"] == "out_of_scope"
+    assert body["reply"] == main.OUT_OF_SCOPE_REPLIES["en"]
     assert body["source"] == ""
+    assert fake_model.last_prompt is None  # the LLM was not consulted at all
 
 
 # Routing fix: intent_classifier's train_status keywords included bare "is
@@ -296,7 +299,7 @@ INTENT_ROUTING_CASES = [
     ("Has the train been delayed?", "delay_check"),
     ("Is train running?", "train_status"),
     ("Is the train running today?", "train_status"),
-    ("What is the weather in London?", "unknown"),
+    ("What is the weather in London?", "out_of_scope"),
 ]
 
 
@@ -331,7 +334,8 @@ def test_intent_routing_table_sinhala_tamil(monkeypatch):
 def test_offtopic_weather_query_is_unknown_not_train_info():
     r = client.post("/chat", json={"message": "What is the weather in London?"})
     body = r.json()
-    assert body["intent"] == "unknown"
+    assert body["intent"] == "out_of_scope"
+    assert body["reply"] == main.OUT_OF_SCOPE_REPLIES["en"]
     assert "train ID" not in body["reply"]
 
 
@@ -354,8 +358,8 @@ def test_fare_query_multi_passenger_fallback_still_multiplies_when_gemini_fails(
     assert body["intent"] == "fare_query"
     assert body["entities"]["passenger_count"] == 2
     # The raw fallback text must show the code-computed totals, not the raw
-    # per-person "LKR 500" lines un-multiplied.
-    assert "LKR 500 x 2 passengers = LKR 1000" in body["reply"]
+    # per-person "LKR 1200" lines un-multiplied.
+    assert "Second Class: LKR 1200 x 2 passengers = LKR 2400" in body["reply"]
 
 
 # Issue C: delay_check required an explicit train_id (e.g. "PM-4082") before

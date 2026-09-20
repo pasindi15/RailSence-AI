@@ -55,6 +55,10 @@ class HubResponse(BaseModel):
     sender_agent: str | None = None
     payload: dict = {}
     message: str | None = None
+    # Why an "error" response happened, so /chat can tell the passenger the truth
+    # in their own language: "unreachable" (timeout / connection failure) or
+    # "rejected" (the Hub/agent answered with a non-200). None for status "ok".
+    error_kind: str | None = None
 
 
 def generate_auth_token(sender_agent: str = "passenger-agent") -> str:
@@ -117,7 +121,7 @@ async def send_to_hub(message: HubMessage) -> HubResponse:
         except Exception as exc:
             # Not a timeout/connection issue (e.g. malformed URL) - retrying won't help.
             print(f"[hub] !! message_id={message.message_id} unexpected error ({type(exc).__name__}): {exc}")
-            return HubResponse(status="error", message=HUB_UNREACHABLE_MESSAGE)
+            return HubResponse(status="error", message=HUB_UNREACHABLE_MESSAGE, error_kind="unreachable")
 
         print(f"[hub] <- message_id={message.message_id} status_code={response.status_code} attempt={attempt}/{attempts}")
         if response.status_code == 200:
@@ -129,10 +133,10 @@ async def send_to_hub(message: HubMessage) -> HubResponse:
                 sender_agent=dest_resp.get("sender_agent", message.receiver_agent),
                 payload=dest_resp.get("payload", dest_resp),
             )
-        return HubResponse(status="error", message=HUB_UNREACHABLE_MESSAGE)
+        return HubResponse(status="error", message=HUB_UNREACHABLE_MESSAGE, error_kind="rejected")
 
     print(f"[hub] !! message_id={message.message_id} giving up after {attempts} attempts ({type(last_error).__name__}: {last_error})")
-    return HubResponse(status="error", message=HUB_UNREACHABLE_MESSAGE)
+    return HubResponse(status="error", message=HUB_UNREACHABLE_MESSAGE, error_kind="unreachable")
 
 
 def send_to_hub_mock(message: HubMessage) -> HubResponse:
