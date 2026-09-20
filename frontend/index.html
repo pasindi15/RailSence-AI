@@ -1652,11 +1652,12 @@ body::after {
               <th style="padding: 10px 8px;">SENDER ➔ RECEIVER</th>
               <th style="padding: 10px 8px;">INTENT</th>
               <th style="padding: 10px 8px;">STATUS</th>
+              <th style="padding: 10px 8px;">FAILURE REASON / DETAILS</th>
               <th style="padding: 10px 8px;">LATENCY</th>
             </tr>
           </thead>
           <tbody id="hub-timeline-body">
-            <tr><td colspan="6" style="padding: 20px; text-align: center; color: var(--muted);">Loading message timeline...</td></tr>
+            <tr><td colspan="7" style="padding: 20px; text-align: center; color: var(--muted);">Loading message timeline...</td></tr>
           </tbody>
         </table>
       </div>
@@ -3170,19 +3171,56 @@ async function loadHubDashboard() {
           const textCol = isFailed ? '#F87171' : '#4ADE80';
           const timeStr = l.timestamp ? new Date(l.timestamp).toLocaleTimeString() : 'N/A';
           const durStr = l.duration_ms ? l.duration_ms.toFixed(1) + ' ms' : '< 1 ms';
+
+          let errorHtml = '<span style="color:var(--muted);font-size:11px;">—</span>';
+          if (isFailed || l.error_message || l.error_summary) {
+            const summary = l.error_summary || 'Request Failed';
+            const details = l.error_details || l.error_message || '';
+            const missing = Array.isArray(l.missing_fields) ? l.missing_fields : [];
+            const rawLog = l.error_message || details;
+
+            const tagsHtml = missing.length > 0
+              ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin:4px 0 2px 0;">` +
+                missing.map(f => `<span style="background:rgba(239,68,68,0.22);border:1px solid rgba(239,68,68,0.45);color:#FECACA;font-size:10px;padding:1px 5px;border-radius:3px;">Missing: ${escapeHtml(f)}</span>`).join('') +
+                `</div>`
+              : '';
+
+            errorHtml = `
+              <div style="max-width:380px;line-height:1.4;">
+                <div style="color:#F87171;font-weight:700;font-size:11px;display:flex;align-items:flex-start;gap:4px;">
+                  <span style="flex-shrink:0;">⚠️</span>
+                  <span style="word-break:break-word;">${escapeHtml(summary)}</span>
+                </div>
+                ${details && details !== summary ? `
+                  <div style="color:#FCA5A5;font-size:11px;margin-top:2px;opacity:0.92;line-height:1.35;">
+                    ${escapeHtml(details)}
+                  </div>
+                ` : ''}
+                ${tagsHtml}
+                ${rawLog ? `
+                  <details style="margin-top:3px;cursor:pointer;">
+                    <summary style="color:#94A3B8;font-size:10px;text-decoration:underline;outline:none;user-select:none;">View raw technical log</summary>
+                    <pre style="margin:4px 0 0 0;padding:6px;background:rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.12);border-radius:4px;font-size:10px;color:#CBD5E1;white-space:pre-wrap;word-break:break-all;max-height:120px;overflow-y:auto;font-family:'Share Tech Mono',monospace;">${escapeHtml(rawLog)}</pre>
+                  </details>
+                ` : ''}
+              </div>
+            `;
+          }
+
           return `
             <tr style="border-bottom:1px solid rgba(180,130,40,0.15);">
-              <td style="padding:8px;color:var(--muted);">${timeStr}</td>
-              <td style="padding:8px;color:var(--brand);font-weight:600;">${escapeHtml(l.message_id || 'N/A')}</td>
-              <td style="padding:8px;"><span style="color:#93C5FD;">${escapeHtml(sAgent)}</span> ➔ <span style="color:#A7F3D0;">${escapeHtml(rAgent)}</span></td>
+              <td style="padding:8px;color:var(--muted);white-space:nowrap;">${timeStr}</td>
+              <td style="padding:8px;color:var(--brand);font-weight:600;font-size:11px;">${escapeHtml(l.message_id || 'N/A')}</td>
+              <td style="padding:8px;white-space:nowrap;"><span style="color:#93C5FD;">${escapeHtml(sAgent)}</span> ➔ <span style="color:#A7F3D0;">${escapeHtml(rAgent)}</span></td>
               <td style="padding:8px;color:var(--ink-bright);">${escapeHtml(l.intent || '')}</td>
               <td style="padding:8px;"><span style="padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;background:${bgCol};color:${textCol}">${escapeHtml(l.status || 'ROUTED')}</span></td>
-              <td style="padding:8px;color:var(--muted-hi);">${durStr}</td>
+              <td style="padding:8px;">${errorHtml}</td>
+              <td style="padding:8px;color:var(--muted-hi);white-space:nowrap;">${durStr}</td>
             </tr>
           `;
         }).join('');
       } else {
-        tbody.innerHTML = '<tr><td colspan="6" style="padding:20px;text-align:center;color:var(--muted);">No message telemetry recorded in audit trail yet.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" style="padding:20px;text-align:center;color:var(--muted);">No message telemetry recorded in audit trail yet.</td></tr>';
       }
     }
   } catch (err) {

@@ -2336,8 +2336,12 @@ let passengerData = [
 
 window.addEventListener('DOMContentLoaded', () => {
   const today = new Date().toISOString().split('T')[0];
+  const maxDate = new Date();
+  maxDate.setDate(maxDate.getDate() + 365);
+  const maxDateStr = maxDate.toISOString().split('T')[0];
   if ($('travel-date')) {
     $('travel-date').min = today;
+    $('travel-date').max = maxDateStr;
     $('travel-date').value = today;
   }
   if ($('dashboard-date')) {
@@ -2355,6 +2359,16 @@ window.addEventListener('DOMContentLoaded', () => {
 
 window.addEventListener('popstate', handleUrlRouting);
 
+window.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'NAVIGATE_BOOKING') {
+    switchView('booking');
+    if (event.data.prefill) {
+      applyPrefill(event.data.prefill);
+    }
+    history.pushState(null, '', event.data.url || '/user/booking');
+  }
+});
+
 function navigateTo(path) {
   history.pushState(null, '', path);
   handleUrlRouting();
@@ -2362,10 +2376,13 @@ function navigateTo(path) {
 
 function applyPrefill(prefill) {
   if (!prefill) return;
-  if (prefill.from_station) $('from-station').value = prefill.from_station;
-  if (prefill.to_station) $('to-station').value = prefill.to_station;
-  if (prefill.travel_date) $('travel-date').value = prefill.travel_date;
-  onRouteOrDateChanged();
+  if (prefill.from_station && $('from-station')) $('from-station').value = prefill.from_station;
+  if (prefill.to_station && $('to-station')) $('to-station').value = prefill.to_station;
+  if (prefill.travel_date && $('travel-date')) $('travel-date').value = prefill.travel_date;
+  if (prefill.seat_class && typeof selectSeatClass === 'function') {
+    selectSeatClass(prefill.seat_class);
+  }
+  if (typeof onRouteOrDateChanged === 'function') onRouteOrDateChanged();
 }
 
 function handleUrlRouting() {
@@ -2374,12 +2391,24 @@ function handleUrlRouting() {
   const from = url.searchParams.get('from');
   const to = url.searchParams.get('to');
   const dateVal = url.searchParams.get('date');
+  const trainId = url.searchParams.get('train_id');
+  const seatClass = url.searchParams.get('seat_class');
+  const paxCount = url.searchParams.get('passenger_count');
 
   if (path === '/user' || path === '/user/' || path.includes('/dashboard')) {
     switchView('dashboard');
   } else if (path.includes('/booking')) {
     switchView('booking');
-    if (from || to || dateVal) applyPrefill({ from_station: from, to_station: to, travel_date: dateVal });
+    if (from || to || dateVal || seatClass) {
+      applyPrefill({
+        from_station: from,
+        to_station: to,
+        travel_date: dateVal,
+        train_id: trainId,
+        seat_class: seatClass,
+        passenger_count: paxCount,
+      });
+    }
   } else if (path.includes('/confirmation')) {
     switchView('confirmation');
   } else if (path.includes('/chat')) {
@@ -2973,7 +3002,7 @@ async function fetchTrainOptions() {
         container.innerHTML = `
           <div style="font-size:13.5px;color:#991B1B;background:#FEF2F2;border:1px solid #F87171;padding:16px;border-radius:8px;text-align:center;">
             <strong>No train services operating</strong> for <strong>${escapeHtml(from)} → ${escapeHtml(to)}</strong> on <strong>${escapeHtml(travelDate)}</strong>.<br/>
-            <span style="font-size:12px;color:#7F1D1D;display:inline-block;margin-top:4px;">Please check station names or select another date within the 90-day booking horizon.</span>
+            <span style="font-size:12px;color:#7F1D1D;display:inline-block;margin-top:4px;">Please check station names or select an upcoming travel date.</span>
           </div>`;
       }
       updateSummary();

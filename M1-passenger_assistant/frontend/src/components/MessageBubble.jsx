@@ -49,10 +49,14 @@ export default function MessageBubble({
 
   const handleContinueBooking = (bookingPrefill) => {
     const data = bookingPrefill || action?.prefill || {};
-    const from = encodeURIComponent(data.from_station || "");
-    const to = encodeURIComponent(data.to_station || "");
-    const dateVal = encodeURIComponent(data.travel_date || "");
-    const query = `?from=${from}&to=${to}&date=${dateVal}`;
+    const params = new URLSearchParams();
+    if (data.from_station) params.set("from", data.from_station);
+    if (data.to_station) params.set("to", data.to_station);
+    if (data.travel_date) params.set("date", data.travel_date);
+    if (data.train_id) params.set("train_id", data.train_id);
+    if (data.seat_class) params.set("seat_class", data.seat_class);
+    if (data.passenger_count) params.set("passenger_count", String(data.passenger_count));
+    const query = params.toString() ? `?${params.toString()}` : "";
 
     if (window.parent && window.parent !== window) {
       window.parent.postMessage(
@@ -64,7 +68,7 @@ export default function MessageBubble({
       );
     }
 
-    const targetUrl = `http://localhost:3000/user/booking${query}`;
+    const targetUrl = action?.url || `http://localhost:3000/user/booking${query}`;
     if (window.parent === window) {
       window.open(targetUrl, "_blank", "noopener,noreferrer");
     }
@@ -130,6 +134,30 @@ export default function MessageBubble({
                   <span className="chip-label">DATE</span>
                   <span className="chip-value">
                     {prefill?.travel_date || action?.prefill?.travel_date}
+                  </span>
+                </div>
+              )}
+              {(prefill?.train_id || action?.prefill?.train_id) && (
+                <div className="action-chip">
+                  <span className="chip-label">TRAIN</span>
+                  <span className="chip-value">
+                    {prefill?.train_id || action?.prefill?.train_id}
+                  </span>
+                </div>
+              )}
+              {(prefill?.seat_class || action?.prefill?.seat_class) && (
+                <div className="action-chip">
+                  <span className="chip-label">CLASS</span>
+                  <span className="chip-value">
+                    {prefill?.seat_class || action?.prefill?.seat_class}
+                  </span>
+                </div>
+              )}
+              {(prefill?.passenger_count || action?.prefill?.passenger_count) && (
+                <div className="action-chip">
+                  <span className="chip-label">SEATS</span>
+                  <span className="chip-value">
+                    {prefill?.passenger_count || action?.prefill?.passenger_count}
                   </span>
                 </div>
               )}

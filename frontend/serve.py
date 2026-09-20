@@ -671,22 +671,23 @@ async def chat_endpoint(payload: ChatInput) -> dict[str, Any]:
         # Travel date is present — validate horizon
         try:
             t_date = date.fromisoformat(prefill["travel_date"])
+            booking_horizon = int(os.getenv("BOOKING_HORIZON_DAYS", "365"))
             if t_date < now_colombo:
                 return {
                     "reply": (
                         f"The date **{prefill['travel_date']}** is in the past. "
-                        f"Daily train services operate today ({now_colombo.isoformat()}) and up to 90 days in advance. "
+                        f"Daily train services operate today ({now_colombo.isoformat()}) and up to {booking_horizon} days in advance. "
                         f"Please choose today or an upcoming travel date."
                     ),
                     "intent": "booking_request",
                     "prefill": {k: v for k, v in prefill.items() if k != "travel_date"},
                     "action": None,
                 }
-            max_horizon = now_colombo + timedelta(days=90)
+            max_horizon = now_colombo + timedelta(days=booking_horizon)
             if t_date > max_horizon:
                 return {
                     "reply": (
-                        f"The travel date **{prefill['travel_date']}** exceeds our 90-day booking advance limit "
+                        f"The travel date **{prefill['travel_date']}** exceeds our {booking_horizon}-day booking advance limit "
                         f"(available through {max_horizon.isoformat()}). Please select an earlier date."
                     ),
                     "intent": "booking_request",
@@ -1346,6 +1347,181 @@ async def preview_cancellation_nlp(payload: AdminNLPPreviewReq) -> JSONResponse:
 
 
 # ---------------------------------------------------------------------------
+# Admin Booking Manifest Endpoints
+# ---------------------------------------------------------------------------
+
+@app.get("/api/admin/trains", tags=["admin"])
+async def list_admin_trains_proxy() -> JSONResponse:
+    """
+    Proxy to booking-agent /admin/trains — returns active trains for dropdown.
+    Falls back to direct DB query if booking-agent is offline.
+    """
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.get(f"{BOOKING_AGENT_URL}/admin/trains")
+            if resp.status_code == 200:
+                return JSONResponse(status_code=200, content=resp.json())
+    except Exception:
+        pass
+
+    try:
+        sys.path.insert(0, str(_M3_ROOT / "booking-agent"))
+        from database.database import SessionLocal
+        from database.models import Train
+
+        with SessionLocal() as db:
+            trains = (
+                db.query(Train)
+                .filter(Train.active == True)  # noqa: E712
+                .order_by(Train.train_id)
+                .all()
+            )
+            return JSONResponse(
+                status_code=200,
+                content=[
+                    {
+                        "id": t.id,
+                        "train_id": t.train_id,
+                        "train_name": t.train_name,
+                        "route": t.route or "",
+                        "origin_station": t.origin_station,
+                        "destination_station": t.destination_station,
+                    }
+                    for t in trains
+                ],
+            )
+    except Exception as exc:
+        return JSONResponse(status_code=500, content={"error": f"Failed to load trains: {exc}"})
+
+
+@app.get("/api/admin/bookings", tags=["admin"])
+async def list_admin_bookings_proxy(
+    train_id: str | None = None,
+    travel_date: str | None = None,
+    booking_status: str | None = None,
+) -> JSONResponse:
+    """
+    Proxy to booking-agent /admin/bookings — returns ticket manifest filtered
+    by train_id (string) and travel_date (YYYY-MM-DD journey date).
+    Falls back to direct DB query if booking-agent is offline.
+    """
+    params: dict[str, str] = {}
+    if train_id:
+        params["train_id"] = train_id
+    if travel_date:
+        params["travel_date"] = travel_date
+    if booking_status:
+        params["booking_status"] = booking_status
+
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            resp = await client.get(
+                f"{BOOKING_AGENT_URL}/admin/bookings",
+                params=params,
+            )
+            if resp.status_code in (200, 400, 404):
+                return JSONResponse(status_code=resp.status_code, content=resp.json())
+    except Exception:
+        pass
+
+    # Direct DB fallback
+    try:
+        from datetime import date as _date
+        sys.path.insert(0, str(_M3_ROOT / "booking-agent"))
+        from database.database import SessionLocal
+        from database.models import Booking, Train, TrainSchedule
+
+        parsed_date = None
+        if travel_date:
+            try:
+                parsed_date = _date.fromisoformat(travel_date.strip())
+            except ValueError:
+                return JSONResponse(
+                    status_code=400,
+                    content={"error": "Invalid travel_date format. Expected YYYY-MM-DD."},
+                )
+
+        if not train_id and not parsed_date:
+            return JSONResponse(
+                status_code=400,
+                content={"error": "At least one filter (train_id or travel_date) is required."},
+            )
+
+        with SessionLocal() as db:
+            query = (
+                db.query(Booking)
+                .join(Train, Booking.train_id == Train.id)
+                .join(TrainSchedule, Booking.schedule_id == TrainSchedule.id)
+            )
+            if train_id:
+                train_row = db.query(Train).filter(Train.train_id == train_id.strip()).first()
+                if not train_row:
+                    return JSONResponse(
+                        status_code=404,
+                        content={"error": f"Train '{train_id}' not found."},
+                    )
+                query = query.filter(Booking.train_id == train_row.id)
+            if parsed_date:
+                query = query.filter(Booking.travel_date == parsed_date)
+            if booking_status:
+                query = query.filter(Booking.status == booking_status.upper())
+
+            bookings = query.order_by(Booking.travel_date, Booking.created_at).all()
+            results = []
+            for b in bookings:
+                t = b.train
+                s = b.schedule
+                canc = b.cancellation_request
+                pax = [
+                    {"full_name": bp.passenger.full_name or "Unknown", "nic_masked": bp.passenger.nic_masked}
+                    for bp in b.booking_passengers
+                    if bp.passenger
+                ]
+                status_val = b.status.value if hasattr(b.status, "value") else str(b.status)
+                if status_val == "CANCELLED" and canc and canc.admin_decision == "APPROVE":
+                    pay_status = "REFUNDED"
+                elif status_val == "CONFIRMED":
+                    pay_status = "PAID"
+                elif status_val in ("HELD", "PENDING_FRAUD_REVIEW"):
+                    pay_status = "PENDING"
+                else:
+                    pay_status = "UNKNOWN"
+
+                results.append({
+                    "id": b.id,
+                    "booking_reference": b.booking_reference,
+                    "ticket_token": b.ticket_token,
+                    "passenger_email": b.passenger_email or "",
+                    "passengers": pax,
+                    "passenger_count": b.passenger_count,
+                    "fare": str(b.fare),
+                    "train_id": t.train_id if t else str(b.train_id),
+                    "train_name": t.train_name if t else "",
+                    "route": (t.route or "") if t else "",
+                    "from_station": b.from_station,
+                    "to_station": b.to_station,
+                    "travel_date": b.travel_date.isoformat(),
+                    "departure_time": s.departure_time.strftime("%H:%M") if s and s.departure_time else "",
+                    "arrival_time": s.arrival_time.strftime("%H:%M") if s and s.arrival_time else "",
+                    "seat_class": b.seat_class,
+                    "status": status_val,
+                    "payment_status": pay_status,
+                    "created_at": b.created_at.isoformat() if b.created_at else None,
+                    "cancellation_case": canc.case_reference if canc else None,
+                })
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "count": len(results),
+                    "filters": {"train_id": train_id, "travel_date": travel_date, "booking_status": booking_status},
+                    "bookings": results,
+                },
+            )
+    except Exception as exc:
+        return JSONResponse(status_code=500, content={"error": f"Failed to load bookings: {exc}"})
+
+
+# ---------------------------------------------------------------------------
 # Admin Fraud Review Endpoints
 # ---------------------------------------------------------------------------
 
@@ -1559,6 +1735,110 @@ async def hub_dashboard_proxy() -> JSONResponse:
         )
 
 
+def humanize_hub_error(raw_err: str | None, intent: str = "", receiver: str = "") -> dict[str, Any]:
+    """Translate raw technical error logs into clear, human/LLM-understandable explanations."""
+    if not raw_err:
+        return {
+            "summary": "Unknown Error",
+            "details": "No specific failure reason was returned by the receiving agent.",
+            "missing_fields": [],
+        }
+
+    err = str(raw_err).strip()
+    lowered = err.lower()
+
+    # Case 1: Incomplete booking parameters (Pydantic validation errors on BookingRequest)
+    if "validation error" in lowered and ("bookingrequest" in lowered or intent == "booking_request"):
+        missing = []
+        if "travel_date" in lowered:
+            missing.append("Travel Date")
+        if "train_id" in lowered:
+            missing.append("Train ID")
+        if "seat_class" in lowered:
+            missing.append("Seat Class")
+        if "passenger_count" in lowered:
+            missing.append("Passenger Count")
+        if "nic" in lowered:
+            missing.append("Passenger NIC")
+
+        missing_str = ", ".join(missing) if missing else "required booking parameters"
+        return {
+            "summary": f"Incomplete Booking Details (Missing: {missing_str})",
+            "details": f"The passenger requested a route, but did not specify {missing_str}. The Booking Agent requires these mandatory fields to create a confirmed seat reservation.",
+            "missing_fields": missing,
+        }
+
+    # Case 2: Cancellation failure (e.g. not found, already cancelled)
+    if intent == "cancel_booking" or "cancel" in lowered:
+        if "not found" in lowered:
+            return {
+                "summary": "Booking Reference Not Found",
+                "details": "The provided booking reference does not match any active ticket in the database.",
+                "missing_fields": [],
+            }
+        if "already cancelled" in lowered:
+            return {
+                "summary": "Ticket Already Cancelled",
+                "details": "This booking has already been cancelled previously.",
+                "missing_fields": [],
+            }
+        return {
+            "summary": "Cancellation Request Rejected",
+            "details": "The Booking Agent could not process this cancellation request.",
+            "missing_fields": [],
+        }
+
+    # Case 3: Train identity / lookup errors
+    if "train_not_found" in lowered or ("not found" in lowered and "train" in lowered):
+        return {
+            "summary": "Train Identity Unrecognized",
+            "details": "Operations or Maintenance could not find a train service matching the requested identifier.",
+            "missing_fields": ["Valid Train ID"],
+        }
+
+    # Case 4: Network / Connectivity / Port offline
+    if any(k in lowered for k in ["connection refused", "502 bad gateway", "failed to connect", "unreachable", "timed out", "timeout"]):
+        target = receiver or "destination agent"
+        return {
+            "summary": f"Agent Unreachable ({target})",
+            "details": f"The Communication Hub could not connect to {target}. The agent service may be offline or restarting.",
+            "missing_fields": [],
+        }
+
+    # Case 5: Circuit breaker
+    if "circuit breaker" in lowered:
+        target = receiver or "destination agent"
+        return {
+            "summary": f"Circuit Breaker Open ({target})",
+            "details": f"Outbound calls to {target} are temporarily blocked by the Hub to prevent cascading failures.",
+            "missing_fields": [],
+        }
+
+    # Case 6: Rate limit / Throttling
+    if "rate limit" in lowered or "429" in lowered:
+        return {
+            "summary": "Rate Limit Exceeded",
+            "details": "The sending agent exceeded the allowed message rate limit for this endpoint.",
+            "missing_fields": [],
+        }
+
+    # Case 7: Authentication / Permission
+    if any(k in lowered for k in ["unauthorized", "forbidden", "401", "403", "invalid token"]):
+        return {
+            "summary": "Authentication / Permission Denied",
+            "details": "The sender lacks valid authorization credentials or permissions for this intent.",
+            "missing_fields": [],
+        }
+
+    # Fallback: clean first line
+    first_line = err.split("\n")[0].strip()
+    return {
+        "summary": first_line[:90] + ("..." if len(first_line) > 90 else ""),
+        "details": err,
+        "missing_fields": [],
+    }
+
+
 @app.get("/api/hub/timeline", tags=["hub"])
 async def hub_timeline_proxy(limit: int = Query(default=20, ge=1, le=100)) -> JSONResponse:
     """Proxy inter-agent message timeline."""
@@ -1569,22 +1849,27 @@ async def hub_timeline_proxy(limit: int = Query(default=20, ge=1, le=100)) -> JS
                 data = resp.json()
                 items = data.get("items", []) if isinstance(data, dict) else (data if isinstance(data, list) else [])
                 if items:
-                    return JSONResponse(
-                        status_code=200,
-                        content=[
-                            {
-                                "message_id": i.get("message_id"),
-                                "correlation_id": i.get("correlation_id"),
-                                "sender": i.get("sender_agent") or i.get("sender", ""),
-                                "receiver": i.get("receiver_agent") or i.get("receiver", ""),
-                                "intent": i.get("intent", ""),
-                                "status": i.get("status", "ROUTED"),
-                                "duration_ms": i.get("duration_ms"),
-                                "timestamp": i.get("timestamp"),
-                            }
-                            for i in items
-                        ],
-                    )
+                    result_items = []
+                    for i in items:
+                        raw_err = i.get("error_message")
+                        intent = i.get("intent", "")
+                        receiver = i.get("receiver_agent") or i.get("receiver", "")
+                        h = humanize_hub_error(raw_err, intent=intent, receiver=receiver) if raw_err else None
+                        result_items.append({
+                            "message_id": i.get("message_id"),
+                            "correlation_id": i.get("correlation_id"),
+                            "sender": i.get("sender_agent") or i.get("sender", ""),
+                            "receiver": receiver,
+                            "intent": intent,
+                            "status": i.get("status", "ROUTED"),
+                            "error_message": raw_err,
+                            "error_summary": h["summary"] if h else None,
+                            "error_details": h["details"] if h else None,
+                            "missing_fields": h["missing_fields"] if h else [],
+                            "duration_ms": i.get("duration_ms"),
+                            "timestamp": i.get("timestamp"),
+                        })
+                    return JSONResponse(status_code=200, content=result_items)
     except Exception:
         pass
 
@@ -1593,22 +1878,27 @@ async def hub_timeline_proxy(limit: int = Query(default=20, ge=1, le=100)) -> JS
         from hub_database import SessionLocal, AuditLog
         with SessionLocal() as db:
             logs = db.query(AuditLog).order_by(AuditLog.id.desc()).limit(limit).all()
-            return JSONResponse(
-                status_code=200,
-                content=[
-                    {
-                        "message_id": l.message_id,
-                        "correlation_id": getattr(l, "correlation_id", None),
-                        "sender": l.sender_agent,
-                        "receiver": l.receiver_agent,
-                        "intent": l.intent,
-                        "status": l.status.value if hasattr(l.status, "value") else str(l.status),
-                        "duration_ms": float(l.duration_ms) if getattr(l, "duration_ms", None) is not None else None,
-                        "timestamp": l.timestamp.isoformat() if l.timestamp else None,
-                    }
-                    for l in logs
-                ],
-            )
+            result_items = []
+            for l in logs:
+                raw_err = getattr(l, "error_message", None)
+                intent = l.intent or ""
+                receiver = l.receiver_agent or ""
+                h = humanize_hub_error(raw_err, intent=intent, receiver=receiver) if raw_err else None
+                result_items.append({
+                    "message_id": l.message_id,
+                    "correlation_id": getattr(l, "correlation_id", None),
+                    "sender": l.sender_agent,
+                    "receiver": receiver,
+                    "intent": intent,
+                    "status": l.status.value if hasattr(l.status, "value") else str(l.status),
+                    "error_message": raw_err,
+                    "error_summary": h["summary"] if h else None,
+                    "error_details": h["details"] if h else None,
+                    "missing_fields": h["missing_fields"] if h else [],
+                    "duration_ms": float(l.duration_ms) if getattr(l, "duration_ms", None) is not None else None,
+                    "timestamp": l.timestamp.isoformat() if l.timestamp else None,
+                })
+            return JSONResponse(status_code=200, content=result_items)
     except Exception as exc:
         print("[Serve Hub Timeline Error]:", exc)
         return JSONResponse(status_code=200, content=[])
