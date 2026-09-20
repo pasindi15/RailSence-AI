@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RailSense AI — Operations Login</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Share+Tech+Mono&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:           #060A12;
+  --card:         rgba(14, 20, 36, 0.94);
+  --border:       rgba(59, 130, 246, 0.24);
+  --border-hi:    rgba(96, 165, 250, 0.50);
+  --ink:          #CBD5E1;
+  --ink-bright:   #FFFFFF;
+  --muted:        #64748B;
+  --brand:        #3B82F6;
+  --brand-grad:   linear-gradient(135deg, #1D4ED8 0%, #3B82F6 55%, #60A5FA 100%);
+  --shadow:       0 12px 40px rgba(0, 0, 0, 0.90), 0 2px 8px rgba(0,0,0,0.5);
+  --r:            16px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Inter', -apple-system, sans-serif;
+  font-size: 14px;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  padding: 20px;
+}
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(59, 130, 246, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(59, 130, 246, 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 900px 600px at 15% 10%,  rgba(29, 78, 216, 0.16) 0%, transparent 60%),
+    radial-gradient(ellipse 700px 500px at 85% 90%,  rgba(124, 58, 237, 0.12) 0%, transparent 55%);
+}
+.login-container {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 440px;
+  background: var(--card);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  box-shadow: var(--shadow);
+  padding: 40px 36px;
+}
+.brand-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  background: rgba(37, 99, 235, 0.16);
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  color: #93C5FD;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  margin-bottom: 18px;
+  text-transform: uppercase;
+}
+h1 {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ink-bright);
+  line-height: 1.3;
+  margin-bottom: 8px;
+}
+p.sub {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+  margin-bottom: 24px;
+}
+.field {
+  margin-bottom: 18px;
+}
+.field label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #94A3B8;
+  margin-bottom: 6px;
+  letter-spacing: 0.3px;
+}
+.field input {
+  width: 100%;
+  padding: 12px 14px;
+  background: rgba(10, 15, 28, 0.85);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: #FFFFFF;
+  font-size: 13.5px;
+  outline: none;
+  transition: all 0.2s;
+}
+.field input:focus {
+  border-color: #60A5FA;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+.btn-submit {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  background: var(--brand-grad);
+  color: #FFFFFF;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+.btn-submit:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4);
+}
+.btn-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.error-banner {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #FCA5A5;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  margin-bottom: 18px;
+  display: none;
+}
+.secure-footer {
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(59, 130, 246, 0.15);
+  text-align: center;
+  font-size: 11.5px;
+  color: var(--muted);
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="login-container">
+  <div class="brand-badge">🚦 RailSense AI · Central Operations</div>
+  <h1>RailSense AI Central Operations &amp; Admin Suite</h1>
+  <p class="sub">Sign in with authorized officer credentials to access the operational Control Room, prediction engine, and administrative desks.</p>
+
+  <div class="error-banner" id="login-error"></div>
+
+  <form id="login-form">
+    <div class="field">
+      <label for="email">Email Address</label>
+      <input type="email" id="email" required autocomplete="email" placeholder="officer@railsense.lk" autofocus />
+    </div>
+
+    <div class="field">
+      <label for="password">Password</label>
+      <input type="password" id="password" required autocomplete="current-password" placeholder="••••••••••••" />
+    </div>
+
+    <button type="submit" class="btn-submit" id="submit-btn">
+      <span>Sign In</span>
+    </button>
+  </form>
+
+  <div class="secure-footer">
+    🔒 Secure Operations Access · Role-Based Access Control
+  </div>
+</div>
+
+<script>
+const errBox = document.getElementById('login-error');
+const form = document.getElementById('login-form');
+const btn = document.getElementById('submit-btn');
+
+form.onsubmit = async (e) => {
+  e.preventDefault();
+  errBox.style.display = 'none';
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Signing In…';
+
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+
+  try {
+    let resp;
+    try {
+      resp = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+    } catch (_) {
+      // Fallback direct to port 8005
+      resp = await fetch('http://localhost:8005/admin/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+    }
+
+    const data = await resp.json();
+    if (!resp.ok) {
+      throw new Error(data.detail || 'Invalid email or password.');
+    }
+
+    // Save tokens locally for both port 3000 and 8005
+    localStorage.setItem('railsense_m2_token', data.token);
+    localStorage.setItem('railsense_m2_officer', JSON.stringify(data.officer));
+
+    // Redirect to operations
+    const redirectUrl = new URLSearchParams(window.location.search).get('redirect') || '/admin/operations';
+    window.location.href = redirectUrl;
+  } catch (err) {
+    errBox.textContent = err.message;
+    errBox.style.display = 'block';
+    btn.disabled = false;
+    btn.innerHTML = '<span>Sign In</span>';
+  }
+};
+</script>
+</body>
+</html>

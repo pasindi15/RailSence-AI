@@ -503,8 +503,20 @@ def get_booking_page():
     return RedirectResponse(url="/user/booking", status_code=status.HTTP_302_FOUND)
 
 
+@app.get("/login", include_in_schema=False)
+def get_login_page():
+    login_html = _CURRENT_DIR / "login.html"
+    if login_html.is_file():
+        return FileResponse(login_html)
+    return FileResponse(ADMIN_HTML_FILE)
+
+
 @app.get("/admin", include_in_schema=False)
 @app.get("/admin/operations", include_in_schema=False)
+@app.get("/admin/operations/control-room", include_in_schema=False)
+@app.get("/admin/operations/prediction", include_in_schema=False)
+@app.get("/admin/operations/admin", include_in_schema=False)
+@app.get("/admin/operations/admin/officers", include_in_schema=False)
 @app.get("/admin/bookings", include_in_schema=False)
 @app.get("/admin/maintenance", include_in_schema=False)
 @app.get("/admin/security", include_in_schema=False)
@@ -515,6 +527,48 @@ def get_admin_portal():
     if HTML_FILE.is_file():
         return FileResponse(HTML_FILE)
     raise HTTPException(status_code=404, detail="admin.html not found")
+
+
+@app.post("/api/auth/login")
+async def proxy_auth_login(request: Request):
+    body = await request.json()
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        try:
+            resp = await client.post(f"{OPERATIONS_AGENT_URL}/admin/api/login", json=body)
+            return JSONResponse(status_code=resp.status_code, content=resp.json())
+        except Exception as e:
+            raise HTTPException(status_code=502, detail=f"Operations auth service unavailable: {e}")
+
+
+@app.post("/api/auth/logout")
+async def proxy_auth_logout(request: Request):
+    headers = {}
+    auth = request.headers.get("authorization")
+    if auth:
+        headers["authorization"] = auth
+    async with httpx.AsyncClient(timeout=5.0) as client:
+        try:
+            resp = await client.post(f"{OPERATIONS_AGENT_URL}/admin/api/logout", headers=headers, json={})
+            return JSONResponse(status_code=resp.status_code, content=resp.json())
+        except Exception:
+            return {"ok": True}
+
+
+@app.get("/api/auth/me")
+async def proxy_auth_me(request: Request):
+    headers = {}
+    auth = request.headers.get("authorization")
+    if auth:
+        headers["authorization"] = auth
+    else:
+        raise HTTPException(status_code=401, detail="Authentication required. Please sign in.")
+    async with httpx.AsyncClient(timeout=5.0) as client:
+        try:
+            resp = await client.get(f"{OPERATIONS_AGENT_URL}/admin/api/me", headers=headers)
+            return JSONResponse(status_code=resp.status_code, content=resp.json())
+        except Exception as e:
+            raise HTTPException(status_code=502, detail=f"Operations auth service unavailable: {e}")
+
 
 
 @app.get("/hub", include_in_schema=False)
