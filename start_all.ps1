@@ -6,7 +6,12 @@ $root = $PSScriptRoot
 Write-Host "Starting RailSense AI Multi-Agent Ecosystem..." -ForegroundColor Cyan
 
 # 1. M1 Passenger Assistant (Port 8001)
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$root\M1-passenger_assistant\backend'; Write-Host 'Starting M1 Passenger Assistant on port 8001...' -ForegroundColor Cyan; python -m uvicorn main:app --host 127.0.0.1 --port 8001 --reload"
+# Uses the backend's own venv (not the system `python` on PATH) - its
+# chromadb version must match the one that built .chroma/chroma.sqlite3,
+# or RAG lookups fail with "TypeError: object of type 'int' has no len()"
+# and every fare/schedule/train-details question silently falls back to
+# "I'm having trouble looking that up right now."
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$root\M1-passenger_assistant\backend'; Write-Host 'Starting M1 Passenger Assistant on port 8001...' -ForegroundColor Cyan; .\venv\Scripts\python.exe -m uvicorn main:app --host 127.0.0.1 --port 8001 --reload"
 
 # 2. M2 Operations Agent (Port 8005)
 Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$root\M2-operations-agent'; Write-Host 'Starting M2 Operations Agent on port 8005...' -ForegroundColor DarkCyan; python -m uvicorn main:app --host 127.0.0.1 --port 8005 --reload"
