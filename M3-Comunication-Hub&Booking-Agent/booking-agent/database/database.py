@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Generator
+from typing import Generator, Any
 
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
@@ -101,14 +101,25 @@ else:
 # Engine
 # ---------------------------------------------------------------------------
 _connect_args = {}
+_engine_kwargs: dict[str, Any] = {"echo": False}
+
 if DATABASE_URL.startswith("sqlite"):
     _connect_args["check_same_thread"] = False
+else:
+    _connect_args["connect_timeout"] = 5
+    _connect_args["keepalives"] = 1
+    _connect_args["keepalives_idle"] = 30
+    _connect_args["keepalives_interval"] = 10
+    _connect_args["keepalives_count"] = 5
+    _engine_kwargs["pool_pre_ping"] = False
+    _engine_kwargs["pool_size"] = 10
+    _engine_kwargs["max_overflow"] = 20
+    _engine_kwargs["pool_recycle"] = 1800
 
 engine = create_engine(
     DATABASE_URL,
     connect_args=_connect_args,
-    pool_pre_ping=True if not DATABASE_URL.startswith("sqlite") else False,
-    echo=False,
+    **_engine_kwargs,
 )
 
 # ---------------------------------------------------------------------------
@@ -150,6 +161,24 @@ def init_db(seed: bool = False) -> None:
                     conn.execute(sa.text("ALTER TABLE trains ADD COLUMN maintenance_status VARCHAR(100)"))
                 if "route" not in cols:
                     conn.execute(sa.text("ALTER TABLE trains ADD COLUMN route VARCHAR(500)"))
+                if "origin_station" not in cols:
+                    conn.execute(sa.text("ALTER TABLE trains ADD COLUMN origin_station VARCHAR(200)"))
+                if "destination_station" not in cols:
+                    conn.execute(sa.text("ALTER TABLE trains ADD COLUMN destination_station VARCHAR(200)"))
+                if "train_type" not in cols:
+                    conn.execute(sa.text("ALTER TABLE trains ADD COLUMN train_type VARCHAR(100)"))
+            if "train_schedules" in table_names:
+                cols = [c["name"] for c in insp.get_columns("train_schedules")]
+                if "service_status" not in cols:
+                    conn.execute(sa.text("ALTER TABLE train_schedules ADD COLUMN service_status VARCHAR(50) DEFAULT 'SCHEDULED'"))
+                if "service_id" not in cols:
+                    conn.execute(sa.text("ALTER TABLE train_schedules ADD COLUMN service_id VARCHAR(100)"))
+                if "arrival_date" not in cols:
+                    conn.execute(sa.text("ALTER TABLE train_schedules ADD COLUMN arrival_date DATE"))
+                try:
+                    conn.execute(sa.text("CREATE UNIQUE INDEX IF NOT EXISTS ix_schedules_identity ON train_schedules (train_id, travel_date, from_station, to_station)"))
+                except Exception:
+                    pass
             if "bookings" in table_names:
                 cols = [c["name"] for c in insp.get_columns("bookings")]
                 if "ticket_token" not in cols:

@@ -68,6 +68,38 @@ DEMO_FARE_RULES: dict[tuple[str, str], dict[str, Decimal]] = {
         "First Class": Decimal("4000.00"),
         "Second Class": Decimal("2000.00"),
     },
+    ("colombo", "matara"): {
+        "First Class": Decimal("2200.00"),
+        "Second Class": Decimal("1000.00"),
+    },
+    ("matara", "colombo"): {
+        "First Class": Decimal("2200.00"),
+        "Second Class": Decimal("1000.00"),
+    },
+    ("colombo", "anuradhapura"): {
+        "First Class": Decimal("3000.00"),
+        "Second Class": Decimal("1500.00"),
+    },
+    ("anuradhapura", "colombo"): {
+        "First Class": Decimal("3000.00"),
+        "Second Class": Decimal("1500.00"),
+    },
+    ("colombo", "avissawella"): {
+        "First Class": Decimal("1000.00"),
+        "Second Class": Decimal("500.00"),
+    },
+    ("avissawella", "colombo"): {
+        "First Class": Decimal("1000.00"),
+        "Second Class": Decimal("500.00"),
+    },
+    ("kandy", "badulla"): {
+        "First Class": Decimal("2000.00"),
+        "Second Class": Decimal("1000.00"),
+    },
+    ("badulla", "kandy"): {
+        "First Class": Decimal("2000.00"),
+        "Second Class": Decimal("1000.00"),
+    },
 }
 
 
@@ -141,6 +173,10 @@ def get_fare_per_passenger(
     rules_table = fare_rules if fare_rules is not None else DEMO_FARE_RULES
 
     route_fares = rules_table.get(route_key)
+    if not route_fares:
+        norm_from = "colombo" if clean_from in ("colombo fort", "maradana") else clean_from
+        norm_to = "colombo" if clean_to in ("colombo fort", "maradana") else clean_to
+        route_fares = rules_table.get((norm_from, norm_to))
     if not route_fares or canonical_class not in route_fares:
         route_display = f"{from_station.strip()} -> {to_station.strip()}"
         raise FareNotFoundError(

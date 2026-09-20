@@ -92,6 +92,50 @@ def normalize_seat_class(seat_class: str) -> str:
         )
     return canonical
 
+import os
+from datetime import date, datetime, time, timedelta, timezone
+try:
+    from zoneinfo import ZoneInfo
+    COLOMBO_TZ = ZoneInfo("Asia/Colombo")
+except Exception:
+    COLOMBO_TZ = timezone(timedelta(hours=5, minutes=30))
+
+from sqlalchemy.exc import IntegrityError
+from .services_catalog import (
+    find_matching_services,
+    get_service_by_train_id,
+    normalize_station,
+    stations_match,
+)
+
+BOOKING_HORIZON_DAYS = int(os.getenv("BOOKING_HORIZON_DAYS", "90"))
+
+
+# ---------------------------------------------------------------------------
+# Date Horizon & Travel Date Validation
+# ---------------------------------------------------------------------------
+
+def validate_travel_date(travel_date: date) -> None:
+    """
+    Validate that the travel_date is neither in the past nor beyond the booking horizon,
+    evaluated in the Asia/Colombo (UTC+05:30) timezone.
+    """
+    if os.getenv("ALLOW_PAST_TRAVEL_DATES", "").lower() in ("true", "1", "yes"):
+        return
+
+    now_colombo = datetime.now(COLOMBO_TZ).date()
+    if travel_date < now_colombo:
+        raise InvalidBookingError(
+            f"Cannot book or query journeys for past date: {travel_date.isoformat()}. "
+            f"Today is {now_colombo.isoformat()} (Asia/Colombo)."
+        )
+    max_date = now_colombo + timedelta(days=BOOKING_HORIZON_DAYS)
+    if travel_date > max_date:
+        raise InvalidBookingError(
+            f"Travel date {travel_date.isoformat()} exceeds the advance booking limit of {BOOKING_HORIZON_DAYS} days "
+            f"(up to {max_date.isoformat()})."
+        )
+
 
 # ---------------------------------------------------------------------------
 # Validation
@@ -125,6 +169,10 @@ def validate_booking_details(request: BookingRequest) -> None:
     # Validate seat class format
     normalize_seat_class(request.seat_class)
 
+    # Validate travel date if present on request
+    if hasattr(request, "travel_date") and request.travel_date:
+        validate_travel_date(request.travel_date)
+
 
 # ---------------------------------------------------------------------------
 # Train & Schedule Lookups
@@ -133,11 +181,13 @@ def validate_booking_details(request: BookingRequest) -> None:
 def get_train_by_public_id(db: Session, train_id: str) -> Train:
     """
     Find an active train by its public train_id identifier.
+    If the train is in the canonical daily catalog but not yet in the DB,
+    it is automatically registered.
 
     Parameters
     ----------
     db:       Active SQLAlchemy database session.
-    train_id: Public train identifier (e.g., 'PM-4082').
+    train_id: Public train identifier (e.g., 'PM-4082', '1015').
 
     Returns
     -------
@@ -153,6 +203,28 @@ def get_train_by_public_id(db: Session, train_id: str) -> Train:
 
     train = db.query(Train).filter(Train.train_id == clean_id).first()
     if not train:
+        # Check if train exists in canonical daily services catalog
+        catalog_svc = get_service_by_train_id(clean_id)
+        if catalog_svc:
+            sp = db.begin_nested()
+            try:
+                train = Train(
+                    train_id=catalog_svc.train_id,
+                    train_name=catalog_svc.train_name,
+                    route=catalog_svc.route,
+                    origin_station=catalog_svc.origin_station,
+                    destination_station=catalog_svc.destination_station,
+                    train_type="Express",
+                    active=True,
+                )
+                db.add(train)
+                db.flush()
+                sp.commit()
+            except IntegrityError:
+                sp.rollback()
+                train = db.query(Train).filter(Train.train_id == clean_id).first()
+
+    if not train:
         raise TrainNotFoundError(
             train_id=clean_id,
             message=f"Train service '{clean_id}' was not found in the registry.",
@@ -165,7 +237,6 @@ def get_train_by_public_id(db: Session, train_id: str) -> Train:
         )
 
     # Maintenance restriction — separate concept from active/inactive.
-    # OUT_OF_SERVICE trains cannot accept new bookings regardless of schedule existence.
     ms = (getattr(train, "maintenance_status", None) or "").strip().upper()
     if ms == "OUT_OF_SERVICE":
         raise TrainUnderMaintenanceError(
@@ -174,6 +245,143 @@ def get_train_by_public_id(db: Session, train_id: str) -> Train:
         )
 
     return train
+
+
+def ensure_journeys_for_date(
+    db: Session,
+    travel_date: date,
+    from_station: str | None = None,
+    to_station: str | None = None,
+    train_id: str | None = None,
+) -> list[TrainSchedule]:
+    """
+    Idempotently ensure Train and TrainSchedule records exist for the specified
+    travel_date matching the given stations and/or train_id based on the daily services catalog.
+
+    Rules:
+    - Date must be >= today and within BOOKING_HORIZON_DAYS (in Asia/Colombo).
+    - Never overwrite existing TrainSchedule records or alter existing seat capacities.
+    - Preserves explicitly CANCELLED, DELAYED, or DEPARTED service statuses.
+    - Concurrency-safe: uses savepoint + flush to handle race conditions gracefully.
+    - Calculates overnight arrival_date and departure/arrival times per stop sequence.
+    - High Performance: batches existence checks into single queries rather than per-service roundtrips.
+    """
+    validate_travel_date(travel_date)
+
+    matching_services = find_matching_services(
+        origin=from_station,
+        destination=to_station,
+        train_id=train_id,
+    )
+    if not matching_services:
+        return []
+
+    # 1. Batch lookup all required Train records by train_id
+    svc_train_ids = {svc.train_id for svc, _, _ in matching_services}
+    existing_trains = {
+        t.train_id: t
+        for t in db.query(Train).filter(Train.train_id.in_(svc_train_ids)).all()
+    }
+
+    # Ensure missing trains exist
+    for svc, _, _ in matching_services:
+        if svc.train_id not in existing_trains:
+            sp = db.begin_nested()
+            try:
+                t = Train(
+                    train_id=svc.train_id,
+                    train_name=svc.train_name,
+                    route=svc.route,
+                    origin_station=svc.origin_station,
+                    destination_station=svc.destination_station,
+                    train_type="Express",
+                    active=True,
+                )
+                db.add(t)
+                db.flush()
+                sp.commit()
+                existing_trains[svc.train_id] = t
+            except IntegrityError:
+                sp.rollback()
+                t = db.query(Train).filter(Train.train_id == svc.train_id).first()
+                if t:
+                    existing_trains[svc.train_id] = t
+
+    # 2. Batch lookup all existing schedules for these trains on this travel_date
+    train_db_ids = [t.id for t in existing_trains.values() if t and t.id]
+    existing_schedules_map: dict[tuple[int, str, str], TrainSchedule] = {}
+    if train_db_ids:
+        all_existing_scheds = (
+            db.query(TrainSchedule)
+            .filter(
+                TrainSchedule.train_id.in_(train_db_ids),
+                TrainSchedule.travel_date == travel_date,
+            )
+            .all()
+        )
+        for s in all_existing_scheds:
+            key = (s.train_id, (s.from_station or "").strip().lower(), (s.to_station or "").strip().lower())
+            existing_schedules_map[key] = s
+
+    ensured: list[TrainSchedule] = []
+
+    # 3. Create any missing schedules
+    new_schedules_to_add: list[TrainSchedule] = []
+    for svc, origin_stop, dest_stop in matching_services:
+        train = existing_trains.get(svc.train_id)
+        if not train or not train.active:
+            continue
+
+        sched_from = origin_stop.station if origin_stop else svc.origin_station
+        sched_to = dest_stop.station if dest_stop else svc.destination_station
+        dep_time = origin_stop.departure_time if origin_stop and origin_stop.departure_time else svc.departure_time
+        arr_time = dest_stop.arrival_time if dest_stop and dest_stop.arrival_time else svc.arrival_time
+
+        day_diff = (dest_stop.day_offset if dest_stop else 0) - (origin_stop.day_offset if origin_stop else 0)
+        arrival_date = travel_date + timedelta(days=max(0, day_diff))
+
+        key = (train.id, sched_from.strip().lower(), sched_to.strip().lower())
+        existing = existing_schedules_map.get(key)
+        if existing:
+            ensured.append(existing)
+            continue
+
+        new_sched = TrainSchedule(
+            train_id=train.id,
+            service_id=svc.service_id,
+            from_station=sched_from,
+            to_station=sched_to,
+            travel_date=travel_date,
+            arrival_date=arrival_date,
+            departure_time=dep_time,
+            arrival_time=arr_time,
+            first_class_capacity=svc.first_class_capacity,
+            second_class_capacity=svc.second_class_capacity,
+            service_status="SCHEDULED",
+        )
+        new_schedules_to_add.append(new_sched)
+
+    if new_schedules_to_add:
+        sp = db.begin_nested()
+        try:
+            for s in new_schedules_to_add:
+                db.add(s)
+            db.flush()
+            sp.commit()
+            ensured.extend(new_schedules_to_add)
+        except IntegrityError:
+            sp.rollback()
+            re_queried = (
+                db.query(TrainSchedule)
+                .filter(
+                    TrainSchedule.train_id.in_(train_db_ids),
+                    TrainSchedule.travel_date == travel_date,
+                )
+                .all()
+            )
+            ensured = re_queried
+
+    return ensured
 
 
 def get_schedule_for_trip(
@@ -185,11 +393,12 @@ def get_schedule_for_trip(
 ) -> TrainSchedule:
     """
     Find the matching TrainSchedule record for a specific train, route, and travel date.
+    Automatically ensures recurring daily service journeys exist if applicable.
 
     Parameters
     ----------
     db:           Active SQLAlchemy database session.
-    train_id:     Public train identifier (e.g., 'PM-4082').
+    train_id:     Public train identifier (e.g., '1015', 'PM-4082').
     from_station: Departure station name.
     to_station:   Arrival station name.
     travel_date:  Date of travel.
@@ -201,17 +410,27 @@ def get_schedule_for_trip(
     Raises
     ------
     TrainNotFoundError: If the train does not exist or is inactive.
+    RouteMismatchError: If the route is not operated by this train.
     ScheduleNotFoundError: If no schedule operates that route on the given date.
+    InvalidBookingError: If the journey has been cancelled or travel date is invalid.
     """
-    train = get_train_by_public_id(db, train_id)
-
     clean_from = from_station.strip()
     clean_to = to_station.strip()
 
-    # Route validation against the canonical route stored on the train record.
-    # Only enforced when the route field is populated (nullable for backward compat).
+    train = get_train_by_public_id(db, train_id)
     canonical_route = (getattr(train, "route", None) or "").strip()
-    if canonical_route:
+
+    # Route validation
+    catalog_svc = get_service_by_train_id(train_id)
+    if catalog_svc:
+        matching = find_matching_services(origin=clean_from, destination=clean_to, train_id=train_id)
+        if not matching:
+            raise RouteMismatchError(
+                train_id=train.train_id,
+                requested_route=f"{clean_from} -> {clean_to}",
+                canonical_route=catalog_svc.route,
+            )
+    elif canonical_route:
         # Route format: "Origin Station - Destination Station"
         parts = [p.strip() for p in canonical_route.split(" - ", 1)]
         if len(parts) == 2:
@@ -221,10 +440,11 @@ def get_schedule_for_trip(
             if not (from_ok and to_ok):
                 raise RouteMismatchError(
                     train_id=train.train_id,
-                    requested_route=f"{clean_from} - {clean_to}",
+                    requested_route=f"{clean_from} -> {clean_to}",
                     canonical_route=canonical_route,
                 )
 
+    # 1. Query existing schedule directly
     schedule = (
         db.query(TrainSchedule)
         .filter(
@@ -236,6 +456,28 @@ def get_schedule_for_trip(
         .first()
     )
 
+    # 2. If not found and train is a catalog service, ensure journey for this date
+    if not schedule and catalog_svc:
+        ensure_journeys_for_date(
+            db=db,
+            travel_date=travel_date,
+            from_station=clean_from,
+            to_station=clean_to,
+            train_id=train.train_id,
+        )
+        all_train_scheds = (
+            db.query(TrainSchedule)
+            .filter(
+                TrainSchedule.train_id == train.id,
+                TrainSchedule.travel_date == travel_date,
+            )
+            .all()
+        )
+        for s in all_train_scheds:
+            if stations_match(s.from_station, clean_from) and stations_match(s.to_station, clean_to):
+                schedule = s
+                break
+
     if not schedule:
         route_str = f"{clean_from} -> {clean_to}"
         raise ScheduleNotFoundError(
@@ -244,21 +486,18 @@ def get_schedule_for_trip(
             route=route_str,
         )
 
+    status = (getattr(schedule, "service_status", "SCHEDULED") or "SCHEDULED").upper()
+    if status == "CANCELLED":
+        raise InvalidBookingError(
+            f"Train service '{train.train_id}' on {travel_date.isoformat()} ({clean_from} -> {clean_to}) has been cancelled."
+        )
+
     return schedule
 
 
 # ---------------------------------------------------------------------------
 # Seat Availability Calculations
 # ---------------------------------------------------------------------------
-
-import os
-from datetime import date, datetime, time, timedelta, timezone
-try:
-    from zoneinfo import ZoneInfo
-    COLOMBO_TZ = ZoneInfo("Asia/Colombo")
-except Exception:
-    COLOMBO_TZ = timezone(timedelta(hours=5, minutes=30))
-
 MINIMUM_CONNECTION_MINUTES = int(os.getenv("MIN_CONNECTION_MINUTES", "30"))
 
 
@@ -337,7 +576,6 @@ def get_booked_seats(db: Session, schedule_id: int, seat_class: str) -> int:
     return int(booked_count or 0) + int(hold_count or 0)
 
 
-
 def get_available_seats(
     db: Session,
     schedule: TrainSchedule,
@@ -348,6 +586,7 @@ def get_available_seats(
 
     Derived dynamically as:
     available_seats = schedule_capacity - booked_seats
+    If schedule is CANCELLED, available seats are 0.
 
     Parameters
     ----------
@@ -359,6 +598,10 @@ def get_available_seats(
     -------
     int: Remaining available seats (minimum 0).
     """
+    status = (getattr(schedule, "service_status", "SCHEDULED") or "SCHEDULED").upper()
+    if status == "CANCELLED":
+        return 0
+
     canonical_class = normalize_seat_class(seat_class)
 
     if canonical_class == SeatClass.FIRST_CLASS.value:
@@ -386,23 +629,6 @@ def check_seat_availability(
         return remaining available_seats
     Else:
         raise SeatsUnavailableError(seat_class, requested=..., available=...)
-
-    Parameters
-    ----------
-    db:              Active SQLAlchemy database session.
-    schedule:        TrainSchedule entity or schedule integer ID.
-    seat_class:      Seat class string.
-    requested_seats: Number of seats requested (must be >= 1).
-
-    Returns
-    -------
-    int: Remaining available seats.
-
-    Raises
-    ------
-    InvalidBookingError: If requested_seats < 1.
-    ScheduleNotFoundError: If schedule integer ID is not found.
-    SeatsUnavailableError: If available seats < requested seats.
     """
     if requested_seats < 1:
         raise InvalidBookingError(
@@ -446,29 +672,131 @@ def get_schedules_for_route(
     """
     Retrieve active train schedules matching the route and travel date,
     with dynamically derived available seat counts and fare information.
+    Automatically ensures recurring daily service journeys exist if missing.
+    Batched implementation: replaces N+1 seat count queries with 2 aggregated batch queries.
     """
     from .fare import get_fare_per_passenger
 
     clean_from = from_station.strip()
     clean_to = to_station.strip()
 
+    # 1. First query existing active schedules for this travel date
     results = (
         db.query(TrainSchedule, Train)
         .join(Train, TrainSchedule.train_id == Train.id)
         .filter(
             Train.active == True,  # noqa: E712
-            func.lower(TrainSchedule.from_station) == clean_from.lower(),
-            func.lower(TrainSchedule.to_station) == clean_to.lower(),
             TrainSchedule.travel_date == travel_date,
         )
         .all()
     )
 
-    options: list[dict] = []
+    has_matching = any(
+        stations_match(s.from_station, clean_from) and stations_match(s.to_station, clean_to)
+        for s, t in results
+    )
+
+    # 2. Only if no matching schedules exist in the database, lazily materialize from daily catalog
+    if not has_matching:
+        try:
+            ensure_journeys_for_date(
+                db=db,
+                travel_date=travel_date,
+                from_station=clean_from,
+                to_station=clean_to,
+            )
+            results = (
+                db.query(TrainSchedule, Train)
+                .join(Train, TrainSchedule.train_id == Train.id)
+                .filter(
+                    Train.active == True,  # noqa: E712
+                    TrainSchedule.travel_date == travel_date,
+                )
+                .all()
+            )
+        except InvalidBookingError:
+            # Invalid date (past or out of horizon) returns empty list
+            return []
+
+    # Filter matching route and active trains
+    matched_pairs: list[tuple[TrainSchedule, Train]] = []
     for schedule, train in results:
+        if not (stations_match(schedule.from_station, clean_from) and stations_match(schedule.to_station, clean_to)):
+            continue
+        ms = (getattr(train, "maintenance_status", None) or "").strip().upper()
+        if ms == "OUT_OF_SERVICE":
+            continue
+        matched_pairs.append((schedule, train))
+
+    if not matched_pairs:
+        return []
+
+    sched_ids = [s.id for s, _ in matched_pairs]
+
+    # Batch Query 1: Aggregated booked seats for all candidate schedules
+    booked_map: dict[tuple[int, str], int] = {}
+    if sched_ids:
+        booked_counts = (
+            db.query(
+                Booking.schedule_id,
+                func.lower(func.trim(Booking.seat_class)),
+                func.coalesce(func.sum(Booking.passenger_count), 0),
+            )
+            .filter(
+                Booking.schedule_id.in_(sched_ids),
+                Booking.status == BookingStatus.CONFIRMED,
+            )
+            .group_by(Booking.schedule_id, func.lower(func.trim(Booking.seat_class)))
+            .all()
+        )
+        for sid, scls, cnt in booked_counts:
+            booked_map[(sid, scls)] = int(cnt)
+
+    # Batch Query 2: Aggregated active unexpired seat holds for all candidate schedules
+    hold_map: dict[tuple[int, str], int] = {}
+    if sched_ids:
+        try:
+            from database.models import HoldStatus, SeatHold
+            now_utc = datetime.now(timezone.utc)
+            hold_counts = (
+                db.query(
+                    SeatHold.schedule_id,
+                    func.lower(func.trim(SeatHold.seat_class)),
+                    func.coalesce(func.sum(SeatHold.seat_count), 0),
+                )
+                .filter(
+                    SeatHold.schedule_id.in_(sched_ids),
+                    SeatHold.status == HoldStatus.ACTIVE,
+                    SeatHold.expires_at > now_utc,
+                )
+                .group_by(SeatHold.schedule_id, func.lower(func.trim(SeatHold.seat_class)))
+                .all()
+            )
+            for sid, scls, cnt in hold_counts:
+                hold_map[(sid, scls)] = int(cnt)
+        except Exception:
+            pass
+
+    options: list[dict] = []
+    for schedule, train in matched_pairs:
+        status = (getattr(schedule, "service_status", "SCHEDULED") or "SCHEDULED").upper()
+        is_cancelled = status == "CANCELLED"
+
         available_classes = []
         for s_class in (SeatClass.FIRST_CLASS.value, SeatClass.SECOND_CLASS.value):
-            rem_seats = get_available_seats(db, schedule, s_class)
+            if is_cancelled:
+                rem_seats = 0
+            else:
+                canonical = s_class.strip().lower()
+                capacity = (
+                    schedule.first_class_capacity
+                    if s_class == SeatClass.FIRST_CLASS.value
+                    else schedule.second_class_capacity
+                )
+                booked = booked_map.get((schedule.id, canonical), 0)
+                holds = hold_map.get((schedule.id, canonical), 0)
+                rem_seats = max(0, capacity - booked - holds)
+
             try:
                 base_fare = float(get_fare_per_passenger(clean_from, clean_to, s_class))
             except Exception:
@@ -491,18 +819,28 @@ def get_schedules_for_route(
             else str(schedule.arrival_time)
         )
 
+        arr_date_val = schedule.arrival_date or schedule.travel_date
+        is_overnight = arr_date_val > schedule.travel_date
+
         options.append({
             "schedule_id": schedule.id,
+            "service_id": getattr(schedule, "service_id", None),
             "train_id": train.train_id,
             "train_name": train.train_name,
+            "train_type": getattr(train, "train_type", "Express"),
             "from_station": schedule.from_station,
             "to_station": schedule.to_station,
             "travel_date": schedule.travel_date.isoformat(),
+            "arrival_date": arr_date_val.isoformat(),
+            "is_overnight": is_overnight,
             "departure_time": dep_str,
             "arrival_time": arr_str,
+            "service_status": status,
             "available_classes": available_classes,
         })
 
+    # Sort options chronologically by departure time
+    options.sort(key=lambda opt: opt.get("departure_time", ""))
     return options
 
 

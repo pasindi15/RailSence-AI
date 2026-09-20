@@ -91,7 +91,7 @@ REGISTRY: dict[str, AgentEntry] = {
 
     "passenger-agent": AgentEntry(
         name="passenger-agent",
-        base_url=os.getenv("PASSENGER_AGENT_URL", "http://localhost:8001"),
+        base_url=os.getenv("PASSENGER_AGENT_URL", "http://127.0.0.1:8001"),
         description=(
             "Passenger-facing conversational agent. "
             "Collects booking/cancellation intent and dispatches AgentMessages."
@@ -100,7 +100,7 @@ REGISTRY: dict[str, AgentEntry] = {
 
     "booking-agent": AgentEntry(
         name="booking-agent",
-        base_url=os.getenv("BOOKING_AGENT_URL", "http://localhost:8003"),
+        base_url=os.getenv("BOOKING_AGENT_URL", "http://127.0.0.1:8003"),
         description=(
             "Booking & Reservation Agent (Member C). "
             "Processes booking_request and cancel_booking intents against the "
@@ -111,7 +111,7 @@ REGISTRY: dict[str, AgentEntry] = {
 
     "security-agent": AgentEntry(
         name="security-agent",
-        base_url=os.getenv("SECURITY_AGENT_URL", "http://localhost:8004"),
+        base_url=os.getenv("SECURITY_AGENT_URL", "http://127.0.0.1:8004"),
         description=(
             "Security agent responsible for authentication and authorisation. "
             "JWT verification will be delegated here in Phase 2."
@@ -120,13 +120,13 @@ REGISTRY: dict[str, AgentEntry] = {
 
     "operations-agent": AgentEntry(
         name="operations-agent",
-        base_url=os.getenv("OPERATIONS_AGENT_URL", "http://localhost:8005"),
+        base_url=os.getenv("OPERATIONS_AGENT_URL", "http://127.0.0.1:8005"),
         description="Train operations and schedule management agent.",
     ),
 
     "maintenance-agent": AgentEntry(
         name="maintenance-agent",
-        base_url=os.getenv("MAINTENANCE_AGENT_URL", "http://localhost:8006"),
+        base_url=os.getenv("MAINTENANCE_AGENT_URL", "http://127.0.0.1:8006"),
         description="Rolling-stock and infrastructure maintenance agent.",
     ),
 }

@@ -140,8 +140,11 @@ class Train(Base):
     active:             Mapped[bool]      = mapped_column(Boolean, nullable=False, default=True)
     # Shared canonical fields — populated from the shared Supabase trains table.
     # NULL means the column is not yet present in the DB schema; always check before use.
-    maintenance_status: Mapped[str | None] = mapped_column(String(100), nullable=True)
-    route:              Mapped[str | None] = mapped_column(String(500), nullable=True)
+    maintenance_status:  Mapped[str | None] = mapped_column(String(100), nullable=True)
+    route:               Mapped[str | None] = mapped_column(String(500), nullable=True)
+    origin_station:      Mapped[str | None] = mapped_column(String(200), nullable=True)
+    destination_station: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    train_type:          Mapped[str | None] = mapped_column(String(100), nullable=True)
 
     # Relationships
     schedules: Mapped[list["TrainSchedule"]] = relationship(
@@ -161,7 +164,7 @@ class Train(Base):
 
 class TrainSchedule(Base):
     """
-    A single scheduled run of a train on a specific date.
+    A single scheduled run of a train on a specific date (a dated journey).
 
     Relationships
     -------------
@@ -171,21 +174,29 @@ class TrainSchedule(Base):
 
     __tablename__ = "train_schedules"
 
-    id:                    Mapped[int]  = mapped_column(Integer, primary_key=True, autoincrement=True)
-    train_id:              Mapped[int]  = mapped_column(
+    id:                    Mapped[int]         = mapped_column(Integer, primary_key=True, autoincrement=True)
+    train_id:              Mapped[int]         = mapped_column(
                                Integer, ForeignKey("trains.id", ondelete="CASCADE"), nullable=False, index=True
                            )
-    from_station:          Mapped[str]  = mapped_column(String(200), nullable=False)
-    to_station:            Mapped[str]  = mapped_column(String(200), nullable=False)
-    travel_date:           Mapped[date] = mapped_column(Date, nullable=False)
-    departure_time:        Mapped[time] = mapped_column(Time(timezone=False), nullable=False)
-    arrival_time:          Mapped[time] = mapped_column(Time(timezone=False), nullable=False)
-    first_class_capacity:  Mapped[int]  = mapped_column(Integer, nullable=False)
-    second_class_capacity: Mapped[int]  = mapped_column(Integer, nullable=False)
+    from_station:          Mapped[str]         = mapped_column(String(200), nullable=False)
+    to_station:            Mapped[str]         = mapped_column(String(200), nullable=False)
+    travel_date:           Mapped[date]        = mapped_column(Date, nullable=False)
+    departure_time:        Mapped[time]        = mapped_column(Time(timezone=False), nullable=False)
+    arrival_time:          Mapped[time]        = mapped_column(Time(timezone=False), nullable=False)
+    first_class_capacity:  Mapped[int]         = mapped_column(Integer, nullable=False)
+    second_class_capacity: Mapped[int]         = mapped_column(Integer, nullable=False)
+    service_status:        Mapped[str]         = mapped_column(
+                               String(50), nullable=False, default="SCHEDULED", server_default="SCHEDULED"
+                           )
+    service_id:            Mapped[str | None]  = mapped_column(String(100), nullable=True, index=True)
+    arrival_date:          Mapped[date | None] = mapped_column(Date, nullable=True)
 
     __table_args__ = (
         # Composite index: common query pattern is train + date
         Index("ix_schedules_train_date", "train_id", "travel_date"),
+        # Unique identity constraint: prevents duplicate dated journeys under concurrent searches
+        Index("ix_schedules_identity", "train_id", "travel_date", "from_station", "to_station", unique=True),
+        Index("ix_schedules_service_date", "service_id", "travel_date"),
     )
 
     # Relationships
@@ -197,7 +208,7 @@ class TrainSchedule(Base):
     def __repr__(self) -> str:
         return (
             f"<TrainSchedule id={self.id} train_id={self.train_id}"
-            f" date={self.travel_date}>"
+            f" date={self.travel_date} status={self.service_status}>"
         )
 
 

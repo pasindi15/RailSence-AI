@@ -61,18 +61,18 @@ if is_test_environment() and os.getenv("USE_LIVE_HUB") != "1":
     HUB_URL = "http://127.0.0.1:19999"
     BOOKING_AGENT_URL = "http://127.0.0.1:19999"
 else:
-    HUB_URL = os.getenv("AGENT_HUB_URL", "http://localhost:8002").rstrip("/")
-    BOOKING_AGENT_URL = os.getenv("BOOKING_AGENT_URL", "http://localhost:8003").rstrip("/")
+    HUB_URL = os.getenv("AGENT_HUB_URL", "http://127.0.0.1:8002").rstrip("/")
+    BOOKING_AGENT_URL = os.getenv("BOOKING_AGENT_URL", "http://127.0.0.1:8003").rstrip("/")
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "change-me")
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 HTML_FILE = _CURRENT_DIR / "index.html"
 USER_HTML_FILE = _CURRENT_DIR / "user.html"
 ADMIN_HTML_FILE = _CURRENT_DIR / "admin.html"
 
-PASSENGER_AGENT_URL = os.getenv("PASSENGER_AGENT_URL", "http://localhost:8001").rstrip("/")
-OPERATIONS_AGENT_URL = os.getenv("OPERATIONS_AGENT_URL", "http://localhost:8005").rstrip("/")
-MAINTENANCE_AGENT_URL = os.getenv("MAINTENANCE_AGENT_URL", "http://localhost:8006").rstrip("/")
-SECURITY_AGENT_URL = os.getenv("SECURITY_AGENT_URL", "http://localhost:8004").rstrip("/")
+PASSENGER_AGENT_URL = os.getenv("PASSENGER_AGENT_URL", "http://127.0.0.1:8001").rstrip("/")
+OPERATIONS_AGENT_URL = os.getenv("OPERATIONS_AGENT_URL", "http://127.0.0.1:8005").rstrip("/")
+MAINTENANCE_AGENT_URL = os.getenv("MAINTENANCE_AGENT_URL", "http://127.0.0.1:8006").rstrip("/")
+SECURITY_AGENT_URL = os.getenv("SECURITY_AGENT_URL", "http://127.0.0.1:8004").rstrip("/")
 
 app = FastAPI(
     title="RailSense AI - Passenger Web & Booking Gateway",
@@ -109,6 +109,7 @@ class ConfirmBookingInput(BaseModel):
     passenger_email: EmailStr | None = Field(default=None)
     user_id: str | None = Field(default=None)
     passengers: list[dict[str, Any]] | None = Field(default=None)
+    schedule_id: int | None = Field(default=None)
 
 ConfirmBookingInput.model_rebuild()
 
@@ -180,26 +181,39 @@ def extract_booking_intent_and_entities(message: str) -> tuple[bool, dict[str, s
         day_month = re.search(r"\b(\d{1,2})(?:st|nd|rd|th)?\s+(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|oct|nov|dec)\b", lowered)
         month_day = re.search(r"\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|oct|nov|dec)\s+(\d{1,2})(?:st|nd|rd|th)?\b", lowered)
         
+        try:
+            from zoneinfo import ZoneInfo
+            colombo_tz = ZoneInfo("Asia/Colombo")
+        except Exception:
+            colombo_tz = timezone(timedelta(hours=5, minutes=30))
+        now_colombo = datetime.now(colombo_tz).date()
+
         if day_month:
             d = int(day_month.group(1))
             m = month_map[day_month.group(2)]
-            y = 2026 # Active system year
+            y = now_colombo.year
             try:
-                prefill["travel_date"] = date(y, m, d).isoformat()
+                cand_date = date(y, m, d)
+                if cand_date < now_colombo:
+                    cand_date = date(y + 1, m, d)
+                prefill["travel_date"] = cand_date.isoformat()
             except ValueError:
                 pass
         elif month_day:
             m = month_map[month_day.group(1)]
             d = int(month_day.group(2))
-            y = 2026
+            y = now_colombo.year
             try:
-                prefill["travel_date"] = date(y, m, d).isoformat()
+                cand_date = date(y, m, d)
+                if cand_date < now_colombo:
+                    cand_date = date(y + 1, m, d)
+                prefill["travel_date"] = cand_date.isoformat()
             except ValueError:
                 pass
         elif "tomorrow" in lowered:
-            prefill["travel_date"] = (date.today() + timedelta(days=1)).isoformat()
+            prefill["travel_date"] = (now_colombo + timedelta(days=1)).isoformat()
         elif "today" in lowered:
-            prefill["travel_date"] = date.today().isoformat()
+            prefill["travel_date"] = now_colombo.isoformat()
 
     return True, prefill
 
@@ -568,24 +582,106 @@ async def chat_endpoint(payload: ChatInput) -> dict[str, Any]:
         query_str = f"?{'&'.join(params)}" if params else ""
         booking_url = f"/booking{query_str}"
 
-        # Generate intelligent contextual assistant reply
+        try:
+            from zoneinfo import ZoneInfo
+            colombo_tz = ZoneInfo("Asia/Colombo")
+        except Exception:
+            colombo_tz = timezone(timedelta(hours=5, minutes=30))
+        now_colombo = datetime.now(colombo_tz).date()
+
+        # Check if travel date is missing
+        if "travel_date" not in prefill:
+            st_parts = []
+            if "from_station" in prefill:
+                st_parts.append(f"from **{prefill['from_station']}**")
+            if "to_station" in prefill:
+                st_parts.append(f"to **{prefill['to_station']}**")
+            st_text = f" {' '.join(st_parts)}" if st_parts else ""
+
+            reply = (
+                f"I can help you book a train journey{st_text}! "
+                f"Which travel date would you like to depart on? "
+                f"(e.g., today, tomorrow, or a date like { (now_colombo + timedelta(days=7)).isoformat() })"
+            )
+            return {
+                "reply": reply,
+                "intent": "booking_request",
+                "prefill": prefill,
+                "action": {
+                    "type": "continue_to_booking",
+                    "label": "Open Booking Desk ➔",
+                    "url": booking_url,
+                },
+            }
+
+        # Travel date is present — validate horizon
+        try:
+            t_date = date.fromisoformat(prefill["travel_date"])
+            if t_date < now_colombo:
+                return {
+                    "reply": (
+                        f"The date **{prefill['travel_date']}** is in the past. "
+                        f"Daily train services operate today ({now_colombo.isoformat()}) and up to 90 days in advance. "
+                        f"Please choose today or an upcoming travel date."
+                    ),
+                    "intent": "booking_request",
+                    "prefill": {k: v for k, v in prefill.items() if k != "travel_date"},
+                    "action": None,
+                }
+            max_horizon = now_colombo + timedelta(days=90)
+            if t_date > max_horizon:
+                return {
+                    "reply": (
+                        f"The travel date **{prefill['travel_date']}** exceeds our 90-day booking advance limit "
+                        f"(available through {max_horizon.isoformat()}). Please select an earlier date."
+                    ),
+                    "intent": "booking_request",
+                    "prefill": {k: v for k, v in prefill.items() if k != "travel_date"},
+                    "action": None,
+                }
+        except Exception:
+            pass
+
+        # Try to query available trains to provide instant live feedback in chat
+        train_names = []
+        if "from_station" in prefill and "to_station" in prefill:
+            try:
+                async with httpx.AsyncClient(timeout=3.0) as client:
+                    resp = await client.get(
+                        f"{BOOKING_AGENT_URL}/booking-options",
+                        params={
+                            "from_station": prefill["from_station"],
+                            "to_station": prefill["to_station"],
+                            "travel_date": prefill["travel_date"],
+                        },
+                    )
+                    if resp.status_code == 200:
+                        b_data = resp.json()
+                        trains = b_data.get("trains", []) if isinstance(b_data, dict) else b_data
+                        for t in trains[:3]:
+                            t_name = t.get("train_name") or t.get("train_id")
+                            t_dep = t.get("departure_time")
+                            train_names.append(f"**{t_name}** ({t_dep})")
+            except Exception:
+                pass
+
         details_list = []
         if "from_station" in prefill:
             details_list.append(f"from **{prefill['from_station']}**")
         if "to_station" in prefill:
             details_list.append(f"to **{prefill['to_station']}**")
-        if "travel_date" in prefill:
-            details_list.append(f"on **{prefill['travel_date']}**")
+        details_list.append(f"on **{prefill['travel_date']}**")
 
-        if details_list:
+        if train_names:
             reply = (
-                f"I found your booking request {' '.join(details_list)}. "
-                "Click the button below to proceed to the reservation desk with these details pre-filled."
+                f"Daily train services operating {' '.join(details_list)} include: "
+                f"{', '.join(train_names)}. "
+                "Click below to select your seat class and complete your booking."
             )
         else:
             reply = (
-                "I can certainly help you book a train ticket! "
-                "Click the button below to open the booking page and select your stations and date."
+                f"I found your booking request {' '.join(details_list)}. "
+                "Click the button below to proceed to the reservation desk with these details pre-filled."
             )
 
         return {
@@ -648,7 +744,7 @@ async def booking_options_proxy(
     Never invents mock train data.
     """
     try:
-        async with httpx.AsyncClient(timeout=25.0) as client:
+        async with httpx.AsyncClient(timeout=3.0) as client:
             resp = await client.get(
                 f"{BOOKING_AGENT_URL}/booking-options",
                 params={
@@ -658,11 +754,17 @@ async def booking_options_proxy(
                 },
             )
             if resp.status_code == 200:
-                return JSONResponse(status_code=200, content=resp.json())
-            return JSONResponse(status_code=resp.status_code, content=resp.json())
-    except (httpx.ConnectError, httpx.TimeoutException):
-        # Fallback to direct DB query if booking agent service is not running on separate port
+                body = resp.json()
+                trains = body.get("trains", []) if isinstance(body, dict) else body
+                return JSONResponse(status_code=200, content=trains)
+            elif resp.status_code < 500:
+                return JSONResponse(status_code=resp.status_code, content=resp.json())
+            # If downstream returns 5xx, trigger direct fast fallback below
+            raise httpx.RequestError(f"Downstream status {resp.status_code}")
+    except (httpx.ConnectError, httpx.TimeoutException, httpx.RequestError, Exception):
+        # Fallback to direct DB query if booking agent service is not reachable or times out
         try:
+            sys.path.insert(0, str(_M3_ROOT))
             sys.path.insert(0, str(_M3_ROOT / "booking-agent"))
             from database.database import SessionLocal
             from booking.availability import get_schedules_for_route
@@ -675,11 +777,6 @@ async def booking_options_proxy(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 content={"error": "Booking service is temporarily unavailable."},
             )
-    except Exception as exc:
-        return JSONResponse(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            content={"error": "Booking service is temporarily unavailable."},
-        )
 
 
 @app.post("/api/bookings/confirm", tags=["booking"])
@@ -732,12 +829,13 @@ async def confirm_booking_endpoint(req: ConfirmBookingInput) -> JSONResponse:
             "passenger_email": str(req.passenger_email).strip() if req.passenger_email else None,
             "user_id": req.user_id or "guest_passenger",
             "passengers": req.passengers,
+            "schedule_id": req.schedule_id,
         },
     }
 
     # 4. Dispatch through Communication Hub
     try:
-        async with httpx.AsyncClient(timeout=25.0) as client:
+        async with httpx.AsyncClient(timeout=15.0) as client:
             resp = await client.post(
                 f"{HUB_URL}/messages",
                 json=envelope,
@@ -830,14 +928,13 @@ async def confirm_booking_endpoint(req: ConfirmBookingInput) -> JSONResponse:
                 content={"error": "Please complete all booking details."},
             )
 
-        return JSONResponse(
-            status_code=503,
-            content={"error": "Booking service is temporarily unavailable."},
-        )
+        # If Hub returned 5xx or unhandled error, fall back to direct in-process dispatch
+        raise httpx.RequestError(f"Downstream service status {resp.status_code}")
 
-    except httpx.ConnectError:
-        # In case the standalone Hub process is not running, dispatch directly through in-memory BookingService
+    except (httpx.ConnectError, httpx.TimeoutException, httpx.RequestError, Exception) as outer_exc:
+        # In case the standalone Hub process is not reachable or times out, dispatch directly through in-memory BookingService
         try:
+            sys.path.insert(0, str(_M3_ROOT))
             sys.path.insert(0, str(_M3_ROOT / "booking-agent"))
             from database.database import SessionLocal
             from booking.service import BookingService
@@ -936,7 +1033,8 @@ async def confirm_booking_endpoint(req: ConfirmBookingInput) -> JSONResponse:
                 status_code=404,
                 content={"error": "No train is available for this route/date."},
             )
-        except Exception:
+        except Exception as exc:
+            print(f"[confirm_booking fallback error] {type(exc).__name__}: {exc}")
             return JSONResponse(
                 status_code=503,
                 content={"error": "Booking service is temporarily unavailable."},

@@ -2323,6 +2323,8 @@ body {
 <script>
 const $ = id => document.getElementById(id);
 let currentSchedules = [];
+let selectedScheduleId = null;
+let latestTrainRequestId = 0;
 let isSubmitting = false;
 let currentStep = 1;
 let currentCurrency = 'INR';
@@ -2916,6 +2918,8 @@ function selectSeatClass(className) {
 let searchDebounce = null;
 function onRouteOrDateChanged() {
   clearTimeout(searchDebounce);
+  selectedScheduleId = null;
+  if ($('train-select-val')) $('train-select-val').value = '';
   searchDebounce = setTimeout(fetchTrainOptions, 250);
 }
 
@@ -2928,6 +2932,7 @@ async function fetchTrainOptions() {
 
   if (!from || !to || !travelDate) {
     if ($('train-select-val')) $('train-select-val').value = '';
+    selectedScheduleId = null;
     if (container) {
       container.innerHTML = '<div style="font-size:13px;color:var(--text-sub);padding:18px;background:#F9FAFB;border:1px dashed var(--border-light);border-radius:8px;text-align:center;">🔍 Enter origin, destination, and travel date above to discover and select available train services.</div>';
     }
@@ -2935,66 +2940,57 @@ async function fetchTrainOptions() {
     return;
   }
 
+  const reqId = ++latestTrainRequestId;
   if (container) {
-    container.innerHTML = '<div style="font-size:13px;color:var(--text-sub);padding:14px 0;text-align:center;">Loading available train schedules...</div>';
+    container.innerHTML = '<div style="font-size:13px;color:var(--text-sub);padding:14px 0;text-align:center;">Checking available daily services & seat inventory...</div>';
   }
 
   try {
     const resp = await fetch(`/api/booking-options?from_station=${encodeURIComponent(from)}&to_station=${encodeURIComponent(to)}&travel_date=${encodeURIComponent(travelDate)}`);
-    const data = await resp.json();
+    if (reqId !== latestTrainRequestId) return; // Discard stale response
 
-    if (!Array.isArray(data) || data.length === 0) {
-      currentSchedules = [
-        {
-          train_id: '1005',
-          train_name: 'Podi Menike Express',
-          departure_time: '05:55',
-          arrival_time: '09:15',
-          available_classes: [
-            { seat_class: 'Second Class', available_seats: 42, base_fare: 400.0 },
-            { seat_class: 'First Class', available_seats: 18, base_fare: 800.0 }
-          ]
-        },
-        {
-          train_id: '1015',
-          train_name: 'Udarata Menike Express',
-          departure_time: '08:30',
-          arrival_time: '11:45',
-          available_classes: [
-            { seat_class: 'Second Class', available_seats: 35, base_fare: 400.0 },
-            { seat_class: 'First Class', available_seats: 12, base_fare: 800.0 }
-          ]
-        },
-        {
-          train_id: '1025',
-          train_name: 'Senkadagala Menike',
-          departure_time: '15:35',
-          arrival_time: '18:40',
-          available_classes: [
-            { seat_class: 'Second Class', available_seats: 28, base_fare: 400.0 },
-            { seat_class: 'First Class', available_seats: 8, base_fare: 800.0 }
-          ]
-        }
-      ];
-    } else {
-      currentSchedules = data;
+    if (!resp.ok) {
+      if (container) {
+        container.innerHTML = `
+          <div style="font-size:13px;color:#991B1B;background:#FEF2F2;border:1px solid #FCA5A5;padding:14px;border-radius:8px;text-align:center;">
+            <span>⚠️ Daily train services are briefly busy.</span>
+            <button type="button" onclick="fetchTrainOptions()" style="margin-left:10px;padding:5px 12px;background:#8B4513;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:12px;font-weight:600;">Retry Discovery</button>
+          </div>`;
+      }
+      return;
     }
 
+    const data = await resp.json();
+    if (reqId !== latestTrainRequestId) return; // Discard stale response
+
+    const trains = Array.isArray(data) ? data : (data.trains || []);
+
+    if (trains.length === 0) {
+      currentSchedules = [];
+      selectedScheduleId = null;
+      if ($('train-select-val')) $('train-select-val').value = '';
+      if (container) {
+        container.innerHTML = `
+          <div style="font-size:13.5px;color:#991B1B;background:#FEF2F2;border:1px solid #F87171;padding:16px;border-radius:8px;text-align:center;">
+            <strong>No train services operating</strong> for <strong>${escapeHtml(from)} → ${escapeHtml(to)}</strong> on <strong>${escapeHtml(travelDate)}</strong>.<br/>
+            <span style="font-size:12px;color:#7F1D1D;display:inline-block;margin-top:4px;">Please check station names or select another date within the 90-day booking horizon.</span>
+          </div>`;
+      }
+      updateSummary();
+      return;
+    }
+
+    currentSchedules = trains;
     renderTrainOptionCards();
   } catch (err) {
-    currentSchedules = [
-      {
-        train_id: '1005',
-        train_name: 'Podi Menike Express',
-        departure_time: '05:55',
-        arrival_time: '09:15',
-        available_classes: [
-          { seat_class: 'Second Class', available_seats: 42, base_fare: 400.0 },
-          { seat_class: 'First Class', available_seats: 18, base_fare: 800.0 }
-        ]
-      }
-    ];
-    renderTrainOptionCards();
+    if (reqId !== latestTrainRequestId) return;
+    if (container) {
+      container.innerHTML = `
+        <div style="font-size:13px;color:#991B1B;background:#FEF2F2;border:1px solid #FCA5A5;padding:14px;border-radius:8px;text-align:center;">
+          <span>⚠️ Failed to load train schedules.</span>
+          <button type="button" onclick="fetchTrainOptions()" style="margin-left:10px;padding:5px 12px;background:#8B4513;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:12px;font-weight:600;">Retry</button>
+        </div>`;
+    }
   }
 }
 
@@ -3003,29 +2999,51 @@ function renderTrainOptionCards() {
   if (!container) return;
   container.innerHTML = '';
 
+  if (!currentSchedules || currentSchedules.length === 0) return;
+
   currentSchedules.forEach((s, idx) => {
-    const isSelected = idx === 0;
-    if (isSelected && $('train-select-val')) $('train-select-val').value = s.train_id;
+    const isCancelled = (s.service_status || '').toUpperCase() === 'CANCELLED';
+    const isSelected = idx === 0 && !isCancelled;
+    if (isSelected) {
+      if ($('train-select-val')) $('train-select-val').value = s.train_id;
+      selectedScheduleId = s.schedule_id || null;
+    }
 
     const card = document.createElement('div');
     card.className = `train-option-card ${isSelected ? 'selected' : ''}`;
     card.id = `train-card-${s.train_id}`;
-    card.onclick = () => selectTrainService(s.train_id);
+
+    if (!isCancelled) {
+      card.onclick = () => selectTrainService(s.train_id, s.schedule_id);
+    } else {
+      card.style.opacity = '0.6';
+      card.style.cursor = 'not-allowed';
+    }
 
     const secondCls = s.available_classes ? s.available_classes.find(c => c.seat_class === 'Second Class') : null;
     const firstCls = s.available_classes ? s.available_classes.find(c => c.seat_class === 'First Class') : null;
 
+    const overnightBadge = s.is_overnight ? '<span style="background:#4338CA;color:#fff;font-size:10.5px;font-weight:700;padding:2px 6px;border-radius:4px;margin-left:6px;">🌙 Overnight (+1 Day)</span>' : '';
+    const cancelledBadge = isCancelled ? '<span style="background:#DC2626;color:#fff;font-size:10.5px;font-weight:700;padding:2px 6px;border-radius:4px;margin-left:6px;">CANCELLED</span>' : '';
+
     card.innerHTML = `
       <div>
-        <div class="train-title-name">${s.train_id} — ${s.train_name}</div>
-        <div class="train-times">Dep: ${s.departure_time} ➔ Arr: ${s.arrival_time}</div>
+        <div class="train-title-name" style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;">
+          <span>${escapeHtml(s.train_id)} — ${escapeHtml(s.train_name)}</span>
+          ${overnightBadge}
+          ${cancelledBadge}
+        </div>
+        <div class="train-times" style="font-size:12.5px;color:var(--text-sub);margin-top:4px;">
+          Dep: <strong>${escapeHtml(s.departure_time)}</strong> (${escapeHtml(s.from_station)}) ➔ Arr: <strong>${escapeHtml(s.arrival_time)}</strong> (${escapeHtml(s.to_station)})
+          ${s.arrival_date && s.arrival_date !== s.travel_date ? `<span style="color:#6366F1;font-weight:600;"> (Arrives ${escapeHtml(s.arrival_date)})</span>` : ''}
+        </div>
       </div>
       <div class="seat-class-pill-group">
-        <span style="font-size:11.5px;background:#F3F4F6;padding:4px 10px;border-radius:6px;font-weight:700;">
-          2nd Class: ${secondCls ? secondCls.available_seats : '30+'} seats
+        <span style="font-size:11.5px;background:#F3F4F6;padding:4px 10px;border-radius:6px;font-weight:700;${secondCls && secondCls.available_seats === 0 ? 'color:#DC2626;' : ''}">
+          2nd Class: ${secondCls ? (secondCls.available_seats > 0 ? secondCls.available_seats + ' seats' : 'Sold Out') : 'N/A'}
         </span>
-        <span style="font-size:11.5px;background:#F3F4F6;padding:4px 10px;border-radius:6px;font-weight:700;">
-          1st Class: ${firstCls ? firstCls.available_seats : '10+'} seats
+        <span style="font-size:11.5px;background:#F3F4F6;padding:4px 10px;border-radius:6px;font-weight:700;${firstCls && firstCls.available_seats === 0 ? 'color:#DC2626;' : ''}">
+          1st Class: ${firstCls ? (firstCls.available_seats > 0 ? firstCls.available_seats + ' seats' : 'Sold Out') : 'N/A'}
         </span>
       </div>
     `;
@@ -3035,8 +3053,9 @@ function renderTrainOptionCards() {
   updateSummary();
 }
 
-function selectTrainService(trainId) {
+function selectTrainService(trainId, scheduleId) {
   if ($('train-select-val')) $('train-select-val').value = trainId;
+  selectedScheduleId = scheduleId || null;
   const container = $('train-options-container');
   if (container) container.classList.remove('train-options-invalid');
   document.querySelectorAll('.train-option-card').forEach(c => c.classList.remove('selected'));
@@ -3375,6 +3394,7 @@ async function submitBooking() {
         passenger_email: email,
         user_id: 'passenger_web_user',
         passengers: passengersPayload,
+        schedule_id: selectedScheduleId,
       })
     });
 
@@ -3391,7 +3411,7 @@ async function submitBooking() {
       showAlert(errMsg, "error");
     }
   } catch (err) {
-    showAlert("Booking service is temporarily unavailable.", "error");
+    showAlert("Booking reservation system is temporarily busy. Please click 'Pay & Confirm' to retry.", "error");
   } finally {
     setLoadingState(false);
   }
