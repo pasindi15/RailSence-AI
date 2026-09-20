@@ -779,3 +779,187 @@ def review_fraud_case_endpoint(
         raise HTTPException(status_code=exc.status_code, detail=exc.message)
 
 
+# ---------------------------------------------------------------------------
+# Admin — Train List (for dropdown)
+# ---------------------------------------------------------------------------
+
+@app.get(
+    "/admin/trains",
+    tags=["admin"],
+    summary="List active trains for admin dropdown selector",
+    include_in_schema=True,
+)
+@app.get(
+    "/api/admin/trains",
+    include_in_schema=False,
+)
+def list_admin_trains(db: Session = Depends(get_db)) -> JSONResponse:
+    """
+    Return all active trains with id, train_id, train_name, and route
+    so the admin dashboard can populate the train filter dropdown.
+    """
+    from database.models import Train
+
+    trains = (
+        db.query(Train)
+        .filter(Train.active == True)  # noqa: E712
+        .order_by(Train.train_id)
+        .all()
+    )
+    return JSONResponse(
+        status_code=200,
+        content=[
+            {
+                "id": t.id,
+                "train_id": t.train_id,
+                "train_name": t.train_name,
+                "route": t.route or f"{t.origin_station or ''} → {t.destination_station or ''}".strip(" →"),
+                "origin_station": t.origin_station,
+                "destination_station": t.destination_station,
+            }
+            for t in trains
+        ],
+    )
+
+
+# ---------------------------------------------------------------------------
+# Admin — Booking Manifest (filtered by train + date)
+# ---------------------------------------------------------------------------
+
+@app.get(
+    "/admin/bookings",
+    tags=["admin"],
+    summary="Retrieve booked tickets filtered by train and travel date",
+    include_in_schema=True,
+)
+@app.get(
+    "/api/admin/bookings",
+    include_in_schema=False,
+)
+def list_admin_bookings(
+    train_id: str | None = None,
+    travel_date: str | None = None,
+    booking_status: str | None = None,
+    db: Session = Depends(get_db),
+) -> JSONResponse:
+    """
+    Return a manifest of bookings filtered by train (train_id string) and
+    travel_date (YYYY-MM-DD), with optional booking_status filter.
+
+    - travel_date refers to the JOURNEY date (Booking.travel_date), NOT created_at.
+    - CANCELLED bookings are always included unless explicitly filtered out.
+    - Requires at least one of train_id or travel_date to avoid full-table scans.
+    """
+    from database.models import Booking, BookingPassenger, Passenger, Train, TrainSchedule
+
+    # Validate travel_date if provided
+    parsed_date: date | None = None
+    if travel_date:
+        try:
+            parsed_date = date.fromisoformat(travel_date.strip())
+        except ValueError:
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid travel_date format. Expected YYYY-MM-DD.",
+            )
+
+    # Require at least one filter to prevent large unindexed dumps
+    if not train_id and not parsed_date:
+        raise HTTPException(
+            status_code=400,
+            detail="At least one filter (train_id or travel_date) is required.",
+        )
+
+    # Build query with joins
+    query = (
+        db.query(Booking)
+        .join(Train, Booking.train_id == Train.id)
+        .join(TrainSchedule, Booking.schedule_id == TrainSchedule.id)
+    )
+
+    # Apply train filter (match on string train_id like "1005")
+    if train_id:
+        clean_tid = train_id.strip()
+        train_row = db.query(Train).filter(Train.train_id == clean_tid).first()
+        if not train_row:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Train '{clean_tid}' not found.",
+            )
+        query = query.filter(Booking.train_id == train_row.id)
+
+    # Apply date filter on journey travel_date (NOT created_at)
+    if parsed_date:
+        query = query.filter(Booking.travel_date == parsed_date)
+
+    # Apply optional status filter
+    if booking_status:
+        query = query.filter(
+            Booking.status == booking_status.upper()
+        )
+
+    bookings = query.order_by(Booking.travel_date, Booking.created_at).all()
+
+    results = []
+    for b in bookings:
+        train = b.train
+        schedule = b.schedule
+
+        # Gather passengers from booking_passengers relationship
+        passengers_info = []
+        for bp in b.booking_passengers:
+            p = bp.passenger
+            if p:
+                passengers_info.append({
+                    "full_name": p.full_name or "Unknown",
+                    "nic_masked": p.nic_masked,
+                })
+
+        # Payment status inference: CANCELLED → REFUNDED if approved, else PAID/PENDING
+        canc_req = b.cancellation_request
+        if b.status.value == "CANCELLED" and canc_req and canc_req.admin_decision == "APPROVE":
+            payment_status = "REFUNDED"
+        elif b.status.value in ("CONFIRMED",):
+            payment_status = "PAID"
+        elif b.status.value in ("HELD", "PENDING_FRAUD_REVIEW"):
+            payment_status = "PENDING"
+        else:
+            payment_status = "UNKNOWN"
+
+        results.append({
+            "id": b.id,
+            "booking_reference": b.booking_reference,
+            "ticket_token": b.ticket_token,
+            "passenger_email": b.passenger_email or "",
+            "passengers": passengers_info,
+            "passenger_count": b.passenger_count,
+            "fare": str(b.fare),
+            "train_id": train.train_id if train else str(b.train_id),
+            "train_name": train.train_name if train else "",
+            "route": (train.route or "") if train else "",
+            "from_station": b.from_station,
+            "to_station": b.to_station,
+            "travel_date": b.travel_date.isoformat(),
+            "departure_time": schedule.departure_time.strftime("%H:%M") if schedule and schedule.departure_time else "",
+            "arrival_time": schedule.arrival_time.strftime("%H:%M") if schedule and schedule.arrival_time else "",
+            "seat_class": b.seat_class,
+            "status": b.status.value if hasattr(b.status, "value") else str(b.status),
+            "payment_status": payment_status,
+            "created_at": b.created_at.isoformat() if b.created_at else None,
+            "cancellation_case": canc_req.case_reference if canc_req else None,
+        })
+
+    return JSONResponse(
+        status_code=200,
+        content={
+            "count": len(results),
+            "filters": {
+                "train_id": train_id,
+                "travel_date": travel_date,
+                "booking_status": booking_status,
+            },
+            "bookings": results,
+        },
+    )
+
+

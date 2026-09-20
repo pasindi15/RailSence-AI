@@ -1272,6 +1272,7 @@ body::after {
       <button class="sub-chip active" id="chip-book-fraud" onclick="switchSubSection('bookings', 'fraud')">🛡️ Fraud Review Queue (ML Flagged)</button>
       <button class="sub-chip" id="chip-book-canc" onclick="switchSubSection('bookings', 'canc')">🔄 Cancellation Queue (Human-in-the-Loop)</button>
       <button class="sub-chip" id="chip-book-schedules" onclick="switchSubSection('bookings', 'schedules')">📋 Schedules &amp; Seat Inventory</button>
+      <button class="sub-chip" id="chip-book-tickets" onclick="switchSubSection('bookings', 'tickets'); loadTicketManifestTrains();">🎫 Booked Tickets (Manifest)</button>
     </div>
 
     <!-- View A: Fraud Review Queue -->
@@ -1341,6 +1342,114 @@ body::after {
           <button class="btn-approve" onclick="inspectSchedules()">Query Trains</button>
         </div>
         <div id="insp-results" style="margin-top:14px;"></div>
+      </div>
+    </div>
+
+    <!-- View D: Ticket Manifest -->
+    <div id="subview-book-tickets" style="display:none;">
+      <div class="card-section">
+        <div class="card-header">
+          <div>
+            <div class="card-title">🎫 Booked Ticket Manifest</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px;">Filter bookings by train and travel date — queries Booking.travel_date (journey date, not booking date)</div>
+          </div>
+          <button class="btn-refresh" onclick="searchTicketManifest()">🔍 Refresh</button>
+        </div>
+
+        <!-- Filter toolbar -->
+        <div style="display:grid;grid-template-columns:2fr 1fr 1fr auto auto;gap:10px;align-items:flex-end;margin:16px 0 18px;">
+          <div>
+            <label style="font-size:11.5px;color:var(--muted-hi);display:block;margin-bottom:4px;">Train</label>
+            <select id="ticket-filter-train" style="width:100%;padding:8px 12px;background:rgba(10,15,26,0.85);border:1px solid var(--border);border-radius:7px;color:#fff;outline:none;font-size:13px;">
+              <option value="">— All Trains —</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:11.5px;color:var(--muted-hi);display:block;margin-bottom:4px;">Travel Date</label>
+            <input type="date" id="ticket-filter-date" style="width:100%;padding:8px 12px;background:rgba(10,15,26,0.85);border:1px solid var(--border);border-radius:7px;color:#fff;outline:none;font-size:13px;" />
+          </div>
+          <div>
+            <label style="font-size:11.5px;color:var(--muted-hi);display:block;margin-bottom:4px;">Status</label>
+            <select id="ticket-filter-status" style="width:100%;padding:8px 12px;background:rgba(10,15,26,0.85);border:1px solid var(--border);border-radius:7px;color:#fff;outline:none;font-size:13px;">
+              <option value="">All Statuses</option>
+              <option value="CONFIRMED">✅ Confirmed</option>
+              <option value="CANCELLED">❌ Cancelled</option>
+              <option value="PENDING_FRAUD_REVIEW">⚠️ Pending Fraud Review</option>
+              <option value="HELD">🔒 Held</option>
+              <option value="EXPIRED">⏰ Expired</option>
+            </select>
+          </div>
+          <button class="btn-approve" id="ticket-search-btn" onclick="searchTicketManifest()" style="white-space:nowrap;">🔍 Search Tickets</button>
+          <button class="btn-reject" id="ticket-clear-btn" onclick="clearTicketFilters()" style="white-space:nowrap;">✕ Clear</button>
+        </div>
+
+        <!-- KPI summary row -->
+        <div id="ticket-kpi-row" style="display:none;display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px;">
+          <div style="padding:14px 16px;background:linear-gradient(135deg,rgba(37,99,235,0.12) 0%,rgba(10,14,26,0.88) 100%);border:1px solid rgba(59,130,246,0.25);border-top:3px solid #3B82F6;border-radius:10px;">
+            <div style="font-size:10px;color:var(--muted-hi);text-transform:uppercase;letter-spacing:0.5px;font-family:'Share Tech Mono',monospace;">Total Bookings</div>
+            <div id="kpi-total" style="font-size:26px;font-weight:800;color:#93C5FD;margin-top:4px;font-family:'Share Tech Mono',monospace;">0</div>
+          </div>
+          <div style="padding:14px 16px;background:linear-gradient(135deg,rgba(5,150,105,0.12) 0%,rgba(10,14,26,0.88) 100%);border:1px solid rgba(16,185,129,0.25);border-top:3px solid #10B981;border-radius:10px;">
+            <div style="font-size:10px;color:var(--muted-hi);text-transform:uppercase;letter-spacing:0.5px;font-family:'Share Tech Mono',monospace;">Total Passengers</div>
+            <div id="kpi-passengers" style="font-size:26px;font-weight:800;color:#6EE7B7;margin-top:4px;font-family:'Share Tech Mono',monospace;">0</div>
+          </div>
+          <div style="padding:14px 16px;background:linear-gradient(135deg,rgba(5,150,105,0.08) 0%,rgba(10,14,26,0.88) 100%);border:1px solid rgba(16,185,129,0.2);border-top:3px solid #34D399;border-radius:10px;">
+            <div style="font-size:10px;color:var(--muted-hi);text-transform:uppercase;letter-spacing:0.5px;font-family:'Share Tech Mono',monospace;">Confirmed</div>
+            <div id="kpi-confirmed" style="font-size:26px;font-weight:800;color:#34D399;margin-top:4px;font-family:'Share Tech Mono',monospace;">0</div>
+          </div>
+          <div style="padding:14px 16px;background:linear-gradient(135deg,rgba(220,38,38,0.10) 0%,rgba(10,14,26,0.88) 100%);border:1px solid rgba(239,68,68,0.22);border-top:3px solid #EF4444;border-radius:10px;">
+            <div style="font-size:10px;color:var(--muted-hi);text-transform:uppercase;letter-spacing:0.5px;font-family:'Share Tech Mono',monospace;">Cancelled</div>
+            <div id="kpi-cancelled" style="font-size:26px;font-weight:800;color:#F87171;margin-top:4px;font-family:'Share Tech Mono',monospace;">0</div>
+          </div>
+        </div>
+
+        <!-- Ticket manifest table -->
+        <div id="ticket-manifest-container">
+          <!-- Initial prompt state -->
+          <div id="ticket-initial-state" style="text-align:center;padding:48px 20px;color:var(--muted);">
+            <div style="font-size:40px;margin-bottom:12px;">🎫</div>
+            <div style="font-size:16px;font-weight:600;color:var(--ink);margin-bottom:6px;">Select a Train and / or Travel Date</div>
+            <div style="font-size:13px;">Choose filters above and click <strong>Search Tickets</strong> to view booked passenger tickets for that journey.</div>
+          </div>
+          <!-- Loading state -->
+          <div id="ticket-loading-state" style="display:none;text-align:center;padding:48px 20px;color:var(--muted);">
+            <div style="font-size:28px;margin-bottom:10px;">⏳</div>
+            <div style="font-size:14px;">Loading ticket manifest…</div>
+          </div>
+          <!-- Error state -->
+          <div id="ticket-error-state" style="display:none;padding:16px 20px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:10px;margin-bottom:14px;">
+            <span style="color:#F87171;font-weight:600;">⚠️ Error:</span> <span id="ticket-error-msg" style="color:var(--ink);"></span>
+            <button class="btn-refresh" onclick="searchTicketManifest()" style="margin-left:12px;">Retry</button>
+          </div>
+          <!-- Empty state -->
+          <div id="ticket-empty-state" style="display:none;text-align:center;padding:48px 20px;color:var(--muted);">
+            <div style="font-size:36px;margin-bottom:10px;">🪑</div>
+            <div style="font-size:15px;font-weight:600;color:var(--ink);margin-bottom:5px;">No Tickets Found</div>
+            <div style="font-size:13px;">No bookings match the selected filters. All seats may be unreserved for this journey.</div>
+          </div>
+          <!-- Results table -->
+          <div id="ticket-table-wrapper" style="display:none;overflow-x:auto;">
+            <table id="ticket-manifest-table" style="width:100%;border-collapse:collapse;font-size:12.5px;">
+              <thead>
+                <tr style="background:rgba(30,40,70,0.8);border-bottom:1px solid var(--border);">
+                  <th style="padding:10px 12px;text-align:left;color:var(--muted-hi);font-weight:600;font-family:'Share Tech Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:0.4px;white-space:nowrap;">Ref #</th>
+                  <th style="padding:10px 12px;text-align:left;color:var(--muted-hi);font-weight:600;font-family:'Share Tech Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:0.4px;">Passenger(s)</th>
+                  <th style="padding:10px 12px;text-align:left;color:var(--muted-hi);font-weight:600;font-family:'Share Tech Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:0.4px;">Train</th>
+                  <th style="padding:10px 12px;text-align:left;color:var(--muted-hi);font-weight:600;font-family:'Share Tech Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:0.4px;">Route</th>
+                  <th style="padding:10px 12px;text-align:left;color:var(--muted-hi);font-weight:600;font-family:'Share Tech Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:0.4px;white-space:nowrap;">Travel Date &amp; Dep.</th>
+                  <th style="padding:10px 12px;text-align:center;color:var(--muted-hi);font-weight:600;font-family:'Share Tech Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:0.4px;">Pax</th>
+                  <th style="padding:10px 12px;text-align:left;color:var(--muted-hi);font-weight:600;font-family:'Share Tech Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:0.4px;">Class</th>
+                  <th style="padding:10px 12px;text-align:right;color:var(--muted-hi);font-weight:600;font-family:'Share Tech Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:0.4px;">Fare</th>
+                  <th style="padding:10px 12px;text-align:center;color:var(--muted-hi);font-weight:600;font-family:'Share Tech Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:0.4px;">Status</th>
+                  <th style="padding:10px 12px;text-align:center;color:var(--muted-hi);font-weight:600;font-family:'Share Tech Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:0.4px;">Payment</th>
+                  <th style="padding:10px 12px;text-align:left;color:var(--muted-hi);font-weight:600;font-family:'Share Tech Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:0.4px;white-space:nowrap;">Booked At</th>
+                </tr>
+              </thead>
+              <tbody id="ticket-manifest-tbody">
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
   </main>
@@ -1494,11 +1603,12 @@ body::after {
               <th>SENDER ➔ RECEIVER</th>
               <th>INTENT</th>
               <th>STATUS</th>
+              <th>FAILURE REASON / DETAILS</th>
               <th>LATENCY</th>
             </tr>
           </thead>
           <tbody id="admin-hub-timeline-body">
-            <tr><td colspan="6" style="padding: 20px; text-align: center; color: var(--muted);">Loading message timeline...</td></tr>
+            <tr><td colspan="7" style="padding: 20px; text-align: center; color: var(--muted);">Loading message timeline...</td></tr>
           </tbody>
         </table>
       </div>
@@ -1842,10 +1952,12 @@ function switchSubSection(parent, sub) {
     $('subview-book-fraud').style.display = sub === 'fraud' ? 'block' : 'none';
     $('subview-book-canc').style.display = sub === 'canc' ? 'block' : 'none';
     $('subview-book-schedules').style.display = sub === 'schedules' ? 'block' : 'none';
+    $('subview-book-tickets').style.display = sub === 'tickets' ? 'block' : 'none';
 
     $('chip-book-fraud').classList.toggle('active', sub === 'fraud');
     $('chip-book-canc').classList.toggle('active', sub === 'canc');
     $('chip-book-schedules').classList.toggle('active', sub === 'schedules');
+    $('chip-book-tickets').classList.toggle('active', sub === 'tickets');
 
     if (sub === 'fraud') loadAdminFraudReviews();
     if (sub === 'canc') loadAdminCancellations();
@@ -2374,19 +2486,56 @@ async function loadAdminHubDashboard() {
             const badgeClass = isFailed ? 'badge-red' : 'badge-green';
             const timeStr = l.timestamp ? new Date(l.timestamp).toLocaleTimeString() : 'N/A';
             const durStr = l.duration_ms ? Number(l.duration_ms).toFixed(1) + ' ms' : '< 1 ms';
+
+            let errorHtml = '<span style="color:var(--muted);font-size:11px;">—</span>';
+            if (isFailed || l.error_message || l.error_summary) {
+              const summary = l.error_summary || 'Request Failed';
+              const details = l.error_details || l.error_message || '';
+              const missing = Array.isArray(l.missing_fields) ? l.missing_fields : [];
+              const rawLog = l.error_message || details;
+
+              const tagsHtml = missing.length > 0
+                ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin:4px 0 2px 0;">` +
+                  missing.map(f => `<span style="background:rgba(239,68,68,0.22);border:1px solid rgba(239,68,68,0.45);color:#FECACA;font-size:10px;padding:1px 5px;border-radius:3px;">Missing: ${escapeHtml(f)}</span>`).join('') +
+                  `</div>`
+                : '';
+
+              errorHtml = `
+                <div style="max-width:380px;line-height:1.4;">
+                  <div style="color:#F87171;font-weight:700;font-size:11px;display:flex;align-items:flex-start;gap:4px;">
+                    <span style="flex-shrink:0;">⚠️</span>
+                    <span style="word-break:break-word;">${escapeHtml(summary)}</span>
+                  </div>
+                  ${details && details !== summary ? `
+                    <div style="color:#FCA5A5;font-size:11px;margin-top:2px;opacity:0.92;line-height:1.35;">
+                      ${escapeHtml(details)}
+                    </div>
+                  ` : ''}
+                  ${tagsHtml}
+                  ${rawLog ? `
+                    <details style="margin-top:3px;cursor:pointer;">
+                      <summary style="color:#94A3B8;font-size:10px;text-decoration:underline;outline:none;user-select:none;">View raw technical log</summary>
+                      <pre style="margin:4px 0 0 0;padding:6px;background:rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.12);border-radius:4px;font-size:10px;color:#CBD5E1;white-space:pre-wrap;word-break:break-all;max-height:120px;overflow-y:auto;font-family:'Share Tech Mono',monospace;">${escapeHtml(rawLog)}</pre>
+                    </details>
+                  ` : ''}
+                </div>
+              `;
+            }
+
             return `
               <tr>
-                <td style="color:var(--muted);">${timeStr}</td>
-                <td style="color:var(--brand);font-weight:600;">${escapeHtml(l.message_id || 'N/A')}</td>
-                <td><span style="color:#93C5FD;">${escapeHtml(sAgent)}</span> ➔ <span style="color:#A7F3D0;">${escapeHtml(rAgent)}</span></td>
+                <td style="color:var(--muted);white-space:nowrap;">${timeStr}</td>
+                <td style="color:var(--brand);font-weight:600;font-size:11px;">${escapeHtml(l.message_id || 'N/A')}</td>
+                <td style="white-space:nowrap;"><span style="color:#93C5FD;">${escapeHtml(sAgent)}</span> ➔ <span style="color:#A7F3D0;">${escapeHtml(rAgent)}</span></td>
                 <td style="color:var(--ink-bright);">${escapeHtml(l.intent || '')}</td>
                 <td><span class="badge-tag ${badgeClass}">${escapeHtml(l.status || 'ROUTED')}</span></td>
-                <td style="color:var(--muted-hi);">${durStr}</td>
+                <td>${errorHtml}</td>
+                <td style="color:var(--muted-hi);white-space:nowrap;">${durStr}</td>
               </tr>
             `;
           }).join('');
         } else {
-          tbody.innerHTML = '<tr><td colspan="6" style="padding:20px;text-align:center;color:var(--muted);">No message telemetry recorded in audit trail yet.</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="7" style="padding:20px;text-align:center;color:var(--muted);">No message telemetry recorded in audit trail yet.</td></tr>';
         }
       }
     }
@@ -2394,6 +2543,171 @@ async function loadAdminHubDashboard() {
     console.error("Failed to load hub dashboard:", err);
   }
 }
+
+// =========================================================================
+// Ticket Manifest Functions
+// =========================================================================
+
+let _ticketTrainsLoaded = false;
+
+async function loadTicketManifestTrains() {
+  if (_ticketTrainsLoaded) return;
+  const sel = $('ticket-filter-train');
+  if (!sel) return;
+  try {
+    const res = await fetch('/api/admin/trains');
+    if (!res.ok) return;
+    const trains = await res.json();
+    trains.forEach(t => {
+      const opt = document.createElement('option');
+      opt.value = t.train_id;
+      opt.textContent = `${t.train_id} — ${t.train_name}${t.route ? ' (' + t.route + ')' : ''}`;
+      sel.appendChild(opt);
+    });
+    _ticketTrainsLoaded = true;
+  } catch (e) {
+    console.warn('[TicketManifest] Could not load trains:', e);
+  }
+}
+
+function _ticketShowState(state) {
+  // state: 'initial' | 'loading' | 'error' | 'empty' | 'table'
+  const states = { initial: 'ticket-initial-state', loading: 'ticket-loading-state', error: 'ticket-error-state', empty: 'ticket-empty-state', table: 'ticket-table-wrapper' };
+  Object.entries(states).forEach(([k, id]) => {
+    const el = $(id);
+    if (el) el.style.display = k === state ? (k === 'table' ? 'block' : 'block') : 'none';
+  });
+  const kpi = $('ticket-kpi-row');
+  if (kpi) kpi.style.display = state === 'table' ? 'grid' : 'none';
+}
+
+function _ticketStatusBadge(status) {
+  const map = {
+    CONFIRMED: ['#34D399', 'rgba(16,185,129,0.15)', '✅'],
+    CANCELLED: ['#F87171', 'rgba(220,38,38,0.15)', '❌'],
+    PENDING_FRAUD_REVIEW: ['#FBBF24', 'rgba(245,158,11,0.15)', '⚠️'],
+    HELD: ['#93C5FD', 'rgba(59,130,246,0.15)', '🔒'],
+    EXPIRED: ['#9CA3AF', 'rgba(107,114,128,0.15)', '⏰'],
+    REJECTED: ['#F87171', 'rgba(220,38,38,0.12)', '🚫'],
+  };
+  const [color, bg, icon] = map[status] || ['#9CA3AF', 'rgba(107,114,128,0.12)', '❓'];
+  return `<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;background:${bg};border:1px solid ${color}40;color:${color};font-size:11px;font-weight:700;white-space:nowrap;font-family:'Share Tech Mono',monospace;">${icon} ${status}</span>`;
+}
+
+function _ticketPayBadge(status) {
+  const map = {
+    PAID: ['#34D399', 'rgba(16,185,129,0.12)'],
+    REFUNDED: ['#A78BFA', 'rgba(139,92,246,0.15)'],
+    PENDING: ['#FBBF24', 'rgba(245,158,11,0.12)'],
+    UNKNOWN: ['#6B7280', 'rgba(107,114,128,0.1)'],
+  };
+  const [color, bg] = map[status] || ['#6B7280', 'rgba(107,114,128,0.1)'];
+  return `<span style="display:inline-block;padding:3px 9px;border-radius:20px;background:${bg};border:1px solid ${color}40;color:${color};font-size:11px;font-weight:700;font-family:'Share Tech Mono',monospace;white-space:nowrap;">${status}</span>`;
+}
+
+async function searchTicketManifest() {
+  const trainId = $('ticket-filter-train')?.value || '';
+  const tDate   = $('ticket-filter-date')?.value || '';
+  const bStatus = $('ticket-filter-status')?.value || '';
+
+  if (!trainId && !tDate) {
+    _ticketShowState('initial');
+    const err = $('ticket-error-state');
+    if (err) err.style.display = 'none';
+    alert('Please select at least a Train or a Travel Date before searching.');
+    return;
+  }
+
+  _ticketShowState('loading');
+
+  try {
+    const params = new URLSearchParams();
+    if (trainId)  params.set('train_id', trainId);
+    if (tDate)    params.set('travel_date', tDate);
+    if (bStatus)  params.set('booking_status', bStatus);
+
+    const res = await fetch('/api/admin/bookings?' + params.toString());
+    const data = await res.json();
+
+    if (!res.ok) {
+      $('ticket-error-msg').textContent = data.detail || data.error || `HTTP ${res.status}`;
+      _ticketShowState('error');
+      return;
+    }
+
+    const bookings = data.bookings || [];
+
+    if (bookings.length === 0) {
+      _ticketShowState('empty');
+      return;
+    }
+
+    // KPI counts
+    const totalPax = bookings.reduce((s, b) => s + (b.passenger_count || 0), 0);
+    const confirmed = bookings.filter(b => b.status === 'CONFIRMED').length;
+    const cancelled = bookings.filter(b => b.status === 'CANCELLED').length;
+    $('kpi-total').textContent = data.count || bookings.length;
+    $('kpi-passengers').textContent = totalPax;
+    $('kpi-confirmed').textContent = confirmed;
+    $('kpi-cancelled').textContent = cancelled;
+
+    // Build table rows
+    const tbody = $('ticket-manifest-tbody');
+    tbody.innerHTML = '';
+    bookings.forEach((b, idx) => {
+      const paxNames = (b.passengers && b.passengers.length)
+        ? b.passengers.map(p => `<div style="font-size:11.5px;">${p.full_name}<br><span style="color:var(--muted);font-size:10.5px;font-family:'Share Tech Mono',monospace;">${p.nic_masked}</span></div>`).join('')
+        : (b.passenger_email ? `<span style="color:var(--muted);font-size:11.5px;">${b.passenger_email}</span>` : `<span style="color:var(--muted);">—</span>`);
+
+      const bookedAt = b.created_at ? new Date(b.created_at).toLocaleString('en-GB', {dateStyle:'short', timeStyle:'short'}) : '—';
+      const routeStr = b.from_station && b.to_station ? `${b.from_station} → ${b.to_station}` : (b.route || '—');
+      const depTime  = b.departure_time || '';
+      const rowBg    = idx % 2 === 0 ? 'rgba(16,20,40,0.5)' : 'rgba(22,28,52,0.35)';
+      const cancelledRow = b.status === 'CANCELLED' ? 'opacity:0.75;' : '';
+
+      const tr = document.createElement('tr');
+      tr.style.cssText = `background:${rowBg};border-bottom:1px solid rgba(255,255,255,0.05);transition:background 0.15s;${cancelledRow}`;
+      tr.onmouseenter = () => tr.style.background = 'rgba(37,99,235,0.1)';
+      tr.onmouseleave = () => tr.style.background = rowBg;
+      tr.innerHTML = `
+        <td style="padding:10px 12px;font-family:'Share Tech Mono',monospace;font-size:12px;color:#93C5FD;white-space:nowrap;">${b.booking_reference}</td>
+        <td style="padding:10px 12px;">${paxNames}</td>
+        <td style="padding:10px 12px;font-size:12px;white-space:nowrap;"><strong style="color:var(--ink);">${b.train_name || b.train_id}</strong><br><span style="color:var(--muted);font-size:10.5px;font-family:'Share Tech Mono',monospace;">${b.train_id}</span></td>
+        <td style="padding:10px 12px;font-size:12px;color:var(--muted-hi);">${routeStr}</td>
+        <td style="padding:10px 12px;font-size:12px;white-space:nowrap;"><strong style="color:var(--ink);">${b.travel_date}</strong>${depTime ? `<br><span style="color:#FBBF24;font-family:'Share Tech Mono',monospace;font-size:11px;">🕐 ${depTime}</span>` : ''}</td>
+        <td style="padding:10px 12px;text-align:center;font-family:'Share Tech Mono',monospace;color:var(--ink);font-weight:700;">${b.passenger_count}</td>
+        <td style="padding:10px 12px;font-size:12px;color:var(--muted-hi);text-transform:capitalize;">${(b.seat_class || '').replace('_', ' ')}</td>
+        <td style="padding:10px 12px;text-align:right;font-family:'Share Tech Mono',monospace;font-size:12px;color:#34D399;white-space:nowrap;">LKR ${parseFloat(b.fare || 0).toLocaleString('en-LK', {minimumFractionDigits:2})}</td>
+        <td style="padding:10px 12px;text-align:center;">${_ticketStatusBadge(b.status)}</td>
+        <td style="padding:10px 12px;text-align:center;">${_ticketPayBadge(b.payment_status)}</td>
+        <td style="padding:10px 12px;font-size:11px;color:var(--muted);white-space:nowrap;">${bookedAt}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    _ticketShowState('table');
+
+  } catch (e) {
+    console.error('[TicketManifest] Search failed:', e);
+    $('ticket-error-msg').textContent = e.message || 'Unexpected error. Check console for details.';
+    _ticketShowState('error');
+  }
+}
+
+function clearTicketFilters() {
+  const trainSel = $('ticket-filter-train');
+  const datePick = $('ticket-filter-date');
+  const statusSel = $('ticket-filter-status');
+  if (trainSel)  trainSel.value = '';
+  if (datePick)  datePick.value = '';
+  if (statusSel) statusSel.value = '';
+  _ticketShowState('initial');
+  const err = $('ticket-error-state');
+  if (err) err.style.display = 'none';
+  const kpi = $('ticket-kpi-row');
+  if (kpi) kpi.style.display = 'none';
+}
+
 </script>
 
 </body>

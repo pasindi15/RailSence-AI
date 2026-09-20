@@ -2336,8 +2336,12 @@ let passengerData = [
 
 window.addEventListener('DOMContentLoaded', () => {
   const today = new Date().toISOString().split('T')[0];
+  const maxDate = new Date();
+  maxDate.setDate(maxDate.getDate() + 365);
+  const maxDateStr = maxDate.toISOString().split('T')[0];
   if ($('travel-date')) {
     $('travel-date').min = today;
+    $('travel-date').max = maxDateStr;
     $('travel-date').value = today;
   }
   if ($('dashboard-date')) {
@@ -2973,7 +2977,7 @@ async function fetchTrainOptions() {
         container.innerHTML = `
           <div style="font-size:13.5px;color:#991B1B;background:#FEF2F2;border:1px solid #F87171;padding:16px;border-radius:8px;text-align:center;">
             <strong>No train services operating</strong> for <strong>${escapeHtml(from)} → ${escapeHtml(to)}</strong> on <strong>${escapeHtml(travelDate)}</strong>.<br/>
-            <span style="font-size:12px;color:#7F1D1D;display:inline-block;margin-top:4px;">Please check station names or select another date within the 90-day booking horizon.</span>
+            <span style="font-size:12px;color:#7F1D1D;display:inline-block;margin-top:4px;">Please check station names or select an upcoming travel date.</span>
           </div>`;
       }
       updateSummary();

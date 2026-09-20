@@ -16,6 +16,7 @@ import uuid
 import asyncio
 from pathlib import Path
 from datetime import datetime, timezone
+from urllib.parse import urlencode
 
 # Needed to import the shared/ package (train_repository) from the monorepo
 # root, which isn't on sys.path by default when uvicorn runs from backend/.
@@ -1278,22 +1279,28 @@ async def chat(req: ChatRequest):
         from_st = entities.get("from_station")
         to_st = entities.get("to_station")
         t_date = entities.get("travel_date")
-        prefill = {}
-        if from_st:
-            prefill["from_station"] = from_st
-        if to_st:
-            prefill["to_station"] = to_st
-        if t_date:
-            prefill["travel_date"] = t_date
-
-        params = []
-        if from_st:
-            params.append(f"from={from_st}")
-        if to_st:
-            params.append(f"to={to_st}")
-        if t_date:
-            params.append(f"date={t_date}")
-        query_str = f"?{'&'.join(params)}" if params else ""
+        prefill = {
+            key: value
+            for key, value in {
+                "from_station": from_st,
+                "to_station": to_st,
+                "travel_date": t_date,
+                "train_id": entities.get("train_id"),
+                "seat_class": entities.get("seat_class"),
+                "passenger_count": entities.get("passenger_count"),
+            }.items()
+            if value not in (None, "")
+        }
+        query_values = {
+            "from": prefill.get("from_station"),
+            "to": prefill.get("to_station"),
+            "date": prefill.get("travel_date"),
+            "train_id": prefill.get("train_id"),
+            "seat_class": prefill.get("seat_class"),
+            "passenger_count": prefill.get("passenger_count"),
+        }
+        query_str = urlencode({key: value for key, value in query_values.items() if value not in (None, "")})
+        query_str = f"?{query_str}" if query_str else ""
         booking_url = f"http://localhost:3000/user/booking{query_str}"
 
         action = {
@@ -1355,7 +1362,6 @@ async def chat(req: ChatRequest):
                 reply = t("booking_found", language, origin=_disp(from_st, language),
                           destination=_disp(to_st, language), date_part=date_part)
                 source = "via Booking Agent"
-
     elif intent == "cancel_booking":
         booking_ref = entities.get("booking_reference") or _extract_train_id(text)
         reason = entities.get("reason") or "No reason provided"  # API value sent to the Booking Agent

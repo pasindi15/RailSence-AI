@@ -1,42 +1,114 @@
-# Fares (reference data - synchronized with the online booking system's fare table; verify against actual SLR fare chart before final submission)
+# Fares — RailSense AI Booking System
 
-## Colombo Fort - Kandy
-- First Class: LKR 2500 per seat
-- Second Class: LKR 1200 per seat
-- Same fare in both directions (Colombo Fort - Kandy and Kandy - Colombo Fort)
+> Fares below are the **exact values used by the booking system** (`fare.py`).
+> Total fare = fare per passenger × number of passengers.
 
-## Colombo Fort - Galle
-- First Class: LKR 1800 per seat
-- Second Class: LKR 800 per seat
-- Same fare in both directions (Colombo Fort - Galle and Galle - Colombo Fort)
+---
 
-## Colombo Fort - Badulla
-- First Class: LKR 4000 per seat
-- Second Class: LKR 2000 per seat
-- Same fare in both directions (Colombo Fort - Badulla and Badulla - Colombo Fort)
+## Main Line — Colombo Fort ↔ Kandy
 
-## Colombo Fort - Matara
-- First Class: LKR 2200 per seat
-- Second Class: LKR 1000 per seat
-- Same fare in both directions (Colombo Fort - Matara and Matara - Colombo Fort)
+| Class | Fare per Passenger |
+|---|---|
+| **First Class** | LKR 2,500.00 |
+| **Second Class** | LKR 1,200.00 |
 
-## Colombo Fort - Anuradhapura
-- First Class: LKR 3000 per seat
-- Second Class: LKR 1500 per seat
-- Same fare in both directions (Colombo Fort - Anuradhapura and Anuradhapura - Colombo Fort)
+*Applies to: Podi Menike (1005 / 1010), Udarata Menike (1015), Intercity Express (1020)*
 
-## Colombo Fort - Avissawella
-- First Class: LKR 1000 per seat
-- Second Class: LKR 500 per seat
-- Same fare in both directions (Colombo Fort - Avissawella and Avissawella - Colombo Fort)
+---
 
-## Kandy - Badulla
-- First Class: LKR 2000 per seat
-- Second Class: LKR 1000 per seat
-- Same fare in both directions (Kandy - Badulla and Badulla - Kandy)
+## Main Line — Colombo Fort ↔ Badulla
 
-## How fares are calculated
-- The fare shown for a route is the price per seat. The total fare is the seat fare multiplied by the number of passengers.
-- Two classes can be booked online: First Class and Second Class.
-- The online booking system applies no discounts or concession rates. Concession fares (for example senior or student rates) are not available through this assistant.
-- This assistant only has fares for the routes listed in this document. For any other route it has no confirmed fare and must not estimate one; the passenger should check at a staffed station counter.
+| Class | Fare per Passenger |
+|---|---|
+| **First Class** | LKR 4,000.00 |
+| **Second Class** | LKR 2,000.00 |
+
+*Applies to: Podi Menike (1005), Udarata Menike (1015)*
+
+---
+
+## Main Line — Kandy ↔ Badulla
+
+| Class | Fare per Passenger |
+|---|---|
+| **First Class** | LKR 2,000.00 |
+| **Second Class** | LKR 1,000.00 |
+
+*Intermediate segment on the Hill Country line*
+
+---
+
+## Coastal Line — Colombo Fort ↔ Galle
+
+| Class | Fare per Passenger |
+|---|---|
+| **First Class** | LKR 1,800.00 |
+| **Second Class** | LKR 800.00 |
+
+*Applies to: Sagarika Express (8055)*
+
+---
+
+## Coastal Line — Colombo Fort ↔ Matara
+
+| Class | Fare per Passenger |
+|---|---|
+| **First Class** | LKR 2,200.00 |
+| **Second Class** | LKR 1,000.00 |
+
+*Applies to: Ruhunu Kumari (8054), Dakshina Intercity (8050)*
+
+---
+
+## Northern Line — Colombo Fort ↔ Anuradhapura
+
+| Class | Fare per Passenger |
+|---|---|
+| **First Class** | LKR 3,000.00 |
+| **Second Class** | LKR 1,500.00 |
+
+*Applies to: Rajarata Rejini (4025)*
+
+---
+
+## Northern Line — Colombo Fort ↔ Jaffna
+
+| Class | Fare per Passenger |
+|---|---|
+| **First Class** | LKR — *(not yet defined)* |
+| **Second Class** | LKR — *(not yet defined)* |
+
+*Applies to: Yal Devi (4085), Uttara Devi (4095)*
+> Currently the system uses the Anuradhapura fare as a fallback for Jaffna journeys.
+
+---
+
+## Kelani Valley Line — Colombo Fort ↔ Avissawella
+
+| Class | Fare per Passenger |
+|---|---|
+| **Second Class only** | LKR 500.00 |
+
+*Applies to: Kelani Valley Commuter (2210, 2230) — no First Class carriages*
+
+---
+
+## Fare Calculation Rules
+
+- **Formula:** `Total Fare = Fare Per Passenger × Passenger Count`
+- **Maximum passengers per booking:** 10
+- **"Colombo Fort" and "Maradana"** are treated as the same origin station by the fare engine
+- **Exact decimal arithmetic** is used — no rounding errors
+- The fare is locked at booking confirmation and does not change afterwards
+- **Concessions:** The online booking system applies no discounts or concession rates. Concession fares (for example senior or student rates) are not available through this assistant.
+
+---
+
+## Seat Classes Available
+
+| Class Name | What it is |
+|---|---|
+| **First Class** | Reserved, air-conditioned or observation saloon |
+| **Second Class** | Reserved seating |
+
+> Third Class / Unreserved travel is not supported for online booking through RailSense AI.
