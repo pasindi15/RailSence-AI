@@ -142,7 +142,7 @@ def persist_booking(
         db.add(booking)
         db.flush()
 
-        # Link passenger records to booking_passengers
+        # Link passenger records to booking_passengers (batched)
         p_list = passenger_records
         if not p_list and hasattr(request, "passengers") and request.passengers:
             from shared.nic import hash_nic, mask_nic
@@ -152,21 +152,28 @@ def persist_booking(
             ]
 
         if p_list:
+            all_hashes = [p["nic_hash"] for p in p_list]
+            existing_pax_map = {
+                p.nic_hash: p
+                for p in db.query(Passenger).filter(Passenger.nic_hash.in_(all_hashes)).all()
+            }
+            new_pax = []
             for p_info in p_list:
                 p_hash = p_info["nic_hash"]
-                p_masked = p_info["nic_masked"]
-                p_name = p_info.get("name")
-
-                passenger = db.query(Passenger).filter(Passenger.nic_hash == p_hash).first()
-                if not passenger:
-                    passenger = Passenger(
+                if p_hash not in existing_pax_map:
+                    p = Passenger(
                         nic_hash=p_hash,
-                        nic_masked=p_masked,
-                        full_name=p_name,
+                        nic_masked=p_info["nic_masked"],
+                        full_name=p_info.get("name"),
                     )
-                    db.add(passenger)
-                    db.flush()
+                    db.add(p)
+                    new_pax.append(p)
+                    existing_pax_map[p_hash] = p
+            if new_pax:
+                db.flush()
 
+            for p_info in p_list:
+                passenger = existing_pax_map[p_info["nic_hash"]]
                 bp = BookingPassenger(
                     booking_id=booking.id,
                     passenger_id=passenger.id,

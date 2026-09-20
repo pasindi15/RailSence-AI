@@ -140,7 +140,7 @@ class TrainUnderMaintenanceError(BookingError):
         self.maintenance_status = maintenance_status
 
 
-class RouteMismatchError(BookingError):
+class RouteMismatchError(ScheduleNotFoundError):
     """Raised when the requested from/to stations do not match the train's canonical route."""
 
     def __init__(self, train_id: str, requested_route: str, canonical_route: str, message: str | None = None):
@@ -148,8 +148,8 @@ class RouteMismatchError(BookingError):
             f"ROUTE_MISMATCH: Train '{train_id}' operates '{canonical_route}', "
             f"not '{requested_route}'."
         )
-        super().__init__(msg)
-        self.train_id = train_id
+        super().__init__(train_id=train_id, travel_date="", route=requested_route)
+        self.message = msg
         self.requested_route = requested_route
         self.canonical_route = canonical_route
 

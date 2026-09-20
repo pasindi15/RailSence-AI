@@ -2012,7 +2012,7 @@ async function fetchTrainOptions() {
 
   } catch (err) {
     select.innerHTML = '<option value="">Error loading schedules</option>';
-    showAlert("Booking service is temporarily unavailable.", "error");
+    showAlert("Train schedules are temporarily busy. Please retry.", "error");
   }
 }
 
@@ -2272,7 +2272,7 @@ async function submitBooking() {
       showAlert(errMsg, "error");
     }
   } catch (err) {
-    showAlert("Booking service is temporarily unavailable.", "error");
+    showAlert("Booking reservation system is temporarily busy. Please click to retry.", "error");
   } finally {
     setLoadingState(false);
   }
