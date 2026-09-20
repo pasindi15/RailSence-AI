@@ -150,6 +150,30 @@ def init_db(seed: bool = False) -> None:
     # Import models so all tables are registered on Base.metadata
     from . import models  # noqa: F401
     Base.metadata.create_all(bind=engine)
+
+    # Ensure PostgreSQL custom enum types contain all latest values
+    if engine.dialect.name == "postgresql":
+        enum_statements = [
+            "ALTER TYPE investigation_label ADD VALUE IF NOT EXISTS 'FALSE_POSITIVE'",
+            "ALTER TYPE booking_status ADD VALUE IF NOT EXISTS 'HELD'",
+            "ALTER TYPE booking_status ADD VALUE IF NOT EXISTS 'PENDING_FRAUD_REVIEW'",
+            "ALTER TYPE booking_status ADD VALUE IF NOT EXISTS 'EXPIRED'",
+            "ALTER TYPE booking_status ADD VALUE IF NOT EXISTS 'REJECTED'",
+            "ALTER TYPE idempotency_status ADD VALUE IF NOT EXISTS 'COMPLETED'",
+            "ALTER TYPE idempotency_status ADD VALUE IF NOT EXISTS 'CONFIRMED'",
+            "ALTER TYPE waiting_list_status ADD VALUE IF NOT EXISTS 'ALLOCATED'",
+        ]
+        try:
+            import sqlalchemy as sa
+            with engine.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
+                for stmt in enum_statements:
+                    try:
+                        conn.execute(sa.text(stmt))
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+
     try:
         with engine.connect() as conn:
             import sqlalchemy as sa

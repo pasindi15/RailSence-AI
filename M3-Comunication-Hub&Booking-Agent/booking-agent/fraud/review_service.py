@@ -215,16 +215,18 @@ class FraudReviewService:
 
             # Record human review feedback label
             try:
-                from database.models import FraudInvestigationLabel, InvestigationLabel
-                label_entry = FraudInvestigationLabel(
-                    case_reference=case.case_reference,
-                    primary_nic_hash=case.primary_nic_hash,
-                    label=InvestigationLabel.CONFIRMED_FRAUD,
-                    evidence_notes=case.admin_reason,
-                    reviewer_id=admin_user or "admin",
-                )
-                self.db.add(label_entry)
-            except Exception as e:
+                with self.db.begin_nested():
+                    from database.models import FraudInvestigationLabel, InvestigationLabel
+                    label_entry = FraudInvestigationLabel(
+                        case_reference=case.case_reference,
+                        primary_nic_hash=case.primary_nic_hash,
+                        label=InvestigationLabel.CONFIRMED_FRAUD,
+                        evidence_notes=case.admin_reason,
+                        reviewer_id=admin_user or "admin",
+                    )
+                    self.db.add(label_entry)
+                    self.db.flush()
+            except Exception:
                 pass
 
             self.db.commit()
@@ -360,14 +362,18 @@ class FraudReviewService:
         case.reviewed_at = now
 
         try:
-            label_entry = FraudInvestigationLabel(
-                case_reference=case.case_reference,
-                primary_nic_hash=case.primary_nic_hash,
-                true_label=InvestigationLabel.FALSE_POSITIVE,
-                reviewer_notes=case.admin_reason,
-                created_at=now,
-            )
-            self.db.add(label_entry)
+            with self.db.begin_nested():
+                from database.models import FraudInvestigationLabel, InvestigationLabel
+                label_entry = FraudInvestigationLabel(
+                    case_reference=case.case_reference,
+                    primary_nic_hash=case.primary_nic_hash,
+                    label=InvestigationLabel.FALSE_POSITIVE,
+                    evidence_notes=case.admin_reason,
+                    reviewer_id=admin_user or "admin",
+                    created_at=now,
+                )
+                self.db.add(label_entry)
+                self.db.flush()
         except Exception:
             pass
 
