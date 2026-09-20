@@ -1,17 +1,30 @@
-// Shared fetch helper for the M2 admin dashboard.
-// All admin API routes live under /admin/api (see backend/admin_router.py).
-
+// Shared fetch helper & session manager for M2 Admin & RBAC Suite.
 const API_BASE = "/admin/api";
 
 const AdminAPI = {
+  TOKEN_KEY: "railsense_m2_token",
+  USER_KEY: "railsense_m2_officer",
+
   getToken() {
-    return localStorage.getItem("m2_admin_token");
+    return localStorage.getItem(this.TOKEN_KEY);
   },
-  setToken(token) {
-    localStorage.setItem("m2_admin_token", token);
+
+  getCurrentUser() {
+    try {
+      return JSON.parse(localStorage.getItem(this.USER_KEY) || "null");
+    } catch (_) {
+      return null;
+    }
   },
-  clearToken() {
-    localStorage.removeItem("m2_admin_token");
+
+  setSession(token, officer) {
+    if (token) localStorage.setItem(this.TOKEN_KEY, token);
+    if (officer) localStorage.setItem(this.USER_KEY, JSON.stringify(officer));
+  },
+
+  clearSession() {
+    localStorage.removeItem(this.TOKEN_KEY);
+    localStorage.removeItem(this.USER_KEY);
   },
 
   async request(path, options = {}) {
@@ -22,20 +35,28 @@ const AdminAPI = {
       headers["Content-Type"] = "application/json";
     }
 
-    const resp = await fetch(`${API_BASE}${path}`, { ...options, headers });
+    let resp;
+    try {
+      resp = await fetch(`${API_BASE}${path}`, { ...options, headers });
+    } catch (netErr) {
+      throw new Error("Unable to connect to M2 Operations service. Check if service is running.");
+    }
 
     if (resp.status === 401) {
-      this.clearToken();
-      showLoginScreen();
-      throw new Error("Session expired — please log in again.");
+      this.clearSession();
+      if (typeof showLoginScreen === "function") showLoginScreen();
+      throw new Error("Session expired or invalid. Please sign in.");
     }
 
     let data = null;
-    try { data = await resp.json(); } catch (_) { /* no body */ }
+    try { data = await resp.json(); } catch (_) { /* no json body */ }
 
     if (!resp.ok) {
       const detail = data && data.detail ? data.detail : resp.statusText;
-      throw new Error(typeof detail === "string" ? detail : JSON.stringify(detail));
+      const msg = typeof detail === "string" ? detail : (detail.message || JSON.stringify(detail));
+      const err = new Error(msg);
+      err.status = resp.status;
+      throw err;
     }
     return data;
   },
@@ -46,22 +67,37 @@ const AdminAPI = {
   del(path) { return this.request(path, { method: "DELETE" }); },
   postForm(path, formData) { return this.request(path, { method: "POST", body: formData }); },
 
-  async login(username, password) {
+  async login(emailOrUsername, password) {
     const resp = await fetch(`${API_BASE}/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ email: emailOrUsername, password }),
     });
     const data = await resp.json();
-    if (!resp.ok) throw new Error(data.detail || "Login failed");
-    this.setToken(data.token);
+    if (!resp.ok) {
+      const detail = data.detail || "Authentication failed.";
+      throw new Error(typeof detail === "string" ? detail : JSON.stringify(detail));
+    }
+    this.setSession(data.token, data.officer);
     return data;
+  },
+
+  async logout() {
+    try {
+      await this.post("/logout", {});
+    } catch (_) {
+      /* ignore network errors on logout */
+    } finally {
+      this.clearSession();
+      if (typeof showLoginScreen === "function") showLoginScreen();
+    }
   },
 };
 
 // ---------------- Toasts ----------------
 function toast(message, type = "info") {
   const stack = document.getElementById("toast-stack");
+  if (!stack) return;
   const el = document.createElement("div");
   el.className = `toast ${type}`;
   el.textContent = message;
