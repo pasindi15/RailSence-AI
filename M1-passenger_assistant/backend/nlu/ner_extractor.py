@@ -29,7 +29,12 @@ if GEMINI_API_KEY and genai is not None:
 # Extend this dict as you confirm real station names with your dataset.
 # Each canonical (English) name maps to its English/Sinhala/Tamil aliases.
 STATION_ALIASES = {
-    "Colombo Fort": ["colombo fort", "කොළඹ කොටුව", "கொழும்பு கோட்டை"],
+    # Bare "colombo" (no "fort") is how passengers actually phrase it most of
+    # the time (e.g. "colombo to badulla") - without it, extraction found
+    # only the destination station, the RAG retrieval query fell back to a
+    # single weak "badulla"-only search, and multiple unrelated routes came
+    # back mixed together instead of just Colombo Fort - Badulla.
+    "Colombo Fort": ["colombo fort", "colombo", "කොළඹ කොටුව", "கொழும்பு கோட்டை"],
     "Kandy": ["kandy", "මහනුවර", "கண்டி"],
     "Galle": ["galle", "ගාල්ල", "காலி"],
     "Jaffna": ["jaffna", "යාපනය", "யாழ்ப்பாணம்"],
@@ -43,6 +48,24 @@ DATE_PATTERN = re.compile(r"\b\d{4}-\d{2}-\d{2}\b")
 TRAIN_ID_PATTERN = re.compile(r"\b[A-Z]{2,12}-\d{3,5}\b", re.IGNORECASE)
 BOOKING_REF_PATTERN = re.compile(r"\b(RS-[A-Za-z0-9]{4,10})\b", re.IGNORECASE)
 SEAT_CLASS_KEYWORDS = ["first class", "second class", "third class"]
+# Separate from SEAT_CLASS_KEYWORDS above - that field's exact "First/Second/
+# Third Class" format is part of the booking_request payload contract sent to
+# the Booking Agent (M3) and must not change. This is only for fare_query:
+# filtering fares.md results down to the class the passenger actually asked
+# about, so it needs looser phrasing ("1st"/"AC"/"reserved" on their own) and
+# can carry both a tier and a subtype together (e.g. "1st class AC").
+_FARE_ORDINAL_MAP = {
+    "1st": "1st", "first": "1st",
+    "2nd": "2nd", "second": "2nd",
+    "3rd": "3rd", "third": "3rd",
+}
+_FARE_ORDINAL_PATTERN = re.compile(r"\b(1st|first|2nd|second|3rd|third)\b", re.IGNORECASE)
+# "unreserved" before "reserved" is just readability - \b on both sides of
+# each alternative already stops "reserved" from matching inside
+# "unreserved" (no word boundary between the "un" and "reserved" in it).
+_FARE_SUBTYPE_PATTERN = re.compile(
+    r"\b(unreserved|reserved|observation saloon|ac)\b", re.IGNORECASE
+)
 # "2 person"/"2 persons" were previously missing from the noun alternation, so
 # a query like "colombo to kandy 2 person" silently fell through as if no
 # count were given at all. "for 2" is a second, reversed phrasing (count
@@ -90,6 +113,22 @@ def _llm_extract_stations(text: str) -> list[str]:
     except Exception as e:
         print(f"LLM station extraction failed: {e}")
         return []
+
+
+def _extract_fare_class_keywords(text: str) -> list[str]:
+    """Extract the fare class the passenger asked about, e.g. "1st class AC"
+    -> ["1st", "ac"], "2nd class reserved" -> ["2nd", "reserved"], bare "AC"
+    -> ["ac"]. Returns [] when no class is mentioned at all, so fare_query
+    keeps showing every class for the route (the existing default)."""
+    lowered = text.lower()
+    keywords = []
+    ordinal_match = _FARE_ORDINAL_PATTERN.search(lowered)
+    if ordinal_match:
+        keywords.append(_FARE_ORDINAL_MAP[ordinal_match.group(1).lower()])
+    subtype_match = _FARE_SUBTYPE_PATTERN.search(lowered)
+    if subtype_match:
+        keywords.append(subtype_match.group(1).lower())
+    return keywords
 
 
 def extract_entities(text: str) -> dict:
@@ -165,6 +204,7 @@ def extract_entities(text: str) -> dict:
         "booking_reference": booking_ref,
         "reason": reason,
         "seat_class": next((keyword.title() for keyword in SEAT_CLASS_KEYWORDS if keyword in lowered), None),
+        "fare_class_keywords": _extract_fare_class_keywords(text) or None,
         # None (not 1) when no count is mentioned - the caller decides how to
         # handle "unspecified" rather than this silently guessing a solo
         # passenger for what might be a group fare question.
