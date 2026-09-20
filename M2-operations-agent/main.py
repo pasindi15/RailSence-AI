@@ -27,7 +27,7 @@ ROOT_DIR = Path(__file__).resolve().parents[1]
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-from fastapi import Body, FastAPI, HTTPException, Request, status
+from fastapi import FastAPI, HTTPException, Query, Request, status
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 import bleach
@@ -46,7 +46,7 @@ import hub_client
 import supabase_store
 from admin import admin_db
 from admin.admin_router import router as admin_router
-from shared.train_repository import TrainRepositoryUnavailable, get_train
+from shared.train_repository import TrainRepositoryUnavailable, get_train, resolve_train
 
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO").upper())
 logger = logging.getLogger("railsense.operations")
@@ -105,41 +105,11 @@ AGENT_NAME = "operations-agent"
 UI_PATH = Path(__file__).parent / "ui" / "index.html"
 DATA_PATH = Path(__file__).parent / "data" / "operations_history.csv"
 AUDIT_PATH = Path(__file__).parent / "data" / "audit_log.jsonl"
+# Recent in-process prediction results, and delay_alert events retained when
+# Supabase is unreachable. Incidents are no longer mirrored here — they live in
+# the real incident store (admin_db, Supabase primary / local JSONL fallback).
 _predictions: list[dict] = []
-_incidents: list[dict] = []
 _events: list[dict] = []
-OPERATION_TYPES = ("trains", "incidents", "risk_zones", "crossings", "alerts", "dispatch_actions")
-_operation_store: dict[str, list[dict]] = {
-    "trains": [
-        {"id": "PM-8056", "name": "Podi Menike", "route": "Colombo Fort - Badulla", "station": "Rambukkana", "lat": 7.254, "lng": 80.403, "speed": 42, "eta": "18:42", "delay": 9, "risk": 78, "status": "watch"},
-        {"id": "IC-1001", "name": "Intercity Express", "route": "Colombo Fort - Kandy", "station": "Kadugannawa", "lat": 7.254, "lng": 80.527, "speed": 61, "eta": "18:28", "delay": 2, "risk": 32, "status": "normal"},
-        {"id": "DM-8055", "name": "Night Mail", "route": "Colombo Fort - Batticaloa", "station": "Habarana", "lat": 8.034, "lng": 80.752, "speed": 38, "eta": "21:14", "delay": 12, "risk": 86, "status": "critical"},
-    ],
-    "incidents": [
-        {"id": "INC-2408", "type": "wildlife", "title": "Wildlife activity near line", "location": "Habarana - Minneriya", "train_id": "DM-8055", "severity": "critical", "status": "open", "impact": 18, "time": "21:14", "note": "Historical elephant movement during evening hours."},
-        {"id": "INC-2407", "type": "person_on_track", "title": "Person reported beside track", "location": "Kelaniya", "train_id": "PM-8056", "severity": "high", "status": "investigating", "impact": 12, "time": "18:09", "note": "Driver alerted; next section held for verification."},
-        {"id": "INC-2406", "type": "flood", "title": "Heavy rain and waterlogging", "location": "Kalutara South", "train_id": "UD-8050", "severity": "medium", "status": "monitoring", "impact": 14, "time": "17:52", "note": "Speed restriction active through the low-lying section."},
-    ],
-    "risk_zones": [
-        {"id": "RZ-01", "name": "Habarana wildlife corridor", "kind": "wildlife", "location": "Habarana - Minneriya", "score": 86, "level": "high", "lat": 8.034, "lng": 80.752, "evidence": "17 historical sightings · 19:00-23:00"},
-        {"id": "RZ-02", "name": "Kalutara flood plain", "kind": "flood", "location": "Kalutara - Aluthgama", "score": 71, "level": "high", "lat": 6.585, "lng": 79.96, "evidence": "Heavy rain · low-lying track bed"},
-        {"id": "RZ-03", "name": "Kelaniya trespass corridor", "kind": "people", "location": "Kelaniya", "score": 64, "level": "watch", "lat": 6.968, "lng": 79.887, "evidence": "Repeated reports near station approaches"},
-    ],
-    "crossings": [
-        {"id": "LC-042", "location": "Gampaha", "status": "high_risk", "vehicles": 23, "train_eta": "02:14", "risk": 82, "gate": "closed", "pedestrians": 4},
-        {"id": "LC-018", "location": "Ragama", "status": "normal", "vehicles": 11, "train_eta": "08:40", "risk": 27, "gate": "open", "pedestrians": 1},
-        {"id": "LC-067", "location": "Polgahawela", "status": "fault", "vehicles": 18, "train_eta": "04:05", "risk": 74, "gate": "manual", "pedestrians": 7},
-    ],
-    "alerts": [
-        {"id": "ALT-901", "title": "Wildlife risk: Night Mail 8055", "location": "Habarana", "severity": "critical", "status": "active", "age": "2 min", "action": "Reduce speed and notify driver"},
-        {"id": "ALT-900", "title": "Flood probability 71%", "location": "Kalutara", "severity": "high", "status": "acknowledged", "age": "8 min", "action": "Maintain 40 km/h restriction"},
-        {"id": "ALT-899", "title": "Level crossing malfunction", "location": "Polgahawela", "severity": "medium", "status": "active", "age": "12 min", "action": "Dispatch crossing team"},
-    ],
-    "dispatch_actions": [
-        {"id": "ACT-100", "action": "Alert driver", "owner": "Control desk", "target": "DM-8055", "status": "queued", "priority": "critical", "created": "21:14"},
-        {"id": "ACT-099", "action": "Notify station master", "owner": "Operations", "target": "Habarana", "status": "sent", "priority": "high", "created": "21:12"},
-    ],
-}
 
 
 def _load_history() -> list[dict]:
@@ -153,13 +123,39 @@ HISTORY = _load_history()
 
 
 def _audit(action: str, request: Request, details: dict) -> None:
-    record = {"timestamp": datetime.now(timezone.utc).isoformat(), "action": action, "client": get_remote_address(request), **details}
+    """Append one inter-agent audit event to Supabase and the local JSONL.
+
+    The Audit & Agent Communication Log screen reads these rows, so every
+    record carries the full documented shape — message_id, sender_agent,
+    receiver_agent, intent, timestamp, outcome — whichever store it lands in.
+    Callers pass overrides in `details`; the defaults below describe a local
+    (non-hub) action this agent performed on its own behalf.
+    """
+    details = dict(details)
+    sender = details.pop("sender_agent", None) or AGENT_NAME
+    receiver = details.pop("receiver_agent", None) or AGENT_NAME
+    intent = details.pop("intent", None) or action
+    outcome = details.pop("outcome", None) or "success"
+    message_id = details.pop("message_id", None) or uuid.uuid4().hex
+
+    record = {
+        "message_id": message_id,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "action": action,
+        "intent": intent,
+        "sender_agent": sender,
+        "receiver_agent": receiver,
+        "outcome": outcome,
+        "client": get_remote_address(request),
+        **details,
+    }
     try:
         with AUDIT_PATH.open("a", encoding="utf-8") as handle:
-            handle.write(json.dumps(record) + "\n")
+            handle.write(json.dumps(record, default=str) + "\n")
     except OSError as exc:
         logger.warning("Could not write audit record: %s", exc)
-    if not supabase_store.insert_audit(action, get_remote_address(request), details):
+
+    if not supabase_store.insert_audit(action, get_remote_address(request), record):
         logger.info("Supabase audit unavailable; retained local audit record")
 
 
@@ -222,19 +218,75 @@ def _metric_file(path: Path) -> dict:
         return {}
 
 
-def _operations_payload() -> dict[str, list[dict]]:
-    result = {}
-    for entity_type in OPERATION_TYPES:
-        result[entity_type] = supabase_store.fetch_entities(entity_type)
-        if result[entity_type] is None:
-            result[entity_type] = list(_operation_store[entity_type])
-    return result
+def _route_for_station(station: Optional[str]) -> str:
+    """Resolve a reported station to a real corridor from the operations corpus.
+
+    Incidents are filed against a station, but the retrieval corpus is keyed by
+    route. Rather than labelling live reports with a placeholder, look the
+    station up in the historical data and use the busiest real route serving it.
+    """
+    if not station:
+        return "Unassigned corridor"
+    needle = str(station).casefold()
+    matches = Counter(
+        row.get("route") for row in HISTORY
+        if str(row.get("station", "")).casefold() == needle and row.get("route")
+    )
+    if matches:
+        return matches.most_common(1)[0][0]
+    for row in HISTORY:
+        if needle in str(row.get("route", "")).casefold():
+            return row["route"]
+    return "Unassigned corridor"
 
 
-def _validate_operation_type(entity_type: str) -> str:
-    if entity_type not in OPERATION_TYPES:
-        raise HTTPException(status_code=404, detail="Unknown operation resource")
-    return entity_type
+def _index_incident_for_retrieval(record: dict) -> dict:
+    """Add a live incident to both retrieval indexes so RAG can cite it.
+
+    pgvector is updated through the same embeddings pipeline the bulk loader
+    uses (rag/embed_documents.py); the local TF-IDF index is refreshed so the
+    offline path stays in step. Best-effort: indexing failures are reported,
+    never raised, so they can't fail incident creation.
+    """
+    outcome = {"local_tfidf": False, "pgvector": False, "detail": ""}
+    try:
+        outcome["local_tfidf"] = incident_retriever.add_live_incident(record)
+    except Exception as exc:
+        outcome["detail"] = f"tfidf: {exc.__class__.__name__}"
+        logger.warning("Local incident indexing failed: %s", exc)
+
+    try:
+        from rag import embed_documents
+
+        result = embed_documents.embed_incident(record)
+        outcome["pgvector"] = result["indexed"]
+        if not result["indexed"]:
+            outcome["detail"] = (outcome["detail"] + " " + result["reason"]).strip()
+    except Exception as exc:
+        outcome["detail"] = (outcome["detail"] + f" pgvector: {exc.__class__.__name__}").strip()
+        logger.warning("pgvector incident indexing skipped: %s", exc)
+    return outcome
+
+
+def _unindex_incident(incident_id: str) -> dict:
+    """Drop a deleted incident from both retrieval indexes."""
+    outcome = {"local_tfidf": False, "pgvector": False, "detail": ""}
+    try:
+        outcome["local_tfidf"] = incident_retriever.remove_live_incident(incident_id)
+    except Exception as exc:
+        logger.warning("Local incident de-indexing failed: %s", exc)
+
+    try:
+        from rag import embed_documents
+
+        result = embed_documents.delete_incident_embedding(incident_id)
+        outcome["pgvector"] = result["deleted"]
+        if not result["deleted"]:
+            outcome["detail"] = result["reason"]
+    except Exception as exc:
+        outcome["detail"] = f"pgvector: {exc.__class__.__name__}"
+        logger.warning("pgvector incident de-indexing skipped: %s", exc)
+    return outcome
 
 
 # ---------------------------------------------------------------------------
@@ -253,6 +305,29 @@ class DayType(str, Enum):
     weekday = "weekday"
     weekend = "weekend"
     public_holiday = "public_holiday"
+
+
+class IncidentClassification(str, Enum):
+    """Labels the NLP classifier can assign — the correctable set in the UI.
+
+    Mirrors nlp/classify_incident.CATEGORIES so a controller can only correct a
+    classification to a label the model could itself have produced, keeping
+    corrected rows usable as evaluation ground truth.
+    """
+
+    signal_fault = "signal_fault"
+    mechanical = "mechanical"
+    weather = "weather"
+    track_obstruction = "track_obstruction"
+    staffing = "staffing"
+    other = "other"
+
+
+class ReviewStatus(str, Enum):
+    pending = "pending"
+    approved = "approved"
+    rejected = "rejected"
+    corrected = "corrected"
 
 
 class IncidentType(str, Enum):
@@ -308,10 +383,25 @@ def _find_historical_train(train_id: str, route: str) -> dict | None:
 
 
 def _canonical_train_or_error(train_id: str) -> dict:
+    """Resolve a caller-supplied train id to its canonical registry row.
+
+    Passengers type the service number printed on a timetable ("4082") as
+    often as the operational id ("PM-4082"), and the registry holds both
+    conventions. resolve_train() accepts either, but refuses to pick when a
+    bare number matches more than one train - that case is reported back with
+    the candidates so the passenger can be asked which one they meant, rather
+    than being given a confident delay figure for the wrong service.
+    """
     try:
-        train = get_train(train_id)
+        train, candidates = resolve_train(train_id)
     except TrainRepositoryUnavailable as exc:
         raise HTTPException(status_code=503, detail="TRAIN_REGISTRY_UNAVAILABLE") from exc
+    if train is None and candidates:
+        raise HTTPException(
+            status_code=409,
+            detail=f"TRAIN_ID_AMBIGUOUS: {train_id} matches "
+                   f"{', '.join(c.get('train_id', '') for c in candidates)}",
+        )
     if train is None or not train.get("active", False):
         raise HTTPException(status_code=404, detail=f"TRAIN_NOT_FOUND: {train_id}")
     return train
@@ -319,7 +409,11 @@ def _canonical_train_or_error(train_id: str) -> dict:
 
 class DelayPredictionRequest(BaseModel):
     route: str = Field(..., min_length=3, max_length=120, examples=["Colombo Fort - Kandy"])
-    train_id: str = Field(..., min_length=3, max_length=20, examples=["PM-4082"])
+    # min_length=1, not 3: the canonical registry holds both prefixed ids
+    # (PM-4082) and bare Sri Lanka Railways service numbers as short as two
+    # digits (e.g. "50" = Ruhunu Kumari). _canonical_train_or_error() below
+    # is the real validation - a bogus short string still 404s there.
+    train_id: str = Field(..., min_length=1, max_length=20, examples=["PM-4082", "50"])
     scheduled_time: datetime = Field(..., description="ISO 8601 scheduled departure/arrival time")
     weather: Optional[WeatherCondition] = None
     day_type: Optional[DayType] = None
@@ -356,7 +450,7 @@ class RouteStatusResponse(BaseModel):
 
 
 class IncidentReportRequest(BaseModel):
-    train_id: str = Field(..., min_length=3, max_length=20)
+    train_id: str = Field(..., min_length=1, max_length=20)  # see DelayPredictionRequest.train_id
     station: str = Field(..., min_length=2, max_length=80)
     raw_text: str = Field(..., min_length=5, max_length=2000)
 
@@ -455,11 +549,6 @@ def _history_route_stats(history: list[dict] | None = None) -> list[dict]:
     return sorted(result, key=lambda item: item["average_delay"], reverse=True)
 
 
-def _recent_feed() -> list[dict]:
-    generated = [{"id": item.get("record_id"), "route": item.get("route"), "station": item.get("station"), "type": item.get("incident_type"), "summary": item.get("incident_note"), "time": item.get("scheduled_time")} for item in HISTORY if item.get("incident_type") != "none"]
-    return list(reversed(_incidents[-8:])) + list(reversed(generated[-8:]))[: max(0, 8 - len(_incidents))]
-
-
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
@@ -481,79 +570,82 @@ def health():
 
 @app.get("/api/dashboard")
 def dashboard_data():
-    history = supabase_store.fetch_history() or HISTORY
+    """Single aggregate behind the consolidated Control Room dashboard.
+
+    Network KPIs, the route delay heatmap and the hourly delay-pressure curve
+    were three separate panels making three calls; they are now one section
+    served by this one query. Every number is computed from the live
+    operations corpus (Supabase when reachable, data/operations_history.csv
+    otherwise) or from a committed evaluation artifact — nothing is synthesised
+    here. `data_source.offline` tells the UI to show the offline banner rather
+    than passing stale data off as live.
+    """
+    supabase_history = supabase_store.fetch_history()
+    offline = supabase_history is None
+    history = supabase_history if supabase_history else HISTORY
+
     route_stats = _history_route_stats(history)
     delays = [float(row.get("delay_minutes", 0)) for row in history]
-    incident_counts = Counter(row.get("incident_type", "other") for row in history if row.get("incident_type") != "none")
+    incident_counts = Counter(
+        row.get("incident_type", "other") for row in history if row.get("incident_type") != "none"
+    )
+
     hour_groups: dict[int, list[float]] = {hour: [] for hour in range(24)}
     for row in history:
         try:
-            hour = datetime.fromisoformat(row["scheduled_time"]).hour
+            hour = datetime.fromisoformat(str(row["scheduled_time"]).replace("Z", "+00:00")).hour
             hour_groups[hour].append(float(row.get("delay_minutes", 0)))
         except (KeyError, ValueError):
             continue
-    hourly = [{"hour": hour, "average_delay": round(sum(values) / len(values), 1) if values else 0} for hour, values in hour_groups.items()]
-    ml_metrics = _metric_file(Path(__file__).parent / "evaluation" / "ml" / "delay_model_metrics.json")
-    nlp_metrics = _metric_file(Path(__file__).parent / "evaluation" / "nlp" / "classification_metrics.json")
-    robustness = _metric_file(Path(__file__).parent / "evaluation" / "nlp" / "out_of_template_robustness_check.json")
+    hourly = [
+        {"hour": hour, "average_delay": round(sum(values) / len(values), 1) if values else 0,
+         "samples": len(values)}
+        for hour, values in hour_groups.items()
+    ]
+
+    eval_dir = Path(__file__).parent / "evaluation"
+    ml_metrics = _metric_file(eval_dir / "ml" / "delay_model_metrics.json")
+    nlp_metrics = _metric_file(eval_dir / "nlp" / "classification_metrics.json")
+    rag_metrics = _metric_file(eval_dir / "rag" / "retrieval_metrics.json")
+    robustness = _metric_file(eval_dir / "nlp" / "out_of_template_robustness_check.json")
+
+    recent_events = supabase_store.fetch_recent_events(50)
+    events_offline = recent_events is None
+    events = recent_events if recent_events is not None else list(reversed(_events[-50:]))
+    audit_total = supabase_store.count_rows("audit_events")
+    if audit_total is None:
+        audit_total = _read_audit_count()
+
     return {
         "generated_at": datetime.now(timezone.utc).isoformat(),
-        "overview": {"trips": len(history), "average_delay": round(sum(delays) / len(delays), 1) if delays else 0, "on_time_rate": round(sum(delay <= 5 for delay in delays) / len(delays) * 100, 1) if delays else 0, "active_alerts": len([event for event in (supabase_store.fetch_recent_events(50) or _events) if event.get("event_type") == "delay_alert"]), "audit_events": supabase_store.count_rows("audit_events") or _read_audit_count()},
+        "data_source": {
+            "history": "supabase" if not offline else "local_csv",
+            "events": "supabase" if not events_offline else "in_memory",
+            "offline": offline,
+        },
+        "overview": {
+            "trips": len(history),
+            "average_delay": round(sum(delays) / len(delays), 1) if delays else 0,
+            "on_time_rate": round(sum(delay <= 5 for delay in delays) / len(delays) * 100, 1) if delays else 0,
+            "active_alerts": len([e for e in events if e.get("event_type") == "delay_alert"]),
+            "audit_events": audit_total,
+            "routes_monitored": len(route_stats),
+        },
         "routes": route_stats,
         "hourly": hourly,
         "incident_mix": [{"type": key, "count": value} for key, value in incident_counts.most_common()],
-        "feature_importance": delay_model.get_top_features(6),
+        "feature_importance": delay_model.get_all_features()[:8],
         "ml_metrics": ml_metrics,
         "nlp_metrics": nlp_metrics,
+        "rag_metrics": rag_metrics,
         "robustness": robustness,
-        "feed": _recent_feed(),
-        "events": (supabase_store.fetch_recent_events(12) or list(reversed(_events[-12:]))),
-        "hub": {"configured": bool(os.getenv("HUB_BASE_URL")), "endpoint": hub_client.HUB_BASE_URL, "alert_threshold_minutes": hub_client.DELAY_ALERT_THRESHOLD_MINUTES},
-        "operations": _operations_payload(),
+        "events": events[:12],
+        "hub": {
+            "configured": bool(os.getenv("HUB_BASE_URL")),
+            "endpoint": hub_client.HUB_BASE_URL,
+            "alert_threshold_minutes": hub_client.DELAY_ALERT_THRESHOLD_MINUTES,
+        },
     }
-
-
-@app.get("/api/operations")
-def operations_data():
-    return {"generated_at": datetime.now(timezone.utc).isoformat(), **_operations_payload()}
-
-
-@app.post("/api/operations/{entity_type}")
-def create_operation(entity_type: str, payload: dict = Body(...)):
-    entity_type = _validate_operation_type(entity_type)
-    entity = {"id": payload.get("id") or f"{entity_type[:3].upper()}-{uuid.uuid4().hex[:6].upper()}", **payload}
-    if not supabase_store.insert_entity(entity_type, entity):
-        _operation_store[entity_type].insert(0, entity)
-    return entity
-
-
-@app.patch("/api/operations/{entity_type}/{entity_id}")
-def update_operation(entity_type: str, entity_id: str, payload: dict = Body(...)):
-    entity_type = _validate_operation_type(entity_type)
-    updated = supabase_store.update_entity(entity_type, entity_id, payload)
-    if updated is None:
-        matches = [item for item in _operation_store[entity_type] if item.get("id") == entity_id]
-        if not matches:
-            raise HTTPException(status_code=404, detail="Operation entity not found")
-        matches[0].update(payload)
-        updated = matches[0]
-    return updated
-
-
-@app.delete("/api/operations/{entity_type}/{entity_id}")
-def delete_operation(entity_type: str, entity_id: str):
-    entity_type = _validate_operation_type(entity_type)
-    if not supabase_store.delete_entity(entity_type, entity_id):
-        before = len(_operation_store[entity_type])
-        _operation_store[entity_type] = [item for item in _operation_store[entity_type] if item.get("id") != entity_id]
-        if len(_operation_store[entity_type]) == before:
-            raise HTTPException(status_code=404, detail="Operation entity not found")
-    return {"deleted": entity_id, "entity_type": entity_type}
-
-
-@app.get("/api/events")
-def events():
-    return {"events": list(reversed(_events[-50:]))}
 
 
 @app.post("/predict-delay", response_model=DelayPredictionResponse)
@@ -571,6 +663,12 @@ async def predict_delay(request: Request, req: DelayPredictionRequest):
     Supabase pgvector and Anthropic credentials are used automatically.
     """
     canonical_train = _canonical_train_or_error(req.train_id)
+    # Everything downstream - the operations-history lookup, the explanation
+    # text and the response body - must speak the registry's own id, not the
+    # shorthand the passenger happened to type. Without this, "4082" would
+    # miss every PM-4082 row in HISTORY and the reply would quote a train id
+    # that no other agent can resolve.
+    req.train_id = canonical_train.get("train_id") or req.train_id
     query_parts = [req.route]
     if req.station:
         query_parts.append(req.station)
@@ -726,9 +824,12 @@ def incident_report(request: Request, req: IncidentReportRequest):
     LLM-based mode is available (not the default here, to keep this
     endpoint fast/free for iteration — Phase 4 is where the LLM becomes
     central, for the explanation layer).
-    """
-    import uuid
 
+    The request/response contract is unchanged. What is new behind it: the
+    row is persisted through admin_db (Supabase primary, local JSONL
+    fallback) instead of Supabase-only, and the incident is fed into the
+    embeddings pipeline so RAG can retrieve it as precedent from now on.
+    """
     classification = incident_classifier.classify_incident(req.raw_text)
     summarization = incident_summarizer.summarize_incident(req.raw_text)
 
@@ -741,8 +842,8 @@ def incident_report(request: Request, req: IncidentReportRequest):
         nlp_method=classification["method"],
         received_at=datetime.now(timezone.utc),
     )
-    _incidents.append({"id": response.incident_id, "route": "Live report", "station": response.station, "type": response.classified_type, "summary": response.summary, "time": response.received_at.isoformat()})
-    admin_db.insert_row("incident_reports", {
+
+    stored = admin_db.create_incident({
         "incident_id": response.incident_id,
         "train_id": response.train_id,
         "station": response.station,
@@ -753,8 +854,155 @@ def incident_report(request: Request, req: IncidentReportRequest):
         "review_status": "pending",
         "received_at": response.received_at.isoformat(),
     })
-    _audit("incident_report", request, {"incident_id": response.incident_id, "train_id": req.train_id, "classified_type": response.classified_type})
+
+    _index_incident_for_retrieval({
+        "record_id": response.incident_id,
+        "route": _route_for_station(response.station),
+        "station": response.station,
+        "incident_type": response.classified_type,
+        "delay_minutes": 0.0,
+        "incident_note": req.raw_text,
+    })
+
+    _audit("incident_report", request, {
+        "incident_id": response.incident_id,
+        "train_id": req.train_id,
+        "station": req.station,
+        "classified_type": response.classified_type,
+        "nlp_method": response.nlp_method,
+        "intent": "incident_triage",
+        "outcome": f"created:{stored['source']}",
+    })
     return response
+
+
+@app.get("/incidents")
+def list_incidents(
+    request: Request,
+    limit: int = Query(25, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+    review_status: Optional[str] = None,
+    classified_type: Optional[str] = None,
+    search: Optional[str] = None,
+):
+    """Paginated live read of triaged incidents for the Incident Management screen.
+
+    Additive to the API surface — POST /incident-report is untouched. Rows
+    come from Supabase `incident_reports` when reachable and the local JSONL
+    mirror otherwise; `offline` drives the UI's offline-mode banner.
+    """
+    result = admin_db.list_incidents(
+        limit=limit,
+        offset=offset,
+        review_status=review_status,
+        classified_type=classified_type,
+        search=search,
+    )
+    return {
+        "rows": result["rows"],
+        "count": result["count"],
+        "limit": limit,
+        "offset": offset,
+        "source": result["source"],
+        "offline": result["source"] != "supabase",
+    }
+
+
+class IncidentUpdateRequest(BaseModel):
+    """Controller correction to a triaged incident. Both fields are optional."""
+
+    classified_type: Optional[IncidentClassification] = None
+    summary: Optional[str] = Field(None, min_length=3, max_length=600)
+    review_status: Optional[ReviewStatus] = None
+
+    @field_validator("summary")
+    @classmethod
+    def sanitize_summary(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        value = v.strip()
+        if any(ord(ch) < 32 and ch not in "\t\n\r" for ch in value):
+            raise ValueError("summary contains invalid control characters")
+        cleaned = bleach.clean(value, tags=[], attributes={}, protocols=[], strip=True, strip_comments=True)
+        if cleaned != value:
+            raise ValueError("summary contains disallowed markup")
+        return cleaned
+
+
+@app.patch("/incidents/{incident_id}")
+def update_incident(request: Request, incident_id: str, req: IncidentUpdateRequest):
+    """Write a controller's correction back to the incident's DB row."""
+    patch = {k: v for k, v in req.model_dump(exclude_none=True).items()}
+    if not patch:
+        raise HTTPException(status_code=400, detail="no fields supplied to update")
+    patch = {k: (v.value if isinstance(v, Enum) else v) for k, v in patch.items()}
+    patch.setdefault("review_status", "corrected")
+    # incident_reports.reviewed_at is `double precision` (see admin/admin_schema.sql),
+    # so this must be a Unix timestamp — an ISO string makes Postgres reject the whole
+    # update, which would silently demote the write to the local fallback store.
+    patch["reviewed_at"] = datetime.now(timezone.utc).timestamp()
+
+    existing = admin_db.get_incident(incident_id)
+    if existing is None:
+        raise HTTPException(status_code=404, detail=f"INCIDENT_NOT_FOUND: {incident_id}")
+
+    result = admin_db.update_incident(incident_id, patch)
+    if result["row"] is None:
+        raise HTTPException(status_code=500, detail=result.get("error", "incident update failed"))
+
+    # Keep the retrieval corpus consistent with the corrected classification.
+    _index_incident_for_retrieval({
+        "record_id": incident_id,
+        "route": _route_for_station(result["row"].get("station")),
+        "station": result["row"].get("station"),
+        "incident_type": result["row"].get("classified_type"),
+        "delay_minutes": 0.0,
+        "incident_note": result["row"].get("raw_text") or result["row"].get("summary") or "",
+    })
+
+    _audit("incident_update", request, {
+        "incident_id": incident_id,
+        "changed_fields": sorted(patch.keys()),
+        "classified_type": result["row"].get("classified_type"),
+        "intent": "incident_correction",
+        "outcome": f"updated:{result['source']}",
+    })
+    return {
+        "incident": result["row"],
+        "source": result["source"],
+        "offline": result["source"] != "supabase",
+        # Set when Supabase was reachable but rejected the write, so the UI can
+        # say "rejected" instead of mislabelling it as offline mode.
+        "write_error": result.get("error"),
+    }
+
+
+@app.delete("/incidents/{incident_id}")
+def delete_incident(request: Request, incident_id: str):
+    """Delete an incident and its embedding, so RAG never cites a ghost record."""
+    existing = admin_db.get_incident(incident_id)
+    if existing is None:
+        raise HTTPException(status_code=404, detail=f"INCIDENT_NOT_FOUND: {incident_id}")
+
+    result = admin_db.delete_incident(incident_id)
+    if not result["deleted"]:
+        raise HTTPException(status_code=500, detail="incident delete failed")
+
+    embedding_result = _unindex_incident(incident_id)
+
+    _audit("incident_delete", request, {
+        "incident_id": incident_id,
+        "classified_type": existing.get("classified_type"),
+        "embedding_removed": embedding_result,
+        "intent": "incident_deletion",
+        "outcome": f"deleted:{result['source']}",
+    })
+    return {
+        "deleted": incident_id,
+        "source": result["source"],
+        "embedding_removed": embedding_result,
+        "offline": result["source"] != "supabase",
+    }
 
 
 @app.post("/hub/message")
@@ -764,10 +1012,46 @@ async def hub_message(request: Request, message: HubMessage):
         raise HTTPException(status_code=400, detail="unsupported hub intent")
     payload = message.payload or {}
     
+    raw_text = str(payload.get("raw_text", ""))
+
+    # Resolve the train identifier, keeping the anti-fabrication guard: M2 only
+    # answers for a train the passenger's own words actually name, never for a
+    # placeholder an upstream fallback invented.
+    #
+    # Two accepted forms, because the canonical registry holds both conventions:
+    #   1. Prefixed ids seeded from operations history -> PM-8056, IC-8746
+    #   2. Bare Sri Lanka Railways service numbers     -> 4085, 50, 1005
+    # A bare number is too ambiguous to pattern-match out of free text (it would
+    # also catch times, seat counts and dates), so it is accepted only when the
+    # caller supplied that exact id AND it appears as a standalone token in the
+    # passenger's text - the same "evidenced in raw_text" rule as before.
+    train_id = payload.get("train_id")
+    import re
+
+    match = re.search(r"\b[A-Z]{2,12}-\d{3,5}\b", raw_text, re.IGNORECASE)
+    if match:
+        train_id = match.group(0)
+    else:
+        supplied = str(train_id).strip() if train_id else ""
+        evidenced = bool(
+            supplied
+            and re.search(rf"(?<![\w-]){re.escape(supplied)}(?![\w-])", raw_text, re.IGNORECASE)
+        )
+        if not evidenced:
+            raise HTTPException(status_code=422, detail="delay_check requires a train identifier")
+        train_id = supplied
+
+    # Resolved before the route so the registry's own route can stand in when
+    # the passenger named a train but no stations ("delay of 4082 train"). This
+    # also surfaces an unknown/ambiguous id as a 404/409 the passenger can act
+    # on, instead of the confusing "requires a route" 422 that used to come
+    # first for a question that clearly named its train.
+    canonical_train = _canonical_train_or_error(train_id)
+    train_id = canonical_train.get("train_id") or train_id
+
     # Prefer entities in the original passenger text so M2 never answers for a
     # fabricated route or train supplied by an upstream fallback.
     route = payload.get("route")
-    raw_text = str(payload.get("raw_text", ""))
     stations = payload.get("stations")
     if isinstance(stations, list):
         stations = [str(item).strip() for item in stations if str(item).strip()]
@@ -783,15 +1067,16 @@ async def hub_message(request: Request, message: HubMessage):
     if len(route_stations) >= 2:
         route = f"{route_stations[0]} - {route_stations[1]}"
     if not route or not str(route).strip():
+        # Not a guess: this is the route the shared registry records for the
+        # very train the passenger named.
+        route = canonical_train.get("route") or ""
+        if not str(route).strip():
+            origin = canonical_train.get("origin_station")
+            destination = canonical_train.get("destination_station")
+            if origin and destination:
+                route = f"{origin} - {destination}"
+    if not route or not str(route).strip():
         raise HTTPException(status_code=422, detail="delay_check requires a route with origin and destination")
-
-    train_id = payload.get("train_id")
-    import re
-    match = re.search(r"\b[A-Z]{2,12}-\d{3,5}\b", raw_text, re.IGNORECASE)
-    if match:
-        train_id = match.group(0)
-    if not train_id or (str(train_id) == "PM-4082" and not match):
-        raise HTTPException(status_code=422, detail="delay_check requires a train identifier")
 
     scheduled_time = payload.get("scheduled_time")
     if not scheduled_time and payload.get("time"):

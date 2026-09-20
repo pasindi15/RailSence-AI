@@ -209,61 +209,105 @@ body::after {
   color: #FEF3C7;
 }
 
-/* ── Main Navigation Bar ───────────────────────────────────────────── */
+/* ── Main Navigation: off-canvas vertical drawer (mirrors the user portal's
+   sidebar) — hidden until the ☰ toggle button opens it ─────────────── */
+.sidebar-toggle-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 9px;
+  background: rgba(22, 32, 54, 0.90);
+  border: 1px solid rgba(59, 130, 246, 0.28);
+  color: var(--muted-hi);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  font-size: 16px;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: all 0.2s var(--ease);
+}
+
+.sidebar-toggle-btn:hover {
+  color: var(--ink-bright);
+  border-color: rgba(59, 130, 246, 0.5);
+  background: rgba(59, 130, 246, 0.12);
+}
+
+.sidebar-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 6, 15, 0.55);
+  z-index: 999;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+.sidebar-backdrop.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 .admin-nav-bar {
   display: flex;
+  flex-direction: column;
   gap: 4px;
-  margin-bottom: 20px;
-  background: rgba(10, 15, 28, 0.85);
-  padding: 5px;
-  border-radius: var(--r);
+  width: 260px;
+  padding: 12px;
+  background: rgba(10, 15, 28, 0.97);
+  border-radius: 0 var(--r) var(--r) 0;
   border: 1px solid var(--border);
   backdrop-filter: var(--blur);
-  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  box-shadow: 8px 0 30px rgba(0,0,0,0.5);
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  overflow-y: auto;
+  z-index: 1000;
+  transform: translateX(-100%);
+  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.admin-nav-bar.open {
+  transform: translateX(0);
 }
 
 .admin-nav-tab {
-  flex: 1;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 7px;
-  padding: 10px 12px;
+  justify-content: flex-start;
+  gap: 10px;
+  padding: 11px 14px;
   border: 1px solid transparent;
+  border-left: 3px solid transparent;
   border-radius: 8px;
   background: transparent;
   color: var(--muted-hi);
   font-family: inherit;
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.18s var(--ease);
   position: relative;
+  width: 100%;
+  text-align: left;
 }
 
 .admin-nav-tab:hover {
   color: var(--ink-bright);
   background: rgba(59, 130, 246, 0.08);
   border-color: rgba(59, 130, 246, 0.15);
+  transform: translateX(2px);
 }
 
 .admin-nav-tab.active {
   background: linear-gradient(135deg, rgba(29, 78, 216, 0.28) 0%, rgba(37, 99, 235, 0.18) 100%);
   border-color: rgba(96, 165, 250, 0.45);
+  border-left-color: #60A5FA;
   color: #FFFFFF;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255,255,255,0.06);
-}
-
-.admin-nav-tab.active::after {
-  content: '';
-  position: absolute;
-  bottom: -1px;
-  left: 20%;
-  right: 20%;
-  height: 2px;
-  border-radius: 2px 2px 0 0;
-  background: var(--brand-grad);
-  opacity: 0.9;
+  transform: none;
 }
 
 /* ── Sub Navigation ────────────────────────────────────────────────── */
@@ -810,12 +854,9 @@ body::after {
 [data-theme="light"] .admin-nav-tab.active {
   background: linear-gradient(135deg, rgba(219,234,254,0.85) 0%, rgba(239,246,255,0.70) 100%);
   border-color: rgba(59,130,246,0.35);
+  border-left-color: #2563EB;
   color: #1D4ED8;
   box-shadow: 0 2px 10px rgba(37,99,235,0.12);
-}
-
-[data-theme="light"] .admin-nav-tab.active::after {
-  background: linear-gradient(90deg, #2563EB, #3B82F6);
 }
 
 [data-theme="light"] .sub-nav { border-bottom-color: rgba(59,130,246,0.12); }
@@ -1038,6 +1079,7 @@ body::after {
   <!-- Top Navigation Header -->
   <header class="top-nav">
     <div class="brand-area">
+      <button class="sidebar-toggle-btn" id="sidebarToggleBtn" onclick="toggleSidebar()" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="adminNavBar" title="Menu">☰</button>
       <div class="brand-emblem">🛡️</div>
       <div>
         <div class="brand-title">RailSense AI</div>
@@ -1045,8 +1087,10 @@ body::after {
       </div>
     </div>
 
-    <!-- Real-time Agent Status Pills -->
-    <div class="header-status-grid" id="agent-status-pills">
+    <!-- Real-time Agent Status Pills: hidden to keep the header clean. The dot
+         elements still exist (display:none) so updateSystemHealth()'s
+         $(`dot-${port}`) lookups stay harmless no-ops; nothing else changed. -->
+    <div class="header-status-grid" id="agent-status-pills" style="display:none;">
       <span class="service-pill"><span class="service-dot" id="dot-8002"></span> Hub 8002</span>
       <span class="service-pill"><span class="service-dot" id="dot-8003"></span> Booking 8003</span>
       <span class="service-pill"><span class="service-dot" id="dot-8004"></span> Security 8004</span>
@@ -1056,12 +1100,14 @@ body::after {
     </div>
 
     <div style="display:flex;align-items:center;gap:10px;">
-      <!-- Officer Profile Widget -->
+      <!-- Officer Profile Widget: icon-only in the header now. Name/role text
+           still updates via updateOfficerHeaderDisplay() (elements kept,
+           just hidden) so the full profile still shows in the popover. -->
       <div style="position:relative;">
-        <button id="officer-profile-btn" onclick="toggleOfficerPopover()" style="display:flex;align-items:center;gap:8px;padding:6px 12px;background:rgba(30,41,59,0.7);border:1px solid var(--border);border-radius:20px;cursor:pointer;color:#E2E8F0;font-family:inherit;font-size:12.5px;">
+        <button id="officer-profile-btn" onclick="toggleOfficerPopover()" style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:rgba(30,41,59,0.7);border:1px solid var(--border);border-radius:20px;cursor:pointer;color:#E2E8F0;font-family:inherit;font-size:12.5px;">
           <span>👤</span>
-          <span id="officer-header-name">Sign In</span>
-          <span id="officer-header-role" class="badge-tag" style="font-size:10px;padding:1px 6px;background:#1E3A8A;color:#93C5FD;">Guest</span>
+          <span id="officer-header-name" style="display:none;">Sign In</span>
+          <span id="officer-header-role" class="badge-tag" style="display:none;font-size:10px;padding:1px 6px;background:#1E3A8A;color:#93C5FD;">Guest</span>
         </button>
 
         <div id="officer-popover" style="display:none;position:absolute;top:calc(100% + 8px);right:0;width:240px;background:#0F172A;border:1px solid var(--border);border-radius:12px;padding:16px;box-shadow:var(--shadow);z-index:1000;text-align:left;">
@@ -1085,8 +1131,11 @@ body::after {
     </div>
   </header>
 
-  <!-- Main Navigation Tabs -->
-  <nav class="admin-nav-bar" role="tablist">
+  <!-- Backdrop: shown behind the open sidebar drawer; click to close -->
+  <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeSidebar()"></div>
+
+  <!-- Main Navigation: off-canvas drawer, toggled by the ☰ button -->
+  <nav class="admin-nav-bar" id="adminNavBar" role="tablist">
     <button class="admin-nav-tab active" id="nav-dashboard" onclick="navigateTo('/admin')">
       <span>📊</span> Dashboard
     </button>
@@ -1691,12 +1740,39 @@ body::after {
 const $ = id => document.getElementById(id);
 
 /* ── Theme Toggle ─────────────────────────────────────────────────── */
+function currentTheme() {
+  return document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+}
+
+/* The M2 consoles are embedded from another origin, so they cannot read this
+   portal's localStorage. The theme rides in on the iframe URL for the first
+   paint, and every later toggle is pushed over postMessage. */
+function broadcastTheme(theme) {
+  ['frame-ops-control', 'frame-ops-admin'].forEach(id => {
+    const f = $(id);
+    if (!f || !f.contentWindow || f.src === 'about:blank') return;
+    try {
+      f.contentWindow.postMessage({ type: 'railsense-theme', theme }, '*');
+    } catch (_) { /* frame not ready yet — its URL carries the theme */ }
+  });
+}
+
+function bindM2ThemeSync() {
+  ['frame-ops-control', 'frame-ops-admin'].forEach(id => {
+    const frame = $(id);
+    if (!frame || frame.dataset.themeSyncBound) return;
+    frame.dataset.themeSyncBound = 'true';
+    frame.addEventListener('load', () => broadcastTheme(currentTheme()));
+  });
+}
+
 function toggleTheme() {
   const html = document.documentElement;
   const nowLight = html.getAttribute('data-theme') !== 'light';
   html.setAttribute('data-theme', nowLight ? 'light' : 'dark');
   localStorage.setItem('railsense-admin-theme', nowLight ? 'light' : 'dark');
   updateThemeIcon(nowLight);
+  broadcastTheme(nowLight ? 'light' : 'dark');
 }
 
 function updateThemeIcon(isLight) {
@@ -1711,6 +1787,7 @@ window.addEventListener('DOMContentLoaded', () => {
   const saved = localStorage.getItem('railsense-admin-theme') || 'dark';
   document.documentElement.setAttribute('data-theme', saved);
   updateThemeIcon(saved === 'light');
+  bindM2ThemeSync();
 
   checkOfficerAuth();
   handleUrlRouting();
@@ -1755,13 +1832,18 @@ function checkOfficerAuth() {
       headers: { 'Authorization': `Bearer ${token}` }
     }).then(r => {
       if (r.ok) return r.json();
-      throw new Error('Session invalid');
+      // Only the server actually rejecting the credential ends the session.
+      // A proxy timeout or 5xx must not, or a slow backend logs the officer out.
+      if (r.status === 401 || r.status === 403) throw new Error('unauthorized');
+      return null;
     }).then(me => {
+      if (!me) return;
       localStorage.setItem('railsense_m2_officer', JSON.stringify(me));
       updateOfficerHeaderDisplay(me);
       applyRBACToUI(me);
-    }).catch(() => {
-      if (path.includes('/operations')) {
+    }).catch(err => {
+      const rejected = err && err.message === 'unauthorized';
+      if (rejected && path.includes('/operations')) {
         localStorage.removeItem('railsense_m2_token');
         localStorage.removeItem('railsense_m2_officer');
         window.location.href = '/login?redirect=' + encodeURIComponent(path);
@@ -1841,7 +1923,35 @@ async function handleOfficerLogout() {
 function navigateTo(path) {
   history.pushState(null, '', path);
   handleUrlRouting();
+  closeSidebar();
 }
+
+/* ── Sidebar drawer: ☰ opens it, ☰ again / backdrop / Esc / picking a
+   nav item all close it ─────────────────────────────────────────── */
+function toggleSidebar() {
+  const sidebar = $('adminNavBar');
+  const backdrop = $('sidebarBackdrop');
+  const btn = $('sidebarToggleBtn');
+  if (!sidebar) return;
+  const isOpen = sidebar.classList.toggle('open');
+  if (backdrop) backdrop.classList.toggle('visible', isOpen);
+  if (btn) btn.setAttribute('aria-expanded', String(isOpen));
+  document.body.style.overflow = isOpen ? 'hidden' : '';
+}
+
+function closeSidebar() {
+  const sidebar = $('adminNavBar');
+  const backdrop = $('sidebarBackdrop');
+  const btn = $('sidebarToggleBtn');
+  if (sidebar) sidebar.classList.remove('open');
+  if (backdrop) backdrop.classList.remove('visible');
+  if (btn) btn.setAttribute('aria-expanded', 'false');
+  document.body.style.overflow = '';
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeSidebar();
+});
 
 function handleUrlRouting() {
   const path = window.location.pathname;
@@ -1896,7 +2006,10 @@ function switchSection(secName) {
   if (navEl) navEl.classList.add('active');
 
   const token = getOfficerToken();
-  const tokenParam = token ? `?token=${encodeURIComponent(token)}` : '';
+  const opsParams = new URLSearchParams();
+  if (token) opsParams.set('token', token);
+  opsParams.set('theme', currentTheme());
+  const tokenParam = `?${opsParams.toString()}`;
 
   if (secName === 'operations') {
     const f = $('frame-ops-control');
@@ -1921,7 +2034,10 @@ function switchSection(secName) {
 
 function switchSubSection(parent, sub) {
   const token = getOfficerToken();
-  const tokenParam = token ? `?token=${encodeURIComponent(token)}` : '';
+  const opsParams = new URLSearchParams();
+  if (token) opsParams.set('token', token);
+  opsParams.set('theme', currentTheme());
+  const tokenParam = `?${opsParams.toString()}`;
   const officer = getOfficerData();
 
   if (parent === 'operations') {

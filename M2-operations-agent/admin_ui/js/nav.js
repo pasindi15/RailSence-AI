@@ -1,27 +1,26 @@
 // App shell: dynamic RBAC sidebar nav, hash routing, profile popover, and login flow.
 
+// Rubric-focused surface set. Data Management, System Health & Config and
+// Hub & Upstash Control were retired in the consolidation — their scripts and
+// the alert-publishing code remain, only the admin screens are gone.
+// Officers & Roles stay because they are the access-control layer that gates
+// every screen below them, and the unified gateway routes to them directly.
 const VIEWS = [
-  { id: "home", label: "Home", icon: "🏠", group: null, title: "Operations Overview", adminOnly: false },
-  { id: "officers", label: "Officers & Access", icon: "👥", group: "Officers & RBAC", title: "Officers & Access Control", adminOnly: true },
-  { id: "roles", label: "Roles & Permissions", icon: "🔑", group: "Officers & RBAC", title: "Roles & Permissions Matrix", adminOnly: true },
-  { id: "data", label: "Data Management", icon: "🗄️", group: "Operations", title: "Data Management", adminOnly: true },
-  { id: "incidents", label: "Incident Review Queue", icon: "📋", group: "Operations", title: "Incident Review Queue", adminOnly: true },
-  { id: "health", label: "System Health & Config", icon: "💻", group: "Administration", title: "System Health & Config", adminOnly: true },
-  { id: "model", label: "Model Operations", icon: "🧠", group: "Administration", title: "Model Operations", adminOnly: true },
-  { id: "hub", label: "Hub & Event Control", icon: "🔗", group: "Administration", title: "Hub & Event Control", adminOnly: true },
-  { id: "audit", label: "Audit Logs", icon: "🛡️", group: "Security & Audit", title: "Security Audit Logs", adminOnly: true },
+  { id: "home", label: "Home", icon: "🏠", group: null, title: "Operations Admin Overview", adminOnly: false },
+  { id: "incidents", label: "Incident Management", icon: "📋", group: "Operations", title: "Incident Management", adminOnly: true },
+  { id: "model", label: "Model Operations", icon: "🧠", group: "Operations", title: "Model Retraining & Rollback", adminOnly: true },
+  { id: "audit", label: "Audit & Agent Log", icon: "🛡️", group: "Operations", title: "Audit & Agent Communication Log", adminOnly: true },
+  { id: "officers", label: "Officers & Access", icon: "👥", group: "Access Control", title: "Officers & Access Control", adminOnly: true },
+  { id: "roles", label: "Roles & Permissions", icon: "🔑", group: "Access Control", title: "Roles & Permissions Matrix", adminOnly: true },
 ];
 
 const VIEW_LOADERS = {
   home: () => window.ViewHome && window.ViewHome.load(),
+  incidents: () => window.ViewIncidents && window.ViewIncidents.load(),
+  model: () => window.ViewModel && window.ViewModel.load(),
+  audit: () => window.ViewAudit && window.ViewAudit.load(),
   officers: () => window.ViewOfficers && window.ViewOfficers.load(),
   roles: () => window.ViewRoles && window.ViewRoles.load(),
-  data: () => window.ViewData && window.ViewData.load(),
-  incidents: () => window.ViewIncidents && window.ViewIncidents.load(),
-  health: () => window.ViewHealth && window.ViewHealth.load(),
-  model: () => window.ViewModel && window.ViewModel.load(),
-  hub: () => window.ViewHub && window.ViewHub.load(),
-  audit: () => window.ViewAudit && window.ViewAudit.load(),
 };
 
 function getAuthorizedViews() {
@@ -105,15 +104,16 @@ function showAccessRestrictedScreen(featureName = "this administrative feature")
   restrictedEl.innerHTML = `
     <div class="card" style="max-width:560px;margin:40px auto;padding:36px;text-align:center;">
       <div style="font-size:42px;margin-bottom:12px;">🛡️</div>
-      <h2 style="color:#ef4444;margin:0 0 8px 0;font-size:22px;">403 — Access Restricted</h2>
+      <h2 style="color:var(--danger);margin:0 0 8px 0;font-size:22px;">403 — Access Restricted</h2>
       <p style="color:var(--muted);font-size:14px;line-height:1.6;margin:0 0 20px 0;">
         Your account role (<strong>Operations Engineer</strong>) is not authorized to access <strong>${escapeHtml(featureName)}</strong> or administrative settings.
       </p>
-      <div style="background:#f8fafc;padding:16px;border-radius:12px;border:1.5px solid var(--border);margin-bottom:24px;text-align:left;">
+      <div style="background:var(--surface-2);padding:16px;border-radius:12px;border:1.5px solid var(--border);margin-bottom:24px;text-align:left;">
         <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">Authorized Operations Surfaces:</div>
         <div style="display:flex;flex-direction:column;gap:6px;font-size:13px;">
-          <div>✅ <strong>Control Room Dashboard</strong> (Port 8005 / Live Route Tracking)</div>
-          <div>✅ <strong>Interactive Delay Prediction</strong> (Live ML Inference &amp; Triage)</div>
+          <div>✅ <strong>Control Room Dashboard</strong> (network KPIs, route heatmap, delay curve)</div>
+          <div>✅ <strong>Delay Prediction &amp; Explanation</strong> (live ML inference with RAG precedent)</div>
+          <div>✅ <strong>Incident Management</strong> (report and review incidents)</div>
         </div>
       </div>
       <div style="display:flex;justify-content:center;gap:12px;">

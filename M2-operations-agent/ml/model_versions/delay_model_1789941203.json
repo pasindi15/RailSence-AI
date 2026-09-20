@@ -6,5 +6,7 @@
   "mae_minutes": 2.315,
   "rmse_minutes": 2.934,
   "r2": 0.8551,
-  "trained_at": 1789941203
+  "trained_at": 1789924443,
+  "archived_at": 1789941203,
+  "archived_from": "delay_model.pkl"
 }

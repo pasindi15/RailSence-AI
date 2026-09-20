@@ -39,6 +39,12 @@ def get_client():
 
 
 def insert_audit(action: str, client_ip: str, details: dict[str, Any]) -> bool:
+    """Write one audit event. `details` is the fully-formed record from main._audit.
+
+    message_id / intent / outcome live in `metadata` rather than as columns so
+    this works against the existing audit_events schema with no migration; the
+    admin read path normalises them back out of metadata.
+    """
     client = get_client()
     if client is None:
         return False
@@ -52,6 +58,7 @@ def insert_audit(action: str, client_ip: str, details: dict[str, Any]) -> bool:
         "model_version": details.get("model"),
         "classified_type": details.get("classified_type"),
         "sender_agent": details.get("sender_agent"),
+        "receiver_agent": details.get("receiver_agent"),
     }
     try:
         client.table("audit_events").insert(payload).execute()
@@ -118,53 +125,3 @@ def fetch_recent_events(limit: int = 50) -> list[dict] | None:
         return response.data or []
     except Exception:
         return None
-
-
-def fetch_entities(entity_type: str) -> list[dict] | None:
-    client = get_client()
-    if client is None:
-        return None
-    try:
-        response = client.table("operation_entities").select("id,data").eq("entity_type", entity_type).order("updated_at", desc=True).execute()
-        return [{"id": row["id"], **(row.get("data") or {})} for row in (response.data or [])]
-    except Exception:
-        return None
-
-
-def insert_entity(entity_type: str, entity: dict[str, Any]) -> bool:
-    client = get_client()
-    if client is None:
-        return False
-    try:
-        entity_id = str(entity["id"])
-        data = {key: value for key, value in entity.items() if key != "id"}
-        client.table("operation_entities").upsert({"id": entity_id, "entity_type": entity_type, "data": data}).execute()
-        return True
-    except Exception:
-        return False
-
-
-def update_entity(entity_type: str, entity_id: str, changes: dict[str, Any]) -> dict | None:
-    client = get_client()
-    if client is None:
-        return None
-    try:
-        response = client.table("operation_entities").select("id,data").eq("entity_type", entity_type).eq("id", entity_id).limit(1).execute()
-        if not response.data:
-            return None
-        data = {**(response.data[0].get("data") or {}), **changes}
-        client.table("operation_entities").update({"data": data}).eq("entity_type", entity_type).eq("id", entity_id).execute()
-        return {"id": entity_id, **data}
-    except Exception:
-        return None
-
-
-def delete_entity(entity_type: str, entity_id: str) -> bool:
-    client = get_client()
-    if client is None:
-        return False
-    try:
-        response = client.table("operation_entities").delete().eq("entity_type", entity_type).eq("id", entity_id).execute()
-        return bool(response.data)
-    except Exception:
-        return False

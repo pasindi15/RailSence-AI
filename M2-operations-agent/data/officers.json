@@ -1,5 +1,29 @@
 [
   {
+    "id": "9b9117c2-d9d5-4bf9-b509-4aa233e32d43",
+    "full_name": "Pasindi Alawatta",
+    "email": "pasindialawatta@gmail.com",
+    "password_hash": "$2b$12$1gNuOkbFLAvYQXZcUIhyOe0hs3Gx6BQhx04JE0rAl2SYBjRVqDznm",
+    "role": "operations_engineer",
+    "status": "active",
+    "created_at": "2026-09-20T16:16:26.915952+00:00",
+    "updated_at": "2026-09-20T21:57:36.099337+00:00",
+    "last_login_at": "2026-09-20T21:57:36.099306+00:00",
+    "created_by": "operations@gmail.com"
+  },
+  {
+    "id": "56d7b53d-2ca3-40f9-ace6-8393d0199c94",
+    "full_name": "Operations Test User",
+    "email": "operations@gmail.com",
+    "password_hash": "$2b$12$aD5o4sV0w9I/5coEIPTEcuK3l4SKfNo4.EfHlpxD4zPANPZ3jwr0q",
+    "role": "admin",
+    "status": "active",
+    "created_at": "2026-09-20T15:50:32.810421+00:00",
+    "updated_at": "2026-09-20T22:32:37.62791+00:00",
+    "last_login_at": "2026-09-20T22:32:37.627877+00:00",
+    "created_by": "manual_test_seed"
+  },
+  {
     "id": "037598fe-b5bd-4bdc-af23-e6ebb49c6244",
     "full_name": "Test Officer",
     "email": "test_engineer@railsense.lk",
@@ -7,8 +31,8 @@
     "role": "operations_engineer",
     "status": "active",
     "created_at": "2026-09-20T08:48:10.122906+00:00",
-    "updated_at": "2026-09-20T09:03:14.523039+00:00",
-    "last_login_at": "2026-09-20T09:03:10.668391+00:00",
+    "updated_at": "2026-09-20T22:02:40.600457+00:00",
+    "last_login_at": "2026-09-20T22:02:40.600418+00:00",
     "created_by": "admin@railsense.lk"
   },
   {
@@ -19,8 +43,8 @@
     "role": "admin",
     "status": "active",
     "created_at": "2026-09-20T08:41:09.480856+00:00",
-    "updated_at": "2026-09-20T09:04:36.38901+00:00",
-    "last_login_at": "2026-09-20T09:04:36.388964+00:00",
+    "updated_at": "2026-09-20T22:48:58.022914+00:00",
+    "last_login_at": "2026-09-20T22:48:58.022875+00:00",
     "created_by": "bootstrap"
   }
 ]

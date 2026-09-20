@@ -31,6 +31,7 @@ INTENT_KEYWORDS = {
         "train running", "train available", "train cancelled", "train service",
         "will train", "train operating", "out of service", "under maintenance",
         "train working", "train today", "service today", "train status",
+        "operational status",
         "දුම්රිය ධාවනය", "දුම්රිය ක්‍රියාත්මකද",
         "ரயில் இயங்குகிறதா", "ரயில் நிலை",
     ],

@@ -1,10 +1,36 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>RailSense AI — Operations & Admin Suite</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Inter:wght@400;500;600;700;800&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="css/admin.css" />
+<script>
+/* RailSense theme sync — the admin portal on :3000 embeds this console in an
+   iframe and pushes its light/dark choice in over ?theme= and postMessage,
+   so the embedded surface never disagrees with the shell around it. */
+(function () {
+  function apply(t) {
+    document.documentElement.setAttribute('data-theme', t === 'light' ? 'light' : 'dark');
+  }
+  var fromUrl = null;
+  try { fromUrl = new URLSearchParams(location.search).get('theme'); } catch (e) {}
+  var stored = null;
+  try { stored = localStorage.getItem('railsense-admin-theme'); } catch (e) {}
+  apply(fromUrl || stored || 'dark');
+  window.addEventListener('message', function (ev) {
+    if (!ev || !ev.data || ev.data.type !== 'railsense-theme') return;
+    apply(ev.data.theme);
+    try { localStorage.setItem('railsense-admin-theme', ev.data.theme); } catch (e) {}
+  });
+  window.addEventListener('storage', function (ev) {
+    if (ev.key === 'railsense-admin-theme' && ev.newValue) apply(ev.newValue);
+  });
+})();
+</script>
 </head>
 <body>
 
@@ -36,10 +62,10 @@
 <div id="app">
   <aside class="sidebar">
     <div class="logo">
-      <div class="mark">🚦</div>
+      <div class="mark">RS</div>
       <div>
         <div class="name">RailSense AI</div>
-        <div class="subtitle">Operations &amp; RBAC</div>
+        <div class="subtitle">M2 / OPERATIONS</div>
       </div>
     </div>
     <nav id="sidebar-nav"></nav>
@@ -74,14 +100,11 @@
 
     <div class="content">
       <div class="view active" id="view-home"></div>
+      <div class="view" id="view-incidents"></div>
+      <div class="view" id="view-model"></div>
+      <div class="view" id="view-audit"></div>
       <div class="view" id="view-officers"></div>
       <div class="view" id="view-roles"></div>
-      <div class="view" id="view-data"></div>
-      <div class="view" id="view-incidents"></div>
-      <div class="view" id="view-health"></div>
-      <div class="view" id="view-model"></div>
-      <div class="view" id="view-hub"></div>
-      <div class="view" id="view-audit"></div>
     </div>
   </div>
 </div>
@@ -94,14 +117,11 @@
 <script src="js/api.js"></script>
 <script src="js/modal.js"></script>
 <script src="js/views/home.js"></script>
+<script src="js/views/incidents.js"></script>
+<script src="js/views/model.js"></script>
+<script src="js/views/audit.js"></script>
 <script src="js/views/officers.js"></script>
 <script src="js/views/roles.js"></script>
-<script src="js/views/data.js"></script>
-<script src="js/views/incidents.js"></script>
-<script src="js/views/health.js"></script>
-<script src="js/views/model.js"></script>
-<script src="js/views/hub.js"></script>
-<script src="js/views/audit.js"></script>
 <script src="js/nav.js"></script>
 </body>
 </html>

@@ -149,3 +149,45 @@ def format_incident_citations(incidents: list[dict]) -> list[str]:
         ).strip()
         for item in incidents
     ]
+
+
+def add_live_incident(record: dict) -> bool:
+    """Make a just-created incident retrievable by the offline TF-IDF path.
+
+    The pgvector path is updated by rag.embed_documents.embed_incident(); this
+    keeps the local fallback index in step so a demo without Supabase still
+    shows newly-reported incidents as precedent. Returns False when the record
+    carries no note to index.
+    """
+    global _records, _vectorizer, _matrix
+    note = str(record.get("incident_note") or "").strip()
+    if not note:
+        return False
+
+    _load_records()
+    _records = [r for r in _records if str(r.get("record_id")) != str(record.get("record_id"))]
+    _records.append({
+        "record_id": record.get("record_id"),
+        "route": record.get("route") or "Live incident report",
+        "station": record.get("station") or "unknown",
+        "incident_type": record.get("incident_type") or "other",
+        "delay_minutes": float(record.get("delay_minutes") or 0.0),
+        "incident_note": note,
+    })
+    _vectorizer = None
+    _matrix = None
+    return True
+
+
+def remove_live_incident(record_id: str) -> bool:
+    """Evict a deleted incident from the local index so it stops being cited."""
+    global _records, _vectorizer, _matrix
+    if not _records:
+        return False
+    remaining = [r for r in _records if str(r.get("record_id")) != str(record_id)]
+    if len(remaining) == len(_records):
+        return False
+    _records = remaining
+    _vectorizer = None
+    _matrix = None
+    return True

@@ -28,5 +28,85 @@
     "stdout_tail": "Loading dataset from E:\\Y3 S2\\Information Retrieval and Web Analytics - IT3041\\Grp Assignment\\RailSenceAI\\RailSence-AI\\M2-operations-agent\\data\\operations_history.csv ...\nTraining GradientBoostingRegressor ...\n\nHeld-out test metrics:\n  model: GradientBoostingRegressor\n  n_train: 2400\n  n_test: 600\n  mae_minutes: 2.239\n  rmse_minutes: 2.876\n  r2: 0.8716\n\nTop feature importances:\n  incident_type_none: 0.7390\n  incident_type_mechanical: 0.0708\n  weather_clear: 0.0390\n  incident_type_staffing: 0.0341\n  weather_heavy_rain: 0.0320\n  day_type_public_holiday: 0.0205\n  incident_type_track_obstruction: 0.0178\n  incident_type_weather: 0.0122\n\nSaved model -> E:\\Y3 S2\\Information Retrieval and Web Analytics - IT3041\\Grp Assignment\\RailSenceAI\\RailSence-AI\\M2-operations-agent\\ml\\delay_model.pkl\nSaved feature importances -> E:\\Y3 S2\\Information Retrieval and Web Analytics - IT3041\\Grp Assignment\\RailSenceAI\\RailSence-AI\\M2-operations-agent\\ml\\feature_importances.json\nSaved metrics -> E:\\Y3 S2\\Information Retrieval and Web Analytics - IT3041\\Grp Assignment\\RailSenceAI\\RailSence-AI\\M2-operations-agent\\evaluation\\ml\\delay_model_metrics.json\n",
     "stderr_tail": "",
     "logged_at": 1789113005.5387766
+  },
+  {
+    "triggered_by": "verify@railsense.lk",
+    "action": "retrain",
+    "returncode": 0,
+    "metrics": {
+      "model": "GradientBoostingRegressor",
+      "data_source": "supabase",
+      "n_train": 2399,
+      "n_test": 600,
+      "mae_minutes": 2.315,
+      "rmse_minutes": 2.934,
+      "r2": 0.8551,
+      "trained_at": 1789924443
+    },
+    "backup_created": "delay_model_1789924443.pkl",
+    "model_reloaded": true,
+    "data_source": "supabase",
+    "stdout_tail": "Loaded 2999 rows from Supabase operations_history\nTraining GradientBoostingRegressor ...\n\nHeld-out test metrics:\n  model: GradientBoostingRegressor\n  data_source: supabase\n  n_train: 2399\n  n_test: 600\n  mae_minutes: 2.315\n  rmse_minutes: 2.934\n  r2: 0.8551\n  trained_at: 1789924443\n\nTop feature importances:\n  incident_type_none: 0.7332\n  incident_type_mechanical: 0.0769\n  incident_type_staffing: 0.0368\n  weather_clear: 0.0363\n  weather_heavy_rain: 0.0316\n  day_type_public_holiday: 0.0234\n  incident_type_track_obstruction: 0.0182\n  incident_type_weather: 0.0091\nBacked up existing model -> E:\\Y3 S2\\Information Retrieval and Web Analytics - IT3041\\RailSence-AI\\M2-operations-agent\\ml\\model_versions\\delay_model_1789924443.pkl\n\nSaved model -> E:\\Y3 S2\\Information Retrieval and Web Analytics - IT3041\\RailSence-AI\\M2-operations-agent\\ml\\delay_model.pkl\nSaved feature importances -> E:\\Y3 S2\\Information Retrieval and Web Analytics - IT3041\\RailSence-AI\\M2-operations-agent\\ml\\feature_importances.json\nSaved metrics -> E:\\Y3 S2\\Information Retrieval and Web Analytics - IT3041\\RailSence-AI\\M2-operations-agent\\evaluation\\ml\\delay_model_metrics.json\n",
+    "stderr_tail": "",
+    "logged_at": 1789924443.6078255
+  },
+  {
+    "triggered_by": "verify@railsense.lk",
+    "action": "rollback",
+    "restored_from": "delay_model_1789924443.pkl",
+    "archived_as": "delay_model_1789924445_pre_rollback.pkl",
+    "metrics": {
+      "model": "GradientBoostingRegressor",
+      "data_source": "supabase",
+      "n_train": 2399,
+      "n_test": 600,
+      "mae_minutes": 2.315,
+      "rmse_minutes": 2.934,
+      "r2": 0.8551,
+      "trained_at": 1789924015,
+      "archived_at": 1789924443,
+      "archived_from": "delay_model.pkl"
+    },
+    "model_reloaded": true,
+    "logged_at": 1789924445.2837086
+  },
+  {
+    "triggered_by": "operations@gmail.com",
+    "action": "rollback",
+    "restored_from": "delay_model_1789924445_pre_rollback.pkl",
+    "archived_as": "delay_model_1789941188_pre_rollback.pkl",
+    "metrics": {
+      "model": "GradientBoostingRegressor",
+      "data_source": "supabase",
+      "n_train": 2399,
+      "n_test": 600,
+      "mae_minutes": 2.315,
+      "rmse_minutes": 2.934,
+      "r2": 0.8551,
+      "trained_at": 1789924443
+    },
+    "model_reloaded": true,
+    "logged_at": 1789941188.538621
+  },
+  {
+    "triggered_by": "operations@gmail.com",
+    "action": "retrain",
+    "returncode": 0,
+    "metrics": {
+      "model": "GradientBoostingRegressor",
+      "data_source": "supabase",
+      "n_train": 2399,
+      "n_test": 600,
+      "mae_minutes": 2.315,
+      "rmse_minutes": 2.934,
+      "r2": 0.8551,
+      "trained_at": 1789941203
+    },
+    "backup_created": "delay_model_1789941203.pkl",
+    "model_reloaded": true,
+    "data_source": "supabase",
+    "stdout_tail": "Loaded 2999 rows from Supabase operations_history\nTraining GradientBoostingRegressor ...\n\nHeld-out test metrics:\n  model: GradientBoostingRegressor\n  data_source: supabase\n  n_train: 2399\n  n_test: 600\n  mae_minutes: 2.315\n  rmse_minutes: 2.934\n  r2: 0.8551\n  trained_at: 1789941203\n\nTop feature importances:\n  incident_type_none: 0.7332\n  incident_type_mechanical: 0.0769\n  incident_type_staffing: 0.0368\n  weather_clear: 0.0363\n  weather_heavy_rain: 0.0316\n  day_type_public_holiday: 0.0234\n  incident_type_track_obstruction: 0.0182\n  incident_type_weather: 0.0091\nBacked up existing model -> E:\\Y3 S2\\Information Retrieval and Web Analytics - IT3041\\RailSence-AI\\M2-operations-agent\\ml\\model_versions\\delay_model_1789941203.pkl\n\nSaved model -> E:\\Y3 S2\\Information Retrieval and Web Analytics - IT3041\\RailSence-AI\\M2-operations-agent\\ml\\delay_model.pkl\nSaved feature importances -> E:\\Y3 S2\\Information Retrieval and Web Analytics - IT3041\\RailSence-AI\\M2-operations-agent\\ml\\feature_importances.json\nSaved metrics -> E:\\Y3 S2\\Information Retrieval and Web Analytics - IT3041\\RailSence-AI\\M2-operations-agent\\evaluation\\ml\\delay_model_metrics.json\n",
+    "stderr_tail": "",
+    "logged_at": 1789941204.2259793
   }
 ]

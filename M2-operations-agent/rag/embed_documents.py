@@ -35,6 +35,77 @@ def load_root_env() -> None:
         os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
 
 
+def _get_client():
+    """Return a Supabase client for embedding writes, or None when unconfigured."""
+    load_root_env()
+    url = os.getenv("SUPABASE_URL")
+    key = os.getenv(
+        "SUPABASE_SECRET_KEY",
+        os.getenv("SUPABASE_SERVICE_ROLE_KEY", os.getenv("SUPABASE_KEY")),
+    )
+    if not url or not key:
+        return None
+    try:
+        return create_client(url, key)
+    except Exception:
+        return None
+
+
+_singleton_model = None
+
+
+def _get_model():
+    """Lazily load the sentence-transformer, shared across single-record calls."""
+    global _singleton_model
+    if _singleton_model is None:
+        _singleton_model = SentenceTransformer(MODEL_NAME)
+    return _singleton_model
+
+
+def embed_incident(record: dict) -> dict:
+    """Index one newly-created incident so RAG can retrieve it from now on.
+
+    Called by POST /incident-report. Best-effort by design: a missing model
+    download or unreachable Supabase must never fail incident creation, so the
+    outcome is reported back rather than raised. The local TF-IDF index is
+    refreshed separately by rag.incident_retriever.add_live_incident().
+    """
+    note = str(record.get("incident_note") or "").strip()
+    if not note:
+        return {"indexed": False, "reason": "no_incident_note"}
+
+    client = _get_client()
+    if client is None:
+        return {"indexed": False, "reason": "supabase_unconfigured"}
+
+    try:
+        embedding = _get_model().encode([note], normalize_embeddings=True)[0].tolist()
+        client.table("incident_embeddings").upsert({
+            "record_id": record["record_id"],
+            "route": record.get("route") or "Live incident report",
+            "station": record.get("station") or "unknown",
+            "incident_type": record.get("incident_type") or "other",
+            "delay_minutes": float(record.get("delay_minutes") or 0.0),
+            "incident_note": note,
+            "embedding": embedding,
+        }).execute()
+        return {"indexed": True, "reason": "pgvector"}
+    except Exception as exc:
+        return {"indexed": False, "reason": f"{exc.__class__.__name__}: {exc}"}
+
+
+def delete_incident_embedding(record_id: str) -> dict:
+    """Drop an incident's vector row so RAG never retrieves a ghost record."""
+    client = _get_client()
+    if client is None:
+        return {"deleted": False, "reason": "supabase_unconfigured"}
+    try:
+        client.table("incident_embeddings").delete().eq("record_id", record_id).execute()
+        return {"deleted": True, "reason": "pgvector"}
+    except Exception as exc:
+        return {"deleted": False, "reason": f"{exc.__class__.__name__}: {exc}"}
+
+
 def main() -> None:
     load_root_env()
     url = os.getenv("SUPABASE_URL")
