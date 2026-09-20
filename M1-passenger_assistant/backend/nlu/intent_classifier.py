@@ -112,6 +112,15 @@ def classify_intent(text: str) -> str:
     lowered = text.lower()
     for intent, keywords in INTENT_KEYWORDS.items():
         for kw in keywords:
+            if kw == "reserve":
+                # Bare "reserve" as a substring also matches inside "reserved"
+                # - a fare/seat class adjective (e.g. "2nd class reserved"),
+                # not a booking verb - which was hijacking fare_query into
+                # booking_request. Require it as its own word; "reservation"
+                # is unaffected since it's already a separate keyword above.
+                if re.search(r"\breserve\b", lowered):
+                    return intent
+                continue
             if kw in lowered:
                 return intent
     if _TRAIN_ID_PATTERN.search(text) and any(kw in lowered for kw in TRAIN_INFO_KEYWORDS):
