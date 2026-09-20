@@ -108,23 +108,12 @@ def test_cancel_booking_is_a_cancellation_workflow_not_rag(_isolate):
     assert llm.calls == 0
 
 
-def test_booking_request_generates_prefilled_link_without_hub(_isolate):
+def test_booking_request_goes_to_booking_agent_via_hub(_isolate):
     _, hub = _isolate
-    body = chat("Book second class, 2 seats from Colombo Fort to Kandy on 2026-12-03 train PM-4082")
+    body = chat("Book 2 seats from Colombo Fort to Kandy")
     assert body["intent"] == "booking_request"
-    assert hub.sent == []
-    assert body["source"] == "Passenger Assistant booking link"
+    assert hub.receivers == ["booking-agent"]
     assert body["action"]["type"] == "continue_to_booking"
-    assert body["action"]["prefill"] == {
-        "from_station": "Colombo Fort",
-        "to_station": "Kandy",
-        "travel_date": "2026-12-03",
-        "train_id": "PM-4082",
-        "seat_class": "Second Class",
-        "passenger_count": 2,
-    }
-    assert "train_id=PM-4082" in body["action"]["url"]
-    assert "passenger_count=2" in body["action"]["url"]
 
 
 def test_live_delay_goes_to_operations_agent_via_hub_not_policies(_isolate):
