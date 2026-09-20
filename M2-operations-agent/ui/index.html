@@ -1,33 +1,1071 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>RailSense AI | Operations Hub</title>
-<style>
-@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap');
-:root{--navy:#10252c;--ink:#18343a;--muted:#71878a;--paper:#eef4f0;--panel:#fbfdfb;--line:#d5e2dc;--teal:#087f78;--lime:#c7ef9e;--orange:#ee8d48;--red:#d75a50;--shadow:0 16px 38px #163e3212}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 92% 0,#d9f1dc,transparent 32%),var(--paper);color:var(--ink);font:14px 'Space Grotesk',sans-serif}.shell{display:grid;grid-template-columns:240px 1fr;min-height:100vh}.side{background:var(--navy);color:#d9ebe3;padding:27px 18px;position:sticky;top:0;height:100vh}.brand{display:flex;gap:11px;align-items:center;margin:0 10px 38px}.mark{background:var(--lime);color:var(--navy);width:40px;height:40px;display:grid;place-items:center;font-weight:700}.brand strong{display:block;font-size:14px}.brand small,.crumb,.label,.pill,th{font:11px 'DM Mono',monospace}.brand small{color:#87aaa2}.nav-label{font:11px 'DM Mono';color:#75938f;letter-spacing:1.4px;margin:24px 10px 9px;text-transform:uppercase}.nav{display:grid;gap:4px}.nav button{border:0;background:transparent;color:#a9c1bb;text-align:left;padding:11px 12px;border-radius:4px;font:500 13px 'Space Grotesk';cursor:pointer}.nav button:hover,.nav button.active{background:#1b3c42;color:#fff}.nav button.active{box-shadow:inset 3px 0 var(--lime)}.side-foot{position:absolute;bottom:24px;left:28px;right:20px;color:#78938e;font-size:11px;line-height:1.6}.live{display:flex;gap:8px;align-items:center;color:#c7ef9e}.dot{width:7px;height:7px;background:#67d89c;border-radius:50%;box-shadow:0 0 0 5px #67d89c1f}.main{padding:28px 38px 50px;max-width:1500px;width:100%;margin:auto}.top{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);padding-bottom:18px}.crumb{color:var(--teal);text-transform:uppercase;letter-spacing:1.3px}.top h1{font-size:21px;margin:6px 0 0}.top-right{display:flex;align-items:center;gap:18px;color:var(--muted);font:12px 'DM Mono'}.view{display:none;animation:rise .35s ease both}.view.active{display:block}@keyframes rise{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}.intro{display:flex;justify-content:space-between;align-items:end;padding:34px 0 24px}.intro h2{font-size:clamp(29px,4vw,54px);line-height:.98;letter-spacing:-2px;margin:8px 0}.intro p{max-width:480px;color:var(--muted);line-height:1.6}.button{background:var(--teal);color:white;border:0;padding:11px 16px;font:600 12px 'Space Grotesk';cursor:pointer;border-radius:3px}.button.alt{background:var(--navy)}.button.warn{background:var(--orange)}.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:13px}.card{background:#fbfdfbd9;border:1px solid var(--line);box-shadow:var(--shadow);padding:19px}.metric{min-height:120px}.label{letter-spacing:1px;text-transform:uppercase;color:var(--teal)}.value{font-size:34px;letter-spacing:-1.5px;margin:19px 0 3px}.muted,.sub{color:var(--muted);font-size:12px}.split{display:grid;grid-template-columns:1.35fr .65fr;gap:13px;margin-top:13px}.split.equal{grid-template-columns:1fr 1fr}.card h3{margin:0;font-size:16px}.sub{margin:6px 0 19px}.panel-title,.row{display:flex;justify-content:space-between;align-items:center;gap:12px}.chart{height:210px;display:flex;align-items:end;gap:7px;border-bottom:1px solid var(--line);padding:0 3px}.bar{flex:1;min-width:7px;background:linear-gradient(#31b49d,var(--teal));position:relative;border-radius:3px 3px 0 0}.bar span{position:absolute;top:calc(100% + 7px);font:10px 'DM Mono';color:var(--muted)}.list{display:grid;gap:9px}.row{border-bottom:1px solid #e4ece7;padding:11px 0}.row:last-child{border:0}.row small{display:block;color:var(--muted);font-size:11px;margin-top:3px}.pill{padding:4px 7px;border-radius:20px;background:#e6efeb;color:var(--teal);white-space:nowrap}.critical{color:var(--red)}.high{color:var(--orange)}.normal{color:#2d9a69}.watch{color:#c67b2b}.map{height:430px;position:relative;overflow:hidden;background:linear-gradient(135deg,#d9eadb,#b6d6c8);border:1px solid #bdd5c7;background-image:linear-gradient(32deg,transparent 47%,#ffffff80 48%,#ffffff80 49%,transparent 50%),linear-gradient(120deg,transparent 42%,#ffffff80 43%,#ffffff80 44%,transparent 45%)}.map:after{content:'SRI LANKA RAILWAY OPERATIONS GRID';position:absolute;right:16px;bottom:13px;font:10px 'DM Mono';color:#52736c}.track{position:absolute;height:5px;background:#547b72;transform-origin:left center}.t1{width:65%;left:10%;top:64%;transform:rotate(-32deg)}.t2{width:62%;left:19%;top:40%;transform:rotate(41deg)}.t3{width:45%;left:26%;top:70%;transform:rotate(-6deg)}.marker{position:absolute;width:14px;height:14px;border:3px solid #fff;border-radius:50%;background:var(--teal);box-shadow:0 2px 7px #1a4f3c80}.marker.risk{background:var(--red);width:18px;height:18px}.marker span{position:absolute;left:20px;top:-4px;white-space:nowrap;font:11px 'DM Mono';color:var(--ink);background:#ffffffb8;padding:3px}.m1{left:22%;top:67%}.m2{left:55%;top:39%}.m3{left:72%;top:22%}.m4{left:49%;top:57%}.m5{left:77%;top:71%}.map-legend{display:flex;gap:15px;flex-wrap:wrap;margin-top:12px;color:var(--muted);font-size:11px}.legend-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--teal);margin-right:5px}.legend-dot.red{background:var(--red)}.risk-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:13px}.risk-card{min-height:180px;border-top:4px solid var(--orange)}.risk-card.critical{border-color:var(--red)}.risk-score{font-size:40px;margin:22px 0 7px}.table{width:100%;border-collapse:collapse;font-size:12px}.table th{text-align:left;color:var(--muted);text-transform:uppercase;padding:8px 5px;border-bottom:1px solid var(--line)}.table td{padding:12px 5px;border-bottom:1px solid #e4ece7}.progress{height:7px;background:#dfeae4;margin:10px 0 16px}.progress i{display:block;height:100%;background:var(--teal)}.slider{width:100%;accent-color:var(--teal);margin:15px 0}.big-number{font-size:42px}.notice{padding:12px;background:#e6f2e8;border-left:3px solid var(--teal);font-size:12px;line-height:1.5}.feed{max-height:300px;overflow:auto}.feed-item{padding:11px 0;border-bottom:1px solid #e4ece7}.feed-item p{margin:5px 0 0;color:var(--muted);font-size:12px}.modal{display:none;position:fixed;inset:0;background:#10252c66;z-index:5;place-items:center;padding:20px}.modal.open{display:grid}.modal form{background:var(--panel);padding:24px;max-width:450px;width:100%}label{display:block;font:11px 'DM Mono';text-transform:uppercase;color:var(--muted);margin:14px 0 6px}input,select,textarea{font:13px 'Space Grotesk';width:100%;padding:10px;border:1px solid var(--line);background:#fff;color:var(--ink)}textarea{min-height:90px}.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}@media(max-width:950px){.shell{display:block}.side{height:auto;position:relative;padding:16px}.brand{margin-bottom:13px}.nav{display:flex;overflow:auto}.nav-label,.side-foot{display:none}.main{padding:20px}.cards{grid-template-columns:repeat(2,1fr)}.risk-grid{grid-template-columns:1fr 1fr}}@media(max-width:620px){.cards,.split,.split.equal,.risk-grid{grid-template-columns:1fr}.intro{display:block}.intro .button{margin-top:10px}.top-right{gap:7px}.map{height:330px}.main{padding:17px 13px}.top h1{font-size:17px}}
-</style></head>
-<body><div class="shell"><aside class="side"><div class="brand"><div class="mark">RS</div><div><strong>RailSense AI</strong><small>M2 / OPERATIONS HUB</small></div></div><div class="nav-label">Command surfaces</div><nav class="nav" id="nav"></nav><div class="side-foot"><div class="live"><i class="dot"></i> SERVICE LIVE</div><div>Demo records are clearly marked and can be replaced by Supabase operational data.</div></div></aside><main class="main"><header class="top"><div><div class="crumb" id="crumb">M2 / Home</div><h1 id="title">Operations overview</h1></div><div class="top-right"><span id="officerBadge" style="padding:4px 10px;background:#1b3c42;border-radius:4px;color:#c7ef9e;font-size:12px;font-family:'DM Mono',monospace;display:flex;align-items:center;gap:8px;">👤 <span id="officerName">Officer</span> <button id="opsLogoutBtn" style="background:transparent;border:0;color:#ee8d48;cursor:pointer;font:11px 'DM Mono';text-decoration:underline;padding:0;">Logout</button></span><span class="live"><i class="dot"></i> API CONNECTED</span><span id="clock"></span></div></header>
-<section class="view active" data-view="home"><div class="intro"><div><div class="crumb">CONTROL ROOM / 01</div><h2>Make the next<br>move visible.</h2></div><div><p>Operational intelligence for Sri Lankan Railway dispatchers: observe live movement, understand risk, and coordinate the response before delay cascades.</p><button class="button" onclick="show('predictions')">Open prediction lab</button></div></div><div class="cards" id="homeMetrics"></div><div class="split"><article class="card"><div class="panel-title"><div><h3>Delay pressure</h3><p class="sub">Historical network load by departure hour</p></div><span class="pill">LIVE MODEL</span></div><div class="chart" id="hourChart"></div></article><article class="card"><h3>Command queue</h3><p class="sub">Actions needing an operator</p><div class="list" id="queue"></div></article></div><div class="split"><article class="card"><h3>Network posture</h3><p class="sub">Routes ranked by historical delay, refreshed from the operations dataset</p><div class="list" id="routeList"></div></article><article class="card"><h3>Event stream</h3><p class="sub">Latest agent and control-room signals</p><div class="feed" id="eventFeed"></div></article></div></section>
-<section class="view" data-view="map"><div class="intro"><div><div class="crumb">SCREEN 02 / SITUATIONAL AWARENESS</div><h2>Live railway<br>map.</h2></div><div><p>Movement, stations, risk corridors, and active incidents on one Sri Lankan network view.</p><button class="button alt" onclick="refresh()">Refresh positions</button></div></div><div class="split"><article class="card"><div class="panel-title"><h3>Network position layer</h3><span class="pill">POLLING 5 SEC</span></div><div class="map"><i class="track t1"></i><i class="track t2"></i><i class="track t3"></i><i class="marker m1"><span>Colombo Fort</span></i><i class="marker m2"><span>Rambukkana</span></i><i class="marker risk m3"><span>Habarana / WILDLIFE</span></i><i class="marker risk m4"><span>Kelaniya / TRACK</span></i><i class="marker m5"><span>Badulla</span></i></div><div class="map-legend"><span><i class="legend-dot"></i>Train / station</span><span><i class="legend-dot red"></i>Active incident</span><span><i class="legend-dot orange"></i>Risk corridor</span></div></article><article class="card"><h3>Live trains</h3><p class="sub">Current movement layer</p><div class="list" id="trainList"></div></article></div></section>
-<section class="view" data-view="incidents"><div class="intro"><div><div class="crumb">SCREEN 03 / RESPONSE</div><h2>Incident<br>command.</h2></div><div><p>Classify, prioritize, and route wildlife, track, flooding, crossing, signal, and mechanical events.</p><button class="button warn" onclick="openIncident()">Report incident</button></div></div><div class="cards" id="incidentMetrics"></div><div class="split"><article class="card"><div class="panel-title"><h3>Active incident board</h3><span class="pill">CRUD ENABLED</span></div><div class="list" id="incidentList"></div></article><article class="card"><h3>Response workflow</h3><p class="sub">Incident reports become auditable actions</p><div class="notice"><b>Agent reasoning chain</b><br>Observe event → classify with NLP → retrieve similar history → estimate delay → notify driver and station → audit response.</div><div class="list" style="margin-top:14px"><div class="row"><span>Driver alert</span><span class="pill normal">READY</span></div><div class="row"><span>Station master</span><span class="pill high">2 PENDING</span></div><div class="row"><span>Emergency team</span><span class="pill">ON CALL</span></div></div></article></div></section>
-<section class="view" data-view="risks"><div class="intro"><div><div class="crumb">SCREEN 04 / FORECAST</div><h2>Risk<br>intelligence.</h2></div><div><p>Wildlife corridors, people on track, flooding, visibility, and weather combine into an explainable risk score.</p></div></div><div class="risk-grid" id="riskGrid"></div><div class="split equal"><article class="card"><h3>Level crossing watch</h3><p class="sub">Vehicle flow and train approach risk</p><table class="table"><thead><tr><th>Crossing</th><th>Flow / min</th><th>ETA</th><th>Risk</th></tr></thead><tbody id="crossingTable"></tbody></table></article><article class="card"><h3>Risk scoring inputs</h3><p class="sub">Adjust the scenario to test sensitivity</p><label>Rainfall intensity <b id="rainValue">61%</b></label><input class="slider" type="range" min="0" max="100" value="61" oninput="$('rainValue').textContent=this.value+'%'"><label>Wildlife activity <b id="wildValue">78%</b></label><input class="slider" type="range" min="0" max="100" value="78" oninput="$('wildValue').textContent=this.value+'%'"><label>Visibility <b id="visValue">42%</b></label><input class="slider" type="range" min="0" max="100" value="42" oninput="$('visValue').textContent=this.value+'%'"><div class="notice">Combined model signal: <b>HIGH / 76%</b></div></article></div></section>
-<section class="view" data-view="predictions"><div class="intro"><div><div class="crumb">SCREEN 05 / DECISION SUPPORT</div><h2>Prediction<br>lab.</h2></div><div><p>Explore predicted delay, feature influence, grounded precedent, and cascading network impact.</p></div></div><div class="split equal"><article class="card"><h3>What-if simulator</h3><p class="sub">Create a consequence model for the next decision.</p><label>Incident scenario</label><select id="simType"><option>Wildlife collision risk</option><option>Person on track</option><option>Flooding</option><option>Signal failure</option><option>Mechanical failure</option></select><label>Duration <b id="durationValue">20 min</b></label><input class="slider" id="duration" type="range" min="5" max="60" value="20" oninput="$('durationValue').textContent=this.value+' min'"><label>Severity</label><select id="simSeverity"><option>Critical</option><option>High</option><option>Medium</option></select><button class="button" onclick="simulate()">Run simulation</button><div id="simulation" class="notice" style="margin-top:18px">Choose a scenario to calculate affected trains, stations, and passenger delay.</div></article><article class="card"><h3>Why is this train delayed?</h3><p class="sub">Feature importance from the trained delay model</p><div id="features"></div><div class="notice" style="margin-top:20px">Risk is influenced by incident type, weather, peak-hour pressure, and historical route behavior. Similar incidents are retrieved from the operations corpus.</div></article></div></section>
-<section class="view" data-view="analytics"><div class="intro"><div><div class="crumb">SCREEN 06 / EVIDENCE</div><h2>Operations<br>analytics.</h2></div><div><p>Trace where delays happen, why they happen, and how much passenger time the network is absorbing.</p></div></div><div class="cards" id="analyticsMetrics"></div><div class="split"><article class="card"><h3>Cause of delay</h3><p class="sub">Historical incident distribution</p><div id="causeChart"></div></article><article class="card"><h3>Model confidence</h3><p class="sub">Held-out evaluation evidence</p><div class="big-number" id="modelR2">--</div><div class="muted">R² score</div><div class="progress"><i id="modelBar"></i></div><div class="muted" id="modelNote"></div></article></div><article class="card" style="margin-top:13px"><div class="panel-title"><div><h3>Route performance</h3><p class="sub">Historical trips from Supabase or local CSV fallback</p></div><span class="pill">DATA-BACKED</span></div><table class="table"><thead><tr><th>Route</th><th>Trips</th><th>Avg delay</th><th>Incident rate</th><th>Posture</th></tr></thead><tbody id="analyticsRoutes"></tbody></table></article></section>
-<section class="view" data-view="alerts"><div class="intro"><div><div class="crumb">SCREEN 07 / COORDINATION</div><h2>Alert &<br>dispatch.</h2></div><div><p>Move from signal to action. Acknowledge, resolve, and track the operator response in one queue.</p><button class="button" onclick="openIncident()">Create dispatch event</button></div></div><div class="split"><article class="card"><div class="panel-title"><h3>Alert center</h3><span class="pill">AUDIT TRAIL ON</span></div><div class="list" id="alertList"></div></article><article class="card"><h3>Dispatch actions</h3><p class="sub">Driver, station, maintenance, and emergency hand-offs</p><div class="list" id="actionList"></div></article></div></section>
-</main></div>
-<div class="modal" id="modal"><form id="incidentForm"><h3>Report operational incident</h3><p class="sub">Creates a live incident and audit-ready dispatch record.</p><label>Incident type</label><select id="newType"><option>wildlife</option><option>person_on_track</option><option>flood</option><option>level_crossing</option><option>mechanical</option><option>signal_fault</option></select><label>Location</label><input id="newLocation" value="Kelaniya" required><label>Train ID</label><input id="newTrain" value="PM-8056" required><label>Operator note</label><textarea id="newNote" required>Operational report received from control desk.</textarea><div class="modal-actions"><button type="button" class="button alt" onclick="closeModal()">Cancel</button><button class="button">Create incident</button></div></form></div>
-<div class="modal" id="opsLoginModal"><form id="opsLoginForm" style="max-width:380px;"><h3>RailSense AI Operations</h3><p class="sub">Sign in with your officer credentials to access the Control Room.</p><div id="opsLoginErr" style="color:var(--red);font-size:12px;display:none;margin-bottom:10px;font-weight:600;"></div><label>Email</label><input type="email" id="opsEmail" required placeholder="officer@railsense.lk"><label>Password</label><input type="password" id="opsPassword" required placeholder="••••••••••••"><div class="modal-actions"><button type="submit" class="button" style="width:100%;">Sign In</button></div><div style="font:11px 'DM Mono',monospace;color:var(--muted);text-align:center;margin-top:14px;">🔒 Secure Operations Access</div></form></div>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>RailSense AI | Operations Control Room</title>
 <script>
-const $=id=>document.getElementById(id);let ops={},dash={};const views=[['home','Home'],['map','Live Map'],['incidents','Incident Command'],['risks','Risk Intelligence'],['predictions','Prediction Lab'],['analytics','Operations Analytics'],['alerts','Alert Dispatch']];
-function getToken(){const p=new URLSearchParams(window.location.search).get('token');if(p){localStorage.setItem('railsense_m2_token',p);window.history.replaceState({},document.title,window.location.pathname);return p;}return localStorage.getItem('railsense_m2_token')||'';}
-function getAuthHeaders(){const t=getToken();return t?{'Authorization':'Bearer '+t,'Content-Type':'application/json'}:{'Content-Type':'application/json'};}
-function checkAuth(){const t=getToken();if(!t){$('opsLoginModal').classList.add('open');return false;}fetch('/admin/api/me',{headers:getAuthHeaders()}).then(r=>{if(r.ok){return r.json();}else{$('opsLoginModal').classList.add('open');}}).then(u=>{if(u){$('officerName').textContent=`${u.name||'Officer'} (${u.role==='admin'?'Admin':'Ops Eng'})`;}}).catch(()=>{});return true;}
-$('opsLoginForm').onsubmit=async e=>{e.preventDefault();$('opsLoginErr').style.display='none';try{const r=await fetch('/admin/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:$('opsEmail').value,password:$('opsPassword').value})});const d=await r.json();if(!r.ok){throw new Error(d.detail||'Login failed');}localStorage.setItem('railsense_m2_token',d.token);localStorage.setItem('railsense_m2_officer',JSON.stringify(d.officer));$('opsLoginModal').classList.remove('open');$('officerName').textContent=`${d.officer.name} (${d.officer.role==='admin'?'Admin':'Ops Eng'})`;await refresh();}catch(err){$('opsLoginErr').textContent=err.message;$('opsLoginErr').style.display='block';}};
-$('opsLogoutBtn').onclick=()=>{localStorage.removeItem('railsense_m2_token');localStorage.removeItem('railsense_m2_officer');$('opsLoginModal').classList.add('open');};
-function setupNav(){$('nav').innerHTML=views.map(([id,name])=>`<button data-target="${id}" class="${id==='home'?'active':''}">${name}</button>`).join('');document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>show(b.dataset.target))}function show(id){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.dataset.view===id));document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.target===id));let item=views.find(v=>v[0]===id);$('title').textContent=item?.[1]||'Operations overview';$('crumb').textContent=`M2 / ${item?.[1]||'Home'}`}function money(v){return Number(v||0).toFixed(1)}function pill(v){return `<span class="pill ${v}">${String(v||'watch').replaceAll('_',' ')}</span>`}
-function render(){let o=dash.overview||{};$('homeMetrics').innerHTML=[['Network delay',money(o.average_delay)+'m','historical trip average'],['On-time performance',money(o.on_time_rate)+'%','arrivals within five minutes'],['Active alerts',o.active_alerts||0,'event stream threshold'],['Trains in motion',ops.trains?.length||0,'live position layer']].map(x=>`<article class="card metric"><div class="label">${x[0]}</div><div class="value">${x[1]}</div><div class="muted">${x[2]}</div></article>`).join('');let max=Math.max(...(dash.hourly||[]).map(x=>x.average_delay),1);$('hourChart').innerHTML=(dash.hourly||[]).filter(x=>x.hour>=5&&x.hour<=22).map(x=>`<div class="bar" style="height:${Math.max(5,x.average_delay/max*100)}%" title="${x.hour}:00 · ${x.average_delay} min"><span>${x.hour}</span></div>`).join('');$('queue').innerHTML=(ops.dispatch_actions||[]).map(a=>`<div class="row"><div><b>${a.action}</b><small>${a.target} · ${a.owner}</small></div>${pill(a.status)}</div>`).join('');$('routeList').innerHTML=(dash.routes||[]).slice(0,5).map(r=>`<div class="row"><div><b>${r.route}</b><small>${r.trips} trips · ${r.incident_rate}% incident rate</small></div><b>${money(r.average_delay)}m ${pill(r.status)}</b></div>`).join('');$('eventFeed').innerHTML=(dash.events||[]).slice(0,6).map(e=>`<div class="feed-item"><b>${e.event_type||'network event'} · ${e.train_id||'system'}</b><p>${e.route||'Operations signal'} · ${e.severity||'info'}</p></div>`).join('')||'<div class="muted">Waiting for new agent events.</div>';
-$('trainList').innerHTML=(ops.trains||[]).map(t=>`<div class="row"><div><b>${t.id} · ${t.name}</b><small>${t.station} · ${t.speed} km/h · ETA ${t.eta}</small></div><div>${pill(t.status)}<br><small>risk ${t.risk}%</small></div></div>`).join('');$('incidentMetrics').innerHTML=[['Open incidents',(ops.incidents||[]).filter(x=>x.status!=='resolved').length,'triage queue'],['Critical risk',(ops.incidents||[]).filter(x=>x.severity==='critical').length,'immediate action'],['Passenger impact','430','estimated on affected services'],['Response SLA','04:12','average acknowledgement']].map(x=>`<article class="card metric"><div class="label">${x[0]}</div><div class="value">${x[1]}</div><div class="muted">${x[2]}</div></article>`).join('');$('incidentList').innerHTML=(ops.incidents||[]).map(i=>`<div class="row"><div><b>${i.title}</b><small>${i.location} · ${i.train_id} · ${i.note}</small></div><div>${pill(i.severity)}<br><button class="button alt" style="padding:5px 8px;margin-top:5px" onclick="resolve('incidents','${i.id}')">Resolve</button></div></div>`).join('');
-$('riskGrid').innerHTML=(ops.risk_zones||[]).map(r=>`<article class="card risk-card ${r.level==='critical'?'critical':''}"><div class="label">${r.kind} / ${r.level}</div><h3 style="margin-top:8px">${r.name}</h3><div class="risk-score">${r.score}%</div><div class="muted">${r.location}<br>${r.evidence}</div></article>`).join('');$('crossingTable').innerHTML=(ops.crossings||[]).map(c=>`<tr><td><b>${c.id}</b><br>${c.location}</td><td>${c.vehicles}</td><td>${c.train_eta}</td><td>${pill(c.status)}<br><b>${c.risk}%</b></td></tr>`).join('');let features=dash.feature_importance||[];$('features').innerHTML=features.map(f=>`<div style="margin:13px 0"><div class="row" style="padding:0 0 5px"><span>${f.feature||f.name}</span><b>${money((f.importance||f.value||0)*100)}%</b></div><div class="progress"><i style="width:${Math.min(100,(f.importance||f.value||0)*100)}%"></i></div></div>`).join('')||'<div class="muted">Feature artifact not available.</div>';
-let counts=dash.incident_mix||[];let cmax=Math.max(...counts.map(x=>x.count),1);$('causeChart').innerHTML=counts.map(x=>`<div style="margin:13px 0"><div class="row" style="padding:0 0 5px"><span>${x.type.replaceAll('_',' ')}</span><b>${x.count}</b></div><div class="progress"><i style="width:${x.count/cmax*100}%"></i></div></div>`).join('');let r2=dash.ml_metrics?.r2||0;$('modelR2').textContent=money(r2);$('modelBar').style.width=(r2*100)+'%';$('modelNote').textContent=`MAE ${money(dash.ml_metrics?.mae_minutes)} min · RMSE ${money(dash.ml_metrics?.rmse_minutes)} min`;$('analyticsMetrics').innerHTML=[['Historical trips',o.trips||0,'records in current source'],['Passenger minutes','6,430','estimated affected time'],['Routes monitored',(dash.routes||[]).length,'Sri Lankan corridors'],['NLP macro F1',money(dash.nlp_metrics?.macro_avg?.f1),'classification evidence']].map(x=>`<article class="card metric"><div class="label">${x[0]}</div><div class="value">${x[1]}</div><div class="muted">${x[2]}</div></article>`).join('');$('analyticsRoutes').innerHTML=(dash.routes||[]).map(r=>`<tr><td><b>${r.route}</b></td><td>${r.trips}</td><td>${money(r.average_delay)}m</td><td>${r.incident_rate}%</td><td>${pill(r.status)}</td></tr>`).join('');$('alertList').innerHTML=(ops.alerts||[]).map(a=>`<div class="row"><div><b>${a.title}</b><small>${a.location} · ${a.age} · ${a.action}</small></div><div>${pill(a.severity)}<br><button class="button alt" style="padding:5px 8px;margin-top:5px" onclick="resolve('alerts','${a.id}')">Acknowledge</button></div></div>`).join('');$('actionList').innerHTML=(ops.dispatch_actions||[]).map(a=>`<div class="row"><div><b>${a.action}</b><small>${a.owner} → ${a.target} · ${a.created}</small></div>${pill(a.status)}</div>`).join('')}
-async function refresh(){try{let [d,o]=await Promise.all([fetch('/api/dashboard',{headers:getAuthHeaders()}),fetch('/api/operations',{headers:getAuthHeaders()})]);if(d.status===401||o.status===401){$('opsLoginModal').classList.add('open');return;}dash=await d.json();ops=await o.json();render()}catch(e){console.error(e)}}async function resolve(type,id){await fetch(`/api/operations/${type}/${id}`,{method:'PATCH',headers:getAuthHeaders(),body:JSON.stringify({status:type==='alerts'?'acknowledged':'resolved'})});await refresh()}function openIncident(){$('modal').classList.add('open')}function closeModal(){$('modal').classList.remove('open')}$('incidentForm').onsubmit=async e=>{e.preventDefault();await fetch('/api/operations/incidents',{method:'POST',headers:getAuthHeaders(),body:JSON.stringify({type:$('newType').value,title:$('newType').value.replaceAll('_',' ')+' reported',location:$('newLocation').value,train_id:$('newTrain').value,severity:'high',status:'open',impact:15,time:new Date().toLocaleTimeString(),note:$('newNote').value})});closeModal();await refresh();show('incidents')};function simulate(){let duration=Number($('duration').value),severity=$('simSeverity').value;let trains=Math.max(2,Math.round(duration/7)+(severity==='Critical'?2:0)),stations=Math.max(2,Math.round(duration/10)+1),delay=Math.round(duration*1.8+(severity==='Critical'?13:severity==='High'?7:3));$('simulation').innerHTML=`<b>Simulation complete · ${severity}</b><br>${trains} trains · ${stations} stations · ${delay} cumulative delay minutes<br><span class="muted">Recommended: issue driver alert, protect the next crossing, and monitor connections.</span>`}function tick(){$('clock').textContent=new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'})}setupNav();checkAuth();refresh();tick();setInterval(tick,1000);setInterval(refresh,5000);
+/* RailSense theme sync — the admin portal on :3000 embeds this console in an
+   iframe and pushes its light/dark choice in over ?theme= and postMessage,
+   so the embedded surface never disagrees with the shell around it. */
+(function () {
+  function apply(t) {
+    document.documentElement.setAttribute('data-theme', t === 'light' ? 'light' : 'dark');
+  }
+  var fromUrl = null;
+  try { fromUrl = new URLSearchParams(location.search).get('theme'); } catch (e) {}
+  var stored = null;
+  try { stored = localStorage.getItem('railsense-admin-theme'); } catch (e) {}
+  apply(fromUrl || stored || 'dark');
+  window.addEventListener('message', function (ev) {
+    if (!ev || !ev.data || ev.data.type !== 'railsense-theme') return;
+    apply(ev.data.theme);
+    try { localStorage.setItem('railsense-admin-theme', ev.data.theme); } catch (e) {}
+  });
+  window.addEventListener('storage', function (ev) {
+    if (ev.key === 'railsense-admin-theme' && ev.newValue) apply(ev.newValue);
+  });
+})();
+</script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Inter:wght@400;500;600;700;800&family=Share+Tech+Mono&display=swap');
+
+/* ══════════════════════════════════════════════════════════════════════
+   RailSense AI — shared operations design tokens.
+   Mirrors the tokens in frontend/admin.html so this console reads as one
+   surface with the portal that embeds it. Dark is the default; the portal
+   pushes its own theme in over ?theme= and postMessage.
+   ══════════════════════════════════════════════════════════════════════ */
+:root{
+  --bg:#060A12;
+  --panel-dark:#0C1120;
+  --card:rgba(14,20,36,0.90);
+  --card-hi:rgba(22,32,54,0.97);
+  --surface-2:rgba(10,15,28,0.72);
+  --border:rgba(59,130,246,0.20);
+  --border-hi:rgba(96,165,250,0.50);
+  --ink:#CBD5E1;
+  --ink-bright:#FFFFFF;
+  --muted:#8291A8;
+  --muted-hi:#94A3B8;
+  --brand:#3B82F6;
+  --brand-light:#60A5FA;
+  --brand-deep:#1D4ED8;
+  --brand-grad:linear-gradient(135deg,#1D4ED8 0%,#3B82F6 55%,#60A5FA 100%);
+  --gold:#C9A22A;
+  --sig-g:#10B981;
+  --sig-a:#F59E0B;
+  --sig-r:#EF4444;
+  --r:12px;
+  --shadow:0 8px 32px rgba(0,0,0,0.90), 0 2px 8px rgba(0,0,0,0.5);
+  --shadow-card:0 4px 24px rgba(0,0,0,0.70), 0 1px 4px rgba(59,130,246,0.06);
+  --ease:cubic-bezier(0.16,1,0.3,1);
+  /* Legacy aliases, so any var() left in the markup still resolves */
+  --navy:#070C18; --panel:var(--card); --line:var(--border);
+  --teal:var(--brand); --lime:var(--brand-light);
+  --orange:var(--sig-a); --red:var(--sig-r); --paper:var(--bg);
+}
+
+[data-theme="light"]{
+  --bg:#EDF2FB;
+  --panel-dark:#E2EAF6;
+  --card:rgba(255,255,255,0.97);
+  --card-hi:rgba(248,251,255,0.99);
+  --surface-2:rgba(241,245,253,0.92);
+  --border:rgba(59,130,246,0.16);
+  --border-hi:rgba(59,130,246,0.42);
+  --ink:#334155;
+  --ink-bright:#0F172A;
+  --muted:#64748B;
+  --muted-hi:#475569;
+  --brand:#2563EB;
+  --brand-light:#3B82F6;
+  --brand-deep:#1D4ED8;
+  --shadow:0 4px 20px rgba(15,23,42,0.10), 0 1px 4px rgba(15,23,42,0.05);
+  --shadow-card:0 2px 14px rgba(15,23,42,0.09), 0 1px 3px rgba(15,23,42,0.04);
+  --navy:#FFFFFF;
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--ink);
+  font-family:'Inter',-apple-system,'Segoe UI',sans-serif;
+  font-size:13.5px;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:
+    linear-gradient(rgba(59,130,246,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(59,130,246,0.025) 1px, transparent 1px);
+  background-size:40px 40px;
+}
+body::after{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(ellipse 1000px 700px at 12% 0%, rgba(29,78,216,0.13) 0%, transparent 60%),
+    radial-gradient(ellipse 800px 600px at 92% 92%, rgba(201,162,42,0.06) 0%, transparent 55%),
+    radial-gradient(ellipse 600px 400px at 60% 40%, rgba(16,185,129,0.04) 0%, transparent 50%);
+}
+[data-theme="light"] body::before{
+  background-image:
+    linear-gradient(rgba(59,130,246,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(59,130,246,0.05) 1px, transparent 1px);
+}
+[data-theme="light"] body::after{
+  background:
+    radial-gradient(ellipse 1000px 700px at 12% 0%, rgba(219,234,254,0.70) 0%, transparent 60%),
+    radial-gradient(ellipse 800px 600px at 92% 92%, rgba(254,243,199,0.35) 0%, transparent 55%),
+    radial-gradient(ellipse 600px 400px at 60% 40%, rgba(209,250,229,0.20) 0%, transparent 50%);
+}
+
+.shell{position:relative;z-index:1;display:grid;grid-template-columns:248px 1fr;min-height:100vh}
+
+/* ── Sidebar ─────────────────────────────────────────────────────── */
+.side{
+  background:linear-gradient(180deg, rgba(10,15,30,0.97) 0%, rgba(14,20,40,0.97) 100%);
+  border-right:1px solid var(--border);
+  color:var(--ink);
+  padding:22px 16px;
+  position:sticky;top:0;height:100vh;
+  backdrop-filter:blur(20px);
+}
+[data-theme="light"] .side{
+  background:linear-gradient(180deg, rgba(255,255,255,0.99) 0%, rgba(248,252,255,0.98) 100%);
+  box-shadow:1px 0 14px rgba(15,23,42,0.06);
+}
+
+.brand{display:flex;gap:12px;align-items:center;margin:0 6px 10px}
+.mark{
+  width:40px;height:40px;border-radius:10px;
+  background:linear-gradient(135deg,#1D4ED8 0%,#2563EB 50%,#3B82F6 100%);
+  border:1px solid rgba(96,165,250,0.5);
+  box-shadow:0 4px 14px rgba(37,99,235,0.40), inset 0 1px 0 rgba(255,255,255,0.15);
+  color:#fff;display:grid;place-items:center;font-weight:800;font-size:14px;letter-spacing:.5px;
+}
+.brand strong{
+  display:block;font-family:'Playfair Display',serif;font-size:16px;font-weight:700;
+  color:var(--ink-bright);letter-spacing:.3px;
+}
+.brand small,.crumb,.label,.pill,th{font-family:'Share Tech Mono',monospace}
+.brand small{
+  display:block;color:var(--brand-light);font-size:10px;font-weight:700;
+  letter-spacing:1px;text-transform:uppercase;margin-top:1px;
+}
+[data-theme="light"] .brand small{color:#2563EB}
+
+.nav-label{
+  font:11px 'Share Tech Mono',monospace;color:var(--muted);letter-spacing:1.4px;
+  margin:22px 10px 9px;text-transform:uppercase;
+}
+.nav{display:grid;gap:4px}
+.nav button{
+  border:1px solid transparent;border-left:3px solid transparent;background:transparent;
+  color:var(--muted-hi);text-align:left;padding:10px 12px;border-radius:9px;
+  font:500 13px 'Inter',sans-serif;cursor:pointer;transition:all .18s var(--ease);
+}
+.nav button:hover{
+  background:rgba(59,130,246,0.10);border-color:rgba(59,130,246,0.20);color:var(--brand-light);
+}
+.nav button.active{
+  background:linear-gradient(135deg, rgba(37,99,235,0.22) 0%, rgba(14,20,38,0.60) 100%);
+  border-color:rgba(59,130,246,0.35);border-left-color:var(--brand);
+  color:var(--ink-bright);box-shadow:0 2px 10px rgba(37,99,235,0.18);
+}
+[data-theme="light"] .nav button:hover{background:rgba(219,234,254,0.55);color:#1D4ED8}
+[data-theme="light"] .nav button.active{
+  background:linear-gradient(135deg, rgba(219,234,254,0.85) 0%, rgba(239,246,255,0.70) 100%);
+  border-color:rgba(59,130,246,0.35);border-left-color:#2563EB;color:#1D4ED8;
+}
+
+.side-foot{
+  position:absolute;bottom:22px;left:22px;right:18px;
+  color:var(--muted);font-size:10.5px;line-height:1.65;
+  border-top:1px solid var(--border);padding-top:12px;
+}
+.live{
+  display:flex;gap:8px;align-items:center;color:var(--sig-g);
+  font:11px 'Share Tech Mono',monospace;letter-spacing:.5px;
+}
+.dot{
+  width:7px;height:7px;background:var(--sig-g);border-radius:50%;flex-shrink:0;
+  box-shadow:0 0 0 2px rgba(16,185,129,0.25), 0 0 6px var(--sig-g);
+  animation:pulse-dot 2s ease-in-out infinite;
+}
+@keyframes pulse-dot{
+  0%,100%{box-shadow:0 0 0 2px rgba(16,185,129,0.25), 0 0 6px #10B981}
+  50%{box-shadow:0 0 0 4px rgba(16,185,129,0.12), 0 0 10px #10B981}
+}
+
+/* ── Main column ─────────────────────────────────────────────────── */
+.main{padding:24px 34px 50px;max-width:1500px;width:100%;margin:auto}
+.top{
+  display:flex;justify-content:space-between;align-items:center;
+  border-bottom:1px solid var(--border);padding-bottom:16px;margin-bottom:22px;
+  gap:16px;flex-wrap:wrap;
+}
+.top h1{
+  font-family:'Playfair Display',serif;font-size:22px;font-weight:700;
+  color:var(--ink-bright);margin:4px 0 0;letter-spacing:.2px;
+}
+.crumb{font-size:10.5px;color:var(--brand-light);text-transform:uppercase;letter-spacing:1.2px;font-weight:700}
+.top-right{display:flex;align-items:center;gap:14px;font:11px 'Share Tech Mono',monospace;color:var(--muted)}
+.view{display:none}.view.active{display:block;animation:fadeIn .22s var(--ease)}
+@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+
+.intro{display:grid;grid-template-columns:1fr 1fr;gap:26px;align-items:end;margin-bottom:22px}
+.intro h2{
+  font-family:'Playfair Display',serif;font-size:29px;line-height:1.14;margin:6px 0 0;
+  font-weight:700;color:var(--ink-bright);
+}
+.intro p{color:var(--muted);margin:0 0 12px;line-height:1.65}
+
+/* ── Cards ───────────────────────────────────────────────────────── */
+.card{
+  background:linear-gradient(135deg, var(--card) 0%, var(--card-hi) 100%);
+  border:1px solid var(--border);border-radius:var(--r);padding:20px;
+  box-shadow:var(--shadow-card);backdrop-filter:blur(20px);
+  transition:border-color .2s var(--ease);
+}
+.card:hover{border-color:rgba(59,130,246,0.32)}
+.card h3{margin:0;font-size:15px;font-weight:700;color:var(--ink-bright)}
+.sub{color:var(--muted);font-size:12px;margin:5px 0 14px;line-height:1.55}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;margin-bottom:16px}
+.metric .label{color:var(--muted-hi);text-transform:uppercase;letter-spacing:1px;font-size:10.5px;font-weight:700}
+.metric .value{font-size:27px;font-weight:800;margin:7px 0 3px;color:var(--ink-bright);letter-spacing:-.5px}
+.muted{color:var(--muted);font-size:12px;line-height:1.55}
+.split{display:grid;grid-template-columns:1.35fr 1fr;gap:13px;margin-bottom:13px}
+.split.equal{grid-template-columns:1fr 1fr}
+.panel-title{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:12px}
+
+/* ── Pills ───────────────────────────────────────────────────────── */
+.pill{
+  background:rgba(59,130,246,0.12);color:var(--brand-light);
+  border:1px solid rgba(59,130,246,0.28);padding:3px 9px;border-radius:20px;
+  font-size:10px;font-weight:700;text-transform:uppercase;white-space:nowrap;letter-spacing:.5px;
+}
+.pill.critical{background:rgba(239,68,68,0.12);color:#F87171;border-color:rgba(239,68,68,0.32)}
+.pill.watch,.pill.high{background:rgba(245,158,11,0.12);color:#FBBF24;border-color:rgba(245,158,11,0.32)}
+.pill.normal,.pill.ok{background:rgba(16,185,129,0.12);color:#34D399;border-color:rgba(16,185,129,0.32)}
+[data-theme="light"] .pill{background:rgba(59,130,246,0.10);color:#1D4ED8;border-color:rgba(59,130,246,0.25)}
+[data-theme="light"] .pill.critical{background:rgba(239,68,68,0.08);color:#991B1B;border-color:rgba(239,68,68,0.22)}
+[data-theme="light"] .pill.watch,[data-theme="light"] .pill.high{background:rgba(245,158,11,0.10);color:#92400E;border-color:rgba(245,158,11,0.25)}
+[data-theme="light"] .pill.normal,[data-theme="light"] .pill.ok{background:rgba(16,185,129,0.10);color:#065F46;border-color:rgba(16,185,129,0.25)}
+
+/* ── Charts ──────────────────────────────────────────────────────── */
+.chart{display:flex;align-items:flex-end;gap:5px;height:190px;padding-top:12px}
+.bar{
+  flex:1;background:linear-gradient(180deg,#60A5FA 0%,#3B82F6 55%,#1D4ED8 100%);
+  border-radius:4px 4px 0 0;position:relative;min-height:4px;
+  box-shadow:0 0 12px rgba(59,130,246,0.22);
+}
+.bar span{position:absolute;bottom:-18px;left:0;right:0;text-align:center;font:9px 'Share Tech Mono',monospace;color:var(--muted)}
+.progress{height:7px;background:var(--surface-2);border:1px solid var(--border);border-radius:4px;overflow:hidden}
+.progress i{display:block;height:100%;background:var(--brand-grad)}
+.big-number{font-size:40px;font-weight:800;margin:6px 0;color:var(--ink-bright);letter-spacing:-1px}
+
+/* ── Lists & tables ──────────────────────────────────────────────── */
+.list{display:grid;gap:2px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--border)}
+.row:last-child{border-bottom:0}
+.row small{display:block;color:var(--muted);font-size:11.5px;margin-top:3px}
+.table{width:100%;border-collapse:collapse}
+.table th{
+  text-align:left;color:var(--muted-hi);text-transform:uppercase;letter-spacing:.8px;
+  font-size:10.5px;font-weight:700;padding:9px 8px;border-bottom:1px solid var(--border);
+}
+.table td{padding:11px 8px;border-bottom:1px solid var(--border);font-size:12.8px;vertical-align:top}
+.table tbody tr:hover td{background:rgba(59,130,246,0.06)}
+.table tr:last-child td{border-bottom:0}
+[data-theme="light"] .table tbody tr:hover td{background:rgba(239,246,255,0.75)}
+
+/* ── Forms ───────────────────────────────────────────────────────── */
+label{
+  display:block;font:10.5px 'Share Tech Mono',monospace;color:var(--muted-hi);
+  text-transform:uppercase;letter-spacing:.9px;margin:14px 0 6px;font-weight:700;
+}
+input,select,textarea{
+  width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;
+  background:var(--surface-2);font:13px 'Inter',sans-serif;color:var(--ink-bright);
+  outline:none;transition:border-color .18s, box-shadow .18s;
+}
+input:focus,select:focus,textarea:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(59,130,246,0.14)}
+input::placeholder,textarea::placeholder{color:var(--muted)}
+select option{background:#0C1120;color:#E2E8F0}
+[data-theme="light"] select option{background:#fff;color:#0F172A}
+textarea{resize:vertical;min-height:84px}
+
+/* ── Buttons ─────────────────────────────────────────────────────── */
+.button{
+  background:var(--brand-grad);color:#fff;border:1px solid rgba(96,165,250,0.45);
+  padding:10px 18px;border-radius:8px;font:600 13px 'Inter',sans-serif;cursor:pointer;
+  margin-top:14px;transition:all .2s var(--ease);box-shadow:0 3px 12px rgba(37,99,235,0.28);
+}
+.button:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(37,99,235,0.38)}
+.button:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
+.button.alt{background:var(--surface-2);color:var(--muted-hi);border-color:var(--border);box-shadow:none}
+.button.alt:hover{color:var(--brand-light);border-color:var(--brand);background:rgba(59,130,246,0.10)}
+.button.warn{
+  background:linear-gradient(135deg, rgba(201,162,42,0.20) 0%, rgba(180,140,30,0.14) 100%);
+  border-color:rgba(201,162,42,0.45);color:#FDE68A;box-shadow:none;
+}
+.button.warn:hover{border-color:#FBBF24;color:#FEF3C7;box-shadow:0 4px 14px rgba(201,162,42,0.22)}
+[data-theme="light"] .button.warn{
+  background:linear-gradient(135deg, rgba(254,243,199,0.85) 0%, rgba(253,230,138,0.65) 100%);
+  border-color:rgba(245,158,11,0.40);color:#92400E;
+}
+.button.danger{
+  background:linear-gradient(135deg,#B91C1C 0%,#EF4444 100%);
+  border-color:rgba(248,113,113,0.45);color:#fff;box-shadow:0 3px 12px rgba(239,68,68,0.28);
+}
+.button.sm{padding:6px 11px;font-size:11.5px;margin-top:0}
+
+/* ── Notices ─────────────────────────────────────────────────────── */
+.notice{
+  background:rgba(59,130,246,0.08);border:1px solid var(--border);border-left:3px solid var(--brand);
+  padding:13px 15px;border-radius:0 8px 8px 0;font-size:12.8px;line-height:1.65;color:var(--ink);
+}
+.notice.warn{background:rgba(245,158,11,0.08);border-left-color:var(--sig-a);border-color:rgba(245,158,11,0.25)}
+.banner{
+  background:rgba(245,158,11,0.10);border:1px solid rgba(245,158,11,0.32);
+  border-left:4px solid var(--sig-a);padding:12px 16px;border-radius:8px;
+  margin-bottom:16px;font-size:12.8px;color:var(--ink);
+}
+.banner b{color:var(--sig-a)}
+.cite{border:1px solid var(--border);border-radius:10px;padding:13px 15px;margin-bottom:10px;background:var(--surface-2)}
+.cite .head{display:flex;justify-content:space-between;gap:10px;align-items:baseline;margin-bottom:6px}
+.cite .head b{font-size:13px;color:var(--ink-bright)}
+
+/* ── Toolbar ─────────────────────────────────────────────────────── */
+.toolbar{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.toolbar input,.toolbar select{width:auto;min-width:150px;padding:8px 11px;font-size:12.5px}
+.spacer{flex:1}
+
+/* ── Modals ──────────────────────────────────────────────────────── */
+.modal{
+  position:fixed;inset:0;background:rgba(3,7,18,0.72);backdrop-filter:blur(4px);
+  display:none;align-items:center;justify-content:center;padding:22px;z-index:60;
+}
+.modal.open{display:flex}
+.modal form,.modal .box{
+  background:linear-gradient(135deg, var(--card) 0%, var(--card-hi) 100%);
+  border:1px solid var(--border-hi);border-radius:14px;padding:26px;width:100%;
+  max-width:520px;max-height:90vh;overflow:auto;
+  box-shadow:0 20px 60px rgba(0,0,0,0.55), 0 0 0 1px rgba(59,130,246,0.08);
+}
+.modal h3{margin:0;font-family:'Playfair Display',serif;font-size:18px;color:var(--ink-bright)}
+.modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px}
+.empty{color:var(--muted);font-size:12.5px;padding:18px 0;text-align:center}
+
+/* ── Toasts ──────────────────────────────────────────────────────── */
+.toast-stack{position:fixed;right:20px;bottom:20px;display:grid;gap:9px;z-index:80}
+.toast{
+  background:linear-gradient(135deg,#0F172A 0%,#1E293B 100%);border:1px solid var(--border-hi);
+  color:#E2E8F0;padding:12px 16px;border-radius:10px;font-size:12.8px;max-width:380px;
+  box-shadow:var(--shadow);
+}
+.toast.error{background:linear-gradient(135deg,#7F1D1D 0%,#991B1B 100%);border-color:rgba(248,113,113,0.5);color:#FEE2E2}
+.toast.success{background:linear-gradient(135deg,#065F46 0%,#047857 100%);border-color:rgba(52,211,153,0.5);color:#D1FAE5}
+.spin{
+  display:inline-block;width:13px;height:13px;border:2px solid rgba(96,165,250,0.25);
+  border-top-color:var(--brand-light);border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px;
+}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+code{font-family:'Share Tech Mono',monospace;color:var(--brand-light);font-size:.94em}
+
+/* ── Responsive ──────────────────────────────────────────────────── */
+@media(max-width:950px){
+  .shell{display:block}
+  .side{height:auto;position:relative;padding:16px;border-right:0;border-bottom:1px solid var(--border)}
+  .brand{margin-bottom:13px}
+  .nav{display:flex;overflow:auto}
+  .nav-label,.side-foot{display:none}
+  .main{padding:20px}
+  .cards{grid-template-columns:repeat(2,1fr)}
+  .split,.split.equal{grid-template-columns:1fr}
+}
+@media(max-width:620px){
+  .cards{grid-template-columns:1fr}
+  .intro{display:block}
+  .main{padding:17px 13px}
+  .top h1{font-size:18px}
+  .intro h2{font-size:23px}
+}
+</style></head>
+<body><div class="shell">
+<aside class="side">
+  <div class="brand"><div class="mark">RS</div><div><strong>RailSense AI</strong><small>M2 / OPERATIONS</small></div></div>
+  <div class="nav-label">Control surfaces</div>
+  <nav class="nav" id="nav"></nav>
+  <div class="side-foot">
+    <div class="live"><i class="dot"></i> <span id="sourceLabel">CONNECTING…</span></div>
+    <div>All figures are read from the live operations corpus or a committed evaluation artifact.</div>
+  </div>
+</aside>
+
+<main class="main">
+  <header class="top">
+    <div><div class="crumb" id="crumb">M2 / Dashboard</div><h1 id="title">Network dashboard</h1></div>
+    <div class="top-right">
+      <span id="officerBadge" style="padding:4px 10px;background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.28);border-radius:6px;color:var(--brand-light);display:flex;align-items:center;gap:8px;">
+        <span id="officerName">Officer</span>
+        <button id="opsLogoutBtn" style="background:transparent;border:0;color:var(--sig-a);cursor:pointer;font:11px 'Share Tech Mono',monospace;text-decoration:underline;padding:0;">Logout</button>
+      </span>
+      <span class="live"><i class="dot"></i> API CONNECTED</span>
+      <span id="clock"></span>
+    </div>
+  </header>
+
+  <div id="offlineBanner"></div>
+
+  <!-- ============ SCREEN 1 — CONSOLIDATED DASHBOARD ============ -->
+  <section class="view active" data-view="dashboard">
+    <div class="intro">
+      <div><div class="crumb">SCREEN 01 / NETWORK STATE</div><h2>One view of<br>network delay.</h2></div>
+      <div><p>Network KPIs, the route delay heatmap and the 24-hour delay pressure curve, all computed from the same operations corpus in a single aggregate query.</p></div>
+    </div>
+
+    <div class="cards" id="kpis"></div>
+
+    <div class="split">
+      <article class="card">
+        <div class="panel-title">
+          <div><h3>Delay pressure by hour</h3><p class="sub">Mean delay per scheduled departure hour, across every historical trip</p></div>
+          <span class="pill" id="hourlySource">—</span>
+        </div>
+        <div class="chart" id="hourChart"></div>
+      </article>
+      <article class="card">
+        <h3>Cause of delay</h3>
+        <p class="sub">Incident type distribution in the corpus</p>
+        <div id="causeChart"></div>
+      </article>
+    </div>
+
+    <article class="card" style="margin-bottom:13px">
+      <div class="panel-title">
+        <div><h3>Route delay heatmap</h3><p class="sub">Every corridor ranked by mean delay, with trip counts and incident rates</p></div>
+        <span class="pill" id="routeCount">—</span>
+      </div>
+      <table class="table">
+        <thead><tr><th>Route</th><th>Trips</th><th>Avg delay</th><th>Max delay</th><th>Incident rate</th><th>Posture</th></tr></thead>
+        <tbody id="routeTable"></tbody>
+      </table>
+    </article>
+
+    <div class="split equal">
+      <article class="card">
+        <h3>Delay model evidence</h3>
+        <p class="sub">Held-out metrics from the last training run</p>
+        <div class="big-number" id="modelR2">--</div>
+        <div class="muted">R² on the held-out test split</div>
+        <div class="progress" style="margin-top:10px"><i id="modelBar" style="width:0"></i></div>
+        <div class="muted" id="modelNote" style="margin-top:10px"></div>
+      </article>
+      <article class="card">
+        <h3>NLP &amp; retrieval evidence</h3>
+        <p class="sub">From the committed evaluation artifacts</p>
+        <div class="list" id="evalList"></div>
+      </article>
+    </div>
+  </section>
+
+  <!-- ====== SCREEN 2 — DELAY PREDICTION + RAG EXPLANATION ====== -->
+  <section class="view" data-view="predict">
+    <div class="intro">
+      <div><div class="crumb">SCREEN 02 / DECISION SUPPORT</div><h2>Predict, then<br>justify it.</h2></div>
+      <div><p>One request to <code>/predict-delay</code> returns the model's estimate, the grounded explanation, and the historical incidents that explanation is built on — shown together, not split across panels.</p></div>
+    </div>
+
+    <div class="split">
+      <article class="card">
+        <h3>Prediction request</h3>
+        <p class="sub">Submitted to the live inference endpoint</p>
+        <form id="predictForm">
+          <label>Route</label>
+          <input id="pRoute" list="routeOptions" required placeholder="Colombo Fort - Kandy">
+          <datalist id="routeOptions"></datalist>
+          <label>Train ID</label>
+          <input id="pTrain" required placeholder="PM-4082">
+          <label>Station</label>
+          <input id="pStation" placeholder="Rambukkana">
+          <label>Scheduled time</label>
+          <input id="pTime" type="datetime-local" required>
+          <label>Weather</label>
+          <select id="pWeather">
+            <option value="">— not specified —</option>
+            <option value="clear">clear</option><option value="light_rain">light_rain</option>
+            <option value="heavy_rain">heavy_rain</option><option value="fog">fog</option>
+            <option value="extreme_heat">extreme_heat</option>
+          </select>
+          <label>Day type</label>
+          <select id="pDay">
+            <option value="">— not specified —</option>
+            <option value="weekday">weekday</option><option value="weekend">weekend</option>
+            <option value="public_holiday">public_holiday</option>
+          </select>
+          <label>Incident type</label>
+          <select id="pIncident">
+            <option value="none">none</option><option value="signal_fault">signal_fault</option>
+            <option value="mechanical">mechanical</option><option value="weather">weather</option>
+            <option value="track_obstruction">track_obstruction</option><option value="staffing">staffing</option>
+          </select>
+          <button class="button" id="predictBtn" type="submit">Run prediction</button>
+        </form>
+      </article>
+
+      <article class="card">
+        <div class="panel-title">
+          <div><h3>Prediction &amp; grounded explanation</h3><p class="sub">Rendered directly from the API response</p></div>
+          <span class="pill" id="predictMethod" style="display:none"></span>
+        </div>
+        <div id="predictResult"><div class="empty">Submit a request to see the predicted delay, its confidence, and the precedent it is grounded in.</div></div>
+      </article>
+    </div>
+
+    <div class="split equal">
+      <article class="card">
+        <div class="panel-title">
+          <div><h3>Similar past incidents</h3><p class="sub">Retrieved precedent behind the explanation above</p></div>
+          <span class="pill" id="retrievalMethod" style="display:none"></span>
+        </div>
+        <div id="similarIncidents"><div class="empty">Retrieved incidents appear here with the prediction.</div></div>
+      </article>
+      <article class="card">
+        <div class="panel-title">
+          <div><h3>Feature importance</h3><p class="sub">From <code>ml/feature_importances.json</code>, written by the last training run</p></div>
+          <span class="pill" id="featureStamp" style="display:none"></span>
+        </div>
+        <div id="featureChart"><div class="empty">Loading feature importances…</div></div>
+      </article>
+    </div>
+  </section>
+
+  <!-- ============ SCREEN 3 — INCIDENT MANAGEMENT (CRUD) ============ -->
+  <section class="view" data-view="incidents">
+    <div class="intro">
+      <div><div class="crumb">SCREEN 03 / RESPONSE</div><h2>Incident<br>management.</h2></div>
+      <div>
+        <p>File a report and the NLP pipeline sanitises, classifies and summarises it, stores it, and indexes it so RAG can cite it. Corrections and deletions write through to the same store.</p>
+        <button class="button warn" onclick="openIncidentModal()">Report incident</button>
+      </div>
+    </div>
+
+    <article class="card">
+      <div class="toolbar">
+        <input id="iSearch" placeholder="Search summary, train, station…">
+        <select id="iType"><option value="">All classifications</option></select>
+        <select id="iStatus">
+          <option value="">All statuses</option><option value="pending">pending</option>
+          <option value="corrected">corrected</option><option value="approved">approved</option>
+          <option value="rejected">rejected</option>
+        </select>
+        <button class="button alt sm" onclick="incidents.reset()">Apply</button>
+        <span class="spacer"></span>
+        <span class="pill" id="iSource">—</span>
+      </div>
+      <table class="table">
+        <thead><tr><th>Received</th><th>Train</th><th>Station</th><th>Summary</th><th>Classified</th><th>Method</th><th>Status</th><th></th></tr></thead>
+        <tbody id="incidentTable"></tbody>
+      </table>
+      <div class="toolbar" style="margin:14px 0 0">
+        <button class="button alt sm" onclick="incidents.page(-1)">◀ Prev</button>
+        <span class="muted" id="iPageInfo">—</span>
+        <button class="button alt sm" onclick="incidents.page(1)">Next ▶</button>
+      </div>
+    </article>
+  </section>
+</main></div>
+
+<!-- ===================== MODALS ===================== -->
+<div class="modal" id="incidentModal"><form id="incidentForm">
+  <h3>Report operational incident</h3>
+  <p class="sub">The raw text is sanitised, then classified and summarised by the NLP pipeline before it is stored.</p>
+  <label>Train ID</label><input id="nTrain" required placeholder="PM-4082">
+  <label>Station</label><input id="nStation" required placeholder="Rambukkana">
+  <label>Raw incident report</label><textarea id="nText" required placeholder="Describe what the field staff reported…"></textarea>
+  <div class="modal-actions">
+    <button type="button" class="button alt" onclick="closeModal('incidentModal')">Cancel</button>
+    <button class="button" id="incidentSubmit">File incident</button>
+  </div>
+</form></div>
+
+<div class="modal" id="editModal"><form id="editForm">
+  <h3>Correct incident</h3>
+  <p class="sub">Written back to the stored row and the retrieval index, not just this table.</p>
+  <input type="hidden" id="eId">
+  <label>Classified type</label><select id="eType"></select>
+  <label>Summary</label><textarea id="eSummary" required></textarea>
+  <label>Review status</label>
+  <select id="eStatus">
+    <option value="corrected">corrected</option><option value="approved">approved</option>
+    <option value="rejected">rejected</option><option value="pending">pending</option>
+  </select>
+  <label>Original report (read-only)</label><textarea id="eRaw" readonly style="background:var(--panel-dark);opacity:.85"></textarea>
+  <div class="modal-actions">
+    <button type="button" class="button alt" onclick="closeModal('editModal')">Cancel</button>
+    <button class="button" id="editSubmit">Save correction</button>
+  </div>
+</form></div>
+
+<div class="modal" id="opsLoginModal"><form id="opsLoginForm" style="max-width:380px;">
+  <h3>RailSense AI Operations</h3>
+  <p class="sub">Sign in with your officer credentials to access the Control Room.</p>
+  <div id="opsLoginErr" style="color:var(--red);font-size:12px;display:none;margin-bottom:10px;font-weight:600;"></div>
+  <label>Email</label><input type="email" id="opsEmail" required placeholder="officer@railsense.lk">
+  <label>Password</label><input type="password" id="opsPassword" required placeholder="••••••••••••">
+  <div class="modal-actions"><button type="submit" class="button" style="width:100%;">Sign In</button></div>
+  <div style="font:11px 'Share Tech Mono',monospace;color:var(--muted);text-align:center;margin-top:14px;">Secure Operations Access</div>
+</form></div>
+
+<div class="toast-stack" id="toastStack"></div>
+
+<script>
+/* RailSense M2 — Operations Control Room.
+   Three screens, all reading real data:
+     1. Dashboard  — one /api/dashboard aggregate (KPIs + heatmap + hourly curve)
+     2. Predict    — POST /predict-delay, showing the ML result, the grounded
+                     explanation and the RAG precedent together
+     3. Incidents  — full CRUD over the real incident store
+   No sample arrays, no random numbers: if a value is missing the UI says so. */
+
+const $ = id => document.getElementById(id);
+const VIEWS = [['dashboard','Network dashboard'],['predict','Delay prediction & RAG'],['incidents','Incident management']];
+const INCIDENT_TYPES = ['signal_fault','mechanical','weather','track_obstruction','staffing','other'];
+
+let dash = {};
+
+/* ------------------------------- helpers ------------------------------- */
+const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+const num = v => Number(v ?? 0).toFixed(1);
+const pill = v => `<span class="pill ${esc(v)}">${esc(String(v ?? '').replaceAll('_',' '))}</span>`;
+
+function fmtDate(v){
+  if(!v) return '—';
+  const d = typeof v === 'number' ? new Date(v * (v < 2e10 ? 1000 : 1)) : new Date(v);
+  return isNaN(d.getTime()) ? String(v) : d.toLocaleString();
+}
+
+function toast(msg, kind='info'){
+  const el = document.createElement('div');
+  el.className = `toast ${kind}`;
+  el.textContent = msg;
+  $('toastStack').appendChild(el);
+  setTimeout(() => el.remove(), 4500);
+}
+
+function getToken(){
+  const p = new URLSearchParams(location.search).get('token');
+  if(p){ localStorage.setItem('railsense_m2_token', p); history.replaceState({}, document.title, location.pathname); return p; }
+  return localStorage.getItem('railsense_m2_token') || '';
+}
+function headers(){
+  const t = getToken();
+  return t ? {'Authorization':'Bearer '+t, 'Content-Type':'application/json'} : {'Content-Type':'application/json'};
+}
+
+async function api(path, options = {}){
+  const resp = await fetch(path, { headers: headers(), ...options });
+  if(resp.status === 401){ $('opsLoginModal').classList.add('open'); throw new Error('Session expired — please sign in.'); }
+  let data = null;
+  try { data = await resp.json(); } catch(_) { /* empty body */ }
+  if(!resp.ok){
+    const detail = data && data.detail ? data.detail : resp.statusText;
+    throw new Error(typeof detail === 'string' ? detail : JSON.stringify(detail));
+  }
+  return data;
+}
+
+function openModal(id){ $(id).classList.add('open'); }
+function closeModal(id){ $(id).classList.remove('open'); }
+
+/* --------------------------------- nav --------------------------------- */
+function setupNav(){
+  $('nav').innerHTML = VIEWS.map(([id,name]) =>
+    `<button data-target="${id}" class="${id==='dashboard'?'active':''}">${name}</button>`).join('');
+  document.querySelectorAll('.nav button').forEach(b => b.onclick = () => show(b.dataset.target));
+}
+function show(id){
+  document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.dataset.view === id));
+  document.querySelectorAll('.nav button').forEach(b => b.classList.toggle('active', b.dataset.target === id));
+  const item = VIEWS.find(v => v[0] === id);
+  $('title').textContent = item ? item[1] : 'Network dashboard';
+  $('crumb').textContent = `M2 / ${item ? item[1] : 'Dashboard'}`;
+  if(id === 'incidents') incidents.load();
+}
+
+/* ------------------------- screen 1: dashboard ------------------------- */
+function offlineBanner(source){
+  if(!source || !source.offline){ $('offlineBanner').innerHTML = ''; return; }
+  $('offlineBanner').innerHTML =
+    `<div class="banner"><b>Offline mode — showing local data.</b>
+     Supabase is unreachable, so figures are computed from
+     <code>data/operations_history.csv</code> and locally retained events. They may lag the live database.</div>`;
+}
+
+function renderDashboard(){
+  const o = dash.overview || {};
+  const src = dash.data_source || {};
+  offlineBanner(src);
+  $('sourceLabel').textContent = src.offline ? 'LOCAL FALLBACK' : 'SUPABASE LIVE';
+
+  $('kpis').innerHTML = [
+    ['Network delay', num(o.average_delay) + 'm', 'mean across every historical trip'],
+    ['On-time performance', num(o.on_time_rate) + '%', 'arrivals within five minutes'],
+    ['Historical trips', (o.trips ?? 0).toLocaleString(), `from ${src.history === 'supabase' ? 'Supabase' : 'local CSV'}`],
+    ['Audited events', (o.audit_events ?? 0).toLocaleString(), 'entries in the agent audit trail'],
+  ].map(x => `<article class="card metric"><div class="label">${x[0]}</div><div class="value">${x[1]}</div><div class="muted">${x[2]}</div></article>`).join('');
+
+  const hourly = (dash.hourly || []).filter(h => h.samples > 0);
+  $('hourlySource').textContent = `${hourly.length} hours sampled`;
+  if(hourly.length){
+    const max = Math.max(...hourly.map(h => h.average_delay), 0.1);
+    $('hourChart').innerHTML = hourly.map(h =>
+      `<div class="bar" style="height:${Math.max(4, h.average_delay / max * 100)}%" title="${h.hour}:00 — ${h.average_delay} min over ${h.samples} trips"><span>${h.hour}</span></div>`).join('');
+  } else {
+    $('hourChart').innerHTML = '<div class="empty">No scheduled-time data in the current corpus.</div>';
+  }
+
+  const mix = dash.incident_mix || [];
+  const cmax = Math.max(...mix.map(x => x.count), 1);
+  $('causeChart').innerHTML = mix.length ? mix.map(x =>
+    `<div style="margin:13px 0"><div class="row" style="padding:0 0 5px;border:0">
+       <span>${esc(x.type.replaceAll('_',' '))}</span><b>${x.count}</b></div>
+     <div class="progress"><i style="width:${x.count / cmax * 100}%"></i></div></div>`).join('')
+    : '<div class="empty">No incidents recorded in the corpus.</div>';
+
+  const routes = dash.routes || [];
+  $('routeCount').textContent = `${routes.length} corridors`;
+  $('routeTable').innerHTML = routes.length ? routes.map(r =>
+    `<tr><td><b>${esc(r.route)}</b></td><td>${r.trips}</td><td>${num(r.average_delay)}m</td>
+     <td>${num(r.max_delay)}m</td><td>${r.incident_rate}%</td><td>${pill(r.status)}</td></tr>`).join('')
+    : '<tr><td colspan="6"><div class="empty">No route data available.</div></td></tr>';
+
+  const ml = dash.ml_metrics || {};
+  const r2 = Number(ml.r2 ?? 0);
+  $('modelR2').textContent = ml.r2 !== undefined ? num(r2) : '—';
+  $('modelBar').style.width = Math.max(0, Math.min(100, r2 * 100)) + '%';
+  $('modelNote').textContent = ml.mae_minutes !== undefined
+    ? `MAE ${num(ml.mae_minutes)} min · RMSE ${num(ml.rmse_minutes)} min · ${ml.n_train ?? '—'} train / ${ml.n_test ?? '—'} test rows · source: ${ml.data_source ?? 'unknown'}`
+    : 'No delay_model_metrics.json yet — run a training pass.';
+
+  // Shapes match the committed artifacts exactly: classification_metrics.json
+  // is an object, retrieval_metrics.json nests precision under precision_at_k,
+  // and out_of_template_robustness_check.json is a list of scored cases.
+  const nlp = dash.nlp_metrics || {};
+  const pk = (dash.rag_metrics || {}).precision_at_k || {};
+  const ragN = (dash.rag_metrics || {}).n_queries;
+  const rob = Array.isArray(dash.robustness) ? dash.robustness : [];
+  const robCorrect = rob.filter(c => c.correct).length;
+
+  const evidence = [
+    ['NLP macro F1', nlp.macro_avg && nlp.macro_avg.f1 !== undefined ? num(nlp.macro_avg.f1) : '—',
+      'templated incident classification'],
+    ['NLP accuracy', nlp.accuracy !== undefined ? num(nlp.accuracy * 100) + '%' : '—',
+      `against ground-truth incident_type${nlp.n_samples ? ` · ${nlp.n_samples} records` : ''}`],
+    ['Out-of-template', rob.length ? `${num(robCorrect / rob.length * 100)}%` : '—',
+      `paraphrased stress test${rob.length ? ` · ${robCorrect}/${rob.length} correct` : ''}`],
+    ['Retrieval P@1', pk['p@1'] !== undefined ? num(pk['p@1']) : '—',
+      `same-category agreement${ragN ? ` · ${ragN} queries` : ''}`],
+    ['Retrieval P@5', pk['p@5'] !== undefined ? Number(pk['p@5']).toFixed(4) : '—',
+      `backend: ${esc((dash.rag_metrics || {}).backend || 'unknown')}`],
+  ];
+  $('evalList').innerHTML = evidence.map(e =>
+    `<div class="row"><div><b>${e[0]}</b><small>${e[2]}</small></div><b>${e[1]}</b></div>`).join('');
+
+  const routeList = $('routeOptions');
+  if(routeList) routeList.innerHTML = routes.map(r => `<option value="${esc(r.route)}">`).join('');
+}
+
+async function refreshDashboard(){
+  try {
+    dash = await api('/api/dashboard');
+    renderDashboard();
+    renderFeatures(dash.feature_importance || []);
+  } catch(err){
+    console.error(err);
+    $('sourceLabel').textContent = 'SERVICE UNREACHABLE';
+  }
+}
+
+/* --------------------- screen 2: prediction + RAG ---------------------- */
+function renderFeatures(features){
+  const el = $('featureChart');
+  if(!features.length){
+    el.innerHTML = '<div class="empty">No feature_importances.json yet — retrain the model from the Admin Console to generate it.</div>';
+    return;
+  }
+  const max = Math.max(...features.map(f => f.importance ?? f.value ?? 0), 1e-9);
+  el.innerHTML = features.map(f => {
+    const name = f.feature ?? f.name ?? 'unknown';
+    const val = f.importance ?? f.value ?? 0;
+    return `<div style="margin:12px 0"><div class="row" style="padding:0 0 5px;border:0">
+      <span>${esc(name)}</span><b>${Number(val).toFixed(4)}</b></div>
+      <div class="progress"><i style="width:${val / max * 100}%"></i></div></div>`;
+  }).join('');
+  $('featureStamp').style.display = '';
+  $('featureStamp').textContent = `${features.length} ranked features`;
+}
+
+function renderPrediction(r){
+  $('predictMethod').style.display = '';
+  $('predictMethod').textContent = r.explanation_method;
+
+  const confClass = r.confidence === 'high' ? 'normal' : r.confidence === 'medium' ? 'watch' : 'critical';
+  $('predictResult').innerHTML = `
+    <div class="big-number">${num(r.predicted_delay_minutes)} <span style="font-size:17px;font-weight:500">min</span></div>
+    <div class="muted">predicted delay for <b>${esc(r.train_id)}</b> on <b>${esc(r.route)}</b></div>
+    <div class="row" style="margin-top:14px"><span>Confidence</span><span class="pill ${confClass}">${esc(r.confidence)}</span></div>
+    <div class="row"><span>Model version</span><b>${esc(r.model_version)}</b></div>
+    <div class="row"><span>Retrieval method</span><b>${esc(r.retrieval_method)}</b></div>
+    <div class="row"><span>Explanation method</span><b>${esc(r.explanation_method)}</b></div>
+    <div class="notice" style="margin-top:16px"><b>Grounded explanation</b><br>${esc(r.explanation)}</div>
+    ${r.top_contributing_features && r.top_contributing_features.length ? `
+      <div class="muted" style="margin-top:12px">Top contributing features for this prediction:
+        ${r.top_contributing_features.map(f => `<b>${esc(f.feature)}</b> (${Number(f.importance ?? 0).toFixed(3)})`).join(', ')}</div>` : ''}
+  `;
+
+  $('retrievalMethod').style.display = '';
+  $('retrievalMethod').textContent = r.retrieval_method;
+  const cites = r.similar_past_incidents || [];
+  $('similarIncidents').innerHTML = cites.length
+    ? cites.map((c, i) => `<div class="cite"><div class="head"><b>Precedent ${i + 1}</b></div><div class="muted">${esc(c)}</div></div>`).join('')
+      + `<div class="muted" style="margin-top:8px">Retrieved from the historical operations corpus via <b>${esc(r.retrieval_method)}</b>. These citations are what the explanation above is grounded in.</div>`
+    : '<div class="empty">No historical incident precedent matched this query.</div>';
+}
+
+$('predictForm').onsubmit = async e => {
+  e.preventDefault();
+  const btn = $('predictBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span> Predicting…';
+  $('predictResult').innerHTML = '<div class="empty"><span class="spin" style="border-top-color:var(--brand-light);border-color:rgba(96,165,250,0.25)"></span> Running inference…</div>';
+
+  const body = {
+    route: $('pRoute').value.trim(),
+    train_id: $('pTrain').value.trim(),
+    scheduled_time: new Date($('pTime').value).toISOString(),
+  };
+  if($('pStation').value.trim()) body.station = $('pStation').value.trim();
+  if($('pWeather').value) body.weather = $('pWeather').value;
+  if($('pDay').value) body.day_type = $('pDay').value;
+  if($('pIncident').value) body.incident_type = $('pIncident').value;
+
+  try {
+    const result = await api('/predict-delay', { method: 'POST', body: JSON.stringify(body) });
+    renderPrediction(result);
+    refreshDashboard();
+  } catch(err){
+    // TRAIN_REGISTRY_UNAVAILABLE means the shared canonical trains table could not
+    // be reached. M2 refuses rather than predicting for a train it cannot verify,
+    // so say that plainly instead of showing a bare error string.
+    const msg = String(err.message || '');
+    const body = msg.includes('TRAIN_REGISTRY_UNAVAILABLE')
+      ? `<b>Offline mode — prediction unavailable.</b><br>The shared canonical train registry
+         could not be reached, so M2 will not predict for a train it cannot verify.
+         The dashboard and incident screens continue on local data.`
+      : msg.includes('TRAIN_NOT_FOUND')
+        ? `<b>Unknown train.</b><br>${esc(msg)} — this train is not in the shared registry,
+           so no prediction is produced for it.`
+        : `<b>Prediction failed</b><br>${esc(msg)}`;
+    $('predictResult').innerHTML = `<div class="notice warn">${body}</div>`;
+    toast(msg, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Run prediction';
+  }
+};
+
+/* ------------------- screen 3: incident management --------------------- */
+const incidents = (function(){
+  const PAGE = 20;
+  let offset = 0, total = 0;
+
+  function filters(){
+    const p = new URLSearchParams({ limit: PAGE, offset });
+    const s = $('iSearch').value.trim(), t = $('iType').value, st = $('iStatus').value;
+    if(s) p.set('search', s);
+    if(t) p.set('classified_type', t);
+    if(st) p.set('review_status', st);
+    return p;
+  }
+
+  async function load(){
+    const tbody = $('incidentTable');
+    tbody.innerHTML = '<tr><td colspan="8"><div class="empty">Loading incidents…</div></td></tr>';
+    try {
+      const result = await api(`/incidents?${filters().toString()}`);
+      const rows = result.rows || [];
+      total = result.count || rows.length;
+
+      $('iSource').textContent = result.source;
+      $('iPageInfo').textContent = total ? `${offset + 1}–${Math.min(offset + rows.length, total)} of ${total}` : '0 incidents';
+      if(result.offline){
+        $('offlineBanner').innerHTML =
+          `<div class="banner"><b>Offline mode — showing local data.</b>
+           Supabase is unreachable; incidents are read from and written to the local store and will need re-syncing.</div>`;
+      }
+
+      tbody.innerHTML = rows.length ? rows.map(r => `
+        <tr>
+          <td class="muted" style="white-space:nowrap">${fmtDate(r.received_at)}</td>
+          <td><b>${esc(r.train_id)}</b></td>
+          <td>${esc(r.station)}</td>
+          <td style="max-width:280px">${esc(r.summary || r.raw_text)}</td>
+          <td>${pill(r.classified_type)}</td>
+          <td class="muted">${esc(r.nlp_method)}</td>
+          <td>${pill(r.review_status || 'pending')}</td>
+          <td style="white-space:nowrap">
+            <button class="button alt sm" onclick='incidents.edit(${JSON.stringify(r).replace(/'/g,"&#39;")})'>Edit</button>
+            <button class="button danger sm" onclick="incidents.remove('${esc(r.incident_id)}')">Delete</button>
+          </td>
+        </tr>`).join('')
+        : '<tr><td colspan="8"><div class="empty">No incidents match these filters. Use “Report incident” to file one.</div></td></tr>';
+    } catch(err){
+      tbody.innerHTML = `<tr><td colspan="8"><div class="empty">${esc(err.message)}</div></td></tr>`;
+    }
+  }
+
+  function edit(row){
+    $('eId').value = row.incident_id;
+    $('eType').innerHTML = INCIDENT_TYPES.map(t =>
+      `<option value="${t}" ${row.classified_type === t ? 'selected' : ''}>${t}</option>`).join('');
+    $('eSummary').value = row.summary || '';
+    $('eStatus').value = row.review_status === 'pending' ? 'corrected' : (row.review_status || 'corrected');
+    $('eRaw').value = row.raw_text || '';
+    openModal('editModal');
+  }
+
+  async function remove(id){
+    if(!confirm(`Delete incident ${id}?\n\nIts embedding is removed too, so RAG stops citing it. This cannot be undone.`)) return;
+    try {
+      const result = await api(`/incidents/${encodeURIComponent(id)}`, { method: 'DELETE' });
+      toast(result.offline ? 'Deleted from local store (offline)' : 'Incident deleted', 'success');
+      load();
+    } catch(err){ toast(err.message, 'error'); }
+  }
+
+  return {
+    load,
+    edit,
+    remove,
+    reset(){ offset = 0; load(); },
+    page(direction){
+      const next = offset + direction * PAGE;
+      if(next >= 0 && (direction < 0 || next < total)){ offset = next; load(); }
+    },
+  };
+})();
+
+function openIncidentModal(){ openModal('incidentModal'); }
+
+$('incidentForm').onsubmit = async e => {
+  e.preventDefault();
+  const btn = $('incidentSubmit');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span> Filing…';
+  try {
+    const created = await api('/incident-report', {
+      method: 'POST',
+      body: JSON.stringify({
+        train_id: $('nTrain').value.trim(),
+        station: $('nStation').value.trim(),
+        raw_text: $('nText').value.trim(),
+      }),
+    });
+    toast(`Filed as ${created.classified_type} (${created.nlp_method})`, 'success');
+    closeModal('incidentModal');
+    $('incidentForm').reset();
+    incidents.reset();
+  } catch(err){ toast(err.message, 'error'); }
+  finally { btn.disabled = false; btn.textContent = 'File incident'; }
+};
+
+$('editForm').onsubmit = async e => {
+  e.preventDefault();
+  const btn = $('editSubmit');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span> Saving…';
+  try {
+    const result = await api(`/incidents/${encodeURIComponent($('eId').value)}`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        classified_type: $('eType').value,
+        summary: $('eSummary').value.trim(),
+        review_status: $('eStatus').value,
+      }),
+    });
+    if(result.write_error){
+      // Supabase was reachable but rejected the write — say so, rather than
+      // letting it look like a normal offline-mode save.
+      toast('Database rejected the update: ' + result.write_error, 'error');
+    } else {
+      toast(result.offline ? 'Saved to local store (offline)' : 'Incident updated', 'success');
+    }
+    closeModal('editModal');
+    incidents.load();
+  } catch(err){ toast(err.message, 'error'); }
+  finally { btn.disabled = false; btn.textContent = 'Save correction'; }
+};
+
+/* ---------------------------- auth & boot ------------------------------ */
+function checkAuth(){
+  if(!getToken()){ $('opsLoginModal').classList.add('open'); return; }
+  fetch('/admin/api/me', { headers: headers() })
+    .then(r => r.ok ? r.json() : Promise.reject())
+    .then(u => { $('officerName').textContent = `${u.name || 'Officer'} (${u.role === 'admin' ? 'Admin' : 'Ops Eng'})`; })
+    .catch(() => { /* the API calls below surface auth problems */ });
+}
+
+$('opsLoginForm').onsubmit = async e => {
+  e.preventDefault();
+  $('opsLoginErr').style.display = 'none';
+  try {
+    const r = await fetch('/admin/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: $('opsEmail').value, password: $('opsPassword').value }),
+    });
+    const d = await r.json();
+    if(!r.ok) throw new Error(d.detail || 'Login failed');
+    localStorage.setItem('railsense_m2_token', d.token);
+    localStorage.setItem('railsense_m2_officer', JSON.stringify(d.officer));
+    closeModal('opsLoginModal');
+    $('officerName').textContent = `${d.officer.name} (${d.officer.role === 'admin' ? 'Admin' : 'Ops Eng'})`;
+    boot();
+  } catch(err){
+    $('opsLoginErr').textContent = err.message;
+    $('opsLoginErr').style.display = 'block';
+  }
+};
+
+$('opsLogoutBtn').onclick = () => {
+  localStorage.removeItem('railsense_m2_token');
+  localStorage.removeItem('railsense_m2_officer');
+  $('opsLoginModal').classList.add('open');
+};
+
+function tick(){ $('clock').textContent = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'}); }
+
+function boot(){
+  $('iType').innerHTML = '<option value="">All classifications</option>' +
+    INCIDENT_TYPES.map(t => `<option value="${t}">${t}</option>`).join('');
+  const now = new Date();
+  now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+  $('pTime').value = now.toISOString().slice(0, 16);
+  refreshDashboard();
+}
+
+setupNav();
+checkAuth();
+boot();
+tick();
+setInterval(tick, 1000);
+// The dashboard is an aggregate over the whole corpus; a 30s cadence keeps it
+// current without hammering the database the way the old 5s poll did.
+setInterval(() => { if(document.querySelector('.view.active').dataset.view === 'dashboard') refreshDashboard(); }, 30000);
 </script></body></html>

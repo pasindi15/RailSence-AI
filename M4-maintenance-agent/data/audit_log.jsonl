@@ -68,3 +68,47 @@
 {"ts": "2026-09-19T19:32:45.741791+00:00", "action": "hub_issue_report", "agent": "maintenance-agent", "client": "127.0.0.1", "ticket_id": "MT-8AF12B", "sender": "passenger-agent", "description": "The AC is broken in my compartment"}
 {"ts": "2026-09-20T04:46:54.907461+00:00", "action": "engineer_chat", "agent": "maintenance-agent", "client": "127.0.0.1", "detected_asset_type": "diesel_engine", "answer_method": "llm_grounded", "retrieval_method": "supabase_pgvector"}
 {"ts": "2026-09-20T08:18:10.411518+00:00", "action": "hub_issue_report", "agent": "maintenance-agent", "client": "127.0.0.1", "ticket_id": "MT-C300F0", "sender": "passenger-agent", "description": "The AC is broken in my compartment"}
+{"ts": "2026-09-20T09:21:53.743675+00:00", "action": "hub_issue_report", "agent": "maintenance-agent", "client": "127.0.0.1", "ticket_id": "MT-B8F5D5", "sender": "passenger-agent", "description": "The AC is broken in my compartment"}
+{"ts": "2026-09-20T10:46:37.075799+00:00", "action": "hub_issue_report", "agent": "maintenance-agent", "client": "127.0.0.1", "ticket_id": "MT-D1584F", "sender": "passenger-agent", "description": "The AC is broken in my compartment"}
+{"ts": "2026-09-20T11:48:06.427968+00:00", "action": "hub_issue_report", "agent": "maintenance-agent", "client": "127.0.0.1", "ticket_id": "MT-59C021", "sender": "passenger-agent", "description": "The AC is broken in my compartment"}
+{"ts": "2026-09-20T17:25:26.574322+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "PM-4082", "sender": "passenger-agent"}
+{"ts": "2026-09-20T17:25:54.969620+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "UNKNOWN-999", "sender": "passenger-agent"}
+{"ts": "2026-09-20T17:26:20.567288+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "PM-4082", "sender": "passenger-agent"}
+{"ts": "2026-09-20T17:26:48.941938+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "UNKNOWN-999", "sender": "passenger-agent"}
+{"ts": "2026-09-20T21:21:23.243023+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "1005", "sender": "passenger-agent"}
+{"ts": "2026-09-20T21:29:51.777992+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "1005", "sender": "passenger-agent"}
+{"ts": "2026-09-20T21:30:17.388768+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "4085", "sender": "passenger-agent"}
+{"ts": "2026-09-20T21:30:30.722172+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "50", "sender": "passenger-agent"}
+{"ts": "2026-09-20T21:30:38.464004+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "1005", "sender": "passenger-agent"}
+{"ts": "2026-09-20T21:30:52.532820+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "PM-4082", "sender": "passenger-agent"}
+{"ts": "2026-09-20T21:34:24.649592+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "50", "sender": "passenger-agent"}
+{"ts": "2026-09-20T21:39:55.993072+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "PM-8056", "sender": "passenger-agent"}
+{"ts": "2026-09-20T21:43:49.282643+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "4085", "sender": "passenger-agent"}
+{"ts": "2026-09-20T21:46:55.089420+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "IC-1001", "sender": "passenger-agent"}
+{"ts": "2026-09-20T21:47:37.038370+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "IC-1001", "sender": "passenger-agent"}
+{"ts": "2026-09-20T21:55:18.016115+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "YD-9337", "sender": "passenger-agent"}
+{"ts": "2026-09-20T21:55:30.108498+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "4082", "sender": "passenger-agent"}
+{"ts": "2026-09-20T21:55:48.435528+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "PM-8056", "sender": "passenger-agent"}
+{"ts": "2026-09-20T21:56:09.139935+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "4085", "sender": "passenger-agent"}
+{"ts": "2026-09-20T22:00:39.083087+00:00", "action": "hub_issue_report", "agent": "maintenance-agent", "client": "127.0.0.1", "ticket_id": "MT-397328", "sender": "passenger-agent", "description": "The AC is broken in my compartment"}
+{"ts": "2026-09-20T22:01:05.321527+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "IC-1001", "sender": "passenger-agent"}
+{"ts": "2026-09-20T22:03:18.422456+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "PM-4082", "sender": "passenger-agent"}
+{"ts": "2026-09-20T22:04:48.078003+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "4082", "sender": "passenger-agent"}
+{"ts": "2026-09-20T22:04:59.258232+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "PM-8056", "sender": "passenger-agent"}
+{"ts": "2026-09-20T22:05:34.140986+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "PM-4082", "sender": "passenger-agent"}
+{"ts": "2026-09-20T22:06:29.315575+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "1005", "sender": "passenger-agent"}
+{"ts": "2026-09-20T22:07:01.212352+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "4085", "sender": "passenger-agent"}
+{"ts": "2026-09-20T22:07:15.524395+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "IC-8746", "sender": "passenger-agent"}
+{"ts": "2026-09-20T22:07:44.368360+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "PM-8056", "sender": "passenger-agent"}
+{"ts": "2026-09-20T22:09:16.000657+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "PM-8056", "sender": "passenger-agent"}
+{"ts": "2026-09-20T22:10:14.756931+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "PM-8056", "sender": "passenger-agent"}
+{"ts": "2026-09-20T22:10:35.470168+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "1005", "sender": "passenger-agent"}
+{"ts": "2026-09-20T22:11:00.839026+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "4085", "sender": "passenger-agent"}
+{"ts": "2026-09-20T22:12:57.879064+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "1005", "sender": "passenger-agent"}
+{"ts": "2026-09-20T22:13:15.422224+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "PM-8056", "sender": "passenger-agent"}
+{"ts": "2026-09-20T22:13:26.749345+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "1005", "sender": "passenger-agent"}
+{"ts": "2026-09-20T22:13:46.155214+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "PM-4082", "sender": "passenger-agent"}
+{"ts": "2026-09-20T22:14:00.998097+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "DM-8055", "sender": "passenger-agent"}
+{"ts": "2026-09-20T22:17:35.954066+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "4085", "sender": "passenger-agent"}
+{"ts": "2026-09-20T22:53:49.750001+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "55", "sender": "passenger-agent"}
+{"ts": "2026-09-20T22:54:52.605645+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "4085", "sender": "passenger-agent"}

@@ -540,13 +540,365 @@ def get_training_runs() -> list[dict[str, Any]]:
 
 
 def list_model_versions() -> list[dict[str, Any]]:
+    """Real backup .pkl files with the eval metrics captured when each was archived.
+
+    ml/train_delay_model.py writes a `<version>.json` sidecar next to every
+    backup, so the rollback list shows the metrics that model actually scored
+    rather than placeholder text. Versions archived before sidecars existed
+    report metrics as None and the UI renders that honestly.
+    """
     if not MODEL_VERSIONS_DIR.exists():
         return []
     versions = []
-    for f in sorted(MODEL_VERSIONS_DIR.glob("delay_model_*.pkl"), reverse=True):
+    for f in sorted(MODEL_VERSIONS_DIR.glob("delay_model_*.pkl"), key=lambda p: p.stat().st_mtime, reverse=True):
+        sidecar = f.with_suffix(".json")
+        metrics = None
+        if sidecar.exists():
+            try:
+                metrics = json.loads(sidecar.read_text(encoding="utf-8"))
+            except Exception:
+                metrics = None
         versions.append({
             "filename": f.name,
             "created_at": f.stat().st_mtime,
             "size_bytes": f.stat().st_size,
+            "metrics": metrics,
         })
     return versions
+
+
+# ---------------------------------------------------------------------------
+# Incident Reports Repository (Supabase primary + local JSONL fallback)
+#
+# Backs the consolidated Incident Management screen (create / read / update /
+# delete). Mirrors the officers repository pattern: every write goes to
+# Supabase when reachable and is always mirrored locally, so the screen keeps
+# working — with a visible "offline mode" marker — when Supabase is down.
+# ---------------------------------------------------------------------------
+
+LOCAL_INCIDENTS_PATH = ROOT_DIR / "data" / "incident_reports.jsonl"
+
+INCIDENT_FIELDS = (
+    "incident_id", "train_id", "station", "raw_text", "summary",
+    "classified_type", "nlp_method", "review_status", "reviewed_by",
+    "reviewed_at", "received_at",
+)
+
+
+def _load_local_incidents() -> list[dict[str, Any]]:
+    if not LOCAL_INCIDENTS_PATH.exists():
+        return []
+    rows: list[dict[str, Any]] = []
+    try:
+        for line in LOCAL_INCIDENTS_PATH.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if line:
+                rows.append(json.loads(line))
+    except Exception as exc:
+        logger.warning("Could not read local incident store: %s", exc)
+        return []
+    return rows
+
+
+def _save_local_incidents(rows: list[dict[str, Any]]) -> None:
+    LOCAL_INCIDENTS_PATH.parent.mkdir(parents=True, exist_ok=True)
+    payload = "".join(json.dumps(row, default=str) + "\n" for row in rows)
+    LOCAL_INCIDENTS_PATH.write_text(payload, encoding="utf-8")
+
+
+def _upsert_local_incident(record: dict[str, Any]) -> None:
+    rows = _load_local_incidents()
+    rows = [r for r in rows if r.get("incident_id") != record.get("incident_id")]
+    rows.append(record)
+    _save_local_incidents(rows)
+
+
+def create_incident(record: dict[str, Any]) -> dict[str, Any]:
+    """Persist a triaged incident. Returns {'row': ..., 'source': ...}."""
+    row = {key: record.get(key) for key in INCIDENT_FIELDS if key in record}
+    row.setdefault("review_status", "pending")
+    row.setdefault("received_at", datetime.now(timezone.utc).isoformat())
+
+    source = "local_fallback"
+    client = get_client()
+    if client is not None:
+        try:
+            res = client.table("incident_reports").insert(row).execute()
+            if res.data:
+                row = res.data[0]
+                source = "supabase"
+        except Exception as exc:
+            logger.warning("Supabase create_incident error: %s", exc)
+
+    _upsert_local_incident(row)
+    return {"row": row, "source": source}
+
+
+def list_incidents(
+    limit: int = 25,
+    offset: int = 0,
+    review_status: Optional[str] = None,
+    classified_type: Optional[str] = None,
+    search: Optional[str] = None,
+) -> dict[str, Any]:
+    """Paginated incident listing, newest first."""
+    client = get_client()
+    if client is not None:
+        try:
+            query = client.table("incident_reports").select("*", count="exact")
+            if review_status:
+                query = query.eq("review_status", review_status)
+            if classified_type:
+                query = query.eq("classified_type", classified_type)
+            if search:
+                query = query.or_(
+                    f"summary.ilike.%{search}%,train_id.ilike.%{search}%,station.ilike.%{search}%"
+                )
+            query = query.order("received_at", desc=True).range(offset, offset + limit - 1)
+            res = query.execute()
+            return {
+                "rows": res.data or [],
+                "count": res.count if res.count is not None else len(res.data or []),
+                "source": "supabase",
+            }
+        except Exception as exc:
+            logger.warning("Supabase list_incidents error: %s", exc)
+
+    rows = _load_local_incidents()
+    if review_status:
+        rows = [r for r in rows if r.get("review_status") == review_status]
+    if classified_type:
+        rows = [r for r in rows if r.get("classified_type") == classified_type]
+    if search:
+        needle = search.lower()
+        rows = [
+            r for r in rows
+            if needle in str(r.get("summary", "")).lower()
+            or needle in str(r.get("train_id", "")).lower()
+            or needle in str(r.get("station", "")).lower()
+        ]
+    rows.sort(key=lambda r: str(r.get("received_at") or ""), reverse=True)
+    return {
+        "rows": rows[offset: offset + limit],
+        "count": len(rows),
+        "source": "local_fallback",
+    }
+
+
+def get_incident(incident_id: str) -> Optional[dict[str, Any]]:
+    client = get_client()
+    if client is not None:
+        try:
+            res = client.table("incident_reports").select("*").eq("incident_id", incident_id).limit(1).execute()
+            if res.data:
+                return res.data[0]
+        except Exception as exc:
+            logger.warning("Supabase get_incident error: %s", exc)
+    for row in _load_local_incidents():
+        if row.get("incident_id") == incident_id:
+            return row
+    return None
+
+
+def update_incident(incident_id: str, patch: dict[str, Any]) -> dict[str, Any]:
+    """Apply a controller correction. Returns {'row', 'source'} or {'row': None}."""
+    clean = {k: v for k, v in patch.items() if k in INCIDENT_FIELDS and k != "incident_id"}
+    if not clean:
+        return {"row": None, "source": "none", "error": "no updatable fields supplied"}
+
+    source = "local_fallback"
+    error: Optional[str] = None
+    updated: Optional[dict[str, Any]] = None
+    client = get_client()
+    if client is not None:
+        try:
+            res = client.table("incident_reports").update(clean).eq("incident_id", incident_id).execute()
+            if res.data:
+                updated = res.data[0]
+            else:
+                # The update succeeded but PostgREST returned no representation.
+                # Re-read rather than reporting offline, which would wrongly tell
+                # the operator their correction only landed locally.
+                echo = client.table("incident_reports").select("*").eq("incident_id", incident_id).limit(1).execute()
+                if echo.data:
+                    updated = echo.data[0]
+            if updated is not None:
+                source = "supabase"
+        except Exception as exc:
+            # Supabase is configured and reachable but rejected this write (e.g. a
+            # column type mismatch). That is NOT offline mode — report it, so the
+            # UI does not tell the operator their change is merely queued locally.
+            error = f"{exc.__class__.__name__}: {exc}"
+            logger.warning("Supabase update_incident error: %s", exc)
+
+    rows = _load_local_incidents()
+    for index, row in enumerate(rows):
+        if row.get("incident_id") == incident_id:
+            row.update(clean)
+            rows[index] = row
+            updated = updated or row
+            _save_local_incidents(rows)
+            break
+    else:
+        if updated is not None:
+            _upsert_local_incident(updated)
+
+    return {"row": updated, "source": source, "error": error}
+
+
+def delete_incident(incident_id: str) -> dict[str, Any]:
+    """Remove an incident from Supabase and the local mirror."""
+    source = "local_fallback"
+    deleted = False
+    client = get_client()
+    if client is not None:
+        try:
+            client.table("incident_reports").delete().eq("incident_id", incident_id).execute()
+            deleted = True
+            source = "supabase"
+        except Exception as exc:
+            logger.warning("Supabase delete_incident error: %s", exc)
+
+    rows = _load_local_incidents()
+    remaining = [r for r in rows if r.get("incident_id") != incident_id]
+    if len(remaining) != len(rows):
+        _save_local_incidents(remaining)
+        deleted = True
+
+    return {"deleted": deleted, "source": source}
+
+
+# ---------------------------------------------------------------------------
+# Inter-Agent Audit Trail (read-only)
+#
+# Serves the Audit & Agent Communication Log screen. Supabase `audit_events`
+# is primary; data/audit_log.jsonl is the offline fallback. Both shapes are
+# normalised to one row contract so the UI never branches on the source.
+# ---------------------------------------------------------------------------
+
+LOCAL_AGENT_AUDIT_PATH = ROOT_DIR / "data" / "audit_log.jsonl"
+
+
+def _normalise_audit_row(row: dict[str, Any]) -> dict[str, Any]:
+    """Flatten a Supabase or JSONL audit record to the documented row shape."""
+    metadata = row.get("metadata") or {}
+    if not isinstance(metadata, dict):
+        metadata = {}
+    return {
+        "message_id": row.get("message_id") or metadata.get("message_id") or "",
+        "timestamp": row.get("timestamp") or row.get("created_at") or "",
+        "action": row.get("action") or "",
+        "intent": row.get("intent") or metadata.get("intent") or row.get("action") or "",
+        "sender_agent": row.get("sender_agent") or metadata.get("sender_agent") or "",
+        "receiver_agent": row.get("receiver_agent") or metadata.get("receiver_agent") or "",
+        "outcome": row.get("outcome") or metadata.get("outcome") or "",
+        "route": row.get("route") or metadata.get("route"),
+        "train_id": row.get("train_id") or metadata.get("train_id"),
+        "predicted_delay_minutes": row.get("predicted_delay_minutes", metadata.get("delay")),
+        "model_version": row.get("model_version") or metadata.get("model"),
+        "classified_type": row.get("classified_type") or metadata.get("classified_type"),
+        "client": row.get("client") or metadata.get("client") or "",
+        "details": metadata or {k: v for k, v in row.items() if k not in {"timestamp", "action"}},
+    }
+
+
+def _matches_audit_filters(
+    row: dict[str, Any],
+    agent: Optional[str],
+    intent: Optional[str],
+    date_from: Optional[str],
+    date_to: Optional[str],
+) -> bool:
+    if agent:
+        needle = agent.lower()
+        haystack = f"{row.get('sender_agent', '')} {row.get('receiver_agent', '')}".lower()
+        if needle not in haystack:
+            return False
+    if intent and intent.lower() not in str(row.get("intent", "")).lower():
+        return False
+    stamp = str(row.get("timestamp") or "")
+    if date_from and stamp and stamp[:10] < date_from[:10]:
+        return False
+    if date_to and stamp and stamp[:10] > date_to[:10]:
+        return False
+    return True
+
+
+def list_agent_audit_events(
+    limit: int = 100,
+    offset: int = 0,
+    agent: Optional[str] = None,
+    intent: Optional[str] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+) -> dict[str, Any]:
+    """Filtered, paginated read of the inter-agent audit trail."""
+    client = get_client()
+    if client is not None:
+        try:
+            query = client.table("audit_events").select("*", count="exact")
+            if agent:
+                # Server-side: either side of the conversation may name the agent.
+                query = query.or_(f"sender_agent.ilike.%{agent}%,receiver_agent.ilike.%{agent}%")
+            if intent:
+                query = query.ilike("action", f"%{intent}%")
+            if date_from:
+                query = query.gte("created_at", date_from)
+            if date_to:
+                query = query.lte("created_at", f"{date_to[:10]}T23:59:59+00:00")
+            query = query.order("created_at", desc=True).range(offset, offset + limit - 1)
+            res = query.execute()
+            rows = [_normalise_audit_row(r) for r in (res.data or [])]
+            return {
+                "rows": rows,
+                "count": res.count if res.count is not None else len(rows),
+                "source": "supabase",
+                "offline": False,
+            }
+        except Exception as exc:
+            logger.warning("Supabase list_agent_audit_events error: %s", exc)
+
+    if not LOCAL_AGENT_AUDIT_PATH.exists():
+        return {"rows": [], "count": 0, "source": "local_jsonl", "offline": True}
+
+    records: list[dict[str, Any]] = []
+    try:
+        for line in LOCAL_AGENT_AUDIT_PATH.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                records.append(_normalise_audit_row(json.loads(line)))
+            except json.JSONDecodeError:
+                continue
+    except OSError as exc:
+        logger.warning("Could not read local audit log: %s", exc)
+        return {"rows": [], "count": 0, "source": "local_jsonl", "offline": True}
+
+    filtered = [r for r in records if _matches_audit_filters(r, agent, intent, date_from, date_to)]
+    filtered.reverse()
+    return {
+        "rows": filtered[offset: offset + limit],
+        "count": len(filtered),
+        "source": "local_jsonl",
+        "offline": True,
+    }
+
+
+def summarise_agent_audit_events(limit: int = 1000) -> dict[str, Any]:
+    """Intent distribution over the audit trail, for the screen's summary bars."""
+    result = list_agent_audit_events(limit=limit)
+    by_intent: dict[str, int] = {}
+    by_agent: dict[str, int] = {}
+    for row in result["rows"]:
+        key = row.get("intent") or "unknown"
+        by_intent[key] = by_intent.get(key, 0) + 1
+        sender = row.get("sender_agent") or "operations-agent"
+        by_agent[sender] = by_agent.get(sender, 0) + 1
+    return {
+        "total_sampled": len(result["rows"]),
+        "by_intent": by_intent,
+        "by_agent": by_agent,
+        "source": result["source"],
+        "offline": result["offline"],
+    }

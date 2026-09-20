@@ -41,11 +41,8 @@ def get_client() -> Client:
     return _client
 
 
-def get_train(train_id: str) -> dict[str, Any] | None:
-    """Return the canonical train row for an exact public train_id."""
-    clean_id = (train_id or "").strip().upper()
-    if not clean_id:
-        return None
+def _exact_train(clean_id: str) -> dict[str, Any] | None:
+    """Look a canonical train_id up verbatim, with no alias resolution."""
     try:
         response = (
             get_client()
@@ -58,6 +55,84 @@ def get_train(train_id: str) -> dict[str, Any] | None:
     except Exception as exc:
         raise TrainRepositoryUnavailable("Canonical train lookup failed") from exc
     return response.data[0] if response.data else None
+
+
+def _alias_candidates(clean_id: str) -> list[dict[str, Any]]:
+    """Active canonical rows a passenger's shorthand could be referring to.
+
+    The registry deliberately carries two naming conventions side by side (see
+    SHARED_TRAIN_SOURCE_OF_TRUTH.md): prefixed operational ids like PM-4082,
+    and bare Sri Lanka Railways service numbers like 50 or 1015. Passengers
+    type whichever they have seen, so "4082" has to be able to reach PM-4082 -
+    but only when the registry leaves no genuine doubt about which train that
+    is. Roughly one numeric suffix in eight is shared by two or more trains
+    (IC-1048 and UD-1048, for example), and answering for the wrong one is
+    worse than saying we are not sure, so the caller is handed every candidate
+    rather than an arbitrary pick.
+    """
+    try:
+        if clean_id.isdigit():
+            # Bare service number -> any prefixed id ending in "-<number>".
+            # The '-' anchors it so "82" can never reach "PM-4082".
+            response = (
+                get_client()
+                .table("trains")
+                .select("*")
+                .ilike("train_id", f"%-{clean_id}")
+                .eq("active", True)
+                .execute()
+            )
+        elif "-" in clean_id and clean_id.rsplit("-", 1)[1].isdigit():
+            # Prefixed id that is not in the registry under that prefix ->
+            # try the bare service number it is built from.
+            response = (
+                get_client()
+                .table("trains")
+                .select("*")
+                .eq("train_id", clean_id.rsplit("-", 1)[1])
+                .eq("active", True)
+                .execute()
+            )
+        else:
+            return []
+    except Exception as exc:
+        raise TrainRepositoryUnavailable("Canonical train lookup failed") from exc
+    return response.data or []
+
+
+def resolve_train(train_id: str) -> tuple[dict[str, Any] | None, list[dict[str, Any]]]:
+    """Resolve caller-supplied text to one canonical train row.
+
+    Returns (row, candidates). An exact registry hit always wins and returns
+    ([] , no candidates). Otherwise an unambiguous alias resolves to its single
+    canonical row. When the shorthand is ambiguous, row is None and every
+    candidate is returned so the caller can ask which train was meant instead
+    of guessing on the passenger's behalf.
+    """
+    clean_id = (train_id or "").strip().upper()
+    if not clean_id:
+        return None, []
+
+    exact = _exact_train(clean_id)
+    if exact is not None:
+        return exact, []
+
+    candidates = _alias_candidates(clean_id)
+    if len(candidates) == 1:
+        return candidates[0], []
+    return None, candidates
+
+
+def get_train(train_id: str) -> dict[str, Any] | None:
+    """Return the canonical train row for a public train_id.
+
+    Exact matches win. An unambiguous alias (a bare service number for a
+    prefixed id, or vice versa) resolves to its canonical row; an ambiguous
+    one returns None rather than guessing. Use resolve_train() when the caller
+    can act on the ambiguous candidates.
+    """
+    row, _candidates = resolve_train(train_id)
+    return row
 
 
 def search_trains(

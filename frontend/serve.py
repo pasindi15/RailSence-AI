@@ -25,6 +25,7 @@ import sys
 import time
 import uuid
 from datetime import date, datetime, timedelta, timezone
+from datetime import time as dtime
 from pathlib import Path
 from typing import Any
 
@@ -284,6 +285,17 @@ def get_user_portal():
 _TRAIN_BOARD_CACHE: dict[str, tuple[float, dict[str, Any]]] = {}
 _TRAIN_BOARD_CACHE_TTL = 30.0  # 30 seconds in-memory TTL
 
+# Canonical Sri Lanka Railways timetable data, cross-referenced against the
+# two other places this project states it independently (M1's schedules.md
+# FAQ doc and M3's booking services_catalog.py) so train_id/name/route stay
+# consistent everywhere they are shown. Used only when the shared Supabase
+# tables are completely unreachable or empty; this is the same graceful-
+# degradation pattern as M2's local-CSV fallback, not runtime randomness.
+# "current_station" / "next_station" / "progress_percent" are intentionally
+# absent here - they are computed fresh from departure/arrival (and stops,
+# when known) by _compute_live_position() every time this data is served,
+# so a stale hardcoded position is never shown regardless of when the
+# service actually starts.
 _CANONICAL_FALLBACK_SERVICES: list[dict[str, Any]] = [
     {
         "train_id": "1005",
@@ -292,15 +304,11 @@ _CANONICAL_FALLBACK_SERVICES: list[dict[str, Any]] = [
         "to_station": "Badulla",
         "route": "Colombo - Badulla",
         "departure_time": "05:55",
-        "arrival_time": "15:15",
+        "arrival_time": "16:35",
         "service_status": "SCHEDULED",
         "maintenance_status": "OPERATIONAL",
         "platform": "3",
         "stops": ["Ragama", "Polgahawela", "Peradeniya", "Nanu Oya", "Ella", "Badulla"],
-        "live_status": "ON_SCHEDULE",
-        "current_station": "Peradeniya",
-        "next_station": "Nanu Oya",
-        "progress_percent": 45,
         "first_class_capacity": 40,
         "second_class_capacity": 120,
     },
@@ -311,55 +319,48 @@ _CANONICAL_FALLBACK_SERVICES: list[dict[str, Any]] = [
         "to_station": "Badulla",
         "route": "Colombo - Badulla",
         "departure_time": "08:30",
-        "arrival_time": "17:45",
+        "arrival_time": "19:15",
         "service_status": "SCHEDULED",
         "maintenance_status": "OPERATIONAL",
         "platform": "4",
         "stops": ["Ragama", "Gampaha", "Polgahawela", "Kandy", "Hatton", "Nanu Oya", "Badulla"],
-        "live_status": "ON_SCHEDULE",
-        "current_station": "Colombo Fort",
-        "next_station": "Ragama",
-        "progress_percent": 5,
         "first_class_capacity": 30,
         "second_class_capacity": 140,
     },
     {
+        # Yal Devi - real SLR service 4085 (see schedules.md and
+        # services_catalog.py; a previous version of this fallback mislabeled
+        # 4085 as "Uttara Devi" and invented a non-existent "4082" for Yal
+        # Devi - both corrected here).
         "train_id": "4085",
-        "train_name": "Uttara Devi",
+        "train_name": "Yal Devi Express",
         "from_station": "Colombo Fort",
         "to_station": "Jaffna",
-        "route": "Colombo - Jaffna",
+        "route": "Colombo Fort - Jaffna",
         "departure_time": "05:45",
-        "arrival_time": "12:45",
+        "arrival_time": "13:20",
         "service_status": "SCHEDULED",
         "maintenance_status": "OPERATIONAL",
         "platform": "1",
-        "stops": ["Gampaha", "Kurunegala", "Anuradhapura", "Vavuniya", "Kilinochchi", "Jaffna"],
-        "live_status": "ON_SCHEDULE",
-        "current_station": "Anuradhapura",
-        "next_station": "Vavuniya",
-        "progress_percent": 60,
+        "stops": ["Colombo Fort", "Kurunegala", "Anuradhapura", "Vavuniya", "Jaffna"],
         "first_class_capacity": 45,
         "second_class_capacity": 150,
     },
     {
-        "train_id": "4082",
-        "train_name": "Yal Devi Express",
+        # Uttara Devi - the real overnight sibling of Yal Devi, service 4095.
+        "train_id": "4095",
+        "train_name": "Uttara Devi (Overnight)",
         "from_station": "Colombo Fort",
         "to_station": "Jaffna",
-        "route": "Colombo - Jaffna",
-        "departure_time": "06:35",
-        "arrival_time": "13:30",
-        "service_status": "DELAYED",
+        "route": "Colombo Fort - Jaffna",
+        "departure_time": "20:15",
+        "arrival_time": "04:10",
+        "service_status": "SCHEDULED",
         "maintenance_status": "OPERATIONAL",
         "platform": "2",
-        "stops": ["Ragama", "Polgahawela", "Kurunegala", "Anuradhapura", "Jaffna"],
-        "live_status": "DELAYED_15_MIN",
-        "current_station": "Kurunegala",
-        "next_station": "Anuradhapura",
-        "progress_percent": 35,
-        "first_class_capacity": 35,
-        "second_class_capacity": 130,
+        "stops": ["Colombo Fort", "Kurunegala", "Anuradhapura", "Vavuniya", "Jaffna"],
+        "first_class_capacity": 40,
+        "second_class_capacity": 120,
     },
     {
         "train_id": "8050",
@@ -373,10 +374,6 @@ _CANONICAL_FALLBACK_SERVICES: list[dict[str, Any]] = [
         "maintenance_status": "OPERATIONAL",
         "platform": "5",
         "stops": ["Panadura", "Aluthgama", "Ambalangoda", "Hikkaduwa", "Galle", "Matara"],
-        "live_status": "ON_SCHEDULE",
-        "current_station": "Galle",
-        "next_station": "Matara",
-        "progress_percent": 80,
         "first_class_capacity": 50,
         "second_class_capacity": 160,
     },
@@ -392,14 +389,146 @@ _CANONICAL_FALLBACK_SERVICES: list[dict[str, Any]] = [
         "maintenance_status": "OPERATIONAL",
         "platform": "1",
         "stops": ["Anuradhapura", "Kurunegala", "Polgahawela", "Colombo Fort", "Galle", "Matara"],
-        "live_status": "ON_SCHEDULE",
-        "current_station": "Colombo Fort",
-        "next_station": "Galle",
-        "progress_percent": 70,
         "first_class_capacity": 30,
         "second_class_capacity": 150,
     },
 ]
+
+
+def _fallback_services_with_live_positions() -> list[dict[str, Any]]:
+    """The static fallback timetable, with live position computed fresh (never frozen).
+
+    This path only runs when Supabase is unreachable, so there is no travel_date
+    to compare against "today" - the fallback board is always presented as
+    covering the current day, matching what it replaces.
+    """
+    enriched = []
+    for service in _CANONICAL_FALLBACK_SERVICES:
+        computed = _compute_live_position(
+            service.get("departure_time"),
+            service.get("arrival_time"),
+            service.get("from_station"),
+            service.get("to_station"),
+            None,
+            is_today=True,
+        )
+        enriched.append({**service, **computed})
+    return enriched
+
+
+def _parse_clock(value: str | None) -> "dtime | None":
+    """Parse an "HH:MM" or "HH:MM:SS" string into a time object."""
+    if not value:
+        return None
+    try:
+        parts = [int(p) for p in str(value).strip().split(":")]
+        while len(parts) < 3:
+            parts.append(0)
+        return dtime(parts[0], parts[1], parts[2])
+    except (ValueError, IndexError):
+        return None
+
+
+def _compute_live_position(
+    departure_time: str | None,
+    arrival_time: str | None,
+    from_station: str | None,
+    to_station: str | None,
+    stop_times: dict[str, Any] | None,
+    is_today: bool,
+) -> dict[str, Any]:
+    """Derive a train's live position from its own schedule and the current clock.
+
+    Nothing here is random or hardcoded: every field is computed from the
+    service's real departure/arrival times (and, when available, its real
+    per-stop times) compared against the current Asia/Colombo clock. When the
+    selected board date is not today, or the schedule lacks usable times, the
+    honest answer is "no live claim" - fields are left None rather than guessed.
+    """
+    result: dict[str, Any] = {
+        "live_status": None,
+        "current_station": None,
+        "next_station": None,
+        "progress_percent": None,
+    }
+    if not is_today:
+        return result
+
+    dep = _parse_clock(departure_time)
+    arr = _parse_clock(arrival_time)
+    if dep is None or arr is None:
+        return result
+
+    try:
+        from zoneinfo import ZoneInfo
+        colombo_tz = ZoneInfo("Asia/Colombo")
+    except Exception:
+        colombo_tz = timezone(timedelta(hours=5, minutes=30))
+    now_dt = datetime.now(colombo_tz)
+    now = now_dt.time()
+
+    base = datetime(2000, 1, 1)
+    dep_dt = base.replace(hour=dep.hour, minute=dep.minute, second=dep.second)
+    arr_dt = base.replace(hour=arr.hour, minute=arr.minute, second=arr.second)
+    now_ref = base.replace(hour=now.hour, minute=now.minute, second=now.second)
+    if arr_dt <= dep_dt:
+        # Overnight service (e.g. departs 20:15, arrives 04:10 the next day).
+        arr_dt += timedelta(days=1)
+        if now_ref < dep_dt:
+            # Viewed after local midnight but before this evening's departure:
+            # the run actually on the rails is the one that left yesterday
+            # evening and lands this morning, so measure against yesterday's
+            # window. Without this shift a train 90% of the way to Badulla at
+            # 03:00 reports "not yet departed", which is the opposite of true.
+            dep_dt -= timedelta(days=1)
+            arr_dt -= timedelta(days=1)
+
+    if now_ref < dep_dt:
+        result["live_status"] = "SCHEDULED"
+        result["progress_percent"] = 0
+        result["current_station"] = from_station
+        return result
+
+    if now_ref >= arr_dt:
+        result["live_status"] = "ARRIVED"
+        result["progress_percent"] = 100
+        result["current_station"] = to_station
+        return result
+
+    total_seconds = (arr_dt - dep_dt).total_seconds()
+    elapsed_seconds = (now_ref - dep_dt).total_seconds()
+    progress = round((elapsed_seconds / total_seconds) * 100) if total_seconds > 0 else 0
+    result["live_status"] = "IN_TRANSIT"
+    result["progress_percent"] = max(0, min(100, progress))
+
+    # Real per-stop times let us name the exact current/next station rather
+    # than just report a percentage; without them we report progress only.
+    if isinstance(stop_times, dict) and stop_times:
+        timeline: list[tuple[datetime, str, str]] = []  # (moment, station, kind)
+        for station, times in stop_times.items():
+            if not isinstance(times, dict):
+                continue
+            for kind in ("arr", "dep"):
+                clock = _parse_clock(times.get(kind))
+                if clock is None:
+                    continue
+                # Anchored to the departure's own day, not the fixed base day,
+                # so an overnight run measured against yesterday's window keeps
+                # its stops in the right order rather than jumping a day.
+                moment = dep_dt.replace(hour=clock.hour, minute=clock.minute, second=clock.second)
+                if moment < dep_dt:
+                    moment += timedelta(days=1)
+                timeline.append((moment, station, kind))
+        timeline.sort(key=lambda item: item[0])
+
+        passed = [item for item in timeline if item[0] <= now_ref]
+        upcoming = [item for item in timeline if item[0] > now_ref]
+        if passed:
+            result["current_station"] = passed[-1][1]
+        if upcoming:
+            result["next_station"] = upcoming[0][1]
+
+    return result
 
 
 def _fetch_train_board_data(parsed_date: date) -> dict[str, Any]:
@@ -418,6 +547,12 @@ def _fetch_train_board_data(parsed_date: date) -> dict[str, Any]:
         or []
     )
 
+    try:
+        from zoneinfo import ZoneInfo
+        is_today = parsed_date == datetime.now(ZoneInfo("Asia/Colombo")).date()
+    except Exception:
+        is_today = parsed_date == datetime.now(timezone(timedelta(hours=5, minutes=30))).date()
+
     services = []
     for schedule in schedule_rows:
         train = schedule.get("trains") or {}
@@ -426,9 +561,28 @@ def _fetch_train_board_data(parsed_date: date) -> dict[str, Any]:
         stops = schedule.get("stops") or schedule_metadata.get("stops") or train_metadata.get("stops") or train_metadata.get("route_stops")
         if not isinstance(stops, list):
             stops = []
-        live_status = train_metadata.get("live_status") or train_metadata.get("movement_status")
-        current_station = train_metadata.get("current_station")
-        next_station = train_metadata.get("next_station")
+        from_station = schedule.get("from_station") or train.get("origin_station")
+        to_station = schedule.get("to_station") or train.get("destination_station")
+        departure_time = schedule.get("departure_time")
+        arrival_time = schedule.get("arrival_time")
+
+        # Live position is never authored/stored - it is derived here, on every
+        # request, from the schedule's own departure/arrival (and per-stop
+        # times when known) against the current Asia/Colombo clock. A schedule
+        # that already carries authored live fields (e.g. a future ops feed)
+        # is trusted first; otherwise it is computed, never left as a silent
+        # "N/A" when the schedule itself has everything needed to answer.
+        stop_times = train_metadata.get("stop_times") if isinstance(train_metadata.get("stop_times"), dict) else None
+        computed = _compute_live_position(
+            departure_time, arrival_time, from_station, to_station, stop_times, is_today,
+        )
+        live_status = train_metadata.get("live_status") or train_metadata.get("movement_status") or computed["live_status"]
+        current_station = train_metadata.get("current_station") or computed["current_station"]
+        next_station = train_metadata.get("next_station") or computed["next_station"]
+        progress_percent = train_metadata.get("progress_percent")
+        if progress_percent is None:
+            progress_percent = computed["progress_percent"]
+
         maintenance = str(train.get("maintenance_status") or "UNKNOWN").upper()
         service_status = str(schedule.get("service_status") or "SCHEDULED").upper()
         if not train.get("active") or maintenance in {"OUT_OF_SERVICE", "DECOMMISSIONED"}:
@@ -436,11 +590,11 @@ def _fetch_train_board_data(parsed_date: date) -> dict[str, Any]:
         services.append({
             "train_id": train.get("train_id") or schedule.get("train_id"),
             "train_name": train.get("train_name"),
-            "from_station": schedule.get("from_station") or train.get("origin_station"),
-            "to_station": schedule.get("to_station") or train.get("destination_station"),
+            "from_station": from_station,
+            "to_station": to_station,
             "route": train.get("route"),
-            "departure_time": schedule.get("departure_time"),
-            "arrival_time": schedule.get("arrival_time"),
+            "departure_time": departure_time,
+            "arrival_time": arrival_time,
             "service_status": service_status,
             "maintenance_status": maintenance,
             "platform": schedule.get("platform"),
@@ -448,13 +602,13 @@ def _fetch_train_board_data(parsed_date: date) -> dict[str, Any]:
             "live_status": live_status,
             "current_station": current_station,
             "next_station": next_station,
-            "progress_percent": train_metadata.get("progress_percent"),
+            "progress_percent": progress_percent,
             "first_class_capacity": schedule.get("first_class_capacity"),
             "second_class_capacity": schedule.get("second_class_capacity"),
         })
 
     if not services:
-        services = _CANONICAL_FALLBACK_SERVICES
+        services = _fallback_services_with_live_positions()
 
     return {
         "travel_date": parsed_date.isoformat(),
@@ -492,7 +646,7 @@ async def train_board(travel_date: str | None = Query(default=None)) -> JSONResp
             "travel_date": parsed_date.isoformat(),
             "updated_at": datetime.now(timezone.utc).isoformat(),
             "source": "canonical_cache",
-            "services": _CANONICAL_FALLBACK_SERVICES,
+            "services": _fallback_services_with_live_positions(),
         }
         _TRAIN_BOARD_CACHE[cache_key] = (now_ts, fallback_data)
         return JSONResponse(content=fallback_data)
@@ -562,7 +716,8 @@ async def proxy_auth_me(request: Request):
         headers["authorization"] = auth
     else:
         raise HTTPException(status_code=401, detail="Authentication required. Please sign in.")
-    async with httpx.AsyncClient(timeout=5.0) as client:
+    # Each verify round-trips to Supabase, so allow well over the ~1-2s typical latency.
+    async with httpx.AsyncClient(timeout=15.0) as client:
         try:
             resp = await client.get(f"{OPERATIONS_AGENT_URL}/admin/api/me", headers=headers)
             return JSONResponse(status_code=resp.status_code, content=resp.json())
@@ -671,22 +826,23 @@ async def chat_endpoint(payload: ChatInput) -> dict[str, Any]:
         # Travel date is present — validate horizon
         try:
             t_date = date.fromisoformat(prefill["travel_date"])
+            booking_horizon = int(os.getenv("BOOKING_HORIZON_DAYS", "365"))
             if t_date < now_colombo:
                 return {
                     "reply": (
                         f"The date **{prefill['travel_date']}** is in the past. "
-                        f"Daily train services operate today ({now_colombo.isoformat()}) and up to 90 days in advance. "
+                        f"Daily train services operate today ({now_colombo.isoformat()}) and up to {booking_horizon} days in advance. "
                         f"Please choose today or an upcoming travel date."
                     ),
                     "intent": "booking_request",
                     "prefill": {k: v for k, v in prefill.items() if k != "travel_date"},
                     "action": None,
                 }
-            max_horizon = now_colombo + timedelta(days=90)
+            max_horizon = now_colombo + timedelta(days=booking_horizon)
             if t_date > max_horizon:
                 return {
                     "reply": (
-                        f"The travel date **{prefill['travel_date']}** exceeds our 90-day booking advance limit "
+                        f"The travel date **{prefill['travel_date']}** exceeds our {booking_horizon}-day booking advance limit "
                         f"(available through {max_horizon.isoformat()}). Please select an earlier date."
                     ),
                     "intent": "booking_request",
@@ -749,9 +905,18 @@ async def chat_endpoint(payload: ChatInput) -> dict[str, Any]:
             },
         }
 
-    # General assistance: try M1 Passenger Assistant first
+    # General assistance: try M1 Passenger Assistant first.
+    #
+    # The timeout has to cover M1's *whole* pipeline, not just M1 itself: an
+    # operational question ("Is PM-8056 delayed?") fans out to the Hub and on
+    # to M2, which runs the delay model plus incident retrieval before
+    # answering. That round-trip measures ~11s warm, so the old 8s ceiling
+    # timed out on exactly the operations questions this box invites - and the
+    # except/pass below turned that into the generic booking greeting, which
+    # read as "the assistant ignored my question" rather than "it timed out".
+    m1_error: str | None = None
     try:
-        async with httpx.AsyncClient(timeout=8.0) as client:
+        async with httpx.AsyncClient(timeout=45.0) as client:
             m1_resp = await client.post(
                 f"{PASSENGER_AGENT_URL}/chat",
                 json={
@@ -772,8 +937,26 @@ async def chat_endpoint(payload: ChatInput) -> dict[str, Any]:
                         "prefill": {},
                         "action": None,
                     }
+    except httpx.TimeoutException:
+        m1_error = (
+            "The Passenger Assistant is taking longer than usual to answer that. "
+            "Please try again in a moment."
+        )
     except Exception:
-        pass
+        m1_error = (
+            "The Passenger Assistant is unavailable right now, so I can't check "
+            "that. Please try again shortly."
+        )
+
+    # Reached only when M1 could not answer. Say why rather than replying with
+    # the booking greeting, which looked like the question had been ignored.
+    if m1_error:
+        return {
+            "reply": m1_error,
+            "intent": "assistant_unavailable",
+            "prefill": {},
+            "action": None,
+        }
 
     # General assistance fallback
     return {
@@ -1346,6 +1529,181 @@ async def preview_cancellation_nlp(payload: AdminNLPPreviewReq) -> JSONResponse:
 
 
 # ---------------------------------------------------------------------------
+# Admin Booking Manifest Endpoints
+# ---------------------------------------------------------------------------
+
+@app.get("/api/admin/trains", tags=["admin"])
+async def list_admin_trains_proxy() -> JSONResponse:
+    """
+    Proxy to booking-agent /admin/trains — returns active trains for dropdown.
+    Falls back to direct DB query if booking-agent is offline.
+    """
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.get(f"{BOOKING_AGENT_URL}/admin/trains")
+            if resp.status_code == 200:
+                return JSONResponse(status_code=200, content=resp.json())
+    except Exception:
+        pass
+
+    try:
+        sys.path.insert(0, str(_M3_ROOT / "booking-agent"))
+        from database.database import SessionLocal
+        from database.models import Train
+
+        with SessionLocal() as db:
+            trains = (
+                db.query(Train)
+                .filter(Train.active == True)  # noqa: E712
+                .order_by(Train.train_id)
+                .all()
+            )
+            return JSONResponse(
+                status_code=200,
+                content=[
+                    {
+                        "id": t.id,
+                        "train_id": t.train_id,
+                        "train_name": t.train_name,
+                        "route": t.route or "",
+                        "origin_station": t.origin_station,
+                        "destination_station": t.destination_station,
+                    }
+                    for t in trains
+                ],
+            )
+    except Exception as exc:
+        return JSONResponse(status_code=500, content={"error": f"Failed to load trains: {exc}"})
+
+
+@app.get("/api/admin/bookings", tags=["admin"])
+async def list_admin_bookings_proxy(
+    train_id: str | None = None,
+    travel_date: str | None = None,
+    booking_status: str | None = None,
+) -> JSONResponse:
+    """
+    Proxy to booking-agent /admin/bookings — returns ticket manifest filtered
+    by train_id (string) and travel_date (YYYY-MM-DD journey date).
+    Falls back to direct DB query if booking-agent is offline.
+    """
+    params: dict[str, str] = {}
+    if train_id:
+        params["train_id"] = train_id
+    if travel_date:
+        params["travel_date"] = travel_date
+    if booking_status:
+        params["booking_status"] = booking_status
+
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            resp = await client.get(
+                f"{BOOKING_AGENT_URL}/admin/bookings",
+                params=params,
+            )
+            if resp.status_code in (200, 400, 404):
+                return JSONResponse(status_code=resp.status_code, content=resp.json())
+    except Exception:
+        pass
+
+    # Direct DB fallback
+    try:
+        from datetime import date as _date
+        sys.path.insert(0, str(_M3_ROOT / "booking-agent"))
+        from database.database import SessionLocal
+        from database.models import Booking, Train, TrainSchedule
+
+        parsed_date = None
+        if travel_date:
+            try:
+                parsed_date = _date.fromisoformat(travel_date.strip())
+            except ValueError:
+                return JSONResponse(
+                    status_code=400,
+                    content={"error": "Invalid travel_date format. Expected YYYY-MM-DD."},
+                )
+
+        if not train_id and not parsed_date:
+            return JSONResponse(
+                status_code=400,
+                content={"error": "At least one filter (train_id or travel_date) is required."},
+            )
+
+        with SessionLocal() as db:
+            query = (
+                db.query(Booking)
+                .join(Train, Booking.train_id == Train.id)
+                .join(TrainSchedule, Booking.schedule_id == TrainSchedule.id)
+            )
+            if train_id:
+                train_row = db.query(Train).filter(Train.train_id == train_id.strip()).first()
+                if not train_row:
+                    return JSONResponse(
+                        status_code=404,
+                        content={"error": f"Train '{train_id}' not found."},
+                    )
+                query = query.filter(Booking.train_id == train_row.id)
+            if parsed_date:
+                query = query.filter(Booking.travel_date == parsed_date)
+            if booking_status:
+                query = query.filter(Booking.status == booking_status.upper())
+
+            bookings = query.order_by(Booking.travel_date, Booking.created_at).all()
+            results = []
+            for b in bookings:
+                t = b.train
+                s = b.schedule
+                canc = b.cancellation_request
+                pax = [
+                    {"full_name": bp.passenger.full_name or "Unknown", "nic_masked": bp.passenger.nic_masked}
+                    for bp in b.booking_passengers
+                    if bp.passenger
+                ]
+                status_val = b.status.value if hasattr(b.status, "value") else str(b.status)
+                if status_val == "CANCELLED" and canc and canc.admin_decision == "APPROVE":
+                    pay_status = "REFUNDED"
+                elif status_val == "CONFIRMED":
+                    pay_status = "PAID"
+                elif status_val in ("HELD", "PENDING_FRAUD_REVIEW"):
+                    pay_status = "PENDING"
+                else:
+                    pay_status = "UNKNOWN"
+
+                results.append({
+                    "id": b.id,
+                    "booking_reference": b.booking_reference,
+                    "ticket_token": b.ticket_token,
+                    "passenger_email": b.passenger_email or "",
+                    "passengers": pax,
+                    "passenger_count": b.passenger_count,
+                    "fare": str(b.fare),
+                    "train_id": t.train_id if t else str(b.train_id),
+                    "train_name": t.train_name if t else "",
+                    "route": (t.route or "") if t else "",
+                    "from_station": b.from_station,
+                    "to_station": b.to_station,
+                    "travel_date": b.travel_date.isoformat(),
+                    "departure_time": s.departure_time.strftime("%H:%M") if s and s.departure_time else "",
+                    "arrival_time": s.arrival_time.strftime("%H:%M") if s and s.arrival_time else "",
+                    "seat_class": b.seat_class,
+                    "status": status_val,
+                    "payment_status": pay_status,
+                    "created_at": b.created_at.isoformat() if b.created_at else None,
+                    "cancellation_case": canc.case_reference if canc else None,
+                })
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "count": len(results),
+                    "filters": {"train_id": train_id, "travel_date": travel_date, "booking_status": booking_status},
+                    "bookings": results,
+                },
+            )
+    except Exception as exc:
+        return JSONResponse(status_code=500, content={"error": f"Failed to load bookings: {exc}"})
+
+
+# ---------------------------------------------------------------------------
 # Admin Fraud Review Endpoints
 # ---------------------------------------------------------------------------
 
@@ -1559,6 +1917,110 @@ async def hub_dashboard_proxy() -> JSONResponse:
         )
 
 
+def humanize_hub_error(raw_err: str | None, intent: str = "", receiver: str = "") -> dict[str, Any]:
+    """Translate raw technical error logs into clear, human/LLM-understandable explanations."""
+    if not raw_err:
+        return {
+            "summary": "Unknown Error",
+            "details": "No specific failure reason was returned by the receiving agent.",
+            "missing_fields": [],
+        }
+
+    err = str(raw_err).strip()
+    lowered = err.lower()
+
+    # Case 1: Incomplete booking parameters (Pydantic validation errors on BookingRequest)
+    if "validation error" in lowered and ("bookingrequest" in lowered or intent == "booking_request"):
+        missing = []
+        if "travel_date" in lowered:
+            missing.append("Travel Date")
+        if "train_id" in lowered:
+            missing.append("Train ID")
+        if "seat_class" in lowered:
+            missing.append("Seat Class")
+        if "passenger_count" in lowered:
+            missing.append("Passenger Count")
+        if "nic" in lowered:
+            missing.append("Passenger NIC")
+
+        missing_str = ", ".join(missing) if missing else "required booking parameters"
+        return {
+            "summary": f"Incomplete Booking Details (Missing: {missing_str})",
+            "details": f"The passenger requested a route, but did not specify {missing_str}. The Booking Agent requires these mandatory fields to create a confirmed seat reservation.",
+            "missing_fields": missing,
+        }
+
+    # Case 2: Cancellation failure (e.g. not found, already cancelled)
+    if intent == "cancel_booking" or "cancel" in lowered:
+        if "not found" in lowered:
+            return {
+                "summary": "Booking Reference Not Found",
+                "details": "The provided booking reference does not match any active ticket in the database.",
+                "missing_fields": [],
+            }
+        if "already cancelled" in lowered:
+            return {
+                "summary": "Ticket Already Cancelled",
+                "details": "This booking has already been cancelled previously.",
+                "missing_fields": [],
+            }
+        return {
+            "summary": "Cancellation Request Rejected",
+            "details": "The Booking Agent could not process this cancellation request.",
+            "missing_fields": [],
+        }
+
+    # Case 3: Train identity / lookup errors
+    if "train_not_found" in lowered or ("not found" in lowered and "train" in lowered):
+        return {
+            "summary": "Train Identity Unrecognized",
+            "details": "Operations or Maintenance could not find a train service matching the requested identifier.",
+            "missing_fields": ["Valid Train ID"],
+        }
+
+    # Case 4: Network / Connectivity / Port offline
+    if any(k in lowered for k in ["connection refused", "502 bad gateway", "failed to connect", "unreachable", "timed out", "timeout"]):
+        target = receiver or "destination agent"
+        return {
+            "summary": f"Agent Unreachable ({target})",
+            "details": f"The Communication Hub could not connect to {target}. The agent service may be offline or restarting.",
+            "missing_fields": [],
+        }
+
+    # Case 5: Circuit breaker
+    if "circuit breaker" in lowered:
+        target = receiver or "destination agent"
+        return {
+            "summary": f"Circuit Breaker Open ({target})",
+            "details": f"Outbound calls to {target} are temporarily blocked by the Hub to prevent cascading failures.",
+            "missing_fields": [],
+        }
+
+    # Case 6: Rate limit / Throttling
+    if "rate limit" in lowered or "429" in lowered:
+        return {
+            "summary": "Rate Limit Exceeded",
+            "details": "The sending agent exceeded the allowed message rate limit for this endpoint.",
+            "missing_fields": [],
+        }
+
+    # Case 7: Authentication / Permission
+    if any(k in lowered for k in ["unauthorized", "forbidden", "401", "403", "invalid token"]):
+        return {
+            "summary": "Authentication / Permission Denied",
+            "details": "The sender lacks valid authorization credentials or permissions for this intent.",
+            "missing_fields": [],
+        }
+
+    # Fallback: clean first line
+    first_line = err.split("\n")[0].strip()
+    return {
+        "summary": first_line[:90] + ("..." if len(first_line) > 90 else ""),
+        "details": err,
+        "missing_fields": [],
+    }
+
+
 @app.get("/api/hub/timeline", tags=["hub"])
 async def hub_timeline_proxy(limit: int = Query(default=20, ge=1, le=100)) -> JSONResponse:
     """Proxy inter-agent message timeline."""
@@ -1569,22 +2031,27 @@ async def hub_timeline_proxy(limit: int = Query(default=20, ge=1, le=100)) -> JS
                 data = resp.json()
                 items = data.get("items", []) if isinstance(data, dict) else (data if isinstance(data, list) else [])
                 if items:
-                    return JSONResponse(
-                        status_code=200,
-                        content=[
-                            {
-                                "message_id": i.get("message_id"),
-                                "correlation_id": i.get("correlation_id"),
-                                "sender": i.get("sender_agent") or i.get("sender", ""),
-                                "receiver": i.get("receiver_agent") or i.get("receiver", ""),
-                                "intent": i.get("intent", ""),
-                                "status": i.get("status", "ROUTED"),
-                                "duration_ms": i.get("duration_ms"),
-                                "timestamp": i.get("timestamp"),
-                            }
-                            for i in items
-                        ],
-                    )
+                    result_items = []
+                    for i in items:
+                        raw_err = i.get("error_message")
+                        intent = i.get("intent", "")
+                        receiver = i.get("receiver_agent") or i.get("receiver", "")
+                        h = humanize_hub_error(raw_err, intent=intent, receiver=receiver) if raw_err else None
+                        result_items.append({
+                            "message_id": i.get("message_id"),
+                            "correlation_id": i.get("correlation_id"),
+                            "sender": i.get("sender_agent") or i.get("sender", ""),
+                            "receiver": receiver,
+                            "intent": intent,
+                            "status": i.get("status", "ROUTED"),
+                            "error_message": raw_err,
+                            "error_summary": h["summary"] if h else None,
+                            "error_details": h["details"] if h else None,
+                            "missing_fields": h["missing_fields"] if h else [],
+                            "duration_ms": i.get("duration_ms"),
+                            "timestamp": i.get("timestamp"),
+                        })
+                    return JSONResponse(status_code=200, content=result_items)
     except Exception:
         pass
 
@@ -1593,22 +2060,27 @@ async def hub_timeline_proxy(limit: int = Query(default=20, ge=1, le=100)) -> JS
         from hub_database import SessionLocal, AuditLog
         with SessionLocal() as db:
             logs = db.query(AuditLog).order_by(AuditLog.id.desc()).limit(limit).all()
-            return JSONResponse(
-                status_code=200,
-                content=[
-                    {
-                        "message_id": l.message_id,
-                        "correlation_id": getattr(l, "correlation_id", None),
-                        "sender": l.sender_agent,
-                        "receiver": l.receiver_agent,
-                        "intent": l.intent,
-                        "status": l.status.value if hasattr(l.status, "value") else str(l.status),
-                        "duration_ms": float(l.duration_ms) if getattr(l, "duration_ms", None) is not None else None,
-                        "timestamp": l.timestamp.isoformat() if l.timestamp else None,
-                    }
-                    for l in logs
-                ],
-            )
+            result_items = []
+            for l in logs:
+                raw_err = getattr(l, "error_message", None)
+                intent = l.intent or ""
+                receiver = l.receiver_agent or ""
+                h = humanize_hub_error(raw_err, intent=intent, receiver=receiver) if raw_err else None
+                result_items.append({
+                    "message_id": l.message_id,
+                    "correlation_id": getattr(l, "correlation_id", None),
+                    "sender": l.sender_agent,
+                    "receiver": receiver,
+                    "intent": intent,
+                    "status": l.status.value if hasattr(l.status, "value") else str(l.status),
+                    "error_message": raw_err,
+                    "error_summary": h["summary"] if h else None,
+                    "error_details": h["details"] if h else None,
+                    "missing_fields": h["missing_fields"] if h else [],
+                    "duration_ms": float(l.duration_ms) if getattr(l, "duration_ms", None) is not None else None,
+                    "timestamp": l.timestamp.isoformat() if l.timestamp else None,
+                })
+            return JSONResponse(status_code=200, content=result_items)
     except Exception as exc:
         print("[Serve Hub Timeline Error]:", exc)
         return JSONResponse(status_code=200, content=[])

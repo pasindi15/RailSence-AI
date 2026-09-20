@@ -15,10 +15,12 @@ create table if not exists manual_embeddings (
     created_at   timestamptz default now()
 );
 
-create index if not exists manual_embeddings_embedding_idx
+-- HNSW index: reliable for small datasets, no cluster-probe tuning needed.
+-- IVFFlat with lists=50 on only ~79 rows caused empty results (too many sparse clusters).
+create index if not exists manual_embeddings_hnsw_idx
     on manual_embeddings
-    using ivfflat (embedding vector_cosine_ops)
-    with (lists = 50);
+    using hnsw (embedding vector_cosine_ops)
+    with (m = 16, ef_construction = 64);
 
 -- RPC: retrieve top-k similar manual sections
 create or replace function match_manual_sections(

@@ -32,6 +32,25 @@ function closeModal() {
   document.getElementById("modal-overlay").innerHTML = "";
 }
 
+// Object-style API used by the officer/RBAC views. Unlike openModal() it adds no
+// footer buttons: callers pass markup that already contains its own .modal-actions.
+const Modal = {
+  open({ title = "", html = "" } = {}) {
+    const overlay = document.getElementById("modal-overlay");
+    if (!overlay) return;
+    overlay.innerHTML = `
+      <div class="modal">
+        <h3>${title}</h3>
+        <div id="modal-body">${html}</div>
+      </div>
+    `;
+    overlay.classList.add("visible");
+    const firstField = overlay.querySelector("input, select, textarea");
+    if (firstField) firstField.focus();
+  },
+  close: closeModal,
+};
+
 document.addEventListener("DOMContentLoaded", () => {
   const overlay = document.getElementById("modal-overlay");
   if (overlay) {

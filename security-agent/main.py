@@ -76,8 +76,11 @@ class AgentMessagePayload(BaseModel):
     message_id: str | None = None
     sender: str = "booking-agent"
     receiver: str = "security-agent"
+    sender_agent: str | None = None
+    receiver_agent: str | None = None
     intent: str
     body: dict[str, Any] = Field(default_factory=dict)
+    payload: dict[str, Any] = Field(default_factory=dict)
     correlation_id: str | None = None
 
 
@@ -130,10 +133,11 @@ def handle_internal_message(payload: AgentMessagePayload) -> JSONResponse:
     Handles messages routed via Communication Hub for fraud scoring.
     """
     if payload.intent in ("fraud_score_request", "fraud_check"):
-        features = payload.body.get("features", {})
-        nic_key = payload.body.get("nic_key", "")
-        booking_ref = payload.body.get("booking_reference")
-        travel_ctx = payload.body.get("travel_context", {})
+        message_body = payload.payload or payload.body
+        features = message_body.get("features", {})
+        nic_key = message_body.get("nic_key", "")
+        booking_ref = message_body.get("booking_reference")
+        travel_ctx = message_body.get("travel_context", {})
 
         result = fraud_detector.score_features(features)
 

@@ -46,6 +46,7 @@ from booking import (
     SeatsUnavailableError,
 )
 from booking.availability import (
+    BOOKING_HORIZON_DAYS,
     ensure_journeys_for_date,
     get_available_seats,
     get_schedule_for_trip,
@@ -337,18 +338,20 @@ class TestBookingHorizonValidation:
         assert "past date" in str(exc_info.value).lower()
 
     def test_far_future_date_beyond_horizon_rejected(self, today_colombo):
-        """Dates beyond 90 days are rejected."""
-        far_future = today_colombo + timedelta(days=95)
+        """Dates beyond advance horizon are rejected."""
+        far_future = today_colombo + timedelta(days=BOOKING_HORIZON_DAYS + 10)
         with pytest.raises(InvalidBookingError) as exc_info:
             validate_travel_date(far_future)
         assert "exceeds" in str(exc_info.value).lower()
-        assert "90 days" in str(exc_info.value).lower()
+        assert f"{BOOKING_HORIZON_DAYS} days" in str(exc_info.value).lower()
 
     def test_dates_within_horizon_are_valid(self, today_colombo):
-        """Today, tomorrow, and up to 90 days are valid."""
+        """Today, tomorrow, up to 90 days, and dates up to the full horizon (e.g. 2026-12-22) are valid."""
         validate_travel_date(today_colombo)
         validate_travel_date(today_colombo + timedelta(days=1))
         validate_travel_date(today_colombo + timedelta(days=90))
+        validate_travel_date(today_colombo + timedelta(days=93))
+        validate_travel_date(today_colombo + timedelta(days=BOOKING_HORIZON_DAYS))
 
 
 # ===========================================================================

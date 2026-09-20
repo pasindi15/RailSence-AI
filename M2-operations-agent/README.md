@@ -76,8 +76,8 @@ As the developer of **Module 2**, I engineered the following end-to-end componen
   * `incident_retriever.py`: Dual-backend retriever querying Supabase `pgvector` (`match_incidents` RPC) with local Scikit-Learn TF-IDF cosine similarity fallback.
   * `explanation.py`: Grounded explanation synthesizer combining numerical delay, top model feature importances, and retrieved incident citations.
 * **Full-Stack Operations Interfaces (`ui/` & `admin_ui/`)**:
-  * **Operations Control Room (`ui/index.html`)**: Glassmorphism dashboard featuring network delay gauges, route delay heatmaps, 24-hour pressure curves, active risk zones, level crossings, and interactive what-if prediction drawers.
-  * **Admin Operations Console (`admin_ui/index.html`)**: Web management portal with incident review queues, dataset CSV import/export, and on-demand model retraining with rollback safety.
+  * **Operations Control Room (`ui/index.html`)**: Three screens — a consolidated network dashboard, a delay prediction lab that shows the ML result together with its RAG-grounded explanation, and full incident CRUD.
+  * **Admin Operations Console (`admin_ui/index.html`)**: Incident management, delay-model retraining with rollback, the read-only agent audit log, and the RBAC officer/role administration that gates them.
 * **Resilience & Storage Layer (`supabase_store.py`, `hub_client.py`)**:
   * Dual-persistence architecture ensuring complete functionality online (Supabase PostgreSQL + pgvector) and offline (local CSV, TF-IDF, JSONL).
   * Outbound alert publisher broadcasting alerts to the Agent Hub and Upstash Redis.
@@ -111,47 +111,113 @@ On the Passenger Portal (`/user`), users view real-time train board statuses. Th
 
 ## 4. Admin-Side Functionalities (Traffic Controller & Admin Experience)
 
-Traffic controllers and railway administrators manage operational network health through two dedicated interfaces:
+The operations surface was deliberately reduced from ~15 panels to **four graded feature
+areas plus one consolidated dashboard**. Every panel that remains maps 1:1 to a rubric
+item (ML, NLP, IR/RAG, agent-hub integration, auditability), and every figure it shows is
+read from the real persistence layer — Supabase Postgres/pgvector when online, the local
+CSV / JSONL / TF-IDF stores when offline. **There are no hardcoded, mocked, or randomly
+generated values in any surviving screen.** When Supabase is unreachable each screen shows
+an explicit *"Offline mode — showing local data"* banner rather than silently serving
+stale or empty results.
 
-### Interface A: Operations Control Room Dashboard (`http://localhost:8005/`)
-FastAPI serves this real-time monitoring center at the root URL:
+### Interface A: Operations Control Room (`http://localhost:8005/`)
 
 ```
-┌────────────────────────────────────────────────────────────────────────┐
-│ 🚆 RailSense AI — Operations Control Room                              │
-│                                                                        │
-│ [ Avg Delay: 6.4m ] [ On-Time: 78.2% ] [ Alerts: 4 ] [ Audited: 1,420 ]│
-├───────────────────────────────────┬────────────────────────────────────┤
-│ 🗺️ Route Delay Heatmap             │ 📈 24-Hour Delay Pressure Curve    │
-│ • Colombo - Kandy (Avg 8.2m)      │ Peak congestion: 07:00-09:00       │
-│ • Colombo - Galle (Avg 4.1m)      │ Secondary peak:  16:30-19:00       │
-│ • Colombo - Badulla (Avg 12.8m)   │ Off-peak baseline: 2.1m            │
-├───────────────────────────────────┼────────────────────────────────────┤
-│ ⚠️ Active Risk Zones & Crossings  │ 📊 Incident Mix Breakdown          │
-│ • Habarana Wildlife (Score 86)    │ Mechanical: 28%  Signal: 24%       │
-│ • Kalutara Flood Plain (Score 71) │ Weather: 22%     Obstruction: 16%  │
-├───────────────────────────────────┴────────────────────────────────────┤
-│ 🛠️ Interactive Prediction Drawer & Live Triaged Incident Feed          │
-└────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────┐
+│ RailSense AI — Operations Control Room          [SUPABASE LIVE] 17:04:22 │
+├──────────────────────────────────────────────────────────────────────────┤
+│ SCREEN 1 · NETWORK DASHBOARD          (one /api/dashboard aggregate)      │
+│ [Network delay 8.4m] [On-time 43.8%] [Trips 2,999] [Audited 330]         │
+│ ├ Delay pressure by hour (24h curve)  ├ Cause of delay (incident mix)    │
+│ ├ Route delay heatmap — 7 corridors, trips / avg / max / incident rate   │
+│ └ Model evidence (R², MAE, RMSE)      └ NLP & retrieval evidence         │
+├──────────────────────────────────────────────────────────────────────────┤
+│ SCREEN 2 · DELAY PREDICTION & RAG EXPLANATION                            │
+│ Request form ──POST /predict-delay──▶ prediction + confidence + version  │
+│                                       grounded explanation               │
+│                                       similar_past_incidents (real)      │
+│                                       feature importances (real file)    │
+├──────────────────────────────────────────────────────────────────────────┤
+│ SCREEN 3 · INCIDENT MANAGEMENT — create · read · update · delete         │
+└──────────────────────────────────────────────────────────────────────────┘
 ```
 
-1. **Network KPI Overview**: Live metric cards displaying average network-wide delay, on-time percentage (OTP %), active critical alerts, and total logged audit records.
-2. **Route Delay Heatmap**: Visual comparative matrix across all 7 Sri Lankan railway corridors, showing total trips, average delays, maximum recorded delays, and incident frequencies.
-3. **Hourly Delay Pressure Curve**: 24-hour distribution curve identifying rush-hour congestion points versus mid-day baselines.
-4. **Active Risk Zones & Level Crossing Monitors**: Real-time tracking of high-risk geographic areas (e.g. Habarana elephant crossing corridor, Kalutara coastal flood plains) and level crossings with vehicle queue estimates and gate status.
-5. **Interactive Delay Simulation Drawer**: Controllers can simulate any scenario by selecting route, station, weather condition, scheduled time, and incident type to receive instant predicted delays and feature importance charts.
-6. **Incident Triage & Staff Briefing Modal**: Field staff enter unstructured incident text; M2 sanitizes input, classifies the fault category, extracts an executive summary, and logs it to the incident queue.
-7. **Live Auto-Refreshing Event Feed**: Auto-polls every 5 seconds, displaying real-time delay alerts and dispatch actions.
+**1. Network Dashboard (consolidated).** What were three separate panels making three
+separate calls — *Network KPI Overview*, *Route Delay Heatmap* and *Hourly Delay Pressure
+Curve* — are now one section backed by a **single** `GET /api/dashboard` aggregate. It
+reports network-wide mean delay, on-time rate, corpus size and audit volume; the 24-hour
+delay-pressure curve (each bar annotated with its sample count); the per-corridor heatmap
+with trips, mean delay, max delay and incident rate; the incident-type mix; and the
+committed ML / NLP / retrieval evaluation metrics. The response carries a `data_source`
+block (`{history, events, offline}`) that drives the offline banner.
+
+**2. Delay Prediction & RAG Explanation (merged).** The old *Interactive Delay Simulation
+Drawer* and the separate display of `similar_past_incidents` are now one screen, because
+a prediction and the evidence it rests on should not be read in two places. The form posts
+to the **existing** `/predict-delay` endpoint — no forked route. The backend chain is:
+
+&nbsp;&nbsp;&nbsp;&nbsp;`shared.train_repository` train validity check →
+exact historical match in `operations_history` →
+else `ml/predict.py` against `delay_model.pkl` →
+`rag/incident_retriever.py` (pgvector `match_incidents` RPC, TF-IDF fallback) →
+`rag/explanation.py`
+
+The screen renders `predicted_delay_minutes`, `confidence`, the grounded `explanation`,
+the retrieved incidents with their real route / station / delay / similarity, the
+`model_version`, and both the `retrieval_method` and `explanation_method` so the examiner
+can see which path served the answer. The feature-importance chart reads
+`ml/feature_importances.json` as written by the most recent training run.
+
+**3. Incident Management — full CRUD (merged).** The *Incident Triage & Staff Briefing
+Modal* (create) and the admin *Incident Review Queue* (review/reclassify) are now a single
+screen:
+
+| Operation | Route | Behaviour |
+|---|---|---|
+| **Create** | `POST /incident-report` *(contract unchanged)* | `bleach` + Pydantic sanitisation → `nlp/classify_incident.py` → `nlp/summarize_incident.py` → persisted to `incident_reports` → **fed to the embeddings pipeline** so RAG can cite it from then on |
+| **Read** | `GET /incidents` | Paginated live listing with real `classified_type`, `summary`, `nlp_method`, `review_status` and timestamp; filter by text, classification and status |
+| **Update** | `PATCH /incidents/{id}` | Controller corrects the classification or edits the summary; written back to the stored row **and** re-indexed for retrieval |
+| **Delete** | `DELETE /incidents/{id}` | Removes the row **and** its `incident_embeddings` vector, so RAG never retrieves a ghost record |
+
+`GET`/`PATCH`/`DELETE` are **additive** — the `POST /incident-report` request/response
+shape that M1 and the Hub rely on is untouched.
 
 ### Interface B: Admin Operations Console (`http://localhost:8005/admin`)
-Mounted at `/admin`, this console provides advanced system and model operations:
-* **Data Management**: Search, filter, and inspect the 3,000 historical records; perform CSV exports/imports; execute data quality anomaly checks.
-* **Incident Review Queue**: Allows human controllers to review, verify, or reclassify triaged incident reports submitted by station masters.
-* **Model Retraining with Rollback Safety**:
-  * Controllers can trigger on-demand model retraining (`ml/train_delay_model.py`) directly from the web interface.
-  * The backend automatically creates a timestamped backup of `delay_model.pkl` prior to replacement. If a retraining run degrades performance, administrators can rollback to the prior model version with a single click.
-* **Hub & Upstash Control**: Live probe testing connectivity to M3 Hub (`HUB_BASE_URL`) and Upstash Redis.
-* **Tamper-Evident Audit Explorer**: Searchable inspector over `audit_events` verifying timestamps, caller IP addresses, and prediction parameters.
+
+**4. Model Retraining with Rollback.** "Retrain Now" runs `ml/train_delay_model.py`
+against the **current** corpus — Supabase `operations_history` when reachable, the CSV
+otherwise, never a cached sample. Before the new `delay_model.pkl` is written, the
+outgoing model is archived to `ml/model_versions/delay_model_<unix_ts>.pkl` together with
+a `.json` sidecar holding the metrics *that* model scored, so the rollback list shows real
+filenames, real timestamps and real per-version metrics instead of placeholder text.
+Retraining refreshes `feature_importances.json`, and `ml/predict.py` re-reads the model
+whenever its mtime changes — **so both retrain and rollback take effect without a service
+restart**. Rollback archives the current model first and restores the selected version's
+metrics alongside it.
+
+**5. Audit & Agent Communication Log (read-only).** Reads `audit_events` directly
+(Supabase primary, `data/audit_log.jsonl` fallback). Every row is a genuinely logged event
+carrying `message_id`, `sender_agent`, `receiver_agent`, `intent`, `timestamp` and
+`outcome`. Search and filter by agent, intent and date range are **pushed down to
+Postgres** when Supabase is reachable, so a large table is never pulled into the process
+to be filtered in Python; the JSONL fallback applies the same predicates locally. The
+screen is **tamper-evident by construction**: no update or delete route exists for
+`audit_events`, and every write verb against it returns 405.
+
+*Officers & Access* and *Roles & Permissions* also remain. They are not themselves graded
+rubric items, but they are the RBAC layer that gates all four screens above, and the
+unified gateway routes to them directly at `/admin/operations/admin/officers`.
+
+### Panels removed in this consolidation
+
+| Removed | Why | What was kept |
+|---|---|---|
+| Active Risk Zones & Level Crossing Monitors | Simulated data, outside graded scope | — (the backing `/api/operations` mock store was deleted outright) |
+| Live Auto-Refreshing Event Feed | Duplicated the audit explorer | Events still surface in `/api/dashboard` and the audit log |
+| Data Management (CSV import/export screen) | Not a graded rubric item | `data/import_to_supabase.py`, `data/generate_dataset.py` and the ML training pipeline remain fully runnable from the CLI |
+| Hub & Upstash Control (connectivity probe) | Diagnostics, not a graded item | **All alert-publishing code in `hub_client.py` is untouched** — the ≥ 5.0-minute `delay_alert` broadcast still fires exactly as before |
+| System Health & Config | Diagnostics screen | `GET /admin/api/health/status` remains — the offline banners and topbar pills read it |
+| Live Map, Alert Dispatch, Operations Analytics | Simulated entity data | Real analytics folded into the consolidated dashboard |
 
 ---
 
@@ -224,11 +290,26 @@ The model transforms categorical and continuous operational variables into numer
 | `incident_type` | Categorical | One-Hot Encoded (`none`, `signal_fault`, `mechanical`, `weather`, `track_obstruction`, `staffing`) |
 
 ### 3. Feature Importance Analysis
-Extracted directly from the trained model (`ml/feature_importances.json`):
-1. **`incident_type_none` (Importance: ~0.42)**: The primary determining factor is whether an incident occurred at all.
-2. **`incident_type_mechanical` & `track_obstruction` (Importance: ~0.24)**: Cause the highest magnitude delay spikes.
-3. **`weather_heavy_rain` (Importance: ~0.14)**: Triggers precautionary speed limits across hill country routes.
-4. **`scheduled_hour` (Importance: ~0.11)**: Rush-hour departures (07:00–09:00, 16:30–19:00) experience compounding delays.
+Extracted directly from the trained model (`ml/feature_importances.json`, as of the latest
+committed retrain against the live Supabase corpus):
+1. **`incident_type_none` (Importance: 0.7332)**: By far the dominant signal — whether an
+   incident occurred at all separates on-time trips from delayed ones more than any other
+   factor.
+2. **`incident_type_mechanical` (0.0769)**, **`incident_type_staffing` (0.0368)** and
+   **`incident_type_track_obstruction` (0.0182)**: Cause the highest magnitude delay spikes
+   once an incident is present.
+3. **`weather_clear` (0.0363)** and **`weather_heavy_rain` (0.0316)**: Weather state is the
+   next strongest driver — heavy rain triggers precautionary speed restrictions on hill
+   country routes.
+4. **`day_type_public_holiday` (0.0234)** and **`scheduled_hour` (0.0060)**: Calendar and
+   time-of-day effects are real but secondary once incident type and weather are accounted
+   for.
+
+Retraining is non-deterministic across runs (the corpus, the Supabase/CSV split, and which
+rows are sampled into the held-out set all shift), so exact weights move slightly between
+runs — the ranking of `incident_type_none` as the dominant feature is stable across every
+retrain observed. The admin console's Model Operations screen always reflects whichever
+values `ml/feature_importances.json` currently holds.
 
 ---
 
@@ -309,10 +390,20 @@ A core requirement of enterprise railway software is fault tolerance. M2 is engi
 All metrics reported below were computed from committed evaluation scripts and datasets.
 
 ### 1. Delay Prediction Model Performance (`ml/train_delay_model.py`)
-* **Dataset**: 3,000 historical operations records (80% train / 20% test split).
-* **Mean Absolute Error (MAE)**: **2.239 minutes** (predictions deviate by ~2.2 min on average).
-* **Root Mean Squared Error (RMSE)**: **2.876 minutes**.
-* **Coefficient of Determination ($R^2$)**: **0.8716** (explains 87.16% of delay variance).
+
+Training now reads the **current** corpus — Supabase `operations_history` when reachable,
+`data/operations_history.csv` otherwise — so the figures depend on which source served the
+run. `data_source` is recorded in `delay_model_metrics.json` and shown in the admin console.
+
+| Corpus | Records | MAE (min) | RMSE (min) | $R^2$ |
+|---|---|---|---|---|
+| Local CSV (`data/operations_history.csv`) | 3,000 | **2.239** | **2.876** | **0.8716** |
+| Supabase `operations_history` (live) | 2,999 | **2.315** | **2.934** | **0.8551** |
+
+Both are 80% train / 20% test at `random_state=42`. The small gap is **not** a regression:
+Supabase currently holds 2,999 of the CSV's 3,000 rows, which shifts the split. The CSV
+figures remain reproducible offline with `python M2-operations-agent/ml/train_delay_model.py`
+when Supabase is unreachable.
 
 ### 2. Incident NLP Classification (`nlp/evaluate_nlp.py`)
 * **Templated Dataset Accuracy (400 records)**: **100.00%** (Macro F1 = 1.00).
@@ -334,13 +425,36 @@ All metrics reported below were computed from committed evaluation scripts and d
 | `GET` | `/health` | Liveness probe | `{"service": "operations-agent", "status": "ok"}` |
 | `GET` | `/` | Operations Control Room UI | Serves `ui/index.html` |
 | `GET` | `/admin` | Admin Operations Console | Serves `admin_ui/index.html` |
-| `GET` | `/api/dashboard` | Control room aggregate data | Network KPIs, heatmaps, hourly curves, active events |
-| `GET` | `/api/operations` | Operational entity state | Live trains, risk zones, crossings, alerts |
+| `GET` | `/api/dashboard` | Consolidated control-room aggregate | **Out**: `overview`, `routes`, `hourly`, `incident_mix`, `feature_importance`, `ml_metrics`, `nlp_metrics`, `rag_metrics`, `events`, `data_source` (drives the offline banner) |
 | `POST` | `/predict-delay` | ML delay inference | **In**: `route`, `train_id`, `station`, `weather`, `scheduled_time`<br>**Out**: `predicted_delay_minutes`, `explanation`, `top_features`, `similar_past_incidents` |
 | `GET` | `/route-status/{id}`| Real-time route health | **Out**: `status` (normal/watch/critical), `average_delay_minutes`, `active_trains` |
-| `POST` | `/incident-report` | NLP incident triage | **In**: `raw_text`, `train_id`, `station`<br>**Out**: `classified_type`, `summary`, `nlp_method` |
+| `POST` | `/incident-report` | NLP incident triage *(contract unchanged)* | **In**: `raw_text`, `train_id`, `station`<br>**Out**: `incident_id`, `classified_type`, `summary`, `nlp_method`, `received_at` |
+| `GET` | `/incidents` | List triaged incidents *(added)* | **In**: `limit`, `offset`, `review_status`, `classified_type`, `search`<br>**Out**: `rows`, `count`, `source`, `offline` |
+| `PATCH` | `/incidents/{id}` | Correct a classification or summary *(added)* | **In**: `classified_type`, `summary`, `review_status`<br>**Out**: `incident`, `source`, `offline` |
+| `DELETE` | `/incidents/{id}` | Delete an incident and its embedding *(added)* | **Out**: `deleted`, `embedding_removed`, `source`, `offline` |
 | `POST` | `/internal/messages`| Inbound Hub routing | Accepts `AgentMessage` (`intent: delay_check`), returns `delay_check_response` |
 | `POST` | `/hub/message` | Direct Hub message handler | Legacy alias for `/internal/messages` |
+
+**Admin console API** (prefix `/admin/api`, all admin-only, JWT-authenticated):
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/health/status` | Supabase / Hub / Upstash / Anthropic liveness — drives the offline banners |
+| `GET` | `/model/metrics-history` | Current held-out metrics + the real retrain/rollback run log |
+| `GET` | `/model/feature-importances` | `ml/feature_importances.json` as written by the last run |
+| `POST` | `/model/retrain` | Runs `ml/train_delay_model.py`; archives the outgoing model, reloads the predictor |
+| `GET` | `/model/versions` | Real backup files with per-version metrics sidecars |
+| `POST` | `/model/rollback/{filename}` | Restores a prior `.pkl` and its metrics |
+| `GET` | `/audit/events` | **Read-only** agent audit trail; filter by `agent`, `intent`, `date_from`, `date_to` |
+| `GET` | `/audit/summary` | Intent / sender distribution over the trail |
+| — | `/officers/*`, `/roles/matrix` | RBAC administration (gates every screen above) |
+
+> **Removed with the panel consolidation:** `GET /api/operations` (+ its `POST`/`PATCH`/`DELETE`),
+> `GET /api/events`, `/admin/api/data/*`, `/admin/api/hub/*`, `/admin/api/health/data-sources`,
+> `/admin/api/health/config`, `/admin/api/incidents/queue`. None are consumed by M1, M3 or M4 —
+> they existed solely to serve retired admin screens. The `hub_client.py` alert publisher is
+> untouched.
+
 
 ---
 

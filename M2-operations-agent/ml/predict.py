@@ -23,20 +23,60 @@ MODEL_VERSION = "phase2-gbr-v1"
 
 _model = None
 _feature_importances: list[dict] = []
+_model_mtime: float | None = None
+_importances_mtime: float | None = None
+
+
+def _mtime(path: Path) -> float | None:
+    try:
+        return path.stat().st_mtime
+    except OSError:
+        return None
 
 
 def _load_model_if_needed():
-    global _model, _feature_importances
-    if _model is None and MODEL_PATH.exists():
+    """Load the pipeline, re-loading whenever the .pkl changes on disk.
+
+    Retraining and rollback both overwrite delay_model.pkl while the service
+    is running, so the cache is keyed on the file's mtime. This is what lets
+    the admin console's "Retrain" and "Restore" buttons take effect without a
+    service restart.
+    """
+    global _model, _feature_importances, _model_mtime, _importances_mtime
+
+    model_mtime = _mtime(MODEL_PATH)
+    if model_mtime is None:
+        _model = None
+        return None
+
+    if _model is None or model_mtime != _model_mtime:
         try:
             _model = joblib.load(MODEL_PATH)
-            if IMPORTANCES_PATH.exists():
-                with open(IMPORTANCES_PATH) as f:
-                    _feature_importances = json.load(f)
+            _model_mtime = model_mtime
         except Exception:
             _model = None
+            _model_mtime = None
+            return None
+
+    importances_mtime = _mtime(IMPORTANCES_PATH)
+    if importances_mtime is not None and importances_mtime != _importances_mtime:
+        try:
+            with open(IMPORTANCES_PATH, encoding="utf-8") as handle:
+                _feature_importances = json.load(handle)
+            _importances_mtime = importances_mtime
+        except Exception:
             _feature_importances = []
+
     return _model
+
+
+def reload_model() -> bool:
+    """Force a reload after a retrain or rollback. Returns True if a model loaded."""
+    global _model, _model_mtime, _importances_mtime
+    _model = None
+    _model_mtime = None
+    _importances_mtime = None
+    return _load_model_if_needed() is not None
 
 
 def is_model_available() -> bool:
@@ -44,8 +84,15 @@ def is_model_available() -> bool:
 
 
 def get_top_features(n: int = 3) -> list[dict]:
+    """Top-n entries of the real ml/feature_importances.json from the last run."""
     _load_model_if_needed()
     return _feature_importances[:n]
+
+
+def get_all_features() -> list[dict]:
+    """Every ranked feature from the last training run, for the ML screen chart."""
+    _load_model_if_needed()
+    return list(_feature_importances)
 
 
 def predict_delay(

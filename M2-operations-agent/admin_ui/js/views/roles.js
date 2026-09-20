@@ -30,68 +30,68 @@ window.ViewRoles = (function () {
             <tbody>
               <tr>
                 <td><strong>Control Room Dashboard</strong><br><small class="muted">Live train map, crossing monitors, delay pressure</small></td>
-                <td style="text-align:center;"><span style="color:#10b981;font-size:16px;font-weight:bold;">✅</span></td>
-                <td style="text-align:center;"><span style="color:#10b981;font-size:16px;font-weight:bold;">✅</span></td>
+                <td style="text-align:center;"><span style="color:var(--success);font-size:16px;font-weight:bold;">✅</span></td>
+                <td style="text-align:center;"><span style="color:var(--success);font-size:16px;font-weight:bold;">✅</span></td>
                 <td><span class="badge active">Operational</span></td>
               </tr>
               <tr>
                 <td><strong>Interactive Delay Prediction</strong><br><small class="muted">Live inference regressor, feature importance, triage</small></td>
-                <td style="text-align:center;"><span style="color:#10b981;font-size:16px;font-weight:bold;">✅</span></td>
-                <td style="text-align:center;"><span style="color:#10b981;font-size:16px;font-weight:bold;">✅</span></td>
+                <td style="text-align:center;"><span style="color:var(--success);font-size:16px;font-weight:bold;">✅</span></td>
+                <td style="text-align:center;"><span style="color:var(--success);font-size:16px;font-weight:bold;">✅</span></td>
                 <td><span class="badge active">Operational</span></td>
               </tr>
               <tr>
                 <td><strong>View Operational Data &amp; Events</strong><br><small class="muted">Live route delay heatmaps, incident feeds</small></td>
-                <td style="text-align:center;"><span style="color:#10b981;font-size:16px;font-weight:bold;">✅</span></td>
-                <td style="text-align:center;"><span style="color:#10b981;font-size:16px;font-weight:bold;">✅</span></td>
+                <td style="text-align:center;"><span style="color:var(--success);font-size:16px;font-weight:bold;">✅</span></td>
+                <td style="text-align:center;"><span style="color:var(--success);font-size:16px;font-weight:bold;">✅</span></td>
                 <td><span class="badge active">Operational</span></td>
               </tr>
               <tr>
                 <td><strong>M2 Admin Console</strong><br><small class="muted">System configuration, data CRUD, model retraining</small></td>
-                <td style="text-align:center;"><span style="color:#10b981;font-size:16px;font-weight:bold;">✅</span></td>
-                <td style="text-align:center;"><span style="color:#ef4444;font-size:16px;font-weight:bold;">❌</span></td>
+                <td style="text-align:center;"><span style="color:var(--success);font-size:16px;font-weight:bold;">✅</span></td>
+                <td style="text-align:center;"><span style="color:var(--danger);font-size:16px;font-weight:bold;">❌</span></td>
                 <td><span class="badge admin">Admin Only</span></td>
               </tr>
               <tr>
                 <td><strong>Officers &amp; Access Management</strong><br><small class="muted">View officer accounts, security audit trail</small></td>
-                <td style="text-align:center;"><span style="color:#10b981;font-size:16px;font-weight:bold;">✅</span></td>
-                <td style="text-align:center;"><span style="color:#ef4444;font-size:16px;font-weight:bold;">❌</span></td>
+                <td style="text-align:center;"><span style="color:var(--success);font-size:16px;font-weight:bold;">✅</span></td>
+                <td style="text-align:center;"><span style="color:var(--danger);font-size:16px;font-weight:bold;">❌</span></td>
                 <td><span class="badge admin">Admin Only</span></td>
               </tr>
               <tr>
                 <td><strong>Create Officer Accounts</strong><br><small class="muted">Provision credentials without public self-registration</small></td>
-                <td style="text-align:center;"><span style="color:#10b981;font-size:16px;font-weight:bold;">✅</span></td>
-                <td style="text-align:center;"><span style="color:#ef4444;font-size:16px;font-weight:bold;">❌</span></td>
+                <td style="text-align:center;"><span style="color:var(--success);font-size:16px;font-weight:bold;">✅</span></td>
+                <td style="text-align:center;"><span style="color:var(--danger);font-size:16px;font-weight:bold;">❌</span></td>
                 <td><span class="badge admin">Admin Only</span></td>
               </tr>
               <tr>
                 <td><strong>Edit / Change Officer Role</strong><br><small class="muted">Promote or demote roles with last-admin guard</small></td>
-                <td style="text-align:center;"><span style="color:#10b981;font-size:16px;font-weight:bold;">✅</span></td>
-                <td style="text-align:center;"><span style="color:#ef4444;font-size:16px;font-weight:bold;">❌</span></td>
+                <td style="text-align:center;"><span style="color:var(--success);font-size:16px;font-weight:bold;">✅</span></td>
+                <td style="text-align:center;"><span style="color:var(--danger);font-size:16px;font-weight:bold;">❌</span></td>
                 <td><span class="badge admin">Admin Only</span></td>
               </tr>
               <tr>
                 <td><strong>Deactivate Officer Accounts</strong><br><small class="muted">Revoke access without deleting historical data</small></td>
-                <td style="text-align:center;"><span style="color:#10b981;font-size:16px;font-weight:bold;">✅</span></td>
-                <td style="text-align:center;"><span style="color:#ef4444;font-size:16px;font-weight:bold;">❌</span></td>
+                <td style="text-align:center;"><span style="color:var(--success);font-size:16px;font-weight:bold;">✅</span></td>
+                <td style="text-align:center;"><span style="color:var(--danger);font-size:16px;font-weight:bold;">❌</span></td>
                 <td><span class="badge admin">Admin Only</span></td>
               </tr>
               <tr>
                 <td><strong>Reset Officer Passwords</strong><br><small class="muted">Generate new temporary bcrypt-hashed credentials</small></td>
-                <td style="text-align:center;"><span style="color:#10b981;font-size:16px;font-weight:bold;">✅</span></td>
-                <td style="text-align:center;"><span style="color:#ef4444;font-size:16px;font-weight:bold;">❌</span></td>
+                <td style="text-align:center;"><span style="color:var(--success);font-size:16px;font-weight:bold;">✅</span></td>
+                <td style="text-align:center;"><span style="color:var(--danger);font-size:16px;font-weight:bold;">❌</span></td>
                 <td><span class="badge admin">Admin Only</span></td>
               </tr>
               <tr>
                 <td><strong>Model Retraining &amp; Rollback</strong><br><small class="muted">Trigger ML retrain scripts and model version switches</small></td>
-                <td style="text-align:center;"><span style="color:#10b981;font-size:16px;font-weight:bold;">✅</span></td>
-                <td style="text-align:center;"><span style="color:#ef4444;font-size:16px;font-weight:bold;">❌</span></td>
+                <td style="text-align:center;"><span style="color:var(--success);font-size:16px;font-weight:bold;">✅</span></td>
+                <td style="text-align:center;"><span style="color:var(--danger);font-size:16px;font-weight:bold;">❌</span></td>
                 <td><span class="badge admin">Admin Only</span></td>
               </tr>
               <tr>
                 <td><strong>System &amp; Hub Configuration</strong><br><small class="muted">Adjust delay thresholds and inter-agent routes</small></td>
-                <td style="text-align:center;"><span style="color:#10b981;font-size:16px;font-weight:bold;">✅</span></td>
-                <td style="text-align:center;"><span style="color:#ef4444;font-size:16px;font-weight:bold;">❌</span></td>
+                <td style="text-align:center;"><span style="color:var(--success);font-size:16px;font-weight:bold;">✅</span></td>
+                <td style="text-align:center;"><span style="color:var(--danger);font-size:16px;font-weight:bold;">❌</span></td>
                 <td><span class="badge admin">Admin Only</span></td>
               </tr>
             </tbody>
@@ -106,15 +106,15 @@ window.ViewRoles = (function () {
           The RBAC engine decouples capabilities from roles via <span class="mono">ROLE_PERMISSIONS</span> in <span class="mono">admin_auth.py</span>. Additional specialized roles can be activated seamlessly:
         </p>
         <div class="grid grid-3" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:12px;">
-          <div style="background:#f8fafc;padding:12px 14px;border-radius:10px;border:1px solid var(--border);">
+          <div style="background:var(--surface-2);padding:12px 14px;border-radius:10px;border:1px solid var(--border);">
             <strong>Operations Manager</strong>
             <p style="font-size:12px;color:var(--muted);margin:4px 0 0 0;">Control room, prediction, audit reviews, and operational data management.</p>
           </div>
-          <div style="background:#f8fafc;padding:12px 14px;border-radius:10px;border:1px solid var(--border);">
+          <div style="background:var(--surface-2);padding:12px 14px;border-radius:10px;border:1px solid var(--border);">
             <strong>Train Dispatcher</strong>
             <p style="font-size:12px;color:var(--muted);margin:4px 0 0 0;">Live tracking, crossing control, and operational dispatch messaging.</p>
           </div>
-          <div style="background:#f8fafc;padding:12px 14px;border-radius:10px;border:1px solid var(--border);">
+          <div style="background:var(--surface-2);padding:12px 14px;border-radius:10px;border:1px solid var(--border);">
             <strong>Operations Analyst</strong>
             <p style="font-size:12px;color:var(--muted);margin:4px 0 0 0;">Delay prediction lab, model evaluation analytics, and historical query access.</p>
           </div>

@@ -16,6 +16,7 @@ import uuid
 import asyncio
 from pathlib import Path
 from datetime import datetime, timezone
+from urllib.parse import urlencode
 
 # Needed to import the shared/ package (train_repository) from the monorepo
 # root, which isn't on sys.path by default when uvicorn runs from backend/.
@@ -46,8 +47,9 @@ from supabase import create_client, Client
 
 from nlu.lang_detect import detect_language
 from nlu.intent_classifier import classify_intent, is_greeting
-from nlu.ner_extractor import extract_entities
+from nlu.ner_extractor import STATION_ALIASES, extract_entities
 from hub_client import build_envelope, send_to_hub, USE_MOCK_HUB
+from i18n import t
 from rag.retriever import retrieve_faq_chunks
 from shared.train_repository import TrainRepositoryUnavailable, get_train, get_train_details, get_train_schedule, search_trains
 
@@ -158,9 +160,160 @@ def get_recent_history(session_id: str, turns: int = 3) -> list[dict]:
 INTENT_SOURCE_DOC = {
     "fare_query": "fares.md",
     "schedule_query": "schedules.md",
+    "policy_query": "policies.md",
 }
 
 LANGUAGE_NAMES = {"si": "Sinhala", "ta": "Tamil", "en": "English"}
+
+# One explicit sentence per detected language, placed at the top of every Gemini
+# prompt (see compose_rag_answer). Gemini generates the answer directly in this
+# language from the retrieved context - the reply is never translated afterwards.
+LANGUAGE_ANSWER_RULES = {
+    "si": "Answer completely in Sinhala.",
+    "ta": "Answer completely in Tamil.",
+    "en": "Answer in English.",
+}
+
+_SCRIPT_RANGES = {"si": (0x0D80, 0x0DFF), "ta": (0x0B80, 0x0BFF)}
+
+
+def _has_script(text: str, language: str) -> bool:
+    lo, hi = _SCRIPT_RANGES[language]
+    return any(lo <= ord(ch) <= hi for ch in text)
+
+
+# --- Language-aware fallback (used only when Gemini is unavailable) -----------
+# If Gemini is not configured, errors (e.g. 429 quota) or returns nothing, the
+# passenger still gets the RAG facts. English keeps the original wording; for
+# Sinhala/Tamil the fixed frame is localized. Fare data is structured, so it is
+# rendered fully in the passenger's language. Policy/schedule text is free-form
+# English that cannot be translated without the LLM, so it is shown after a
+# localized notice saying it is temporarily English-only - never silently.
+FALLBACK_STRINGS = {
+    "si": {
+        "found": "මට හමු වූ තොරතුරු:",
+        "found_group": "මගීන් {n} දෙනෙකු සඳහා මට හමු වූ තොරතුරු:",
+        "seat_line": "{label}: ආසනයකට LKR {amt}",
+        "person_line": "{label}: එක් අයෙකුට LKR {amt}",
+        "group_line": "{label}: LKR {amt} × {n} = LKR {total}",
+        "both_ways": "දෙදිශාවටම එකම ගාස්තුවක් අදාළ වේ.",
+        "class_missing": "මෙම මාර්ගය සඳහා \"{requested}\" ගාස්තුවක් ලැයිස්තුගත කර නැත. පවතින ගාස්තු:",
+        "english_only_notice": (
+            "පිළිතුර සකස් කරන සේවාව දැනට තාවකාලිකව නොමැති බැවින්, "
+            "මෙම තොරතුරු දැනට ඉංග්‍රීසියෙන් පමණක් පෙන්වයි:"
+        ),
+    },
+    "ta": {
+        "found": "எனக்குக் கிடைத்த தகவல்:",
+        "found_group": "{n} பயணிகளுக்குக் கிடைத்த தகவல்:",
+        "seat_line": "{label}: ஒரு இருக்கைக்கு LKR {amt}",
+        "person_line": "{label}: ஒருவருக்கு LKR {amt}",
+        "group_line": "{label}: LKR {amt} × {n} = LKR {total}",
+        "both_ways": "இரு திசைகளிலும் ஒரே கட்டணம் பொருந்தும்.",
+        "class_missing": "இந்த வழித்தடத்திற்கு \"{requested}\" கட்டணம் பட்டியலிடப்படவில்லை. கிடைக்கும் கட்டணங்கள்:",
+        "english_only_notice": (
+            "பதிலைத் தயாரிக்கும் சேவை தற்போது தற்காலிகமாகக் கிடைக்காததால், "
+            "இந்தத் தகவல் தற்போது ஆங்கிலத்தில் மட்டும் காட்டப்படுகிறது:"
+        ),
+    },
+}
+
+# Display names for the booking system's canonical class names (fares.md labels).
+FARE_CLASS_LABELS = {
+    "si": {"First Class": "පළමු පන්තිය", "Second Class": "දෙවන පන්තිය"},
+    "ta": {"First Class": "முதல் வகுப்பு", "Second Class": "இரண்டாம் வகுப்பு"},
+}
+
+
+def _station_display(name: str, language: str) -> str:
+    """Localized station name: the first alias in STATION_ALIASES written in the
+    passenger's script (the canonical English name if there is none)."""
+    for alias in STATION_ALIASES.get(name, []):
+        if _has_script(alias, language):
+            return alias
+    return name
+
+
+def _disp(name: str | None, language: str) -> str | None:
+    """A station name as the passenger should see it (Sinhala/Tamil script for si/ta)."""
+    if not name or language not in _SCRIPT_RANGES:
+        return name
+    return _station_display(name, language)
+
+
+def _language_prompt_block(language: str) -> str:
+    """The language instruction + factual-grounding rules placed at the top of EVERY
+    Gemini prompt (RAG answers and agent-result answers alike), so the language
+    detected once in /chat controls the language of whatever Gemini writes."""
+    language_name = LANGUAGE_NAMES.get(language, "English")
+    instruction = (
+        f"Detected passenger language: {language_name} ({language}). "
+        f"You must answer the passenger in the detected language. "
+        f"{LANGUAGE_ANSWER_RULES.get(language, LANGUAGE_ANSWER_RULES['en'])} "
+        f"Respond only in {language_name}."
+    )
+    # Restated on every turn (the system prompt has the same rules) so the model
+    # is directed to it for this specific question.
+    rules = (
+        "Answer rules for this reply: state railway facts ONLY from the retrieved "
+        "knowledge base context, the agent result, the extracted details and the "
+        "pre-computed values below; never invent or change a fare, train number, "
+        "time, delay or route. Keep train IDs, booking references, times and "
+        "currency amounts (e.g. LKR 2500) exactly as given; station names may be "
+        f"written in {language_name}. Do not mention the knowledge base, agents, "
+        "JSON or any other internal detail, and do not output JSON - write a "
+        "natural, passenger-friendly answer."
+    )
+    return f"{instruction}\n\n{rules}"
+
+
+def present_agent_result(
+    language: str, question: str, label: str, facts: dict, required: list[str]
+) -> str | None:
+    """Sinhala/Tamil only: Gemini writes the passenger reply directly in the
+    detected language from an agent's structured result (no English-then-translate
+    step). Returns None - and the caller uses its deterministic localized template -
+    when Gemini is unavailable, errors, returns nothing, answers in the wrong
+    script, or drops any value in `required` (IDs / numbers that must survive
+    verbatim). English keeps the existing deterministic wording."""
+    if language not in _SCRIPT_RANGES or not gemini_model:
+        return None
+    facts_text = "\n".join(f"- {k}: {v}" for k, v in facts.items() if v not in (None, ""))
+    prompt = (
+        f"{_language_prompt_block(language)}\n\n"
+        "The facts below come from a railway system agent and are the ONLY source of "
+        "facts for this reply. Report every number, ID and time exactly. Where a fact "
+        "says it is historical or an estimate, say so plainly - never present it as a "
+        "live status.\n\n"
+        f"Agent result ({label}):\n{facts_text}\n\n"
+        f"Passenger's question: {question}\n\nWrite the reply to the passenger now."
+    )
+    print(f"[llm] Gemini request started for agent result ({label}, language={language})")
+    try:
+        answer = (gemini_model.generate_content(prompt).text or "").strip()
+    except Exception as e:
+        print(f"[llm] ERROR - Gemini failed presenting {label} ({type(e).__name__}): {e} - using localized template")
+        return None
+    if not answer:
+        print(f"[llm] ERROR - Gemini returned an empty reply for {label} - using localized template")
+        return None
+    if not _has_script(answer, language):
+        print(f"[llm] WARNING - reply for {label} is not in {LANGUAGE_NAMES[language]} - using localized template")
+        return None
+    missing = [tok for tok in required if tok not in answer]
+    if missing:
+        print(f"[llm] WARNING - reply for {label} dropped required value(s) {missing} - using localized template")
+        return None
+    print(f"[llm] Gemini agent-result reply received ({len(answer)} chars)")
+    return answer
+
+
+def _agent_error(language: str, hub_response) -> str:
+    """Truthful, localized message for a failed Hub call. "rejected" = the agent
+    answered but could not complete the request; anything else = not reachable.
+    The raw technical Hub message is never shown to the passenger."""
+    kind = getattr(hub_response, "error_kind", None)
+    return t("agent_rejected" if kind == "rejected" else "agent_unreachable", language)
 
 # Fixed, non-LLM replies for FIX 1 (greetings) - deliberately not a Gemini
 # call, so this stays instant and free even under load. Written per-language
@@ -172,13 +325,64 @@ GREETING_REPLIES = {
     "ta": "வணக்கம்! நான் இலங்கை ரயில்வே உதவியாளர் — அட்டவணைகள், கட்டணங்கள், தாமதங்கள் அல்லது முன்பதிவு குறித்து உங்களுக்கு உதவ முடியும். உங்களுக்கு என்ன தேவை?",
 }
 
-# Only used when gemini_model isn't configured at all (FIX 3's LLM-guided
-# decline path below covers the normal case) - still needs to be in-language
-# per FIX 4 rather than a hardcoded English string.
-OFF_TOPIC_FALLBACK = {
-    "en": "I can only help with railway schedules, fares, delays, or complaints — is there something about your journey I can help with?",
-    "si": "මට උදව් කළ හැක්කේ දුම්රිය කාලසටහන්, ගාස්තු, ප්‍රමාදවීම් හෝ පැමිණිලි සම්බන්ධයෙන් පමණි — ඔබේ ගමන සම්බන්ධයෙන් මට උදව් කළ හැකි දෙයක් තිබේද?",
-    "ta": "நான் ரயில் அட்டவணைகள், கட்டணங்கள், தாமதங்கள் அல்லது புகார்கள் தொடர்பாக மட்டுமே உதவ முடியும் — உங்கள் பயணம் தொடர்பாக நான் உதவக்கூடிய ஏதாவது உள்ளதா?",
+# Fixed "not a service of this system" notice for questions that are not about
+# this railway's passenger services. Deliberately a canned, in-language message
+# rather than something the LLM composes: the limit is a property of the system,
+# so it must read the same every time and can never turn into a general-knowledge
+# answer (FIX 3 used to only *ask* the LLM to decline).
+OUT_OF_SCOPE_REPLIES = {
+    "en": (
+        "This service only supports Sri Lanka Railways passenger services: train schedules, "
+        "fares, booking and cancellation, refund and travel policies, train delays and status, "
+        "and reporting a problem. Your question is outside what this system provides, so I can't answer it."
+    ),
+    "si": (
+        "මෙම සේවාව මගින් ශ්‍රී ලංකා දුම්රිය මගී සේවා සම්බන්ධයෙන් පමණක් උදව් කළ හැක: දුම්රිය කාලසටහන්, "
+        "ගාස්තු, වෙන්කිරීම් සහ අවලංගු කිරීම්, ආපසු ගෙවීම් සහ ගමන් ප්‍රතිපත්ති, දුම්රිය ප්‍රමාද සහ තත්ත්වය, "
+        "සහ ගැටලු වාර්තා කිරීම. ඔබේ ප්‍රශ්නය මෙම පද්ධතිය සපයන සේවාවෙන් පිටත බැවින් මට පිළිතුරු දිය නොහැක."
+    ),
+    "ta": (
+        "இந்தச் சேவை இலங்கை ரயில்வேயின் பயணிகள் சேவைகளுக்கு மட்டுமே உதவும்: ரயில் அட்டவணைகள், கட்டணங்கள், "
+        "முன்பதிவு மற்றும் ரத்து, பணத்திரும்பப் பெறுதல் மற்றும் பயணக் கொள்கைகள், ரயில் தாமதம் மற்றும் நிலை, "
+        "மற்றும் பிரச்சனையைப் புகாரளித்தல். உங்கள் கேள்வி இந்த அமைப்பு வழங்கும் சேவைகளுக்கு வெளியே உள்ளதால் என்னால் பதிலளிக்க முடியாது."
+    ),
+}
+
+# Engineering / maintenance-manual questions belong to the Maintenance Agent and
+# are engineer-facing only. The passenger assistant never forwards them to it
+# and never answers from manual content.
+ENGINEERING_NOTICE_REPLIES = {
+    "en": (
+        "Technical maintenance and engineering information is not available through the passenger "
+        "assistant. If you have noticed a fault while travelling, describe it (and the train ID if you "
+        "know it) and I will report it to the maintenance team."
+    ),
+    "si": (
+        "තාක්ෂණික නඩත්තු සහ ඉංජිනේරු තොරතුරු මගී සහායක හරහා ලබා ගත නොහැක. ගමන අතරතුර දෝෂයක් දුටුවේ නම්, "
+        "එය (දුම්රිය හැඳුනුම් අංකය දන්නේ නම් එයද) විස්තර කරන්න; මම එය නඩත්තු කණ්ඩායමට වාර්තා කරන්නෙමි."
+    ),
+    "ta": (
+        "தொழில்நுட்பப் பராமரிப்பு மற்றும் பொறியியல் தகவல்கள் பயணிகள் உதவியாளர் மூலம் கிடைக்காது. பயணத்தின் போது "
+        "ஏதேனும் கோளாறைக் கவனித்திருந்தால், அதை (தெரிந்தால் ரயில் அடையாள எண்ணுடன்) விவரிக்கவும்; "
+        "நான் அதைப் பராமரிப்புக் குழுவிற்குத் தெரிவிக்கிறேன்."
+    ),
+}
+
+# The passenger named a route that has no fare in fares.md (which mirrors the
+# booking system's fare table). Say so instead of quoting a different route's fare.
+FARE_NOT_AVAILABLE_REPLIES = {
+    "en": (
+        "I don't have a confirmed fare for that route in the booking system's fare table, so I can't "
+        "quote one. Please check at a staffed station counter, or ask me about another route."
+    ),
+    "si": (
+        "එම මාර්ගය සඳහා වෙන්කිරීමේ පද්ධතියේ ගාස්තු වගුවේ තහවුරු කළ ගාස්තුවක් මා සතුව නැති නිසා මට එය ලබා දිය නොහැක. "
+        "කරුණාකර සේවක පහසුකම් සහිත දුම්රිය ස්ථාන කවුන්ටරයෙන් විමසන්න, නැතහොත් වෙනත් මාර්ගයක් ගැන අසන්න."
+    ),
+    "ta": (
+        "அந்த வழித்தடத்திற்கு முன்பதிவு அமைப்பின் கட்டண அட்டவணையில் உறுதிப்படுத்தப்பட்ட கட்டணம் என்னிடம் இல்லை, "
+        "எனவே அதைத் தர இயலாது. பணியாளர்கள் உள்ள நிலைய கவுண்டரில் விசாரிக்கவும், அல்லது வேறு வழித்தடம் பற்றிக் கேளுங்கள்."
+    ),
 }
 
 # delay_check is Hub-routed and, per this project's established rule, its
@@ -209,6 +413,41 @@ DELAY_UNREACHABLE_REPLIES = {
 # via keywords, rather than re-litigating topicality on embedding distance
 # alone for every intent.
 RAG_DISTANCE_THRESHOLD = 1.6
+
+# Distance alone is not enough: a station name in an unrelated question ("best
+# restaurants in Colombo") makes the retrieval query just "Colombo Fort", which
+# embeds very close to a fare/schedule chunk. In the unclassified path the
+# message must therefore also contain a railway-domain word or name a full route
+# (two stations), otherwise it is out of scope. Not applied to any question a
+# keyword/policy intent already claimed (those pass a source_filter).
+RAILWAY_VOCAB = re.compile(
+    r"\b(?:trains?|railways?|rail|stations?|platforms?|tickets?|fares?|seats?|book\w*|reserv\w*|"
+    r"refund\w*|cancel\w*|luggage|baggage|journey|travel\w*|schedules?|timetable|departs?|"
+    r"departure|arrival|delay\w*|late|compartment|coach|carriage|passengers?|route|slr|"
+    r"discount\w*|concession\w*|senior|child|children|student|class|complain\w*|polic\w+|"
+    r"id|nic|identity)\b",
+    re.IGNORECASE,
+)
+# Sinhala/Tamil railway terms (substring match - these scripts have no \b and
+# words are inflected, e.g. දුම්රිය / දුම්රියේ). The embedding model is
+# English-centric, so for si/ta the retrieval distance cannot separate on-topic
+# from off-topic (measured: a Tamil weather question 1.40, a Tamil luggage
+# question 1.93); this vocabulary is the only usable in-scope signal there.
+RAILWAY_VOCAB_SI_TA = (
+    # Sinhala: train, ticket, fare, price, time, timetable, station, booking, cancel,
+    # refund, journey, passenger, delay, luggage, complaint, seat, platform
+    "දුම්රිය", "ටිකට්", "ගාස්තු", "මිල", "වේලාව", "වේලාසටහන", "ස්ථාන", "වෙන්", "අවලංගු",
+    "ආපසු ගෙවී", "ගමන", "මගී", "ප්‍රමාද", "බඩු", "පැමිණිල්ල", "පැමිණිලි", "ආසන", "වේදිකා",
+    # Tamil
+    "ரயில்", "டிக்கெட்", "கட்டணம்", "விலை", "நேரம்", "அட்டவணை", "நிலையம்", "முன்பதிவு", "ரத்து",
+    "பணத்திரும்ப", "பணம் திரும்ப", "பயண", "பயணி", "தாமத", "லக்கேஜ்", "சாமான்", "புகார்", "இருக்கை", "நடைமேடை",
+)
+
+
+def _mentions_railway(text: str, language: str) -> bool:
+    if language == "en":
+        return bool(RAILWAY_VOCAB.search(text))
+    return any(term in text for term in RAILWAY_VOCAB_SI_TA)
 
 # Matches a fare doc line like "- 2nd Class Reserved: LKR 500".
 FARE_LINE_PATTERN = re.compile(r"^-\s*(?P<label>[^:]+):\s*LKR\s*(?P<amount>[\d,]+)", re.MULTILINE)
@@ -256,6 +495,149 @@ def _compute_group_fares(chunks: list[dict], passenger_count: int, class_keyword
     return "\n".join(lines)
 
 
+def _chunk_body(text: str, limit: int = 1500) -> str:
+    """A retrieved chunk as passenger-readable text for the no-LLM fallback: drop
+    the document-title line that embed_documents prefixes to every chunk, show the
+    section heading in bold, and cut at a line boundary rather than mid-sentence
+    (a fixed 400-char cut used to drop the very facts - e.g. refund percentages -
+    that the passenger asked about)."""
+    parts = text.split("\n\n", 1)
+    body = parts[1] if len(parts) == 2 else text
+    lines = body.splitlines()
+    if lines and lines[0].startswith("## "):
+        lines[0] = f"**{lines[0][3:].strip()}**"
+    out, size = [], 0
+    for line in lines:
+        if out and size + len(line) > limit:
+            break
+        out.append(line)
+        size += len(line) + 1
+    return "\n".join(out)
+
+
+def _localized_fare_chunk(chunk: dict, language: str) -> str:
+    """One fares.md route section rendered in Sinhala/Tamil. Route and class names
+    are localized; LKR amounts are copied unchanged from the chunk."""
+    t = FALLBACK_STRINGS[language]
+    route = " - ".join(_station_display(part.strip(), language) for part in chunk["heading"].split(" - "))
+    lines = [f"**{route}**"]
+    for m in FARE_LINE_PATTERN.finditer(chunk["text"]):
+        label = m.group("label").strip()
+        lines.append("• " + t["seat_line"].format(
+            label=FARE_CLASS_LABELS[language].get(label, label), amt=m.group("amount")))
+    if "same fare in both directions" in chunk["text"].lower():
+        lines.append(t["both_ways"])
+    return "\n".join(lines)
+
+
+# schedules.md service lines look like "- Podi Menike (1005): departs 05:55, arrives 08:47"
+# or "- Ruhunu Kumari (50): departs Maradana 05:50, arrives Matara 09:10". The
+# structure is regular, so a Sinhala/Tamil schedule answer can be rendered without
+# any translation of schedules.md: train names, numbers and times are copied as-is,
+# only the labels and known station names are localized.
+_SCHEDULE_LINE = re.compile(
+    r"^-\s*(?P<name>.+?)\s*\((?P<code>[^)]*)\):\s*departs\s+(?P<dep>.+?),\s*arrives\s+(?P<arr>.+?)\s*$"
+)
+_CLOCK = re.compile(r"\d{1,2}:\d{2}")
+SCHEDULE_STRINGS = {
+    "si": {"departs": "පිටත්වීම", "arrives": "පැමිණීම", "overnight": "(රාත්‍රී ගමන)"},
+    "ta": {"departs": "புறப்பாடு", "arrives": "வருகை", "overnight": "(இரவுப் பயணம்)"},
+}
+
+
+def _place_time(fragment: str, language: str) -> str:
+    """"Maradana 05:50" -> "<localized Maradana> 05:50"; "05:50" stays "05:50"."""
+    m = _CLOCK.search(fragment)
+    if not m:
+        return fragment
+    place = fragment[: m.start()].strip()
+    return f"{_disp(place, language) if place else ''} {fragment[m.start():]}".strip()
+
+
+_HEADING_ROUTE = re.compile(r"^(?P<line>.+?)\s+—\s+(?P<a>.+?)\s+to\s+(?P<b>.+)$")
+
+
+def _localize_heading(heading: str, language: str) -> str:
+    """"Main Line — Colombo Fort to Kandy" -> "Main Line — <si/ta Colombo Fort> - <si/ta Kandy>".
+    The line name is a proper noun and stays; only known station names change script."""
+    m = _HEADING_ROUTE.match(heading)
+    if m and m["a"] in STATION_ALIASES and m["b"] in STATION_ALIASES:
+        return f"{m['line']} — {_disp(m['a'], language)} - {_disp(m['b'], language)}"
+    return heading
+
+
+def _localized_schedule_chunk(chunks: list[dict], stations: list[str], language: str) -> str:
+    """The schedules.md section for the asked route (first section naming every
+    asked station, else the best-ranked one), rendered in the passenger's language."""
+    strings = SCHEDULE_STRINGS[language]
+    ranked = [c for c in chunks if all(s.lower() in c["heading"].lower() for s in stations)] if stations else []
+    for chunk in ranked + list(chunks):
+        lines = []
+        for raw in chunk["text"].splitlines():
+            m = _SCHEDULE_LINE.match(raw.strip())
+            if not m:
+                continue
+            arr = _place_time(m.group("arr"), language).replace("(overnight)", strings["overnight"])
+            lines.append(
+                f"• {m.group('name')} ({m.group('code')}): "
+                f"{strings['departs']} {_place_time(m.group('dep'), language)}, {strings['arrives']} {arr}"
+            )
+        if lines:
+            return "**" + _localize_heading(chunk["heading"], language) + "**" + chr(10) + chr(10).join(lines)
+    return ""
+
+
+def _localized_fallback_text(
+    language: str,
+    intent: str,
+    chunks: list[dict],
+    fare_chunks: list[dict],
+    fare_class_keywords: list[str],
+    passenger_count: int | None,
+    stations: list[str] | None = None,
+) -> str | None:
+    """No-LLM fallback in the passenger's language, or None for English (the
+    original English fallback wording is kept unchanged)."""
+    t = FALLBACK_STRINGS.get(language)
+    if t is None:
+        return None
+    labels = FARE_CLASS_LABELS[language]
+
+    def group_lines(matched):
+        return "\n".join(
+            "• " + t["group_line"].format(label=labels.get(label, label), amt=amt, n=passenger_count, total=amt * passenger_count)
+            for label, amt in matched
+        )
+
+    if intent == "fare_query":
+        if fare_class_keywords:
+            matched = _matching_fare_lines(fare_chunks, fare_class_keywords)
+            if matched and passenger_count and passenger_count > 1:
+                return f"{t['found_group'].format(n=passenger_count)}\n\n{group_lines(matched)}"
+            if matched:
+                lines = "\n".join(
+                    "• " + t["person_line"].format(label=labels.get(label, label), amt=amt) for label, amt in matched
+                )
+                return f"{t['found']}\n\n{lines}"
+            requested = " ".join(fare_class_keywords)
+            route_chunk = next((c for c in fare_chunks if FARE_LINE_PATTERN.search(c["text"])), None)
+            body = _localized_fare_chunk(route_chunk, language) if route_chunk else ""
+            return f"{t['class_missing'].format(requested=requested)}\n\n{body}".strip()
+        if passenger_count and passenger_count > 1:
+            matched = _matching_fare_lines(fare_chunks, [])
+            if matched:
+                return f"{t['found_group'].format(n=passenger_count)}\n\n{group_lines(matched)}"
+        route_chunk = next((c for c in fare_chunks if FARE_LINE_PATTERN.search(c["text"])), None)
+        if route_chunk:
+            return f"{t['found']}\n\n{_localized_fare_chunk(route_chunk, language)}"
+    if intent == "schedule_query":
+        schedule = _localized_schedule_chunk(chunks, stations or [], language)
+        if schedule:
+            return t["found"] + chr(10) * 2 + schedule
+    # Policy / anything free-form: only English source text exists.
+    return f"{t['english_only_notice']}\n\n{_chunk_body(chunks[0]['text'])}"
+
+
 def compose_rag_answer(
     text: str,
     language: str,
@@ -281,14 +663,11 @@ def compose_rag_answer(
         # 500 the whole /chat endpoint or leak internals to the passenger - log the
         # real exception and degrade to a clean message instead.
         print(f"[rag] ERROR - retrieval failed ({type(e).__name__}): {e}")
-        return "I'm having trouble looking that up right now. Please try again in a moment.", ""
+        return t("rag_error", language), ""
     print(f"[rag] retrieved {len(chunks)} chunk(s) for query={retrieval_query!r} (original text={text!r}) source_filter={source_filter!r}")
     if not chunks:
         print(f"[offtopic] intent={intent} query={text!r} reason=no_chunks_retrieved")
-        return (
-            "I don't have that information in my current knowledge base. "
-            "Could you rephrase, or ask about schedules, fares, delays, or bookings instead?"
-        ), ""
+        return t("rag_no_chunks", language), ""
 
     # Off-topic guardrail (FIX 3): even the closest match being a weak one
     # means the retrieved chunks aren't actually relevant to this question
@@ -301,11 +680,22 @@ def compose_rag_answer(
     # intent_classifier's keyword match already confirmed relevance, and a
     # single-station query genuinely scores a weak distance on its own (see
     # RAG_DISTANCE_THRESHOLD above) without being off-topic.
-    off_topic = source_filter is None and chunks[0]["distance"] > RAG_DISTANCE_THRESHOLD
+    # The distance threshold was calibrated on English text with an English-only
+    # embedding model; for Sinhala/Tamil it cannot tell on-topic from off-topic
+    # (a legitimate Sinhala luggage question measured 1.87), so there the
+    # railway-vocabulary check alone decides.
+    off_topic = source_filter is None and (
+        (language == "en" and chunks[0]["distance"] > RAG_DISTANCE_THRESHOLD)
+        or (len(entity_stations) < 2 and not _mentions_railway(text, language))
+    )
     if off_topic:
-        print(f"[offtopic] intent={intent} query={text!r} top_distance={chunks[0]['distance']:.3f}")
+        # Not about this railway's passenger services: show the fixed system
+        # notice. The LLM is not called at all, so it cannot answer from general
+        # knowledge.
+        print(f"[offtopic] intent={intent} query={text!r} top_distance={chunks[0]['distance']:.3f} -> out_of_scope notice")
+        return OUT_OF_SCOPE_REPLIES.get(language, OUT_OF_SCOPE_REPLIES["en"]), ""
 
-    sources = "" if off_topic else ", ".join(sorted({c["source"] for c in chunks}))
+    sources = ", ".join(sorted({c["source"] for c in chunks}))
 
     # Bug fix: this used to be computed further down, only reachable once the
     # Gemini call actually succeeded - so the two raw-fallback returns below
@@ -326,6 +716,14 @@ def compose_rag_answer(
     # both stations when NER found a full route; fall back to every
     # retrieved chunk otherwise (e.g. a single-station "fare to Kandy").
     route_stations = (entities or {}).get("stations") or []
+    if intent == "fare_query" and route_stations and not any(
+        all(s.lower() in c["text"].lower() for s in route_stations) for c in chunks
+    ):
+        # Every named station must appear together in one fare section. If none
+        # does, fares.md (== the booking system's table) has no fare for this
+        # route - say so rather than quote a neighbouring route's price.
+        print(f"[rag] no fare section covers stations={route_stations!r} -> fare not available")
+        return FARE_NOT_AVAILABLE_REPLIES.get(language, FARE_NOT_AVAILABLE_REPLIES["en"]), ""
     if len(route_stations) >= 2:
         route_chunks = [
             c for c in chunks
@@ -336,6 +734,11 @@ def compose_rag_answer(
         fare_chunks = chunks
 
     def _raw_fallback_text() -> str:
+        localized = _localized_fallback_text(
+            language, intent, chunks, fare_chunks, fare_class_keywords, passenger_count, route_stations
+        )
+        if localized is not None:
+            return localized
         if intent == "fare_query" and fare_class_keywords:
             matched = _matching_fare_lines(fare_chunks, fare_class_keywords)
             requested = " ".join(fare_class_keywords)
@@ -350,17 +753,15 @@ def compose_rag_answer(
                 return f"Here's what I found:\n\n{computed}"
             return (
                 f"I couldn't find a \"{requested}\" fare listed for this route. "
-                f"Here's what is available:\n\n{fare_chunks[0]['text'][:400]}"
+                f"Here's what is available:\n\n{_chunk_body(fare_chunks[0]['text'])}"
             )
         if intent == "fare_query" and passenger_count and passenger_count > 1:
             computed = _compute_group_fares(fare_chunks, passenger_count)
             if computed:
                 return f"Here's what I found for {passenger_count} passengers:\n\n{computed}"
-        return f"Here's what I found:\n\n{chunks[0]['text'][:400]}"
+        return f"Here's what I found:\n\n{_chunk_body(chunks[0]['text'])}"
 
     if not gemini_model:
-        if off_topic:
-            return OFF_TOPIC_FALLBACK.get(language, OFF_TOPIC_FALLBACK["en"]), ""
         print("[llm] SKIPPED - gemini_model is None (GEMINI_API_KEY missing/not loaded) - returning raw RAG chunk text")
         return _raw_fallback_text(), sources
 
@@ -376,7 +777,7 @@ def compose_rag_answer(
     # (passenger_count itself is computed above, before the raw-fallback
     # returns, so it's available there too.)
     fare_block = ""
-    if intent == "fare_query" and not off_topic:
+    if intent == "fare_query":
         if fare_class_keywords:
             # The passenger named a class - constrain the answer to just the
             # matching fares.md line(s) instead of every class on the route.
@@ -432,26 +833,15 @@ def compose_rag_answer(
                 "giving a total - do not assume 1 passenger.\n\n"
             )
 
-    if off_topic:
-        context_block = (
-            "OFF_TOPIC: true - the retrieved knowledge base has no relevant "
-            "railway information for this question. Politely decline and "
-            "redirect the passenger to what you can help with instead. Do "
-            "not attempt to answer using your own general knowledge, even if "
-            "you know the answer.\n\n"
-        )
-    else:
-        context_text = "\n\n---\n\n".join(f"[{c['source']}] {c['text']}" for c in chunks)
-        context_block = f"Retrieved knowledge base context:\n{context_text}\n\n"
+    context_text = "\n\n---\n\n".join(f"[{c['source']}] {c['text']}" for c in chunks)
+    context_block = f"Retrieved knowledge base context:\n{context_text}\n\n"
 
     # FIX 4: an explicit imperative instruction, not just the `language:`
     # field below (which the system prompt also references) - makes the
     # language requirement something the model is directed to do on this
     # specific turn, not just background metadata it might deprioritize.
-    language_instruction = f"Respond only in {LANGUAGE_NAMES.get(language, 'English')}."
-
     prompt = (
-        f"{language_instruction}\n\n"
+        f"{_language_prompt_block(language)}\n\n"
         f"language: {language}\n\n"
         f"Detected intent: {intent}\n"
         f"Extracted details from the passenger's message: {known_details}\n\n"
@@ -464,14 +854,18 @@ def compose_rag_answer(
     print("[llm] Gemini request started (gemini-flash-latest)")
     try:
         response = gemini_model.generate_content(prompt)
-        print(f"[llm] Gemini response received ({len(response.text)} chars)")
-        return response.text.strip(), sources
+        answer = (response.text or "").strip()
+        print(f"[llm] Gemini response received ({len(answer)} chars)")
+        if not answer:
+            print("[llm] ERROR - Gemini returned an empty response - falling back")
+            return _raw_fallback_text(), sources
+        if language in _SCRIPT_RANGES and not _has_script(answer, language):
+            # Not hidden and not "fixed" by translating: the answer is returned as
+            # Gemini generated it, but the mismatch is visible in the logs.
+            print(f"[llm] WARNING - reply for language={language} contains no {LANGUAGE_NAMES[language]} text")
+        return answer, sources
     except Exception as e:
         print(f"[llm] ERROR - Gemini generation failed ({type(e).__name__}): {e} - falling back")
-        if off_topic:
-            # Falling back to the raw chunk here would leak an irrelevant
-            # document instead of declining - use the canned redirect instead.
-            return OFF_TOPIC_FALLBACK.get(language, OFF_TOPIC_FALLBACK["en"]), ""
         return _raw_fallback_text(), sources
 
 
@@ -523,10 +917,19 @@ def save_message(session_id: str, role: str, message: str):
 
 
 def _extract_train_id(text: str) -> str:
-    """Extract a canonical train ID (e.g. PM-4082, IC-4665) from free text."""
+    """Extract a canonical train ID from free text.
+
+    Handles both registry conventions: prefixed ids (PM-4082, IC-4665) and the
+    bare Sri Lanka Railways service numbers shown on the daily board (4085, 50,
+    1005). The bare-number path reuses the NER extractor's guarded matcher so
+    times, dates and passenger counts are never mistaken for a train id.
+    """
     import re
     match = re.search(r"\b[A-Z]{2,12}-\d{3,5}\b", text, re.IGNORECASE)
-    return match.group(0).upper() if match else ""
+    if match:
+        return match.group(0).upper()
+    from nlu.ner_extractor import _extract_bare_train_number
+    return _extract_bare_train_number(text) or ""
 
 
 @app.get("/health")
@@ -537,7 +940,10 @@ def health():
 @app.get("/trains/{train_id}/details")
 def train_details(train_id: str):
     clean_id = train_id.strip().upper()
-    if not re.fullmatch(r"[A-Z]{2,12}-\d{3,5}", clean_id):
+    # Accept both registry conventions: prefixed ids (PM-4082) and bare SLR
+    # service numbers (4085, 50). The registry lookup below is the real
+    # validation; this only rejects obviously malformed input.
+    if not re.fullmatch(r"[A-Z]{2,12}-\d{3,5}|\d{1,4}", clean_id):
         raise HTTPException(status_code=404, detail="Train not found")
     try:
         details = get_train_details(clean_id)
@@ -582,46 +988,71 @@ async def chat(req: ChatRequest):
     prefill = None
     cancellation = None
 
-    if intent in ("schedule_query", "fare_query"):
+    if intent in ("schedule_query", "fare_query", "policy_query"):
         reply, source = compose_rag_answer(
             text, language, req.session_id,
             source_filter=INTENT_SOURCE_DOC[intent], intent=intent, entities=entities,
         )
 
+    elif intent == "engineering_query":
+        # Engineer-facing manuals stay behind the Maintenance Agent. No Hub call
+        # and no retrieval - the passenger just gets the fixed notice.
+        reply = ENGINEERING_NOTICE_REPLIES.get(language, ENGINEERING_NOTICE_REPLIES["en"])
+        source = ""
+
     elif intent == "train_info":
         train_id = entities.get("train_id")
         if not train_id:
-            reply = "Please provide a train ID so I can check the canonical train registry."
+            reply = t("train_id_needed_info", language)
             source = "via Shared Train Registry"
         else:
             try:
                 train = await asyncio.to_thread(get_train, train_id)
                 if train is None:
-                    reply = f"TRAIN_NOT_FOUND: {train_id} is not registered in the canonical train registry."
+                    # "TRAIN_NOT_FOUND:" is a cross-team sentinel - kept as the prefix
+                    # in every language; the sentence after it is localized.
+                    reply = f"TRAIN_NOT_FOUND: {t('train_not_found_registry', language, train_id=train_id)}"
                 else:
                     schedules = await asyncio.to_thread(get_train_schedule, train_id)
-                    route = train.get("route") or "route not recorded"
-                    active = "active" if train.get("active") else "inactive"
-                    reply = (
-                        f"{train.get('train_name') or train_id} ({train_id}) is {active}. "
-                        f"Route: {route}. "
-                        f"Maintenance status: {train.get('maintenance_status', 'UNKNOWN')}."
+                    route = train.get("route") or t("route_not_recorded", language)
+                    state = t("train_state_active" if train.get("active") else "train_state_inactive", language)
+                    name = train.get("train_name") or train_id
+                    maintenance = train.get("maintenance_status", "UNKNOWN")
+                    first = schedules[0] if schedules else None
+                    next_service = (
+                        t("train_next_service", language,
+                          origin=_disp(first.get("from_station"), language),
+                          destination=_disp(first.get("to_station"), language),
+                          date=first.get("travel_date"), time=first.get("departure_time"))
+                        if first else ""
                     )
-                    if schedules:
-                        first = schedules[0]
-                        reply += (
-                            f" Next recorded service: {first.get('from_station')} to "
-                            f"{first.get('to_station')} on {first.get('travel_date')} "
-                            f"at {first.get('departure_time')}."
-                        )
+                    template = t("train_info_main", language, name=name, train_id=train_id, state=state,
+                                 route=route, maintenance=maintenance) + next_service
+                    presented = await asyncio.to_thread(
+                        present_agent_result, language, text, "train registry record",
+                        {"train_name": name, "train_id": train_id, "status": state, "route": route,
+                         "maintenance_status": maintenance,
+                         "next_recorded_service": next_service.strip() or None},
+                        [train_id],
+                    )
+                    reply = presented or template
                 source = "via Shared Train Registry"
             except TrainRepositoryUnavailable:
-                reply = "The canonical train registry is temporarily unavailable."
+                reply = t("registry_unavailable", language)
                 source = "via Shared Train Registry"
 
     elif intent == "delay_check":
         stations = entities.get("stations", [])
-        route = " - ".join(stations) if isinstance(stations, list) and len(stations) >= 2 else "Colombo Fort - Kandy"
+        if entities.get("from_station") and entities.get("to_station"):
+            # spoken direction (e.g. "Kandy to Colombo"), not dictionary order
+            stations = [entities["from_station"], entities["to_station"]]
+        # No invented default here. This used to fall back to "Colombo Fort -
+        # Kandy", so every "Is <train> delayed?" that named no stations was
+        # answered for the Kandy line - wrong for PM-8056 (Badulla), 1005
+        # (Colombo - Badulla) and most of the board. When the passenger names
+        # no stations we send no route, and Operations fills it in from the
+        # shared registry entry for the train they did name.
+        route = " - ".join(stations) if isinstance(stations, list) and len(stations) >= 2 else None
         train_id = entities.get("train_id")
         resolved_via_registry = False
         if not train_id and isinstance(stations, list) and len(stations) >= 2:
@@ -646,7 +1077,7 @@ async def chat(req: ChatRequest):
                     resolved_via_registry = True
                     print(f"[chat] delay_check using fallback train_id={train_id!r} (mock mode, registry down)")
         if not train_id:
-            reply = "TRAIN_NOT_FOUND: provide a train ID so Operations can validate it."
+            reply = f"TRAIN_NOT_FOUND: {t('delay_need_train_id', language)}"
             source = "via Operations Agent (Hub)"
             save_message(req.session_id, "user", text)
             save_message(req.session_id, "assistant", reply)
@@ -668,6 +1099,7 @@ async def chat(req: ChatRequest):
                 "raw_text": raw_text_for_hub,
                 "route": route,
                 "train_id": train_id,
+                "language": language,  # passenger's language - agents can keep/echo it; M1 writes the final reply in it
             },
         )
         hub_response = await send_to_hub(envelope)
@@ -676,6 +1108,11 @@ async def chat(req: ChatRequest):
             # Operations' /hub/message hands back structured fields, not one
             # composed sentence (unlike Maintenance/Booking below) - this
             # assembles them, it doesn't re-run anything through an LLM.
+            # Operations resolved the identity against the shared registry, so
+            # its values win: "4082" comes back as PM-4082, and the route it
+            # priced the prediction on is the one the reply must quote.
+            train_id = p.get("train_id") or train_id
+            route = p.get("route") or route
             delay = p.get("predicted_delay_minutes", 0)
             delay_minutes = float(delay)
             reason = p.get("reason") or p.get("explanation", "Operational congestion")
@@ -695,65 +1132,134 @@ async def chat(req: ChatRequest):
                     maint_envelope = build_envelope(
                         receiver_agent="maintenance-agent",
                         intent="train_status_query",
-                        payload={"train_id": train_id, "raw_text": text},
+                        payload={"train_id": train_id, "raw_text": text, "language": language},
                     )
                     maint_response = await send_to_hub(maint_envelope)
                     if maint_response.status == "ok":
                         mp = maint_response.payload
                         if mp.get("under_maintenance"):
-                            eta_note = (
-                                f" Expected back in service by {mp['estimated_clear']}."
+                            maintenance_context = " " + t(
+                                "delay_maint", language,
+                                reason=mp.get("reason", "Technical issue under investigation"),
+                            ) + (
+                                t("delay_maint_eta", language, eta=mp["estimated_clear"])
                                 if mp.get("estimated_clear")
                                 else ""
-                            )
-                            maintenance_context = (
-                                f" Maintenance update: "
-                                f"{mp.get('reason', 'Technical issue under investigation')}.{eta_note}"
                             )
                 except Exception:
                     pass
 
-            reply = (
-                f"Expected delay: {delay} minutes. "
-                f"Reason: {reason}.{maintenance_context} "
-                f"Similar past incident: {similar}."
+            # M2 answers from its 2025 incident history. When it matched a
+            # recorded observation for this exact train
+            # (retrieval_method="historical_record"), the number is a past
+            # record, not a live reading - say so, and keep "similar past
+            # incident" labelled as history rather than current status.
+            is_historical = (
+                p.get("retrieval_method") == "historical_record"
+                or str(p.get("model_version", "")).startswith("historical-observation")
             )
+            reason_text = str(reason).strip().rstrip(".")
+            similar_text = str(similar).rstrip(".")
+            headline = t("delay_headline_hist" if is_historical else "delay_headline_est", language, delay=delay)
+            if language != "en":
+                # Deterministic Sinhala/Tamil fallback (Gemini unavailable/rejected): only the
+                # structured facts - the delay figure and whether it is history or an estimate.
+                # Operations' explanation and incident notes are free-form English sentences that
+                # cannot be translated without the LLM, so they are left out rather than pasted
+                # into a Sinhala/Tamil reply.
+                template = headline + (f" {t('delay_maint_note', language)}" if maintenance_context else "")
+            elif is_historical:
+                template = f"{headline} {t('delay_record', language, reason=reason_text)}{maintenance_context}"
+            else:
+                template = (
+                    f"{headline} {t('delay_reason', language, reason=reason_text)}{maintenance_context} "
+                    f"{t('delay_similar', language, similar=similar_text)}"
+                )
+            # Sinhala/Tamil: Gemini writes the answer from the Operations result
+            # (guarded: the delay figure and train ID must appear verbatim, else the
+            # localized template above is used). English keeps the template.
+            presented = await asyncio.to_thread(
+                present_agent_result, language, text, "Operations delay result",
+                {
+                    "train_id": train_id, "route": route,
+                    "delay_minutes": delay,
+                    "basis": (
+                        "a recorded past observation for this exact train - NOT a live status"
+                        if is_historical else "a model estimate - NOT a live status"
+                    ),
+                    "operations_explanation": reason_text,
+                    "similar_past_incident_historical": None if is_historical else similar_text,
+                    "live_maintenance_update": maintenance_context.strip() or None,
+                },
+                [str(abs(delay_minutes)).rstrip("0").rstrip(".") or "0", train_id],
+            )
+            reply = presented or template
             source = "via Operations Agent + Maintenance Agent (Hub)" if maintenance_context else "via Operations Agent (Hub)"
         else:
-            fallback = DELAY_UNREACHABLE_REPLIES.get(language, DELAY_UNREACHABLE_REPLIES["en"])
+            fallback = (
+                _agent_error(language, hub_response)
+                if getattr(hub_response, "error_kind", None) == "rejected"
+                else DELAY_UNREACHABLE_REPLIES.get(language, DELAY_UNREACHABLE_REPLIES["en"])
+            )
             message = hub_response.message or fallback
-            # TRAIN_NOT_FOUND is a cross-team sentinel M2 also emits - passed
-            # through verbatim rather than localized, since something downstream
-            # may match on that exact prefix.
-            reply = message if "TRAIN_NOT_FOUND" in message else fallback
+            # TRAIN_NOT_FOUND is a cross-team sentinel M2 also emits - kept as the
+            # prefix (something downstream may match on it); in Sinhala/Tamil the
+            # sentence after it is localized instead of passing English through.
+            if "TRAIN_NOT_FOUND" in message:
+                reply = message if language == "en" else f"TRAIN_NOT_FOUND: {t('delay_need_train_id', language)}"
+            else:
+                reply = fallback
             source = "via Operations Agent (Hub)"
 
     elif intent == "train_status":
         train_id = entities.get("train_id") or _extract_train_id(text)
         if not train_id:
-            reply = "Please provide a train ID (e.g. PM-4082) so I can check its status."
+            reply = t("train_id_needed_status", language)
             source = "local"
         else:
             try:
                 canonical = await asyncio.to_thread(get_train, train_id)
                 if canonical is None:
-                    reply = f"TRAIN_NOT_FOUND: {train_id} is not a recognised train service."
+                    reply = f"TRAIN_NOT_FOUND: {t('train_not_found_status', language, train_id=train_id)}"
                     source = "via Shared Train Registry"
                 else:
                     envelope = build_envelope(
                         receiver_agent="maintenance-agent",
                         intent="train_status_query",
-                        payload={"train_id": train_id, "raw_text": text},
+                        payload={"train_id": train_id, "raw_text": text, "language": language},
                     )
                     hub_response = await send_to_hub(envelope)
                     if hub_response.status == "ok":
                         p = hub_response.payload
-                        reply = p.get("message", "I could not retrieve the train status right now.")
+                        if language == "en":
+                            reply = p.get("message") or t("train_status_failed", language)
+                        else:
+                            # Maintenance's own text is English; write the answer in the
+                            # passenger's language from its structured fields (Gemini, with a
+                            # deterministic localized template as the guarded fallback).
+                            if p.get("under_maintenance"):
+                                eta = p.get("estimated_clear")
+                                template = t("train_status_maint", language, train_id=train_id,
+                                             reason=p.get("reason", ""),
+                                             eta=t("train_status_eta", language, eta=eta) if eta else "")
+                            elif p.get("found") or p.get("train_id"):
+                                template = t("train_status_clear", language, train_id=train_id)
+                            else:
+                                template = t("train_status_failed", language)
+                            presented = await asyncio.to_thread(
+                                present_agent_result, language, text, "Maintenance train status",
+                                {"train_id": train_id, "under_maintenance": p.get("under_maintenance"),
+                                 "maintenance_reason": p.get("reason"),
+                                 "estimated_back_in_service": p.get("estimated_clear"),
+                                 "agent_message_english": p.get("message")},
+                                [train_id],
+                            )
+                            reply = presented or template
                     else:
-                        reply = "I couldn't check the train status right now. Please try again shortly."
+                        reply = t("train_status_failed", language)
                     source = "via Maintenance Agent"
             except TrainRepositoryUnavailable:
-                reply = "The train registry is temporarily unavailable. Please try again."
+                reply = t("registry_unavailable", language)
                 source = "via Shared Train Registry"
 
     elif intent == "complaint":
@@ -766,96 +1272,92 @@ async def chat(req: ChatRequest):
                 "description": text,
                 "train_id": entities.get("train_id", ""),
                 "station": station,
+                "language": language,  # passenger's language travels with the report
             },
         )
         hub_response = await send_to_hub(envelope)
         if hub_response.status == "ok":
             p = hub_response.payload
-            # Maintenance's reply text is already composed by that agent - passed
-            # through as-is, just appending the ticket id for the passenger's reference.
-            reply = f"{p['message']} (Ticket: {p['ticket_id']})"
+            ticket = p.get("ticket_id", "-")
+            if language == "en":
+                # English: Maintenance's own text passed through, plus the ticket id.
+                reply = f"{p.get('message', '')} (Ticket: {ticket})".strip()
+            else:
+                presented = await asyncio.to_thread(
+                    present_agent_result, language, text, "Maintenance issue ticket",
+                    {"ticket_reference": ticket, "agent_message_english": p.get("message"),
+                     "passenger_report": text},
+                    [ticket],
+                )
+                reply = presented or t("complaint_logged", language, ticket=ticket)
             source = "via Maintenance Agent"
         else:
-            reply = hub_response.message or "I couldn't log your issue right now."
+            reply = (
+                t("complaint_failed", language) if getattr(hub_response, "error_kind", None) == "rejected"
+                else _agent_error(language, hub_response)
+            )
+            source = "via Maintenance Agent"
 
     elif intent == "booking_request":
         from_st = entities.get("from_station")
         to_st = entities.get("to_station")
         t_date = entities.get("travel_date")
-        prefill = {}
-        if from_st:
-            prefill["from_station"] = from_st
-        if to_st:
-            prefill["to_station"] = to_st
-        if t_date:
-            prefill["travel_date"] = t_date
-
-        params = []
-        if from_st:
-            params.append(f"from={from_st}")
-        if to_st:
-            params.append(f"to={to_st}")
-        if t_date:
-            params.append(f"date={t_date}")
-        query_str = f"?{'&'.join(params)}" if params else ""
+        prefill = {
+            key: value
+            for key, value in {
+                "from_station": from_st,
+                "to_station": to_st,
+                "travel_date": t_date,
+                "train_id": entities.get("train_id"),
+                "seat_class": entities.get("seat_class"),
+                "passenger_count": entities.get("passenger_count"),
+            }.items()
+            if value not in (None, "")
+        }
+        query_values = {
+            "from": prefill.get("from_station"),
+            "to": prefill.get("to_station"),
+            "date": prefill.get("travel_date"),
+            "train_id": prefill.get("train_id"),
+            "seat_class": prefill.get("seat_class"),
+            "passenger_count": prefill.get("passenger_count"),
+        }
+        query_str = urlencode({key: value for key, value in query_values.items() if value not in (None, "")})
+        query_str = f"?{query_str}" if query_str else ""
         booking_url = f"http://localhost:3000/user/booking{query_str}"
 
         action = {
             "type": "continue_to_booking",
-            "label": "Continue to Booking ➔",
+            "label": t("label_continue_booking", language),
             "url": booking_url,
             "prefill": prefill,
         }
 
-        envelope = build_envelope(
-            receiver_agent="booking-agent",
-            intent="booking_request",
-            payload={
-                "from_station": entities.get("from_station"),
-                "to_station": entities.get("to_station"),
-                "travel_date": entities.get("travel_date"),
-                "train_id": entities.get("train_id"),
-                "seat_class": entities.get("seat_class"),
-                # ner_extractor now returns None (not 1) when no count was
-                # mentioned - booking_request isn't part of these fixes, so
-                # this preserves its prior default-to-1 behavior exactly.
-                # entities.get("passenger_count", 1) would NOT catch this,
-                # since the key is present with value None, not missing.
-                "passenger_count": entities.get("passenger_count") or 1,
-            },
-        )
-        hub_response = await send_to_hub(envelope)
-        if hub_response.status == "ok":
-            reply = hub_response.payload.get("message", "Booking request processed.")
-            source = "via Booking Agent"
-        else:
-            details_list = []
-            if from_st:
-                details_list.append(f"from **{from_st}**")
+        if not (from_st and to_st):
+            # A required station is missing: ask for it in the passenger's language.
+            # The station that WAS named keeps its own role (a destination is never
+            # turned into an origin) and the missing one is never guessed. The card
+            # above stays so the passenger can also finish in the booking desk.
             if to_st:
-                details_list.append(f"to **{to_st}**")
-            if t_date:
-                details_list.append(f"on **{t_date}**")
-            if details_list:
-                reply = (
-                    f"I found your booking request {' '.join(details_list)}. "
-                    "Click the button below to proceed to the reservation desk with these details pre-filled."
-                )
+                reply = t("booking_ask_origin", language, destination=_disp(to_st, language))
+            elif from_st:
+                reply = t("booking_ask_destination", language, origin=_disp(from_st, language))
             else:
-                reply = (
-                    "I can help you book a train ticket! "
-                    "Click the button below to open the booking desk and select your route and date."
-                )
-            source = "via Booking Agent"
-
+                reply = t("booking_ask_both", language)
+            source = "local"
+        else:
+            date_part = t("booking_date_part", language, date=t_date) if t_date else ""
+            reply = t("booking_found", language, origin=_disp(from_st, language),
+                      destination=_disp(to_st, language), date_part=date_part)
+            source = "Passenger Assistant booking link"
     elif intent == "cancel_booking":
         booking_ref = entities.get("booking_reference") or _extract_train_id(text)
-        reason = entities.get("reason") or "No reason provided"
-        ref_display = booking_ref or "Reference Required"
-
+        reason = entities.get("reason") or "No reason provided"  # API value sent to the Booking Agent
+        reason_shown = entities.get("reason") or t("no_reason_provided", language)
         reply = (
-            f"I have prepared your cancellation request for booking **{ref_display}** "
-            f"with reason: *\"{reason}\"*. Please review the confirmation card below and click **Send Cancellation Request**."
+            t("cancel_prepared", language, ref=booking_ref, reason=reason_shown)
+            if booking_ref
+            else t("cancel_need_ref", language, reason=reason_shown)
         )
         cancellation = {
             "booking_reference": booking_ref or "",
@@ -863,7 +1365,7 @@ async def chat(req: ChatRequest):
         }
         action = {
             "type": "cancellation_confirmation_card",
-            "label": "Send Cancellation Request ➔",
+            "label": t("label_send_cancellation", language),
             "booking_reference": booking_ref or "",
             "reason": reason,
         }
@@ -873,8 +1375,13 @@ async def chat(req: ChatRequest):
         # Natural route questions can miss the keyword classifier. Resolve them
         # against the shared registry before falling back to FAQ retrieval.
         route_words = text.lower()
-        if len(entities.get("stations", [])) >= 2 and "train" in route_words:
-            origin, destination = entities["stations"][:2]
+        mentions_train = "train" in route_words or "දුම්රිය" in text or "ரயில்" in text
+        if len(entities.get("stations", [])) >= 2 and mentions_train:
+            origin, destination = (
+                (entities["from_station"], entities["to_station"])
+                if entities.get("from_station") and entities.get("to_station")
+                else entities["stations"][:2]
+            )
             try:
                 services = await asyncio.to_thread(search_trains, origin, destination)
                 if services:
@@ -883,21 +1390,24 @@ async def chat(req: ChatRequest):
                         for service in services[:10]
                     ]
                     reply = (
-                        f"I found {len(services)} train service(s) from {origin} to {destination}:\n"
-                        + "\n".join(f"- {line}" for line in service_lines)
+                        t("route_found", language, n=len(services),
+                          origin=_disp(origin, language), destination=_disp(destination, language))
+                        + "\n" + "\n".join(f"- {line}" for line in service_lines)
                     )
                     source = "via Shared Train Registry"
                 else:
-                    reply = f"I couldn't find a shared train service from {origin} to {destination}."
+                    reply = t("route_none", language, origin=_disp(origin, language), destination=_disp(destination, language))
                     source = "via Shared Train Registry"
             except TrainRepositoryUnavailable:
-                reply = "The shared train registry is temporarily unavailable. Please try again shortly."
+                reply = t("registry_unavailable", language)
                 source = "via Shared Train Registry"
         else:
             # Keyword classifier missed this one - try the FAQ docs before giving up.
             # compose_rag_answer() already returns a clear "not found, try rephrasing"
             # message (with source="") when nothing relevant is retrieved.
             reply, source = compose_rag_answer(text, language, req.session_id, intent=intent, entities=entities)
+            if reply in OUT_OF_SCOPE_REPLIES.values():
+                intent = "out_of_scope"  # lets the UI show it as a service notice
 
     save_message(req.session_id, "user", text)
     save_message(req.session_id, "assistant", reply)

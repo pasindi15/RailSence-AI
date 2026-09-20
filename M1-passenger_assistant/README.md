@@ -107,6 +107,48 @@ cd backend
 pytest
 ```
 
+## Source of truth for passenger answers
+
+The chatbot must never contradict the Booking Agent (M3), which owns fares, booking limits,
+cancellation and refund rules. The passenger FAQ (`backend/data/faq_docs/`) is a passenger-facing
+view of those rules, not a second copy that can drift:
+
+| FAQ file | Authoritative source | How it is kept in sync |
+|---|---|---|
+| `fares.md` | `DEMO_FARE_RULES` in M3 `booking/fare.py` | **Generated** - `python -m rag.sync_from_m3` |
+| `policies.md` (booking / cancelling / refunds / seating) | M3 `cancellation/rules.py` + `cancellation/policies/*.md` | Hand-written for passengers, **checked by** `tests/test_source_consistency.py` |
+| `policies.md` (luggage, validity, complaints), `schedules.md` | M1 reference data (no other agent owns it) | Unvalidated - verify against real SLR data |
+
+After changing any FAQ file (run from `backend/`, **with the backend venv** - the on-disk index
+is not readable across chromadb versions, and `requirements.txt` pins `chromadb==1.5.9`):
+
+```
+venv\Scripts\python -m rag.sync_from_m3        # only if M3's fare table changed
+venv\Scripts\python -m rag.embed_documents     # rebuild the Chroma index
+venv\Scripts\python -m pytest tests            # consistency + routing + flow tests
+```
+
+Live train status comes from the Operations Agent via the Hub; its "similar past incident" and
+"recorded history" text is historical and is labelled that way. Engineering manuals (M4) are
+engineer-only and are never reachable from the passenger chat.
+
+## Language: the passenger's language controls every reply
+
+`detect_language()` runs **once** at the top of `/chat` (Sinhala `si`, Tamil `ta`, else English `en`;
+mixed text goes by the script with more letters). That single `language` value is then used by every
+path, and is also sent to every agent in the Hub payload (`payload.language`):
+
+| Reply type | Who writes it, in the detected language |
+|---|---|
+| Fare / schedule / policy answers | **Gemini**, from the retrieved English RAG context (`_language_prompt_block`) |
+| Delay, train info, train status, complaint ticket, booking-agent result (si/ta) | **Gemini**, from the agent's structured result (`present_agent_result`); guarded - the reply must be in the right script and keep the delay figure / train ID / ticket ID, else the template below is used |
+| Errors, missing-station questions, cancellation cards, labels, and the fallback when Gemini is down | Fixed templates in `backend/i18n.py` (`t(key, language)`) |
+
+English keeps its original deterministic wording for delay / train / complaint replies. The knowledge
+base (`data/faq_docs/*.md`) stays English: retrieval language and answer language are independent.
+To add a passenger-facing message, add it to `i18n.MESSAGES` with `en`, `si` and `ta` (a test checks
+that every key has all three and the same placeholders).
+
 ## Current status
 
 - **Working now:** language detection, intent classification, entity

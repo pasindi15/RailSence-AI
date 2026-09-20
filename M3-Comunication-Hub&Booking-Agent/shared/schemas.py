@@ -38,6 +38,10 @@ class MemberCIntent(str, Enum):
     issue_report         = "issue_report"
     incident_report      = "incident_report"
     fraud_score_request  = "fraud_score_request"
+    # Passenger -> Maintenance: "is this train running / under maintenance?"
+    # M1 and M4 already send/handle this; it was missing from this enum so
+    # every such question 422'd at the Hub before ever reaching M4.
+    train_status_query   = "train_status_query"
     ack                  = "ack"
 
 

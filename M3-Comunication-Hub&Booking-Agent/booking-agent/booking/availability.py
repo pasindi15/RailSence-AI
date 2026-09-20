@@ -108,7 +108,7 @@ from .services_catalog import (
     stations_match,
 )
 
-BOOKING_HORIZON_DAYS = int(os.getenv("BOOKING_HORIZON_DAYS", "90"))
+BOOKING_HORIZON_DAYS = int(os.getenv("BOOKING_HORIZON_DAYS", "365"))
 
 
 # ---------------------------------------------------------------------------
@@ -726,7 +726,26 @@ def get_schedules_for_route(
         ms = (getattr(train, "maintenance_status", None) or "").strip().upper()
         if ms == "OUT_OF_SERVICE":
             continue
+        # Skip historical/test-fixture trains (IC-XXXX, YD-XXXX, ND-XXXX, EXP-OVERLAP, etc.)
+        train_type = (getattr(train, "train_type", None) or "").strip().lower()
+        if train_type in ("historical_operations", "test_fixture"):
+            continue
         matched_pairs.append((schedule, train))
+
+    # Deduplicate: keep one entry per (train_id, departure_time) — prefer lowest schedule.id
+    # This prevents duplicate rows caused by multiple seed runs or concurrent materialization.
+    seen_keys: dict[tuple[str, str], tuple[TrainSchedule, Train]] = {}
+    for schedule, train in matched_pairs:
+        dep_str_key = (
+            schedule.departure_time.strftime("%H:%M")
+            if hasattr(schedule.departure_time, "strftime")
+            else str(schedule.departure_time)[:5]
+        )
+        dedup_key = (train.train_id, dep_str_key)
+        existing = seen_keys.get(dedup_key)
+        if existing is None or schedule.id < existing[0].id:
+            seen_keys[dedup_key] = (schedule, train)
+    matched_pairs = list(seen_keys.values())
 
     if not matched_pairs:
         return []

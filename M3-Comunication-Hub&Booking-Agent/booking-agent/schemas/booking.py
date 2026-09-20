@@ -121,9 +121,10 @@ class BookingRequest(BaseModel):
         now_colombo = datetime.now(colombo_tz).date()
         if v < now_colombo:
             raise ValueError(f"travel_date must be today or a future date ({now_colombo.isoformat()} in Asia/Colombo)")
-        max_horizon = now_colombo + timedelta(days=90)
+        horizon_days = int(os.getenv("BOOKING_HORIZON_DAYS", "365"))
+        max_horizon = now_colombo + timedelta(days=horizon_days)
         if v > max_horizon:
-            raise ValueError(f"travel_date exceeds advance booking limit of 90 days ({max_horizon.isoformat()})")
+            raise ValueError(f"travel_date exceeds advance booking limit of {horizon_days} days ({max_horizon.isoformat()})")
         return v
 
     @field_validator("seat_class")
