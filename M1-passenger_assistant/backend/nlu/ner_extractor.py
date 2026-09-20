@@ -51,6 +51,32 @@ STATION_ALIASES = {
 TIME_PATTERN = re.compile(r"\b([01]?\d|2[0-3]):[0-5]\d\b")
 DATE_PATTERN = re.compile(r"\b\d{4}-\d{2}-\d{2}\b")
 TRAIN_ID_PATTERN = re.compile(r"\b[A-Z]{2,12}-\d{3,5}\b", re.IGNORECASE)
+# The canonical registry holds two id conventions: prefixed ids seeded from
+# operations history (PM-8056, IC-8746) and bare Sri Lanka Railways service
+# numbers (4085, 50, 1005) - the latter are what the daily train board shows,
+# so "Is 4085 delayed?" has to resolve. A bare number is ambiguous, so it is
+# only read as a train id when a train-ish word sits next to it, and times,
+# ISO dates and passenger counts are excluded by the callers below.
+BARE_TRAIN_NUMBER_PATTERN = re.compile(
+    r"(?:\b(?:train|service|express|no\.?|number|#)\s*#?\s*(\d{1,4})\b"
+    r"|\b(\d{1,4})\s*(?=(?:train|service|express)\b)"
+    r"|(?:\bis\s+(\d{1,4})\b)"
+    r"|(?:\bof\s+(\d{1,4})\b))",
+    re.IGNORECASE,
+)
+
+
+def _extract_bare_train_number(text: str) -> str | None:
+    """Return a standalone SLR service number, or None when nothing safe matches."""
+    # Blank out times (05:45) and ISO dates so their digits can never be read
+    # as a service number, then look for a train-qualified bare number.
+    masked = TIME_PATTERN.sub(" ", text)
+    masked = DATE_PATTERN.sub(" ", masked)
+    match = BARE_TRAIN_NUMBER_PATTERN.search(masked)
+    if not match:
+        return None
+    number = next((g for g in match.groups() if g), None)
+    return number or None
 BOOKING_REF_PATTERN = re.compile(r"\b(RS-[A-Za-z0-9]{4,10})\b", re.IGNORECASE)
 SEAT_CLASS_KEYWORDS = ["first class", "second class", "third class"]
 # Separate from SEAT_CLASS_KEYWORDS above - that field's exact "First/Second/
@@ -212,6 +238,7 @@ def extract_entities(text: str) -> dict:
     time_match = TIME_PATTERN.search(text)
     date_match = DATE_PATTERN.search(text)
     train_id_match = TRAIN_ID_PATTERN.search(text)
+    bare_train_number = None if train_id_match else _extract_bare_train_number(text)
     booking_ref_match = BOOKING_REF_PATTERN.search(text)
     passenger_count_match = PASSENGER_COUNT_PATTERN.search(text) or PASSENGER_COUNT_FOR_PATTERN.search(text)
     lowered = text.lower()
@@ -268,7 +295,7 @@ def extract_entities(text: str) -> dict:
         "to_station": route_destination,
         "time": time_match.group(0) if time_match else None,
         "travel_date": travel_date,
-        "train_id": train_id_match.group(0) if train_id_match else None,
+        "train_id": train_id_match.group(0) if train_id_match else bare_train_number,
         "booking_reference": booking_ref,
         "reason": reason,
         "seat_class": next((keyword.title() for keyword in SEAT_CLASS_KEYWORDS if keyword in lowered), None),

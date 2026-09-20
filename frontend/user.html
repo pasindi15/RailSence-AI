@@ -183,19 +183,68 @@ body {
   align-items: flex-start;
 }
 
+/* ── Sidebar: off-canvas drawer, hidden until the toggle button opens it ── */
+.sidebar-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid var(--border-light);
+  background: #F9FAFB;
+  color: var(--text-label);
+  cursor: pointer;
+  font-size: 17px;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: all 0.18s ease;
+}
+
+.sidebar-toggle-btn:hover {
+  background: var(--primary-light);
+  border-color: var(--primary);
+  color: var(--primary-hover);
+}
+
+.sidebar-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  z-index: 999;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+.sidebar-backdrop.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 .sidebar-nav {
-  width: 240px;
+  width: 260px;
   flex-shrink: 0;
   background: #FFFFFF;
-  border-radius: var(--r-card);
+  border-radius: 0 var(--r-card) var(--r-card) 0;
   border: 1px solid var(--border-light);
-  box-shadow: var(--shadow-sm);
+  box-shadow: 8px 0 28px rgba(15, 23, 42, 0.18);
   padding: 12px;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  position: sticky;
-  top: 20px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  overflow-y: auto;
+  z-index: 1000;
+  transform: translateX(-100%);
+  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar-nav.open {
+  transform: translateX(0);
 }
 
 .sidebar-section {
@@ -1637,8 +1686,8 @@ body {
     flex-direction: column;
   }
   .sidebar-nav {
-    width: 100%;
-    position: static;
+    width: 82vw;
+    max-width: 300px;
   }
   .workflow-stepper {
     grid-template-columns: 1fr 1fr;
@@ -1677,6 +1726,7 @@ body {
   <!-- Top Navigation Header -->
   <header class="top-nav">
     <div class="brand-area">
+      <button class="sidebar-toggle-btn" id="sidebarToggleBtn" onclick="toggleSidebar()" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="sidebarNav" title="Menu">☰</button>
       <div class="brand-emblem">🚆</div>
       <div>
         <div class="brand-title">RailSense AI</div>
@@ -1689,10 +1739,13 @@ body {
     </div>
   </header>
 
+  <!-- Backdrop: shown behind the open sidebar drawer; click to close -->
+  <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeSidebar()"></div>
+
   <!-- Application Body: Left Sidebar + Main Content -->
   <div class="app-body">
-    <!-- Left Navigation Sidebar -->
-    <aside class="sidebar-nav" role="navigation" aria-label="Passenger Portal Navigation">
+    <!-- Left Navigation Sidebar (off-canvas drawer, toggled by the ☰ button) -->
+    <aside class="sidebar-nav" id="sidebarNav" role="navigation" aria-label="Passenger Portal Navigation">
       <button class="tab-btn active" id="tab-dashboard" onclick="navigateTo('/user')">
         <span class="tab-icon">⌂</span>
         <span class="tab-text">Home Dashboard</span>
@@ -2372,7 +2425,35 @@ window.addEventListener('message', (event) => {
 function navigateTo(path) {
   history.pushState(null, '', path);
   handleUrlRouting();
+  closeSidebar();
 }
+
+/* ── Sidebar drawer: ☰ opens it, ☰ again / backdrop / Esc / picking a
+   nav item all close it ─────────────────────────────────────────── */
+function toggleSidebar() {
+  const sidebar = $('sidebarNav');
+  const backdrop = $('sidebarBackdrop');
+  const btn = $('sidebarToggleBtn');
+  if (!sidebar) return;
+  const isOpen = sidebar.classList.toggle('open');
+  if (backdrop) backdrop.classList.toggle('visible', isOpen);
+  if (btn) btn.setAttribute('aria-expanded', String(isOpen));
+  document.body.style.overflow = isOpen ? 'hidden' : '';
+}
+
+function closeSidebar() {
+  const sidebar = $('sidebarNav');
+  const backdrop = $('sidebarBackdrop');
+  const btn = $('sidebarToggleBtn');
+  if (sidebar) sidebar.classList.remove('open');
+  if (backdrop) backdrop.classList.remove('visible');
+  if (btn) btn.setAttribute('aria-expanded', 'false');
+  document.body.style.overflow = '';
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeSidebar();
+});
 
 function applyPrefill(prefill) {
   if (!prefill) return;
@@ -2647,11 +2728,24 @@ function renderDashboardServices(data) {
   }
   list.innerHTML = `<table class="service-table"><thead><tr><th>Train</th><th>Route & stops</th><th>Time</th><th>Status</th></tr></thead><tbody>${data.services.map(service => {
     const status = String(service.service_status || 'SCHEDULED').toLowerCase();
-    const stops = Array.isArray(service.stops) && service.stops.length ? service.stops.join(' · ') : 'Stops: N/A';
-    const position = service.current_station || service.next_station ? `Now: ${service.current_station || 'N/A'} → ${service.next_station || 'N/A'}` : 'Live position: N/A';
+    const stops = Array.isArray(service.stops) && service.stops.length ? `Stops: ${service.stops.join(' · ')}` : 'Stops: N/A';
+    const position = formatLivePosition(service);
     const trainId = service.train_id || '';
-    return `<tr><td>${escapeHtml(trainId || 'N/A')}<br><small style="color:var(--text-sub);">${escapeHtml(service.train_name || 'N/A')}</small><div class="service-actions"><button class="service-action" type="button" onclick="askDashboardQuestion('Is ${escapeHtml(trainId)} delayed?')">Delay</button><button class="service-action" type="button" onclick="askDashboardQuestion('What is the current operational status of ${escapeHtml(trainId)}?')">Operations</button></div></td><td class="route-cell"><strong>${escapeHtml(service.from_station || 'N/A')} → ${escapeHtml(service.to_station || 'N/A')}</strong><span class="service-stops">Stops: ${escapeHtml(stops)}</span><span class="service-position">${escapeHtml(position)}</span></td><td>${escapeHtml(service.departure_time || 'N/A')}<br><small style="color:var(--text-sub);">Arrive ${escapeHtml(service.arrival_time || 'N/A')}</small></td><td><span class="service-status ${status}">${escapeHtml(status.replaceAll('_',' '))}</span></td></tr>`;
+    return `<tr><td>${escapeHtml(trainId || 'N/A')}<br><small style="color:var(--text-sub);">${escapeHtml(service.train_name || 'N/A')}</small><div class="service-actions"><button class="service-action" type="button" onclick="askDashboardQuestion('Is ${escapeHtml(trainId)} delayed?')">Delay</button><button class="service-action" type="button" onclick="askDashboardQuestion('What is the current operational status of ${escapeHtml(trainId)}?')">Operations</button></div></td><td class="route-cell"><strong>${escapeHtml(service.from_station || 'N/A')} → ${escapeHtml(service.to_station || 'N/A')}</strong><span class="service-stops">${escapeHtml(stops)}</span><span class="service-position">${escapeHtml(position)}</span></td><td>${escapeHtml(service.departure_time || 'N/A')}<br><small style="color:var(--text-sub);">Arrive ${escapeHtml(service.arrival_time || 'N/A')}</small></td><td><span class="service-status ${status}">${escapeHtml(status.replaceAll('_',' '))}</span></td></tr>`;
   }).join('')}</tbody></table>`;
+}
+
+// Renders the live position the server derived purely from the service's own
+// schedule (departure/arrival, and per-stop times when known) against the
+// current clock - never a hardcoded or random value. See
+// _compute_live_position() in frontend/serve.py for how these fields are set.
+function formatLivePosition(service) {
+  const { live_status: liveStatus, current_station: current, next_station: next, progress_percent: progress } = service;
+  if (current && next) return `Now: ${current} → ${next}${progress !== null && progress !== undefined ? ` (${progress}%)` : ''}`;
+  if (liveStatus === 'ARRIVED') return `Arrived at ${current || service.to_station || 'destination'}`;
+  if (liveStatus === 'IN_TRANSIT' && progress !== null && progress !== undefined) return `En route — ${progress}% of journey`;
+  if (liveStatus === 'SCHEDULED') return `Not yet departed (${service.departure_time || 'scheduled'})`;
+  return 'Live position: N/A';
 }
 
 function askDashboardQuestion(question) {

@@ -137,9 +137,16 @@ def test_04_unauthorized_admin_api_access_blocked():
     resp_retrain = client.post("/admin/api/model/retrain", headers=headers)
     assert resp_retrain.status_code == 403
 
-    # Attempt to access system health config (Admin only)
-    resp_cfg = client.get("/admin/api/health/config", headers=headers)
+    # Attempt to access system health status (Admin only).
+    # Was /health/config until the admin console was consolidated; that screen
+    # and its endpoint were retired, so this asserts the same RBAC guard on the
+    # surviving health endpoint.
+    resp_cfg = client.get("/admin/api/health/status", headers=headers)
     assert resp_cfg.status_code == 403
+
+    # Attempt to read the audit trail (Admin only)
+    resp_audit = client.get("/admin/api/audit/events", headers=headers)
+    assert resp_audit.status_code == 403
 
     print("[PASS] Test 3 & 8 — Direct Admin API calls by Operations Engineer strictly blocked with 403 Forbidden.")
 

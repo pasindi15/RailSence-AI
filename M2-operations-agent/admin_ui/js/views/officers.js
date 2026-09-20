@@ -27,17 +27,17 @@ window.ViewOfficers = (function () {
         </div>
         <div class="card" style="padding:16px;">
           <div class="muted" style="font-size:11.5px;font-weight:600;text-transform:uppercase;">Active Admins</div>
-          <div style="font-size:26px;font-weight:800;color:#7c3aed;margin:6px 0;" id="kpi-admin-count">…</div>
+          <div style="font-size:26px;font-weight:800;color:var(--maintenance);margin:6px 0;" id="kpi-admin-count">…</div>
           <div class="muted" style="font-size:11px;">Full system control</div>
         </div>
         <div class="card" style="padding:16px;">
           <div class="muted" style="font-size:11.5px;font-weight:600;text-transform:uppercase;">Operations Engineers</div>
-          <div style="font-size:26px;font-weight:800;color:#0284c7;margin:6px 0;" id="kpi-ops-count">…</div>
+          <div style="font-size:26px;font-weight:800;color:var(--passenger);margin:6px 0;" id="kpi-ops-count">…</div>
           <div class="muted" style="font-size:11px;">Control room &amp; prediction</div>
         </div>
         <div class="card" style="padding:16px;">
           <div class="muted" style="font-size:11.5px;font-weight:600;text-transform:uppercase;">Inactive / Suspended</div>
-          <div style="font-size:26px;font-weight:800;color:#ef4444;margin:6px 0;" id="kpi-inactive-count">…</div>
+          <div style="font-size:26px;font-weight:800;color:var(--danger);margin:6px 0;" id="kpi-inactive-count">…</div>
           <div class="muted" style="font-size:11px;">Access revoked</div>
         </div>
       </div>

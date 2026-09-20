@@ -917,10 +917,19 @@ def save_message(session_id: str, role: str, message: str):
 
 
 def _extract_train_id(text: str) -> str:
-    """Extract a canonical train ID (e.g. PM-4082, IC-4665) from free text."""
+    """Extract a canonical train ID from free text.
+
+    Handles both registry conventions: prefixed ids (PM-4082, IC-4665) and the
+    bare Sri Lanka Railways service numbers shown on the daily board (4085, 50,
+    1005). The bare-number path reuses the NER extractor's guarded matcher so
+    times, dates and passenger counts are never mistaken for a train id.
+    """
     import re
     match = re.search(r"\b[A-Z]{2,12}-\d{3,5}\b", text, re.IGNORECASE)
-    return match.group(0).upper() if match else ""
+    if match:
+        return match.group(0).upper()
+    from nlu.ner_extractor import _extract_bare_train_number
+    return _extract_bare_train_number(text) or ""
 
 
 @app.get("/health")
@@ -931,7 +940,10 @@ def health():
 @app.get("/trains/{train_id}/details")
 def train_details(train_id: str):
     clean_id = train_id.strip().upper()
-    if not re.fullmatch(r"[A-Z]{2,12}-\d{3,5}", clean_id):
+    # Accept both registry conventions: prefixed ids (PM-4082) and bare SLR
+    # service numbers (4085, 50). The registry lookup below is the real
+    # validation; this only rejects obviously malformed input.
+    if not re.fullmatch(r"[A-Z]{2,12}-\d{3,5}|\d{1,4}", clean_id):
         raise HTTPException(status_code=404, detail="Train not found")
     try:
         details = get_train_details(clean_id)
@@ -1034,7 +1046,13 @@ async def chat(req: ChatRequest):
         if entities.get("from_station") and entities.get("to_station"):
             # spoken direction (e.g. "Kandy to Colombo"), not dictionary order
             stations = [entities["from_station"], entities["to_station"]]
-        route = " - ".join(stations) if isinstance(stations, list) and len(stations) >= 2 else "Colombo Fort - Kandy"
+        # No invented default here. This used to fall back to "Colombo Fort -
+        # Kandy", so every "Is <train> delayed?" that named no stations was
+        # answered for the Kandy line - wrong for PM-8056 (Badulla), 1005
+        # (Colombo - Badulla) and most of the board. When the passenger names
+        # no stations we send no route, and Operations fills it in from the
+        # shared registry entry for the train they did name.
+        route = " - ".join(stations) if isinstance(stations, list) and len(stations) >= 2 else None
         train_id = entities.get("train_id")
         resolved_via_registry = False
         if not train_id and isinstance(stations, list) and len(stations) >= 2:
@@ -1090,6 +1108,11 @@ async def chat(req: ChatRequest):
             # Operations' /hub/message hands back structured fields, not one
             # composed sentence (unlike Maintenance/Booking below) - this
             # assembles them, it doesn't re-run anything through an LLM.
+            # Operations resolved the identity against the shared registry, so
+            # its values win: "4082" comes back as PM-4082, and the route it
+            # priced the prediction on is the one the reply must quote.
+            train_id = p.get("train_id") or train_id
+            route = p.get("route") or route
             delay = p.get("predicted_delay_minutes", 0)
             delay_minutes = float(delay)
             reason = p.get("reason") or p.get("explanation", "Operational congestion")

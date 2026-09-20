@@ -20,12 +20,30 @@ Endpoints:
         GET    /roles/matrix               -> RBAC capability matrix
 
     M2 Admin Console Features (Admin Only):
-        System Health & Config (/health/*)
-        Data Management (/data/*)
-        Incident Reports Queue (/incident-reports/*)
-        Model Operations (/model/*)
-        Hub & Event Control (/hub/*)
-        General Audit Logs (/audit/*)
+        GET  /health/status              -> source liveness, drives the offline banner
+        GET  /model/metrics-history      -> current metrics + real retrain run log
+        GET  /model/feature-importances  -> ml/feature_importances.json from the last run
+        POST /model/retrain              -> runs ml/train_delay_model.py against live data
+        GET  /model/versions             -> real timestamped backups with their metrics
+        POST /model/rollback/{filename}  -> restore a prior .pkl
+        GET  /audit/events               -> inter-agent audit trail (read-only, filtered)
+        GET  /audit/summary              -> intent/agent distribution over that trail
+
+Removed in the rubric-focused consolidation (see README section 4):
+    /data/*            Data Management screen retired; the CSV import/export
+                       path stays runnable from the CLI via
+                       data/import_to_supabase.py and the ML training pipeline.
+    /hub/status,
+    /hub/events,
+    /hub/test-alert,
+    /hub/threshold     Hub & Upstash connectivity-probe screen retired. The
+                       alert-publishing code in hub_client.py is untouched and
+                       the >= 5.0 minute delay_alert broadcast still fires.
+    /health/data-sources,
+    /health/config     System Health & Config screen retired; /health/status
+                       remains because the offline-mode banner reads it.
+    /incidents/queue   Superseded by the consolidated Incident Management
+                       screen backed by GET/PATCH/DELETE /incidents in main.py.
 """
 
 from __future__ import annotations
@@ -33,13 +51,14 @@ from __future__ import annotations
 from datetime import datetime, timezone
 import os
 from pathlib import Path
+import logging
 import subprocess
 import sys
 import time
 from typing import Any, Optional
 
 import httpx
-from fastapi import APIRouter, Body, Depends, File, HTTPException, Header, Query, Request, UploadFile, status
+from fastapi import APIRouter, Depends, HTTPException, Header, Query, Request, status
 from pydantic import BaseModel, EmailStr, Field
 
 from . import admin_db
@@ -58,6 +77,7 @@ from .admin_auth import (
     verify_password,
 )
 
+logger = logging.getLogger("railsense.admin_router")
 router = APIRouter(prefix="/admin/api", tags=["admin"])
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
@@ -507,185 +527,115 @@ def health_status(identity: dict = Depends(require_admin)):
     }
 
 
-@router.get("/health/data-sources")
-def health_data_sources(identity: dict = Depends(require_admin)):
-    supabase_ok = admin_db.supabase_reachable()
-    csv_exists = admin_db.CSV_FALLBACK_PATH.exists()
-
-    eval_dir = ROOT_DIR / "evaluation"
-    ml_metrics = (eval_dir / "ml" / "delay_model_metrics.json").exists()
-    nlp_metrics = (eval_dir / "nlp" / "classification_metrics.json").exists()
-    rag_metrics = (eval_dir / "rag" / "retrieval_metrics.json").exists()
-
-    return {
-        "operations_history": "supabase" if supabase_ok else ("csv_fallback" if csv_exists else "unavailable"),
-        "audit_events": "supabase" if supabase_ok else "local_jsonl_fallback",
-        "operational_events": "supabase" if supabase_ok else "in_memory_fallback",
-        "model_metrics": "local_json" if ml_metrics else "unavailable",
-        "nlp_metrics": "local_json" if nlp_metrics else "unavailable",
-        "rag_metrics": "local_json" if rag_metrics else "unavailable",
-    }
-
-
-@router.get("/health/config")
-def health_config(identity: dict = Depends(require_admin)):
-    def mask(v: Optional[str]) -> str:
-        if not v:
-            return "(not set)"
-        if len(v) <= 8:
-            return "*" * len(v)
-        return v[:4] + "…" + v[-2:]
-
-    keys = [
-        "SUPABASE_URL", "SUPABASE_SECRET_KEY", "SUPABASE_SERVICE_ROLE_KEY",
-        "SUPABASE_PUBLISHABLE_KEY", "SUPABASE_KEY", "UPSTASH_REDIS_URL",
-        "UPSTASH_REDIS_TOKEN", "ANTHROPIC_API_KEY", "HUB_BASE_URL",
-        "HUB_AUTH_TOKEN", "JWT_TOKEN", "OPERATIONS_AGENT_URL",
-    ]
-    return {k: mask(os.getenv(k)) for k in keys}
-
-
 # ============================================================================
-# 2. DATA MANAGEMENT (ADMIN ONLY)
+# 4. MODEL OPERATIONS — RETRAIN & ROLLBACK (ADMIN ONLY)
 # ============================================================================
 
-class OperationsRecord(BaseModel):
-    record_id: Optional[str] = None
-    route: str
-    station: str
-    train_id: str
-    scheduled_time: str
-    actual_time: Optional[str] = None
-    weather: Optional[str] = None
-    day_type: Optional[str] = None
-    incident_type: Optional[str] = "none"
-    incident_note: Optional[str] = None
-    delay_minutes: float = Field(ge=0, le=600)
+TRAIN_SCRIPT = ML_DIR / "train_delay_model.py"
+IMPORTANCES_PATH = ML_DIR / "feature_importances.json"
+ML_METRICS_PATH = ROOT_DIR / "evaluation" / "ml" / "delay_model_metrics.json"
 
 
-@router.get("/data/records")
-def list_operations_records(limit: int = 50, offset: int = 0, identity: dict = Depends(require_admin)):
-    result = admin_db.fetch_table("operations_history", limit=limit, offset=offset, order_by="scheduled_time")
-    if result["source"] == "unavailable":
-        return admin_db.fetch_operations_history_csv_fallback(limit=limit, offset=offset)
-    return result
+def _read_json(path: Path) -> dict:
+    import json
 
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
 
-@router.post("/data/records")
-def create_operations_record(record: OperationsRecord, identity: dict = Depends(require_admin)):
-    data = record.model_dump()
-    if not data.get("record_id"):
-        data["record_id"] = f"REC-{int(time.time() * 1000)}"
-    result = admin_db.insert_row("operations_history", data)
-    if not result["ok"]:
-        raise HTTPException(status_code=500, detail=result.get("error", "Insert failed"))
-    return result["row"]
-
-
-@router.put("/data/records/{record_id}")
-def update_operations_record(record_id: str, patch: dict = Body(...), identity: dict = Depends(require_admin)):
-    result = admin_db.update_row("operations_history", "record_id", record_id, patch)
-    if not result["ok"]:
-        raise HTTPException(status_code=500, detail=result.get("error", "Update failed"))
-    return result["row"]
-
-
-@router.delete("/data/records/{record_id}")
-def delete_operations_record(record_id: str, identity: dict = Depends(require_admin)):
-    result = admin_db.delete_row("operations_history", "record_id", record_id)
-    if not result["ok"]:
-        raise HTTPException(status_code=500, detail=result.get("error", "Delete failed"))
-    return {"deleted": record_id}
-
-
-@router.post("/data/upload-csv")
-async def upload_csv(file: UploadFile = File(...), identity: dict = Depends(require_admin)):
-    if not file.filename.endswith(".csv"):
-        raise HTTPException(status_code=400, detail="Only CSV files accepted")
-    content = await file.read()
-    dest = ROOT_DIR / "data" / f"uploaded_{int(time.time())}_{file.filename}"
-    dest.write_bytes(content)
-    return {"filename": dest.name, "size_bytes": len(content), "saved_to": str(dest)}
-
-
-# ============================================================================
-# 3. INCIDENT REPORTS REVIEW QUEUE (ADMIN ONLY)
-# ============================================================================
-
-class IncidentReviewPatch(BaseModel):
-    review_status: str = Field(pattern="^(pending|approved|rejected|corrected)$")
-    corrected_type: Optional[str] = None
-    note: Optional[str] = None
-
-
-@router.get("/incidents/queue")
-def list_incident_queue(status: Optional[str] = None, limit: int = 50, offset: int = 0, identity: dict = Depends(require_admin)):
-    filters = {"review_status": status} if status else None
-    result = admin_db.fetch_table("incident_reports", limit=limit, offset=offset, order_by="received_at", filters=filters)
-    return result
-
-
-@router.patch("/incidents/queue/{incident_id}")
-def review_incident(incident_id: str, patch: IncidentReviewPatch, identity: dict = Depends(require_admin)):
-    update_data = {
-        "review_status": patch.review_status,
-        "reviewed_by": identity.get("email") or identity.get("name") or "admin",
-        "reviewed_at": time.time(),
-    }
-    if patch.corrected_type:
-        update_data["classified_type"] = patch.corrected_type
-    result = admin_db.update_row("incident_reports", "incident_id", incident_id, update_data)
-    if not result["ok"]:
-        raise HTTPException(status_code=500, detail=result.get("error", "Review update failed"))
-    return result["row"]
-
-
-# ============================================================================
-# 4. MODEL OPERATIONS (ADMIN ONLY)
-# ============================================================================
 
 @router.get("/model/metrics")
 def model_metrics(identity: dict = Depends(require_admin)):
+    """All three committed evaluation artifacts, as produced by the eval scripts."""
     eval_dir = ROOT_DIR / "evaluation"
-    delay_path = eval_dir / "ml" / "delay_model_metrics.json"
-    nlp_path = eval_dir / "nlp" / "classification_metrics.json"
-    rag_path = eval_dir / "rag" / "retrieval_metrics.json"
-
-    import json
-    def read_json(p: Path) -> dict:
-        return json.loads(p.read_text(encoding="utf-8")) if p.exists() else {}
-
     return {
-        "delay_model": read_json(delay_path),
-        "nlp_classification": read_json(nlp_path),
-        "rag_retrieval": read_json(rag_path),
+        "delay_model": _read_json(eval_dir / "ml" / "delay_model_metrics.json"),
+        "nlp_classification": _read_json(eval_dir / "nlp" / "classification_metrics.json"),
+        "rag_retrieval": _read_json(eval_dir / "rag" / "retrieval_metrics.json"),
+    }
+
+
+@router.get("/model/metrics-history")
+def model_metrics_history(identity: dict = Depends(require_admin)):
+    """Current held-out metrics plus the real retrain/rollback run log."""
+    runs = admin_db.get_training_runs()
+    return {
+        "current_metrics": _read_json(ML_METRICS_PATH) or None,
+        "runs": runs,
+        "run_count": len(runs),
+        "model_present": (ML_DIR / "delay_model.pkl").exists(),
+    }
+
+
+@router.get("/model/feature-importances")
+def model_feature_importances(identity: dict = Depends(require_admin)):
+    """Feature importances written by the most recent training run.
+
+    Read from disk on every request rather than from a cached copy, so the ML
+    screen reflects a retrain without a service restart.
+    """
+    import json
+
+    if not IMPORTANCES_PATH.exists():
+        return {"available": False, "features": [], "generated_at": None}
+    try:
+        features = json.loads(IMPORTANCES_PATH.read_text(encoding="utf-8"))
+    except ValueError:
+        return {"available": False, "features": [], "generated_at": None}
+    return {
+        "available": True,
+        "features": features,
+        "generated_at": IMPORTANCES_PATH.stat().st_mtime,
     }
 
 
 @router.post("/model/retrain")
 def retrain_model(identity: dict = Depends(require_admin)):
-    train_script = ML_DIR / "train.py"
-    if not train_script.exists():
-        raise HTTPException(status_code=404, detail="train.py not found")
+    """Retrain the delay model against the live operations corpus.
 
-    import json
+    Runs ml/train_delay_model.py, which loads Supabase operations_history when
+    reachable and the CSV otherwise, archives the outgoing delay_model.pkl to
+    ml/model_versions/ with a metrics sidecar, then writes the new model,
+    feature_importances.json and delay_model_metrics.json. The in-process
+    predictor is reloaded afterwards so /predict-delay serves the new model
+    without a restart.
+    """
+    if not TRAIN_SCRIPT.exists():
+        raise HTTPException(status_code=404, detail="ml/train_delay_model.py not found")
+
+    versions_before = {v["filename"] for v in admin_db.list_model_versions()}
+
     proc = subprocess.run(
-        [sys.executable, str(train_script)],
+        [sys.executable, str(TRAIN_SCRIPT)],
         cwd=str(ROOT_DIR),
         capture_output=True,
         text=True,
-        timeout=300,
+        timeout=600,
     )
 
-    metrics_path = ROOT_DIR / "evaluation" / "ml" / "delay_model_metrics.json"
-    metrics = None
-    if metrics_path.exists():
-        metrics = json.loads(metrics_path.read_text(encoding="utf-8"))
+    metrics = _read_json(ML_METRICS_PATH) or None
+    versions_after = admin_db.list_model_versions()
+    new_backups = [v["filename"] for v in versions_after if v["filename"] not in versions_before]
+
+    reloaded = False
+    if proc.returncode == 0:
+        try:
+            from ml import predict as delay_model
+
+            reloaded = delay_model.reload_model()
+        except Exception as exc:  # pragma: no cover - defensive
+            proc_note = f"model reload failed: {exc}"
+            logger.warning(proc_note)
 
     run_record = {
         "triggered_by": identity.get("email") or identity.get("name") or "admin",
+        "action": "retrain",
         "returncode": proc.returncode,
         "metrics": metrics,
+        "backup_created": new_backups[0] if new_backups else None,
+        "model_reloaded": reloaded,
+        "data_source": (metrics or {}).get("data_source"),
         "stdout_tail": proc.stdout[-2000:],
         "stderr_tail": proc.stderr[-2000:],
     }
@@ -698,130 +648,121 @@ def retrain_model(identity: dict = Depends(require_admin)):
 
 @router.get("/model/versions")
 def model_versions(identity: dict = Depends(require_admin)):
-    return {"versions": admin_db.list_model_versions()}
+    """Real backup files on disk, with the metrics each one scored."""
+    versions = admin_db.list_model_versions()
+    current = ML_DIR / "delay_model.pkl"
+    return {
+        "versions": versions,
+        "count": len(versions),
+        "current": {
+            "filename": current.name,
+            "created_at": current.stat().st_mtime if current.exists() else None,
+            "metrics": _read_json(ML_METRICS_PATH) or None,
+        },
+    }
 
 
 @router.post("/model/rollback/{filename}")
 def rollback_model(filename: str, identity: dict = Depends(require_admin)):
+    """Restore a previous .pkl, archiving the current one first."""
     import shutil
-    versions_dir = ROOT_DIR / "ml" / "model_versions"
+
+    if "/" in filename or "\\" in filename or ".." in filename:
+        raise HTTPException(status_code=400, detail="Invalid version filename")
+
+    versions_dir = ML_DIR / "model_versions"
     src = versions_dir / filename
-    if not src.exists() or not filename.startswith("delay_model_"):
+    if not src.exists() or not filename.startswith("delay_model_") or src.suffix != ".pkl":
         raise HTTPException(status_code=404, detail="Model version not found")
 
     current_pkl = ML_DIR / "delay_model.pkl"
+    archived_as = None
     if current_pkl.exists():
-        shutil.copy2(current_pkl, versions_dir / f"delay_model_{int(time.time())}_pre_rollback.pkl")
+        archived_as = f"delay_model_{int(time.time())}_pre_rollback.pkl"
+        shutil.copy2(current_pkl, versions_dir / archived_as)
+        if ML_METRICS_PATH.exists():
+            shutil.copy2(ML_METRICS_PATH, (versions_dir / archived_as).with_suffix(".json"))
+
     shutil.copy2(src, current_pkl)
+
+    # Restore that version's metrics alongside the model, so the console keeps
+    # reporting the numbers that belong to the model actually being served.
+    sidecar = src.with_suffix(".json")
+    restored_metrics = None
+    if sidecar.exists():
+        shutil.copy2(sidecar, ML_METRICS_PATH)
+        restored_metrics = _read_json(ML_METRICS_PATH) or None
+
+    reloaded = False
+    try:
+        from ml import predict as delay_model
+
+        reloaded = delay_model.reload_model()
+    except Exception as exc:  # pragma: no cover - defensive
+        logger.warning("Model reload after rollback failed: %s", exc)
 
     admin_db.log_training_run({
         "triggered_by": identity.get("email") or identity.get("name") or "admin",
         "action": "rollback",
         "restored_from": filename,
+        "archived_as": archived_as,
+        "metrics": restored_metrics,
+        "model_reloaded": reloaded,
     })
-    return {"ok": True, "restored_from": filename}
-
-
-# ============================================================================
-# 5. HUB & EVENT CONTROL (ADMIN ONLY)
-# ============================================================================
-
-@router.get("/hub/status")
-def hub_status(identity: dict = Depends(require_admin)):
-    hub_base = os.getenv("HUB_BASE_URL", "http://localhost:8000")
-    reachable = False
-    detail = None
-    try:
-        resp = httpx.get(f"{hub_base}/health", timeout=2.0)
-        reachable = resp.status_code < 500
-        detail = resp.json() if resp.headers.get("content-type", "").startswith("application/json") else None
-    except Exception as exc:
-        detail = str(exc)
-    return {"hub_base_url": hub_base, "reachable": reachable, "detail": detail}
-
-
-@router.get("/hub/events")
-def hub_events(limit: int = 50, identity: dict = Depends(require_admin)):
-    result = admin_db.fetch_table("operational_events", limit=limit, order_by="created_at")
-    return result
-
-
-@router.post("/hub/test-alert")
-def trigger_test_alert(identity: dict = Depends(require_admin)):
-    event = {
-        "event_type": "delay_alert",
-        "route": "Colombo Fort - Kandy",
-        "train_id": "TEST-ADMIN",
-        "predicted_delay_minutes": 12.0,
-        "triggered_by": identity.get("email") or identity.get("name") or "admin",
-        "source": "admin_test_alert",
-        "created_at": time.time(),
+    return {
+        "ok": True,
+        "restored_from": filename,
+        "archived_as": archived_as,
+        "metrics": restored_metrics,
+        "model_reloaded": reloaded,
     }
-    published_to = []
-
-    upstash_url = os.getenv("UPSTASH_REDIS_URL")
-    upstash_token = os.getenv("UPSTASH_REDIS_TOKEN")
-    if upstash_url and upstash_token:
-        try:
-            httpx.post(
-                f"{upstash_url}/publish/delay_alert",
-                headers={"Authorization": f"Bearer {upstash_token}"},
-                json=event, timeout=3.0,
-            )
-            published_to.append("upstash")
-        except Exception:
-            pass
-
-    hub_base = os.getenv("HUB_BASE_URL", "http://localhost:8000")
-    try:
-        httpx.post(f"{hub_base}/events", json=event, timeout=3.0)
-        published_to.append("hub")
-    except Exception:
-        pass
-
-    admin_db.insert_row("operational_events", event)
-    return {"event": event, "published_to": published_to}
-
-
-@router.get("/hub/threshold")
-def get_alert_threshold(identity: dict = Depends(require_admin)):
-    value = admin_db.get_config("delay_alert_threshold_minutes", default=5)
-    return {"delay_alert_threshold_minutes": value}
-
-
-class ThresholdUpdate(BaseModel):
-    delay_alert_threshold_minutes: float = Field(ge=0, le=180)
-
-
-@router.put("/hub/threshold")
-def set_alert_threshold(body: ThresholdUpdate, identity: dict = Depends(require_admin)):
-    result = admin_db.set_config("delay_alert_threshold_minutes", body.delay_alert_threshold_minutes)
-    return result
 
 
 # ============================================================================
-# 6. GENERAL AUDIT TRAILS (ADMIN ONLY)
+# 5. AUDIT & AGENT COMMUNICATION LOG (ADMIN ONLY — STRICTLY READ-ONLY)
+#
+# Tamper-evident by construction: this section exposes reads only. There is
+# deliberately no update or delete route for audit_events, so a row that was
+# written can be inspected and filtered but never edited from the console.
 # ============================================================================
 
 @router.get("/audit/events")
-def audit_events(limit: int = 100, offset: int = 0, identity: dict = Depends(require_admin)):
-    result = admin_db.fetch_table("audit_events", limit=limit, offset=offset, order_by="created_at")
-    if result["source"] == "unavailable":
-        import json
-        log_path = ROOT_DIR / "data" / "audit_log.jsonl"
-        if log_path.exists():
-            lines = log_path.read_text(encoding="utf-8").strip().splitlines()
-            rows = [json.loads(l) for l in lines[-limit:]]
-            return {"rows": list(reversed(rows)), "count": len(lines), "source": "jsonl_fallback"}
-    return result
+def audit_events(
+    limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0),
+    agent: Optional[str] = Query(None, description="Match sender_agent or receiver_agent"),
+    intent: Optional[str] = Query(None, description="Match the message intent / action"),
+    date_from: Optional[str] = Query(None, description="ISO date, inclusive lower bound"),
+    date_to: Optional[str] = Query(None, description="ISO date, inclusive upper bound"),
+    identity: dict = Depends(require_admin),
+):
+    """Filtered, paginated read of the real inter-agent audit trail.
+
+    Filtering is pushed down to Postgres when Supabase is reachable, so a large
+    audit_events table is never pulled into the process to be filtered in
+    Python. The data/audit_log.jsonl fallback applies the same predicates
+    locally and reports `offline: true` so the UI can say so plainly.
+    """
+    result = admin_db.list_agent_audit_events(
+        limit=limit,
+        offset=offset,
+        agent=agent,
+        intent=intent,
+        date_from=date_from,
+        date_to=date_to,
+    )
+    return {
+        "rows": result["rows"],
+        "count": result["count"],
+        "limit": limit,
+        "offset": offset,
+        "source": result["source"],
+        "offline": result["offline"],
+        "filters": {"agent": agent, "intent": intent, "date_from": date_from, "date_to": date_to},
+    }
 
 
 @router.get("/audit/summary")
 def audit_summary(identity: dict = Depends(require_admin)):
-    result = admin_db.fetch_table("audit_events", limit=1000, order_by="created_at")
-    rows = result["rows"]
-    by_type: dict[str, int] = {}
-    for row in rows:
-        key = row.get("intent") or row.get("event_type") or row.get("action") or "unknown"
-        by_type[key] = by_type.get(key, 0) + 1
-    return {"total_sampled": len(rows), "by_type": by_type, "source": result["source"]}
+    """Intent and sender distribution across the audit trail."""
+    return admin_db.summarise_agent_audit_events(limit=1000)

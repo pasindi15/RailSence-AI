@@ -56,7 +56,12 @@ Start-Process powershell -ArgumentList "-NoExit", "-Command", "Write-Host 'Start
 $reactDir = Join-Path $root "M1-passenger_assistant\frontend"
 Start-Process cmd -ArgumentList "/k", "npm.cmd run dev" -WorkingDirectory $reactDir
 
+# 9. M4 Maintenance Login Portal (Port 3002)
+$m4FrontendDir = Join-Path $root "M4-maintenance-agent\frontend"
+Start-Process cmd -ArgumentList "/k", "npm.cmd run dev" -WorkingDirectory $m4FrontendDir
+
 Write-Host "`nAll RailSense AI services launched in separate windows!" -ForegroundColor Green
 Write-Host "User Portal:       http://localhost:3000/user" -ForegroundColor Cyan
 Write-Host "Admin Portal:      http://localhost:3000/admin" -ForegroundColor Yellow
 Write-Host "M1 React Chat App: http://localhost:5173" -ForegroundColor Green
+Write-Host "M4 Login Portal:   http://localhost:3002" -ForegroundColor DarkYellow

@@ -13,6 +13,9 @@ Run:
 """
 
 import json
+import shutil
+import sys
+import time
 from pathlib import Path
 
 import joblib
@@ -30,16 +33,85 @@ DATA_PATH = THIS_DIR.parent / "data" / "operations_history.csv"
 MODEL_PATH = THIS_DIR / "delay_model.pkl"
 IMPORTANCES_PATH = THIS_DIR / "feature_importances.json"
 METRICS_PATH = THIS_DIR.parent / "evaluation" / "ml" / "delay_model_metrics.json"
+VERSIONS_DIR = THIS_DIR / "model_versions"
 
 CATEGORICAL_FEATURES = ["route", "station", "weather", "day_type", "incident_type"]
 NUMERIC_FEATURES = ["scheduled_hour"]
 TARGET = "delay_minutes"
 
 
+def load_operations_history() -> tuple[pd.DataFrame, str]:
+    """Load the CURRENT training corpus: Supabase when online, else the CSV.
+
+    Retraining must reflect records added since the CSV was generated (e.g.
+    rows inserted through the admin console), so Supabase is tried first and
+    the CSV is the offline fallback — the same precedence the serving path
+    uses. Returns the frame and the source label recorded in metrics.
+    """
+    frame = None
+    source = "local_csv"
+
+    try:
+        sys.path.insert(0, str(THIS_DIR.parent))
+        import supabase_store
+
+        rows = supabase_store.fetch_history()
+        if rows:
+            frame = pd.DataFrame(rows)
+            source = "supabase"
+            print(f"Loaded {len(frame)} rows from Supabase operations_history")
+    except Exception as exc:
+        print(f"Supabase unavailable ({exc.__class__.__name__}); using local CSV")
+
+    if frame is None or frame.empty:
+        print(f"Loading dataset from {DATA_PATH} ...")
+        frame = pd.read_csv(DATA_PATH)
+        source = "local_csv"
+
+    frame["scheduled_time"] = pd.to_datetime(frame["scheduled_time"], format="mixed", utc=True)
+    frame["scheduled_hour"] = frame["scheduled_time"].dt.hour
+    frame["delay_minutes"] = pd.to_numeric(frame["delay_minutes"], errors="coerce")
+    frame = frame.dropna(subset=["delay_minutes"])
+    for column in CATEGORICAL_FEATURES:
+        frame[column] = frame[column].fillna("unknown").astype(str)
+    return frame, source
+
+
 def load_and_engineer_features(path: Path) -> pd.DataFrame:
+    """CSV-only loader retained for scripts that pass an explicit path."""
     df = pd.read_csv(path, parse_dates=["scheduled_time", "actual_time"])
     df["scheduled_hour"] = df["scheduled_time"].dt.hour
     return df
+
+
+def backup_current_model() -> Path | None:
+    """Archive the live delay_model.pkl before it is overwritten.
+
+    Writes a timestamped copy plus a `.json` sidecar holding the metrics that
+    model last scored, so the admin rollback list can show real numbers per
+    version instead of placeholder text.
+    """
+    if not MODEL_PATH.exists():
+        return None
+
+    VERSIONS_DIR.mkdir(parents=True, exist_ok=True)
+    stamp = int(time.time())
+    backup_path = VERSIONS_DIR / f"delay_model_{stamp}.pkl"
+    shutil.copy2(MODEL_PATH, backup_path)
+
+    if METRICS_PATH.exists():
+        try:
+            previous = json.loads(METRICS_PATH.read_text(encoding="utf-8"))
+            previous["archived_at"] = stamp
+            previous["archived_from"] = MODEL_PATH.name
+            backup_path.with_suffix(".json").write_text(
+                json.dumps(previous, indent=2), encoding="utf-8"
+            )
+        except (OSError, json.JSONDecodeError):
+            pass
+
+    print(f"Backed up existing model -> {backup_path}")
+    return backup_path
 
 
 def build_pipeline() -> Pipeline:
@@ -77,8 +149,7 @@ def extract_feature_importances(pipeline: Pipeline) -> list[dict]:
 
 
 def main():
-    print(f"Loading dataset from {DATA_PATH} ...")
-    df = load_and_engineer_features(DATA_PATH)
+    df, data_source = load_operations_history()
 
     X = df[CATEGORICAL_FEATURES + NUMERIC_FEATURES]
     y = df[TARGET]
@@ -98,11 +169,13 @@ def main():
 
     metrics = {
         "model": "GradientBoostingRegressor",
+        "data_source": data_source,
         "n_train": len(X_train),
         "n_test": len(X_test),
         "mae_minutes": round(mae, 3),
         "rmse_minutes": round(rmse, 3),
         "r2": round(r2, 4),
+        "trained_at": int(time.time()),
     }
 
     print("\nHeld-out test metrics:")
@@ -114,7 +187,8 @@ def main():
     for item in importances[:8]:
         print(f"  {item['feature']}: {item['importance']:.4f}")
 
-    # --- persist artifacts ---
+    # --- persist artifacts (archive the outgoing model first) ---
+    backup_current_model()
     joblib.dump(pipeline, MODEL_PATH)
     print(f"\nSaved model -> {MODEL_PATH}")
 
