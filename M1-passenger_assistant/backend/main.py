@@ -47,7 +47,7 @@ from supabase import create_client, Client
 from nlu.lang_detect import detect_language
 from nlu.intent_classifier import classify_intent, is_greeting
 from nlu.ner_extractor import extract_entities
-from hub_client import build_envelope, send_to_hub
+from hub_client import build_envelope, send_to_hub, USE_MOCK_HUB
 from rag.retriever import retrieve_faq_chunks
 from shared.train_repository import TrainRepositoryUnavailable, get_train, get_train_details, get_train_schedule, search_trains
 
@@ -639,6 +639,12 @@ async def chat(req: ChatRequest):
                     print(f"[chat] delay_check resolved train_id={train_id!r} for route={route!r} via shared registry")
             except TrainRepositoryUnavailable as e:
                 print(f"[chat] delay_check registry lookup failed for route={route!r}: {e}")
+                # Registry unavailable (no Supabase creds) — use a route-derived
+                # fallback so mock mode and Hub calls can still be exercised.
+                if USE_MOCK_HUB:
+                    train_id = f"ROUTE-{stations[0][:3].upper()}-{stations[1][:3].upper()}"
+                    resolved_via_registry = True
+                    print(f"[chat] delay_check using fallback train_id={train_id!r} (mock mode, registry down)")
         if not train_id:
             reply = "TRAIN_NOT_FOUND: provide a train ID so Operations can validate it."
             source = "via Operations Agent (Hub)"
@@ -751,10 +757,16 @@ async def chat(req: ChatRequest):
                 source = "via Shared Train Registry"
 
     elif intent == "complaint":
+        stations = entities.get("stations", [])
+        station = entities.get("station") or (stations[0] if stations else "")
         envelope = build_envelope(
             receiver_agent="maintenance-agent",
             intent="issue_report",
-            payload={"description": text, "train_id": entities.get("train_id", "")},
+            payload={
+                "description": text,
+                "train_id": entities.get("train_id", ""),
+                "station": station,
+            },
         )
         hub_response = await send_to_hub(envelope)
         if hub_response.status == "ok":

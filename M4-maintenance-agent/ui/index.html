@@ -113,37 +113,54 @@ body.dark .logout-btn:hover{background:#2d1515;color:#f87171;border-color:#7f1d1
 .content{flex:1;padding:0 32px 36px;max-width:1260px;width:100%}
 
 /* ── Hero ── */
-.hero{position:relative;height:390px;border-radius:22px;overflow:hidden;margin:24px 32px 0;box-shadow:var(--shadow-lg);flex-shrink:0}
+.hero{position:relative;height:440px;border-radius:22px;overflow:hidden;margin:24px 32px 0;box-shadow:var(--shadow-lg),0 0 0 1px rgba(255,255,255,0.04);flex-shrink:0}
 .hero-slides{position:absolute;inset:0}
-.hero-slide{position:absolute;inset:0;opacity:0;transition:opacity 0.85s cubic-bezier(0.4,0,0.2,1);z-index:1}
+.hero-slide{position:absolute;inset:0;opacity:0;transition:opacity 0.7s cubic-bezier(0.4,0,0.2,1);z-index:1}
 .hero-slide.active{opacity:1;z-index:2}
-.hero-slide-bg{position:absolute;inset:0;transition:transform 6s ease-in-out}
-.hero-slide.active .hero-slide-bg{transform:scale(1.07)}
-.hero-slide-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center}
-.hero-overlay{position:absolute;inset:0;z-index:3;background:linear-gradient(to right,rgba(0,0,0,0.72) 0%,rgba(0,0,0,0.35) 60%,rgba(0,0,0,0.1) 100%),linear-gradient(to top,rgba(0,0,0,0.55) 0%,transparent 55%)}
-.hero-content{position:absolute;bottom:0;left:0;right:0;z-index:4;padding:28px 36px;display:flex;align-items:flex-end;justify-content:space-between}
-.hero-left{max-width:480px}
-.hero-class-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,0.15);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.25);color:white;padding:4px 10px;border-radius:20px;font-size:0.7rem;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:10px}
-.hero-name{font-size:2rem;font-weight:800;color:white;letter-spacing:-0.5px;line-height:1.1;margin-bottom:8px;text-shadow:0 2px 8px rgba(0,0,0,0.3)}
-.hero-route{display:flex;align-items:center;gap:7px;font-size:0.85rem;color:rgba(255,255,255,0.85);font-weight:500}
-.hero-route-arrow{color:rgba(255,255,255,0.6)}
+.hero-slide-bg{position:absolute;inset:0;transition:transform 7s ease-in-out}
+.hero-slide.active .hero-slide-bg{transform:scale(1.08)}
+.hero-slide-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;transition:transform 7s ease-in-out}
+.hero-overlay{position:absolute;inset:0;z-index:3;background:linear-gradient(to right,rgba(0,0,0,0.8) 0%,rgba(0,0,0,0.45) 55%,rgba(0,0,0,0.08) 100%),linear-gradient(to top,rgba(0,0,0,0.7) 0%,rgba(0,0,0,0.1) 50%,transparent 100%)}
+.hero-grid{position:absolute;inset:0;z-index:3;pointer-events:none;background-image:linear-gradient(rgba(255,255,255,0.022) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.022) 1px,transparent 1px);background-size:44px 44px}
+.hero-content{position:absolute;bottom:0;left:0;right:0;z-index:4;padding:30px 36px 36px;display:flex;align-items:flex-end;justify-content:space-between}
+.hero-left{max-width:520px}
+.hero-class-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,0.14);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.22);color:white;padding:4px 11px;border-radius:20px;font-size:0.7rem;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:11px}
+.hero-name{font-size:2.3rem;font-weight:800;color:white;letter-spacing:-0.5px;line-height:1.1;margin-bottom:9px;text-shadow:0 2px 20px rgba(0,0,0,0.5)}
+.hero-route{display:flex;align-items:center;gap:7px;font-size:0.85rem;color:rgba(255,255,255,0.88);font-weight:500;margin-bottom:13px}
+.hero-route-arrow{display:flex;align-items:center;color:rgba(255,255,255,0.45)}
+.hero-extra-stats{display:flex;gap:7px;flex-wrap:wrap}
+.hero-stat-pill{display:flex;align-items:center;gap:4px;background:rgba(0,0,0,0.3);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.78);padding:3px 9px;border-radius:20px;font-size:0.67rem;font-weight:600}
+.hero-stat-pill svg{opacity:0.6;flex-shrink:0}
 .hero-right{display:flex;flex-direction:column;align-items:flex-end;gap:10px}
-.hero-score-ring{width:68px;height:68px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;border:3px solid;backdrop-filter:blur(12px);background:rgba(255,255,255,0.12)}
-.hero-score-ring.green{border-color:var(--green);color:white}
-.hero-score-ring.amber{border-color:var(--amber);color:white}
-.hero-score-ring.red{border-color:var(--red);color:white}
-.hero-score-num{font-size:1.3rem;font-weight:800;line-height:1;color:white}
-.hero-score-lbl{font-size:0.52rem;color:rgba(255,255,255,0.7);font-weight:600;letter-spacing:0.5px;text-transform:uppercase}
-.hero-status-pill{display:flex;align-items:center;gap:5px;padding:5px 12px;border-radius:20px;font-size:0.74rem;font-weight:700;background:rgba(255,255,255,0.15);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.25);color:white}
-.hero-top-bar{position:absolute;top:0;left:0;right:0;z-index:4;padding:18px 28px;display:flex;justify-content:space-between;align-items:flex-start}
-.hero-train-num{color:rgba(255,255,255,0.6);font-size:0.75rem;font-weight:600;background:rgba(0,0,0,0.25);backdrop-filter:blur(8px);padding:4px 10px;border-radius:20px}
-.hero-nav{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);z-index:5;display:flex;align-items:center;gap:12px}
-.hero-dots{display:flex;gap:6px;align-items:center}
-.hero-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.35);cursor:pointer;border:none;transition:all 0.25s;padding:0;flex-shrink:0}
-.hero-dot.active{background:white;width:22px;border-radius:4px}
-.hero-arrow{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.15);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.3);color:white;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s;font-size:1rem;line-height:1}
-.hero-arrow:hover{background:rgba(255,255,255,0.28)}
-.hero-progress{position:absolute;top:0;left:0;height:3px;background:rgba(255,255,255,0.85);z-index:5;border-radius:0 3px 3px 0;transition:width 0.1s linear}
+.hero-score-ring{width:78px;height:78px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;border:3px solid;backdrop-filter:blur(14px);background:rgba(0,0,0,0.28);transition:border-color 0.4s ease,box-shadow 0.4s ease}
+.hero-score-ring.green{border-color:var(--green);box-shadow:0 0 22px rgba(34,197,94,0.4),0 0 48px rgba(34,197,94,0.1),inset 0 0 14px rgba(34,197,94,0.06)}
+.hero-score-ring.amber{border-color:var(--amber);box-shadow:0 0 22px rgba(245,158,11,0.4),0 0 48px rgba(245,158,11,0.1),inset 0 0 14px rgba(245,158,11,0.06)}
+.hero-score-ring.red{border-color:var(--red);box-shadow:0 0 22px rgba(239,68,68,0.4),0 0 48px rgba(239,68,68,0.1),inset 0 0 14px rgba(239,68,68,0.06)}
+.hero-score-num{font-size:1.5rem;font-weight:900;line-height:1;color:white}
+.hero-score-lbl{font-size:0.52rem;color:rgba(255,255,255,0.65);font-weight:600;letter-spacing:0.5px;text-transform:uppercase}
+.hero-status-pill{display:flex;align-items:center;gap:5px;padding:5px 13px;border-radius:20px;font-size:0.74rem;font-weight:700;background:rgba(255,255,255,0.1);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.18);color:white}
+.hero-top-bar{position:absolute;top:0;left:0;right:0;z-index:4;padding:18px 24px;display:flex;justify-content:space-between;align-items:center}
+.hero-train-num{color:rgba(255,255,255,0.7);font-size:0.74rem;font-weight:600;background:rgba(0,0,0,0.32);backdrop-filter:blur(8px);padding:5px 12px;border-radius:20px;border:1px solid rgba(255,255,255,0.1)}
+.hero-top-right{display:flex;gap:6px}
+.hero-top-stat{display:flex;align-items:center;gap:4px;background:rgba(0,0,0,0.32);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.72);padding:4px 10px;border-radius:20px;font-size:0.67rem;font-weight:600}
+.hero-top-stat svg{opacity:0.55}
+.hero-nav{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);z-index:5;display:flex;align-items:center;gap:9px}
+.hero-dots{display:flex;gap:5px;align-items:center}
+.hero-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.3);cursor:pointer;border:none;transition:all 0.3s cubic-bezier(0.34,1.1,0.64,1);padding:0;flex-shrink:0}
+.hero-dot.active{background:white;width:24px;border-radius:4px}
+.hero-dot:hover:not(.active){background:rgba(255,255,255,0.58);transform:scale(1.2)}
+.hero-arrow{width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,0.1);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.22);color:white;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s cubic-bezier(0.34,1.1,0.64,1)}
+.hero-arrow:hover{background:rgba(255,255,255,0.24);transform:scale(1.1)}
+.hero-arrow:active{transform:scale(0.93)}
+.hero-slide-counter{font-size:0.63rem;font-weight:700;color:rgba(255,255,255,0.4);letter-spacing:0.5px;min-width:26px;text-align:center}
+.hero-progress{position:absolute;bottom:0;left:0;height:3px;background:linear-gradient(to right,rgba(255,255,255,0.55),rgba(255,255,255,0.92));z-index:5;border-radius:0 2px 0 0;transition:width 0.1s linear}
+@keyframes heroIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.hero-animate .hero-class-badge{animation:heroIn 0.42s cubic-bezier(0.34,1.1,0.64,1) 0.04s both}
+.hero-animate .hero-name{animation:heroIn 0.42s cubic-bezier(0.34,1.1,0.64,1) 0.11s both}
+.hero-animate .hero-route{animation:heroIn 0.42s cubic-bezier(0.34,1.1,0.64,1) 0.17s both}
+.hero-animate .hero-extra-stats{animation:heroIn 0.42s cubic-bezier(0.34,1.1,0.64,1) 0.23s both}
+.hero-animate .hero-right{animation:heroIn 0.42s cubic-bezier(0.34,1.1,0.64,1) 0.07s both}
+@media(prefers-reduced-motion:reduce){.hero-animate .hero-class-badge,.hero-animate .hero-name,.hero-animate .hero-route,.hero-animate .hero-extra-stats,.hero-animate .hero-right{animation:none}}
 
 /* ── Page content ── */
 .page-content{padding:26px 32px 36px}
@@ -647,6 +664,45 @@ body.dark .rpt-tag{background:#1e3a5f;border-color:#1e40af;color:#93c5fd}
   .chat-popup{width:calc(100vw - 32px)}
   .hero-name{font-size:1.5rem}
 }
+
+/* ── Live Map ── */
+.map-wrap{display:flex;gap:16px;height:calc(100vh - 220px);min-height:500px}
+.map-canvas-wrap{flex:1;background:#0b1628;border-radius:18px;overflow:hidden;position:relative;border:1px solid rgba(255,255,255,0.07);box-shadow:0 4px 24px rgba(0,0,0,0.18)}
+.map-rail-svg{width:100%;height:100%;display:block}
+.map-sidebar{width:240px;flex-shrink:0;display:flex;flex-direction:column;gap:8px;overflow-y:auto;padding-right:2px}
+.map-sidebar::-webkit-scrollbar{width:4px}
+.map-sidebar::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+.map-train-card{background:var(--white);border:1.5px solid var(--border);border-radius:14px;padding:11px 14px;cursor:pointer;transition:all 0.18s;position:relative;overflow:hidden}
+.map-train-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--primary);border-radius:3px 0 0 3px;opacity:0;transition:opacity 0.18s}
+.map-train-card:hover{box-shadow:var(--shadow-md);transform:translateX(3px)}
+.map-train-card:hover::before,.map-train-card.selected::before{opacity:1}
+.map-train-card.selected{border-color:var(--primary);background:var(--blue-bg)}
+.map-tc-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.map-tc-name{font-size:0.79rem;font-weight:700;color:var(--text)}
+.map-tc-cls{font-size:0.6rem;font-weight:700;letter-spacing:0.4px;text-transform:uppercase;color:var(--primary);background:var(--blue-bg);padding:1px 6px;border-radius:20px;border:1px solid rgba(37,99,235,0.2)}
+.map-tc-route{font-size:0.7rem;color:var(--text-muted);display:flex;align-items:center;gap:4px;margin-bottom:6px}
+.map-tc-meta{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.map-tc-pill{background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:2px 7px;font-size:0.62rem;color:var(--text-muted);font-weight:500}
+.map-info-panel{position:absolute;top:14px;right:14px;z-index:10;background:rgba(11,22,40,0.92);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.12);border-radius:14px;padding:14px 16px;min-width:190px;max-width:230px;display:none}
+.map-info-panel.visible{display:block;animation:fadeUp 0.2s ease}
+.map-info-name{font-size:0.86rem;font-weight:700;color:#fff;margin-bottom:3px;padding-right:22px}
+.map-info-route{font-size:0.68rem;color:rgba(255,255,255,0.5);margin-bottom:10px}
+.map-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.map-info-cell{background:rgba(255,255,255,0.07);border-radius:8px;padding:6px 8px}
+.map-info-cell-val{font-size:0.82rem;font-weight:700;color:#fff}
+.map-info-cell-lbl{font-size:0.6rem;color:rgba(255,255,255,0.45);margin-top:1px}
+.map-info-close{position:absolute;top:10px;right:10px;background:rgba(255,255,255,0.1);border:none;border-radius:50%;width:20px;height:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.6);transition:background 0.12s}
+.map-info-close:hover{background:rgba(255,255,255,0.2)}
+.map-legend{position:absolute;bottom:14px;left:14px;z-index:10;background:rgba(11,22,40,0.88);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px 14px}
+.map-legend-title{font-size:0.6rem;font-weight:700;color:rgba(255,255,255,0.4);letter-spacing:0.5px;text-transform:uppercase;margin-bottom:6px}
+.map-legend-row{display:flex;align-items:center;gap:7px;font-size:0.65rem;color:rgba(255,255,255,0.62);margin-bottom:4px}
+.map-legend-row:last-child{margin-bottom:0}
+.map-legend-line{width:18px;height:2.5px;border-radius:2px;flex-shrink:0}
+.map-live-badge{position:absolute;top:14px;left:14px;z-index:10;display:flex;align-items:center;gap:6px;background:rgba(11,22,40,0.85);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:4px 10px 4px 8px;font-size:0.65rem;font-weight:700;color:rgba(255,255,255,0.75);letter-spacing:0.3px}
+.map-live-dot{width:7px;height:7px;border-radius:50%;background:#10b981;flex-shrink:0;animation:mapPulse 1.5s ease-in-out infinite}
+@keyframes mapPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(0.75)}}
+@keyframes svgPulse{0%{r:7;opacity:0.65}100%{r:15;opacity:0}}
+.train-pulse-ring{animation:svgPulse 1.8s ease-out infinite}
 </style>
 </head>
 <body>
@@ -722,6 +778,9 @@ body.dark .rpt-tag{background:#1e3a5f;border-color:#1e40af;color:#93c5fd}
     <div class="nav-section">Tools</div>
     <button class="nav-item" data-page="predict" onclick="nav('predict',this)">
       <span class="nav-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span> Health Prediction
+    </button>
+    <button class="nav-item" data-page="map" onclick="nav('map',this)">
+      <span class="nav-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg></span> Live Map
     </button>
     <div class="nav-section">Support</div>
     <a href="/chat-ui" class="nav-item" style="text-decoration:none;">
@@ -852,11 +911,25 @@ body.dark .rpt-tag{background:#1e3a5f;border-color:#1e40af;color:#93c5fd}
     <div class="hero" id="hero" onmouseenter="heroPause()" onmouseleave="heroResume()">
       <div class="hero-slides" id="hero-slides"><!-- built by JS --></div>
       <div class="hero-overlay"></div>
+      <div class="hero-grid"></div>
       <div class="hero-top-bar">
         <div class="hero-train-num" id="hero-num">#1015</div>
-        <div></div>
+        <div class="hero-top-right">
+          <div class="hero-top-stat">
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>
+            <span id="hero-speed">90 km/h</span>
+          </div>
+          <div class="hero-top-stat">
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <span id="hero-ontime">94%</span>&nbsp;on-time
+          </div>
+          <div class="hero-top-stat">
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+            <span id="hero-assets-count">3 assets</span>
+          </div>
+        </div>
       </div>
-      <div class="hero-content">
+      <div class="hero-content hero-animate" id="hero-content-wrap">
         <div class="hero-left">
           <div class="hero-class-badge">
             <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/></svg>
@@ -864,10 +937,20 @@ body.dark .rpt-tag{background:#1e3a5f;border-color:#1e40af;color:#93c5fd}
           </div>
           <div class="hero-name" id="hero-name">Udarata Menike</div>
           <div class="hero-route">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"/><circle cx="12" cy="10" r="3"/></svg>
             <span id="hero-from">Colombo Fort</span>
-            <span class="hero-route-arrow">→</span>
+            <span class="hero-route-arrow"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
             <span id="hero-to">Badulla</span>
+          </div>
+          <div class="hero-extra-stats">
+            <div class="hero-stat-pill">
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>
+              <span id="hero-capacity">800 seats</span>
+            </div>
+            <div class="hero-stat-pill">
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+              <span id="hero-loco">DE-1001</span>
+            </div>
           </div>
         </div>
         <div class="hero-right">
@@ -882,9 +965,14 @@ body.dark .rpt-tag{background:#1e3a5f;border-color:#1e40af;color:#93c5fd}
         </div>
       </div>
       <div class="hero-nav">
-        <button class="hero-arrow" onclick="heroStep(-1)">‹</button>
+        <button class="hero-arrow" onclick="heroStep(-1)" aria-label="Previous train">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
         <div class="hero-dots" id="hero-dots"></div>
-        <button class="hero-arrow" onclick="heroStep(1)">›</button>
+        <span class="hero-slide-counter" id="hero-counter">1 / 8</span>
+        <button class="hero-arrow" onclick="heroStep(1)" aria-label="Next train">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
       </div>
       <div class="hero-progress" id="hero-progress" style="width:0%"></div>
     </div>
@@ -1253,6 +1341,42 @@ body.dark .rpt-tag{background:#1e3a5f;border-color:#1e40af;color:#93c5fd}
     </div>
   </div>
 
+  <!-- ═══ PAGE: Live Map ═══ -->
+  <div class="page" id="page-map">
+    <div class="page-content">
+      <div class="map-wrap">
+        <!-- SVG Map Canvas -->
+        <div class="map-canvas-wrap">
+          <div class="map-live-badge"><span class="map-live-dot"></span>Mock Positions</div>
+          <svg id="rail-map-svg" class="map-rail-svg" viewBox="0 0 360 480" preserveAspectRatio="xMidYMid meet"></svg>
+          <!-- Train info panel -->
+          <div class="map-info-panel" id="map-info-panel">
+            <button class="map-info-close" onclick="mapCloseInfo()">
+              <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+            <div class="map-info-name" id="map-info-name">—</div>
+            <div class="map-info-route" id="map-info-route">—</div>
+            <div class="map-info-grid">
+              <div class="map-info-cell"><div class="map-info-cell-val" id="map-info-speed">—</div><div class="map-info-cell-lbl">Speed</div></div>
+              <div class="map-info-cell"><div class="map-info-cell-val" id="map-info-ontime">—</div><div class="map-info-cell-lbl">On-time</div></div>
+              <div class="map-info-cell"><div class="map-info-cell-val" id="map-info-cap">—</div><div class="map-info-cell-lbl">Capacity</div></div>
+              <div class="map-info-cell"><div class="map-info-cell-val" id="map-info-loco">—</div><div class="map-info-cell-lbl">Loco</div></div>
+            </div>
+          </div>
+          <!-- Legend -->
+          <div class="map-legend">
+            <div class="map-legend-title">Rail Lines</div>
+            <div class="map-legend-row"><span class="map-legend-line" style="background:#3b82f6"></span>Main Line</div>
+            <div class="map-legend-row"><span class="map-legend-line" style="background:#8b5cf6"></span>Northern Line</div>
+            <div class="map-legend-row"><span class="map-legend-line" style="background:#10b981"></span>Southern Line</div>
+            <div class="map-legend-row"><span class="map-legend-line" style="background:#f59e0b"></span>Coast Line</div>
+          </div>
+        </div>
+        <!-- Train list sidebar -->
+        <div class="map-sidebar" id="map-sidebar"></div>
+      </div>
+    </div>
+  </div>
 
 </div><!-- /main -->
 
@@ -1456,6 +1580,7 @@ const PAGE_META = {
   trains:  { title:'Trains',            sub:'Sri Lanka Railways fleet — locomotive health & details' },
   fleet:   { title:'Asset Fleet',       sub:'All tracked railway assets with live health scores' },
   predict: { title:'Health Prediction', sub:'ML model · GradientBoostingRegressor' },
+  map:     { title:'Live Map',           sub:'Train tracking · mock positions · Sri Lanka Railways' },
 };
 
 function nav(page, btn) {
@@ -1471,6 +1596,8 @@ function nav(page, btn) {
   if(page==='overview' && fleetAll.length) renderFleetGlance();
   if(page==='fleet'){ initFleetTrainSel(); renderFleet(); }
   if(page==='predict') initPredQuickPick();
+  if(page==='map') initMap();
+  if(page!=='map') stopMapAnimation();
 }
 
 function toggleSbStatus(){
@@ -1549,11 +1676,19 @@ function heroUpdateContent(idx) {
   document.getElementById('hero-from').textContent=t.route[0];
   document.getElementById('hero-to').textContent=t.route[1];
   document.getElementById('hero-score').textContent=h.score;
+  document.getElementById('hero-speed').textContent=t.speed+' km/h';
+  document.getElementById('hero-ontime').textContent=t.ontime+'%';
+  document.getElementById('hero-assets-count').textContent=t.assets.length+' assets';
+  document.getElementById('hero-capacity').textContent=(t.capacity||'—')+' seats';
+  document.getElementById('hero-loco').textContent=t.loco;
+  document.getElementById('hero-counter').textContent=(idx+1)+' / '+TRAINS.length;
   const ringCls=h.status==='GREEN'?'green':h.status==='AMBER'?'amber':'red';
   document.getElementById('hero-ring').className='hero-score-ring '+ringCls;
   document.getElementById('hero-status').textContent=h.status;
   const dotColor=h.status==='GREEN'?'var(--green)':h.status==='AMBER'?'var(--amber)':'var(--red)';
   document.querySelector('#hero-status-pill .badge-dot').style.background=dotColor;
+  const wrap=document.getElementById('hero-content-wrap');
+  if(wrap){wrap.classList.remove('hero-animate');void wrap.offsetWidth;wrap.classList.add('hero-animate');}
 }
 
 function heroGoto(idx) {
@@ -2713,6 +2848,181 @@ function toggleDark(on){
     if(label) label.textContent = 'ON';
   }
 })();
+
+/* ═══ LIVE MAP ═══ */
+/* Projection: x=(lon-79.2)*120  y=(10.5-lat)*96 */
+const MAP_STATIONS = {
+  'Colombo Fort': {x:79,  y:342},
+  'Negombo':      {x:77,  y:316},
+  'Rambukkana':   {x:147, y:305},
+  'Peradeniya':   {x:167, y:310},
+  'Kandy':        {x:172, y:308},
+  'Nanu Oya':     {x:188, y:339},
+  'Haputale':     {x:212, y:359},
+  'Badulla':      {x:223, y:337},
+  'Anuradhapura': {x:142, y:206},
+  'Vavuniya':     {x:156, y:168},
+  'Jaffna':       {x:99,  y:81},
+  'Kalutara':     {x:91,  y:376},
+  'Aluthgama':    {x:103, y:391},
+  'Hikkaduwa':    {x:108, y:419},
+  'Galle':        {x:122, y:429},
+  'Matara':       {x:160, y:437},
+};
+const MAP_RAIL_LINES = {
+  main:     {color:'#3b82f6',w:2.5,stations:['Colombo Fort','Rambukkana','Peradeniya','Kandy','Nanu Oya','Haputale','Badulla']},
+  northern: {color:'#8b5cf6',w:2.5,stations:['Colombo Fort','Anuradhapura','Vavuniya','Jaffna']},
+  southern: {color:'#10b981',w:2.5,stations:['Colombo Fort','Kalutara','Aluthgama','Hikkaduwa','Galle','Matara']},
+  coast:    {color:'#f59e0b',w:2,  stations:['Colombo Fort','Negombo']},
+};
+const MAP_TRAIN_ROUTES = {
+  'T-001':{line:'main',     s0:0,s1:6},
+  'T-002':{line:'main',     s0:0,s1:3},
+  'T-003':{line:'northern', s0:0,s1:3},
+  'T-004':{line:'southern', s0:0,s1:5},
+  'T-005':{line:'main',     s0:3,s1:6},
+  'T-006':{line:'southern', s0:0,s1:4},
+  'T-007':{line:'southern', s0:0,s1:5},
+  'T-008':{line:'main',     s0:0,s1:3},
+};
+const mapState = {
+  'T-001':{prog:0.22,dir:1},'T-002':{prog:0.60,dir:1},'T-003':{prog:0.35,dir:1},'T-004':{prog:0.12,dir:1},
+  'T-005':{prog:0.72,dir:1},'T-006':{prog:0.48,dir:-1},'T-007':{prog:0.30,dir:1},'T-008':{prog:0.85,dir:-1},
+};
+/* Coastline traced from real geographic coordinates via same projection */
+const SL_COAST='M79,342 L77,325 L77,316 L74,296 L72,281 L72,258 L77,236 L68,218 L75,195 L80,175 L85,158 L85,146 L82,132 L90,115 L100,101 L100,81 L114,68 L124,65 L142,68 L166,77 L186,90 L194,101 L194,117 L200,143 L244,186 L258,211 L270,240 L300,267 L306,307 L312,336 L316,351 L317,371 L311,393 L290,406 L230,420 L200,430 L180,438 L167,440 L160,437 L148,432 L122,429 L108,419 L103,391 L91,376 L85,363 Z';
+const MAP_MAJOR=['Colombo Fort','Kandy','Badulla','Jaffna','Galle','Matara','Anuradhapura'];
+
+let mapAnimId=null;
+
+function mapGetPos(tid){
+  const rt=MAP_TRAIN_ROUTES[tid],line=MAP_RAIL_LINES[rt.line],st=mapState[tid];
+  const seg=line.stations.slice(rt.s0,rt.s1+1),n=seg.length-1;
+  const t=st.prog*n,i=Math.min(Math.floor(t),n-1),f=t-i;
+  const a=MAP_STATIONS[seg[i]],b=MAP_STATIONS[seg[i+1]];
+  return {x:a.x+(b.x-a.x)*f,y:a.y+(b.y-a.y)*f};
+}
+
+function svgEl(tag,attrs){
+  const el=document.createElementNS('http://www.w3.org/2000/svg',tag);
+  Object.entries(attrs).forEach(([k,v])=>el.setAttribute(k,v));
+  return el;
+}
+
+function initMap(){
+  const svg=document.getElementById('rail-map-svg');
+  if(!svg)return;
+  while(svg.firstChild)svg.removeChild(svg.firstChild);
+
+  // Ocean background
+  svg.appendChild(svgEl('rect',{x:'0',y:'0',width:'360',height:'480',fill:'#0d1f3c'}));
+  // Subtle grid
+  for(let i=1;i<5;i++) svg.appendChild(svgEl('line',{x1:String(i*72),y1:'0',x2:String(i*72),y2:'480',stroke:'rgba(255,255,255,0.025)','stroke-width':'1'}));
+  for(let i=1;i<7;i++) svg.appendChild(svgEl('line',{x1:'0',y1:String(i*80),x2:'360',y2:String(i*80),stroke:'rgba(255,255,255,0.025)','stroke-width':'1'}));
+
+  // Island: outer glow then land fill
+  const glow=svgEl('path',{d:SL_COAST,fill:'none',stroke:'rgba(59,130,246,0.22)','stroke-width':'6'});
+  glow.style.filter='blur(4px)';
+  svg.appendChild(glow);
+  svg.appendChild(svgEl('path',{d:SL_COAST,fill:'#102040',stroke:'rgba(96,165,250,0.55)','stroke-width':'1.2'}));
+
+  // Rail lines (shadow + coloured)
+  Object.values(MAP_RAIL_LINES).forEach(line=>{
+    const pts=line.stations.map(s=>MAP_STATIONS[s]).filter(Boolean);
+    const d=pts.map((p,i)=>(i===0?`M${p.x},${p.y}`:`L${p.x},${p.y}`)).join(' ');
+    svg.appendChild(svgEl('path',{d,fill:'none',stroke:'rgba(0,0,0,0.4)','stroke-width':String(line.w+2),'stroke-linecap':'round','stroke-linejoin':'round'}));
+    svg.appendChild(svgEl('path',{d,fill:'none',stroke:line.color,'stroke-width':String(line.w),'stroke-linecap':'round','stroke-linejoin':'round',opacity:'0.85'}));
+  });
+
+  // Stations
+  Object.entries(MAP_STATIONS).forEach(([name,pos])=>{
+    const major=MAP_MAJOR.includes(name);
+    svg.appendChild(svgEl('circle',{cx:pos.x,cy:pos.y,r:major?'4':'2.5',fill:major?'#1e3a8a':'#334155',stroke:major?'#60a5fa':'#475569','stroke-width':'1.2'}));
+    if(major){
+      const lbl=svgEl('text',{x:pos.x+6,y:pos.y+4,'font-size':'8.5',fill:'#cbd5e1','font-family':'inherit','font-weight':'500'});
+      lbl.textContent=name;
+      svg.appendChild(lbl);
+    }
+  });
+
+  // Train dots + pulse rings
+  TRAINS.forEach(train=>{
+    const pos=mapGetPos(train.id);
+    const pulse=svgEl('circle',{id:'map-pulse-'+train.id,cx:pos.x,cy:pos.y,r:'7',fill:'none',stroke:'#3b82f6','stroke-width':'1.5',opacity:'0'});
+    pulse.classList.add('train-pulse-ring');
+    svg.appendChild(pulse);
+    const dot=svgEl('circle',{id:'map-dot-'+train.id,cx:pos.x,cy:pos.y,r:'6',fill:'#2563eb',stroke:'#fff','stroke-width':'1.5',filter:'drop-shadow(0 0 4px rgba(37,99,235,0.8))',style:'cursor:pointer'});
+    dot.addEventListener('click',e=>{e.stopPropagation();mapSelectTrain(train.id);});
+    svg.appendChild(dot);
+  });
+
+  svg.addEventListener('click',mapCloseInfo);
+
+  // Build sidebar
+  const sb=document.getElementById('map-sidebar');
+  if(sb){
+    sb.innerHTML='';
+    TRAINS.forEach(train=>{
+      const card=document.createElement('div');
+      card.className='map-train-card';
+      card.id='map-card-'+train.id;
+      card.innerHTML=`<div class="map-tc-top"><span class="map-tc-name">${train.name}</span><span class="map-tc-cls">${train.cls}</span></div><div class="map-tc-route"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="5" r="3"/><line x1="12" y1="8" x2="12" y2="16"/><circle cx="12" cy="19" r="3"/></svg>${train.route[0]} → ${train.route[train.route.length-1]}</div><div class="map-tc-meta"><span class="map-tc-pill">${train.speed} km/h</span><span class="map-tc-pill">${train.ontime}% on-time</span></div>`;
+      card.addEventListener('click',()=>mapSelectTrain(train.id));
+      sb.appendChild(card);
+    });
+  }
+
+  startMapAnimation();
+}
+
+function startMapAnimation(){
+  stopMapAnimation();
+  let last=performance.now();
+  function tick(now){
+    const dt=Math.min(now-last,100);last=now;
+    TRAINS.forEach(train=>{
+      const st=mapState[train.id];
+      st.prog+=0.000018*dt*st.dir;
+      if(st.prog>=1){st.prog=1;st.dir=-1;}
+      if(st.prog<=0){st.prog=0;st.dir=1;}
+      const pos=mapGetPos(train.id);
+      const dot=document.getElementById('map-dot-'+train.id);
+      const pulse=document.getElementById('map-pulse-'+train.id);
+      if(dot){dot.setAttribute('cx',pos.x);dot.setAttribute('cy',pos.y);}
+      if(pulse){pulse.setAttribute('cx',pos.x);pulse.setAttribute('cy',pos.y);}
+    });
+    mapAnimId=requestAnimationFrame(tick);
+  }
+  mapAnimId=requestAnimationFrame(tick);
+}
+
+function stopMapAnimation(){
+  if(mapAnimId){cancelAnimationFrame(mapAnimId);mapAnimId=null;}
+}
+
+function mapSelectTrain(id){
+  document.querySelectorAll('.map-train-card').forEach(c=>c.classList.remove('selected'));
+  const card=document.getElementById('map-card-'+id);
+  if(card){card.classList.add('selected');card.scrollIntoView({behavior:'smooth',block:'nearest'});}
+  const train=TRAINS.find(t=>t.id===id);
+  if(!train)return;
+  document.getElementById('map-info-name').textContent=train.name+' · #'+train.number;
+  document.getElementById('map-info-route').textContent=train.route[0]+' → '+train.route[train.route.length-1];
+  document.getElementById('map-info-speed').textContent=train.speed+' km/h';
+  document.getElementById('map-info-ontime').textContent=train.ontime+'%';
+  document.getElementById('map-info-cap').textContent=train.capacity+' seats';
+  document.getElementById('map-info-loco').textContent=train.loco;
+  document.getElementById('map-info-panel').classList.add('visible');
+  document.querySelectorAll('[id^="map-dot-"]').forEach(d=>{d.setAttribute('fill','#2563eb');d.setAttribute('r','6');});
+  const dot=document.getElementById('map-dot-'+id);
+  if(dot){dot.setAttribute('fill','#60a5fa');dot.setAttribute('r','8');}
+}
+
+function mapCloseInfo(){
+  document.getElementById('map-info-panel').classList.remove('visible');
+  document.querySelectorAll('.map-train-card').forEach(c=>c.classList.remove('selected'));
+  document.querySelectorAll('[id^="map-dot-"]').forEach(d=>{d.setAttribute('fill','#2563eb');d.setAttribute('r','6');});
+}
 
 /* ═══ INIT ═══ */
 heroInit();
