@@ -1,4 +1,8 @@
-const BASE_URL = "http://localhost:9001";
+// Where the Passenger Assistant backend (M1) listens. start_all.ps1/.bat, docker-compose and
+// the Hub registry all use 8001, so that is the default. start_all.sh runs M1 on 9001 and
+// passes VITE_M1_URL to the dev server, so hard-coding one port here broke the other launcher
+// (every message then failed with "Something went wrong").
+const BASE_URL = import.meta.env.VITE_M1_URL || "http://localhost:8001";
 
 export async function sendMessage(sessionId, message) {
   const res = await fetch(`${BASE_URL}/chat`, {

@@ -48,7 +48,7 @@ osascript -e "tell app \"Terminal\" to do script \"cd '$ROOT/M4-maintenance-agen
 osascript -e "tell app \"Terminal\" to do script \"cd '$ROOT/frontend' && PORT=$GATEWAY_PORT python serve.py\""
 
 # 8. M1 React App (5274)
-osascript -e "tell app \"Terminal\" to do script \"cd '$ROOT/M1-passenger_assistant/frontend' && npm run dev -- --port $REACT_PORT\""
+osascript -e "tell app \"Terminal\" to do script \"cd '$ROOT/M1-passenger_assistant/frontend' && VITE_M1_URL=$M1_URL npm run dev -- --port $REACT_PORT\""
 
 # 9. M4 Login Portal — Next.js (3002)
 osascript -e "tell app \"Terminal\" to do script \"cd '$ROOT/M4-maintenance-agent/frontend' && NEXT_PUBLIC_M4_URL=http://localhost:$M4_PORT npm run dev -- --port $M4_LOGIN_PORT\""

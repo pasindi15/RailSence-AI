@@ -35,11 +35,14 @@ export default function MessageBubble({
   role,
   text,
   source,
+  intent,
   action,
   prefill,
   cancellation,
 }) {
   const isUser = role === "user";
+  // Fixed "not a service of this system" reply for out-of-scope questions.
+  const isNotice = !isUser && (intent === "out_of_scope" || intent === "engineering_query");
   const [submittingCanc, setSubmittingCanc] = useState(false);
   const [cancellationResult, setCancellationResult] = useState(null);
   const [cancError, setCancError] = useState(null);
@@ -83,7 +86,8 @@ export default function MessageBubble({
 
   return (
     <div className={`bubble-row ${isUser ? "right" : "left"}`}>
-      <div className={`bubble ${isUser ? "user" : "bot"}`}>
+      <div className={`bubble ${isUser ? "user" : "bot"}${isNotice ? " notice" : ""}`}>
+        {isNotice && <div className="notice-label">Service notice · Not available</div>}
         <div className="msg-content">{renderFormattedText(text)}</div>
 
         <div className="msg-meta-row">
@@ -136,7 +140,7 @@ export default function MessageBubble({
               className="btn-action-primary"
               onClick={() => handleContinueBooking(prefill || action?.prefill)}
             >
-              Continue to Booking ➔
+              {action?.label || "Continue to Booking ➔"}
             </button>
           </div>
         )}
@@ -173,7 +177,7 @@ export default function MessageBubble({
                 >
                   {submittingCanc
                     ? "Transmitting to Agent Hub..."
-                    : "Send Cancellation Request ➔"}
+                    : action?.label || "Send Cancellation Request ➔"}
                 </button>
                 {cancError && <div className="action-error">{cancError}</div>}
               </>

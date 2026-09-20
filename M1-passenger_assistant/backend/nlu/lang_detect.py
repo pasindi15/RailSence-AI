@@ -19,13 +19,24 @@ TAMIL_RANGE = (0x0B80, 0x0BFF)
 
 
 def _unicode_scan(text: str) -> str | None:
+    """Script of the message. Mixed text (e.g. Sinhala with an English word, or
+    Sinhala and Tamil together) is decided by which script has MORE letters, not
+    by whichever character comes first; a tie goes to the script seen first."""
+    counts = {"si": 0, "ta": 0}
+    first = None
     for ch in text:
         code = ord(ch)
         if SINHALA_RANGE[0] <= code <= SINHALA_RANGE[1]:
-            return "si"
-        if TAMIL_RANGE[0] <= code <= TAMIL_RANGE[1]:
-            return "ta"
-    return None
+            counts["si"] += 1
+            first = first or "si"
+        elif TAMIL_RANGE[0] <= code <= TAMIL_RANGE[1]:
+            counts["ta"] += 1
+            first = first or "ta"
+    if not first:
+        return None
+    if counts["si"] == counts["ta"]:
+        return first
+    return "si" if counts["si"] > counts["ta"] else "ta"
 
 
 def detect_language(text: str) -> str:

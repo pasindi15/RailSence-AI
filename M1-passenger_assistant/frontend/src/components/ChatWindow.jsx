@@ -5,8 +5,8 @@ import InputBar from "./InputBar.jsx";
 const QUICK_INQUIRIES = [
   {
     icon: "⏰",
-    label: "Next Train Schedule",
-    text: "What time does the next train to Kandy leave?",
+    label: "Train Schedule",
+    text: "What trains run from Colombo Fort to Kandy?",
     category: "Schedules",
   },
   {
