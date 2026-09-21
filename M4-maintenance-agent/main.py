@@ -25,6 +25,7 @@ import csv
 import json
 import logging
 import os
+import re
 import secrets
 import uuid
 from typing import Any, Optional
@@ -757,12 +758,42 @@ async def chatbot_ui():
     return {"message": "Chat UI not found. Place ui/chat.html to enable it."}
 
 
+def _inject_report_context(message: str) -> str:
+    """If the message references a ticket ID (MT-XXXXXX), prepend the matching report data."""
+    ticket_ids = re.findall(r'\bMT-[A-Z0-9]+\b', message, re.IGNORECASE)
+    if not ticket_ids:
+        return message
+    matched = []
+    for tid in ticket_ids:
+        for r in _in_memory_reports:
+            if r.get("ticket_id", "").upper() == tid.upper():
+                matched.append(r)
+                break
+    if not matched:
+        return message
+    lines = ["[FIELD REPORT CONTEXT — injected from RailSense M4 database]"]
+    for r in matched:
+        resolved = r.get("resolved_at") or ""
+        lines.append(
+            f"Ticket: {r.get('ticket_id','')} | Status: {'RESOLVED' if resolved else 'OPEN'} | "
+            f"Asset: {r.get('asset_id','')} ({r.get('asset_type','')}) | Station: {r.get('station','')} | "
+            f"Priority: {r.get('priority','routine')} | Source: {r.get('source','engineer')}"
+        )
+        lines.append(f"Fault/Observation: {r.get('fault_type','')}")
+        lines.append(f"Summary: {r.get('summary','')}")
+        if r.get("action_taken"):
+            lines.append(f"Action Taken: {r['action_taken']} | Health After: {r.get('health_after','')}")
+        lines.append(f"Reported: {r.get('created_at','')}")
+    return "\n".join(lines) + "\n\n" + message
+
+
 @app.post("/chat")
 @limiter.limit("30/minute")
 async def chat(request: Request, payload: ChatRequest):
     history = [{"role": t.role, "content": t.content} for t in payload.history]
+    enriched_message = _inject_report_context(payload.message)
     result = engineer_chatbot.answer_engineer_question(
-        message=payload.message,
+        message=enriched_message,
         asset_type=payload.asset_type or "",
         history=history,
     )
