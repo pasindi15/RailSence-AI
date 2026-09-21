@@ -1,0 +1,110 @@
+/* RailSense AI — M2 3D banner (Control Room + Admin Console).
+   The banner is always dark, whatever the page theme, like the portal heroes. */
+.m2h {
+  position: relative; overflow: hidden; isolation: isolate;
+  min-height: clamp(430px, 58vh, 560px); margin: 0 0 18px;
+  border-radius: 18px; border: 1px solid rgba(96, 165, 250, 0.22);
+  background:
+    radial-gradient(820px 480px at 70% 45%, rgba(37, 99, 235, 0.24), transparent 62%),
+    radial-gradient(560px 380px at 6% 0%, rgba(201, 162, 42, 0.12), transparent 60%),
+    linear-gradient(160deg, #050913 0%, #070D1C 55%, #04070F 100%);
+  box-shadow: 0 30px 80px -30px rgba(0, 0, 0, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  color: #fff;
+}
+.m2h::before {
+  content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background-image: linear-gradient(rgba(96,165,250,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(96,165,250,.05) 1px, transparent 1px);
+  background-size: 44px 44px;
+  -webkit-mask-image: radial-gradient(ellipse at 62% 50%, #000 30%, transparent 78%);
+  mask-image: radial-gradient(ellipse at 62% 50%, #000 30%, transparent 78%);
+}
+.m2h-scan {
+  position: absolute; inset: 0; z-index: 3; pointer-events: none; mix-blend-mode: screen;
+  background: linear-gradient(180deg, transparent 0%, rgba(96,165,250,.06) 48%, rgba(147,197,253,.11) 50%, transparent 52%);
+  background-size: 100% 260%; animation: m2h-scan 7s linear infinite;
+}
+@keyframes m2h-scan { from { background-position: 0 120%; } to { background-position: 0 -140%; } }
+
+.m2h-inner { position: relative; z-index: 2; display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.2fr); min-height: inherit; }
+.m2h-text { align-self: center; padding: 34px 8px 30px 38px; max-width: 540px; }
+.m2h-kicker {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 16px;
+  font: 700 11px/1 'Share Tech Mono', monospace; letter-spacing: .18em; text-transform: uppercase; color: #93C5FD;
+  opacity: 0; animation: m2h-rise .7s cubic-bezier(.16,1,.3,1) .05s forwards;
+}
+.m2h-dot { width: 7px; height: 7px; border-radius: 50%; background: #34D399; flex-shrink: 0; animation: m2h-pulse 1.8s infinite; }
+@keyframes m2h-pulse { 0% { box-shadow: 0 0 0 0 rgba(52,211,153,.6); } 70% { box-shadow: 0 0 0 8px rgba(52,211,153,0); } 100% { box-shadow: 0 0 0 0 rgba(52,211,153,0); } }
+.m2h-title { margin: 0 0 16px; font: 800 clamp(1.9rem, 3.2vw, 2.9rem)/1.08 'Playfair Display', serif; letter-spacing: -.015em; color: #fff; }
+.m2h-title span { display: block; opacity: 0; transform: translateY(16px); animation: m2h-rise .8s cubic-bezier(.16,1,.3,1) forwards; }
+.m2h-title span:nth-child(1) { animation-delay: .15s; }
+.m2h-title span:nth-child(2) { animation-delay: .3s; }
+.m2h-grad {
+  background: linear-gradient(100deg, #F5D776 0%, #C9A22A 30%, #60A5FA 65%, #93C5FD 100%); background-size: 200% 100%;
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  animation: m2h-rise .8s cubic-bezier(.16,1,.3,1) .3s forwards, m2h-sheen 6s ease-in-out 1.2s infinite !important;
+}
+@keyframes m2h-sheen { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+@keyframes m2h-rise { to { opacity: 1; transform: none; } }
+.m2h-sub { margin: 0 0 22px; color: #94A3B8; font-size: 14px; line-height: 1.65; opacity: 0; animation: m2h-rise .8s cubic-bezier(.16,1,.3,1) .45s forwards; }
+.m2h-ctas { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 22px; opacity: 0; animation: m2h-rise .8s cubic-bezier(.16,1,.3,1) .58s forwards; }
+.m2h-btn, .m2h-btn-alt {
+  display: inline-flex; align-items: center; gap: 7px; padding: 10px 15px; border-radius: 11px; white-space: nowrap;
+  font: 700 12.5px 'Inter', sans-serif; cursor: pointer; text-decoration: none;
+  transition: transform .18s cubic-bezier(.16,1,.3,1), box-shadow .18s, border-color .18s, background .18s;
+}
+.m2h-btn { border: 0; color: #1A1300; background: linear-gradient(135deg, #F5D776 0%, #C9A22A 60%, #A9861C 100%); box-shadow: 0 10px 24px -8px rgba(201,162,42,.7); }
+.m2h-btn:hover { transform: translateY(-2px); box-shadow: 0 14px 30px -8px rgba(201,162,42,.9); }
+.m2h-btn-alt { color: #DBEAFE; background: rgba(15,23,42,.55); border: 1px solid rgba(96,165,250,.35); }
+.m2h-btn-alt:hover { transform: translateY(-2px); border-color: #60A5FA; background: rgba(30,58,138,.35); }
+.m2h-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(108px, 1fr)); gap: 8px; opacity: 0; animation: m2h-rise .8s cubic-bezier(.16,1,.3,1) .72s forwards; }
+.m2h-stat { padding: 10px 11px; border-radius: 12px; background: linear-gradient(160deg, rgba(30,41,59,.55), rgba(15,23,42,.35)); border: 1px solid rgba(96,165,250,.16); min-width: 0; }
+.m2h-stat b { display: block; font: 800 18px/1.15 'Inter', sans-serif; color: #fff; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.m2h-stat b.flash { animation: m2h-flash .9s ease; }
+@keyframes m2h-flash { 0% { color: #F5D776; text-shadow: 0 0 14px rgba(245,215,118,.8); } 100% { color: #fff; text-shadow: none; } }
+.m2h-stat small { display: block; margin-top: 4px; font: 600 9.5px/1.25 'Share Tech Mono', monospace; letter-spacing: .08em; text-transform: uppercase; color: #64748B; }
+
+.m2h-deck { position: relative; min-height: 400px; }
+.m2h-stage { position: absolute; inset: 0; }
+.m2h-stage canvas { display: block; width: 100% !important; height: 100% !important; }
+.m2h-labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.m2h-label {
+  position: absolute; transform: translate(-50%, -130%); white-space: nowrap; opacity: 0; transition: opacity .3s;
+  padding: 3px 8px; border-radius: 99px; font: 700 10px/1.4 'Share Tech Mono', monospace; letter-spacing: .04em;
+  color: #E2E8F0; background: rgba(8,14,28,.8); border: 1px solid var(--c, #60A5FA); box-shadow: 0 0 12px -3px var(--c, #60A5FA);
+}
+.m2h-label b { color: var(--c, #60A5FA); }
+.m2h-bubble {
+  position: absolute; z-index: 4; transform: translate(-18%, calc(-100% - 14px)) scale(.9); transform-origin: 18% 100%; opacity: 0; pointer-events: none;
+  max-width: 250px; padding: 10px 13px 11px; border-radius: 14px;
+  background: rgba(248,250,252,.96); color: #0F172A; font: 600 12.5px/1.45 'Inter', sans-serif;
+  box-shadow: 0 14px 34px -10px rgba(0,0,0,.7), 0 0 0 1px rgba(201,162,42,.5);
+  transition: opacity .3s, transform .35s cubic-bezier(.16,1,.3,1);
+}
+.m2h-bubble.show { opacity: 1; transform: translate(-18%, calc(-100% - 14px)) scale(1); }
+.m2h-bubble::after { content: ''; position: absolute; left: 18%; bottom: -7px; width: 14px; height: 14px; margin-left: -7px; background: inherit; transform: rotate(45deg); border-radius: 2px; }
+.m2h-bubble-name { display: block; margin-bottom: 3px; font: 800 9.5px/1 'Share Tech Mono', monospace; letter-spacing: .12em; text-transform: uppercase; color: #A16207; }
+.m2h-bubble[data-tone="warn"] { box-shadow: 0 14px 34px -10px rgba(0,0,0,.7), 0 0 0 2px rgba(239,68,68,.7); }
+.m2h-bubble[data-tone="good"] { box-shadow: 0 14px 34px -10px rgba(0,0,0,.7), 0 0 0 2px rgba(16,185,129,.7); }
+.m2h-tag {
+  position: absolute; z-index: 4; top: 16px; right: 18px; display: flex; align-items: center; gap: 8px;
+  padding: 6px 12px; border-radius: 99px; font: 700 10px/1 'Share Tech Mono', monospace; letter-spacing: .12em; color: #BFDBFE;
+  background: rgba(8,14,28,.7); border: 1px solid rgba(96,165,250,.3);
+}
+.m2h-no-webgl .m2h-stage {
+  background: radial-gradient(circle at 50% 60%, rgba(59,130,246,.25), transparent 60%),
+              repeating-radial-gradient(circle at 50% 60%, rgba(96,165,250,.16) 0 1px, transparent 1px 28px);
+}
+
+@media (max-width: 1100px) {
+  .m2h-inner { grid-template-columns: 1fr; }
+  .m2h-text { padding: 28px 22px 4px; max-width: none; }
+  .m2h-deck { min-height: 360px; }
+}
+@media (max-width: 560px) {
+  .m2h-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .m2h-deck { min-height: 300px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .m2h-scan, .m2h-dot, .m2h-grad { animation: none !important; }
+  .m2h-kicker, .m2h-title span, .m2h-sub, .m2h-ctas, .m2h-stats { animation: none !important; opacity: 1; transform: none; }
+}
