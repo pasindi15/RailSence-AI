@@ -63,6 +63,7 @@ DATA_PATH = AGENT_DIR / "data" / "assets_history.csv"
 AUDIT_LOG = AGENT_DIR / "data" / "audit_log.jsonl"
 FLAGS_PATH = AGENT_DIR / "data" / "train_flags.jsonl"
 REPORTS_PATH = AGENT_DIR / "data" / "field_reports.jsonl"
+TOKENS_PATH = AGENT_DIR / "data" / "session_tokens.json"
 UI_DIR = AGENT_DIR / "ui"
 
 _in_memory_events: list[dict] = []
@@ -77,6 +78,28 @@ _ENGINEER_ACCOUNTS: dict[str, dict] = {
     "perera":  {"id": "ENG-308", "password": "perera2024", "name": "Nilantha Perera", "role": "Signal Technician"},
 }
 _active_tokens: set[str] = set()    # valid session tokens issued on engineer login
+
+
+def _load_tokens_from_disk() -> None:
+    """Restore _active_tokens from disk so sessions survive server restarts."""
+    if not TOKENS_PATH.exists():
+        return
+    try:
+        data = json.loads(TOKENS_PATH.read_text(encoding="utf-8"))
+        _active_tokens.update(t for t in data.get("tokens", []) if isinstance(t, str) and len(t) == 64)
+        if _active_tokens:
+            logger.info("Restored %d session token(s) from disk", len(_active_tokens))
+    except Exception as exc:
+        logger.warning("Could not load session tokens from disk: %s", exc)
+
+
+def _save_tokens_to_disk() -> None:
+    """Persist current _active_tokens to disk."""
+    try:
+        TOKENS_PATH.parent.mkdir(parents=True, exist_ok=True)
+        TOKENS_PATH.write_text(json.dumps({"tokens": list(_active_tokens)}), encoding="utf-8")
+    except Exception as exc:
+        logger.warning("Could not save session tokens to disk: %s", exc)
 
 
 async def _require_token(x_engineer_token: str = Header(default="")) -> None:
@@ -174,9 +197,10 @@ _CACHE_TTL = 60.0  # seconds
 
 @asynccontextmanager
 async def lifespan(_app):
-    # Restore maintenance flags and field reports from disk across restarts
+    # Restore maintenance flags, field reports, and session tokens from disk across restarts
     _load_flags_from_disk()
     _load_reports_from_disk()
+    _load_tokens_from_disk()
 
     # Reconcile: any train still OUT_OF_SERVICE in Supabase that isn't in our flag file
     # gets a minimal stub entry so /api/train-status keeps returning the right answer.
@@ -822,6 +846,7 @@ async def engineer_login(request: Request, payload: EngineerLoginRequest):
     if account and payload.password == account["password"]:
         token = secrets.token_hex(32)
         _active_tokens.add(token)
+        _save_tokens_to_disk()
         _write_audit("engineer_login_success", client_ip, {"engineer_id": account["id"], "username": username})
         return {"success": True, "name": account["name"], "role": account["role"], "eng_id": account["id"], "token": token}
     _write_audit("engineer_login_failed", client_ip, {"engineer_id": payload.engineer_id})
