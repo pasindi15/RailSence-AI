@@ -1023,11 +1023,191 @@ body::after {
   color: #0F172A !important;
 }
 
-/* Light mode — form inputs */
-[data-theme="light"] input[type="text"],
-[data-theme="light"] input[type="date"] {
-  background: rgba(241,245,253,0.95) !important;
-  border-color: rgba(59,130,246,0.20) !important;
+/* ── Admin Booking Intelligence Assistant Styles ───────────────────── */
+.admin-chat-card {
+  background: linear-gradient(135deg, rgba(14, 22, 44, 0.96) 0%, rgba(10, 16, 32, 0.94) 100%);
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  border-radius: var(--r);
+  padding: 18px 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(59, 130, 246, 0.15);
+  backdrop-filter: var(--blur);
+  transition: all 0.25s var(--ease);
+}
+.admin-chat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(59, 130, 246, 0.18);
+  margin-bottom: 14px;
+}
+.admin-chat-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.admin-chat-badge {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  background: rgba(59, 130, 246, 0.2);
+  color: #93C5FD;
+  border: 1px solid rgba(96, 165, 250, 0.35);
+  padding: 2px 8px;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+.admin-chat-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.admin-chat-suggestions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.chat-suggest-chip {
+  background: rgba(22, 32, 58, 0.85);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  color: #CBD5E1;
+  font-size: 11.5px;
+  padding: 5px 12px;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+.chat-suggest-chip:hover {
+  background: rgba(37, 99, 235, 0.25);
+  border-color: #60A5FA;
+  color: #fff;
+  transform: translateY(-1px);
+}
+.admin-chat-log {
+  max-height: 320px;
+  min-height: 140px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 10px 4px 14px;
+  margin-bottom: 14px;
+  scroll-behavior: smooth;
+}
+.admin-chat-bubble {
+  max-width: 85%;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.55;
+  position: relative;
+  word-break: break-word;
+}
+.admin-chat-bubble.admin {
+  align-self: flex-end;
+  background: linear-gradient(135deg, rgba(29, 78, 216, 0.45) 0%, rgba(37, 99, 235, 0.35) 100%);
+  border: 1px solid rgba(96, 165, 250, 0.45);
+  color: #FFFFFF;
+  border-bottom-right-radius: 3px;
+}
+.admin-chat-bubble.assistant {
+  align-self: flex-start;
+  background: rgba(15, 23, 42, 0.88);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  color: var(--ink-bright);
+  border-bottom-left-radius: 3px;
+}
+.admin-chat-card-widget {
+  margin-top: 10px;
+  background: rgba(10, 16, 30, 0.85);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 12px;
+}
+.admin-chat-sources {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+.admin-source-tag {
+  font-size: 10.5px;
+  font-family: 'Share Tech Mono', monospace;
+  background: rgba(59, 130, 246, 0.12);
+  color: #93C5FD;
+  border: 1px solid rgba(59, 130, 246, 0.28);
+  padding: 2px 7px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.admin-chat-form {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.admin-chat-input {
+  flex: 1;
+  padding: 10px 14px;
+  background: rgba(10, 15, 28, 0.9);
+  border: 1px solid rgba(59, 130, 246, 0.28);
+  border-radius: 8px;
+  color: #fff;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.admin-chat-input:focus {
+  border-color: #60A5FA;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+}
+.admin-chat-send {
+  background: linear-gradient(135deg, #1D4ED8 0%, #2563EB 100%);
+  border: 1px solid #60A5FA;
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s;
+}
+.admin-chat-send:hover {
+  background: linear-gradient(135deg, #2563EB 0%, #3B82F6 100%);
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
+}
+/* Light theme overrides */
+[data-theme="light"] .admin-chat-card {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(246, 250, 255, 0.96) 100%);
+  border-color: rgba(59, 130, 246, 0.25);
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.08);
+}
+[data-theme="light"] .chat-suggest-chip {
+  background: rgba(241, 245, 255, 0.95);
+  border-color: rgba(59, 130, 246, 0.22);
+  color: #334155;
+}
+[data-theme="light"] .admin-chat-bubble.assistant {
+  background: rgba(241, 245, 253, 0.95);
+  border-color: rgba(59, 130, 246, 0.20);
+  color: #0F172A;
+}
+[data-theme="light"] .admin-chat-card-widget {
+  background: #FFFFFF;
+  border-color: rgba(59, 130, 246, 0.18);
+}
+[data-theme="light"] .admin-chat-input {
+  background: #FFFFFF !important;
   color: #0F172A !important;
 }
 </style>
@@ -1274,6 +1454,66 @@ body::after {
       <button class="sub-chip" id="chip-book-schedules" onclick="switchSubSection('bookings', 'schedules')">📋 Schedules &amp; Seat Inventory</button>
       <button class="sub-chip" id="chip-book-tickets" onclick="switchSubSection('bookings', 'tickets'); loadTicketManifestTrains();">🎫 Booked Tickets (Manifest)</button>
     </div>
+
+    <!-- 🤖 Admin Booking Intelligence Assistant (NLP + IR/RAG + LLM) -->
+    <div class="admin-chat-card" id="admin-booking-chat-panel">
+      <div class="admin-chat-header">
+        <div class="admin-chat-title-group">
+          <span style="font-size: 20px;">🤖</span>
+          <div>
+            <div style="font-size: 15px; font-weight: 700; color: var(--ink-bright); display: flex; align-items: center; gap: 8px;">
+              Booking Intelligence Assistant
+              <span class="admin-chat-badge">NLP · RAG · LLM</span>
+            </div>
+            <div style="font-size: 11.5px; color: var(--muted); margin-top: 1px;">
+              Ask about fraud reviews, cancellations, seat availability, schedules, or passenger manifests.
+            </div>
+          </div>
+        </div>
+        <div class="admin-chat-controls">
+          <button class="btn-refresh" type="button" onclick="clearAdminChat()" title="Clear conversation history">✕ Clear</button>
+          <button class="btn-refresh" type="button" id="btn-toggle-chat" onclick="toggleAdminChatCollapse()" title="Collapse / Expand Assistant">− Minimize</button>
+        </div>
+      </div>
+
+      <div id="admin-chat-body">
+        <!-- Quick Suggested Query Chips -->
+        <div class="admin-chat-suggestions">
+          <button class="chat-suggest-chip" type="button" onclick="sendSuggestedQuestion('🛡️ Show pending fraud reviews')">🛡️ Show pending fraud reviews</button>
+          <button class="chat-suggest-chip" type="button" onclick="sendSuggestedQuestion('🔄 Show pending cancellations')">🔄 Show pending cancellations</button>
+          <button class="chat-suggest-chip" type="button" onclick="sendSuggestedQuestion('📋 Check today\'s seat availability')">📋 Check today's seat availability</button>
+          <button class="chat-suggest-chip" type="button" onclick="sendSuggestedQuestion('🎫 Show today\'s booking count')">🎫 Show today's booking count</button>
+          <button class="chat-suggest-chip" type="button" onclick="sendSuggestedQuestion('How many seats are available on Udarata Menike tomorrow?')">How many seats on Udarata Menike tomorrow?</button>
+        </div>
+
+        <!-- Scrollable Conversation Log -->
+        <div class="admin-chat-log" id="admin-chat-log">
+          <div class="admin-chat-bubble assistant">
+            <div>👋 Welcome, Railway Administrator. I am your <strong>Booking Intelligence Assistant</strong>.</div>
+            <div style="margin-top: 5px; font-size: 12px; color: var(--muted-hi);">
+              You can query live database records across the <strong>Fraud Queue</strong>, <strong>Cancellation Queue</strong>, <strong>Seat Inventory</strong>, and <strong>Booked Manifests</strong>.
+            </div>
+          </div>
+        </div>
+
+        <!-- Chat Input Form -->
+        <form class="admin-chat-form" id="admin-chat-form" onsubmit="handleAdminChatSubmit(event)">
+          <input
+            type="text"
+            id="admin-chat-input"
+            class="admin-chat-input"
+            placeholder="Ask about bookings, cancellations, schedules, seats, or fraud reviews..."
+            autocomplete="off"
+            maxlength="500"
+          />
+          <button type="submit" id="admin-chat-send-btn" class="admin-chat-send">
+            <span>Send</span>
+            <span>➔</span>
+          </button>
+        </form>
+      </div>
+    </div>
+
 
     <!-- View A: Fraud Review Queue -->
     <div id="subview-book-fraud">
@@ -2710,6 +2950,170 @@ function clearTicketFilters() {
   if (err) err.style.display = 'none';
   const kpi = $('ticket-kpi-row');
   if (kpi) kpi.style.display = 'none';
+}
+
+// =========================================================================
+// Admin Booking Intelligence Assistant Controller
+// =========================================================================
+
+let _adminChatHistory = [];
+let _adminChatCollapsed = false;
+
+function toggleAdminChatCollapse() {
+  _adminChatCollapsed = !_adminChatCollapsed;
+  const body = $('admin-chat-body');
+  const btn = $('btn-toggle-chat');
+  if (body) {
+    body.style.display = _adminChatCollapsed ? 'none' : 'block';
+  }
+  if (btn) {
+    btn.textContent = _adminChatCollapsed ? '+ Expand' : '− Minimize';
+  }
+}
+
+function clearAdminChat() {
+  _adminChatHistory = [];
+  const log = $('admin-chat-log');
+  if (log) {
+    log.innerHTML = `
+      <div class="admin-chat-bubble assistant">
+        <div>👋 Welcome, Railway Administrator. I am your <strong>Booking Intelligence Assistant</strong>.</div>
+        <div style="margin-top: 5px; font-size: 12px; color: var(--muted-hi);">
+          You can query live database records across the <strong>Fraud Queue</strong>, <strong>Cancellation Queue</strong>, <strong>Seat Inventory</strong>, and <strong>Booked Manifests</strong>.
+        </div>
+      </div>
+    `;
+  }
+}
+
+function sendSuggestedQuestion(text) {
+  const input = $('admin-chat-input');
+  if (input) {
+    // Strip leading icon if present for cleaner search
+    input.value = text.replace(/^[^\w\s]+\s*/, '');
+    handleAdminChatSubmit(new Event('submit'));
+  }
+}
+
+async function handleAdminChatSubmit(e) {
+  if (e && e.preventDefault) e.preventDefault();
+  const input = $('admin-chat-input');
+  const log = $('admin-chat-log');
+  const sendBtn = $('admin-chat-send-btn');
+  if (!input || !log) return;
+
+  const msg = input.value.trim();
+  if (!msg) return;
+
+  // Append Admin Message
+  const adminBubble = document.createElement('div');
+  adminBubble.className = 'admin-chat-bubble admin';
+  adminBubble.textContent = msg;
+  log.appendChild(adminBubble);
+  input.value = '';
+
+  // Append Temporary Loading Indicator
+  const loadingBubble = document.createElement('div');
+  loadingBubble.className = 'admin-chat-bubble assistant';
+  loadingBubble.id = 'admin-chat-loading-indicator';
+  loadingBubble.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px;color:#93C5FD;"><span>⏳</span> <em>Querying live booking intelligence...</em></span>';
+  log.appendChild(loadingBubble);
+  log.scrollTop = log.scrollHeight;
+
+  if (sendBtn) sendBtn.disabled = true;
+
+  try {
+    const token = typeof getOfficerToken === 'function' ? getOfficerToken() : localStorage.getItem('railsense_m2_token');
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const payload = {
+      message: msg,
+      history: _adminChatHistory.slice(-4)
+    };
+
+    const res = await fetch('/api/admin/booking-chat', {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+    loadingBubble.remove();
+
+    if (!res.ok) {
+      const errBubble = document.createElement('div');
+      errBubble.className = 'admin-chat-bubble assistant';
+      errBubble.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+      errBubble.innerHTML = `<span style="color:#F87171;">⚠️ Error:</span> ${escapeHtml(data.detail || data.error || 'Failed to process query.')}`;
+      log.appendChild(errBubble);
+    } else {
+      // Record history
+      _adminChatHistory.push({ role: 'user', content: msg });
+      _adminChatHistory.push({ role: 'assistant', content: data.answer || '' });
+
+      // Build Assistant Bubble
+      const asstBubble = document.createElement('div');
+      asstBubble.className = 'admin-chat-bubble assistant';
+
+      // Answer text with line breaks
+      const formattedAnswer = escapeHtml(data.answer || '').replace(/\n/g, '<br>');
+      let html = `<div>${formattedAnswer}</div>`;
+
+      // Optional structured result card
+      if (data.card && data.card.items && data.card.items.length) {
+        const c = data.card;
+        html += `
+          <div class="admin-chat-card-widget">
+            <div style="font-weight:700;color:#93C5FD;margin-bottom:4px;display:flex;justify-content:space-between;">
+              <span>${escapeHtml(c.title || '')}</span>
+              ${c.subtitle ? `<span style="font-size:11px;color:var(--muted-hi);">${escapeHtml(c.subtitle)}</span>` : ''}
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(130px, 1fr));gap:6px;margin-top:6px;">
+              ${c.items.map(it => {
+                const isStr = typeof it === 'string';
+                const label = isStr ? it.split(':')[0].trim() : (it.label || it.ref || it.case_reference || '');
+                const val = isStr ? (it.includes(':') ? it.split(':').slice(1).join(':').trim() : '') : (it.available ?? it.value ?? it.score ?? it.refund ?? '');
+                return `
+                <div style="background:rgba(255,255,255,0.04);padding:4px 8px;border-radius:4px;border:1px solid rgba(255,255,255,0.06);">
+                  <div style="font-size:10px;color:var(--muted-hi);text-transform:uppercase;">${escapeHtml(label)}</div>
+                  <div style="font-weight:700;color:var(--ink-bright);">${escapeHtml(String(val))}</div>
+                </div>
+              `;}).join('')}
+            </div>
+          </div>
+        `;
+      }
+
+      // Evidence Sources
+      if (data.sources && data.sources.length) {
+        html += `
+          <div class="admin-chat-sources">
+            <span style="font-size:10px;color:var(--muted);text-transform:uppercase;margin-right:2px;display:inline-flex;align-items:center;">Sources:</span>
+            ${data.sources.map(s => `
+              <span class="admin-source-tag" title="Type: ${escapeHtml(s.type)}">
+                ${s.type === 'schedule' ? '📋' : s.type === 'seat_inventory' ? '🪑' : s.type === 'policy' ? '📜' : s.type === 'fraud_review' ? '🛡️' : s.type === 'cancellation' ? '🔄' : '🎫'}
+                ${escapeHtml(s.label || s.id)}
+              </span>
+            `).join('')}
+          </div>
+        `;
+      }
+
+      asstBubble.innerHTML = html;
+      log.appendChild(asstBubble);
+    }
+  } catch (err) {
+    if (loadingBubble.parentNode) loadingBubble.remove();
+    const errBubble = document.createElement('div');
+    errBubble.className = 'admin-chat-bubble assistant';
+    errBubble.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+    errBubble.innerHTML = `<span style="color:#F87171;">⚠️ Network Error:</span> ${escapeHtml(err.message || 'Could not connect to Booking Intelligence Assistant.')}`;
+    log.appendChild(errBubble);
+  } finally {
+    if (sendBtn) sendBtn.disabled = false;
+    log.scrollTop = log.scrollHeight;
+  }
 }
 
 </script>

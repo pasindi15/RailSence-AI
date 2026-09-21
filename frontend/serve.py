@@ -2092,6 +2092,48 @@ async def join_waiting_list_endpoint(req: WaitingListInput) -> JSONResponse:
 
 
 # ---------------------------------------------------------------------------
+# Admin Booking Intelligence Chatbot Proxy
+# ---------------------------------------------------------------------------
+
+@app.post("/api/admin/booking-chat", tags=["admin"])
+async def proxy_admin_booking_chat(request: Request) -> JSONResponse:
+    """
+    Proxy endpoint for the Admin Booking Intelligence Assistant.
+    Forwards natural-language queries to Booking Agent (/api/admin/booking-chat).
+    Falls back to direct in-memory AdminChatService if backend is offline.
+    """
+    body = await request.json()
+    try:
+        async with httpx.AsyncClient(timeout=25.0) as client:
+            resp = await client.post(
+                f"{BOOKING_AGENT_URL}/api/admin/booking-chat",
+                json=body,
+            )
+            if resp.status_code == 200:
+                return JSONResponse(status_code=200, content=resp.json())
+    except Exception:
+        pass
+
+    # Direct database fallback
+    try:
+        sys.path.insert(0, str(_M3_ROOT / "booking-agent"))
+        from database.database import SessionLocal
+        from admin_chat.query_router import AdminChatService
+        from admin_chat.schemas import AdminChatRequest
+
+        chat_req = AdminChatRequest(**body)
+        with SessionLocal() as db:
+            service = AdminChatService(db)
+            result = service.process_chat_message(chat_req)
+            return JSONResponse(status_code=200, content=result.model_dump())
+    except Exception as exc:
+        return JSONResponse(
+            status_code=500,
+            content={"error": f"Booking Intelligence Chatbot unavailable: {exc}"},
+        )
+
+
+# ---------------------------------------------------------------------------
 # CLI Runner
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
@@ -2099,3 +2141,4 @@ if __name__ == "__main__":
     port = int(os.getenv("PORT", 3000))
     print(f"Starting RailSense Unified Frontend on http://localhost:{port}")
     uvicorn.run("serve:app", host="0.0.0.0", port=port, reload=True)
+
