@@ -239,6 +239,8 @@ body::after{
 .muted{color:var(--muted);font-size:12px;line-height:1.55}
 .split{display:grid;grid-template-columns:1.35fr 1fr;gap:13px;margin-bottom:13px}
 .split.equal{grid-template-columns:1fr 1fr}
+.incident-map-card{display:flex;flex-direction:column}
+.incident-map{flex:1;min-height:340px}
 .panel-title{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:12px}
 
 /* ── Pills ───────────────────────────────────────────────────────── */
@@ -446,7 +448,8 @@ code{font-family:'Share Tech Mono',monospace;color:var(--brand-light);font-size:
       </article>
     </div>
 
-    <article class="card" style="margin-bottom:13px">
+    <div class="split">
+    <article class="card">
       <div class="panel-title">
         <div><h3>Route delay heatmap</h3><p class="sub">Every corridor ranked by mean delay, with trip counts and incident rates</p></div>
         <span class="pill" id="routeCount">—</span>
@@ -456,6 +459,14 @@ code{font-family:'Share Tech Mono',monospace;color:var(--brand-light);font-size:
         <tbody id="routeTable"></tbody>
       </table>
     </article>
+    <article class="card incident-map-card">
+      <div class="panel-title">
+        <div><h3>Verified incident map</h3><p class="sub">Incidents approved today (since 00:00) · updates every 5 s</p></div>
+        <span class="pill" id="incidentMapCount">—</span>
+      </div>
+      <div id="incidentMap" class="incident-map"></div>
+    </article>
+    </div>
 
     <div class="split equal">
       <article class="card">
@@ -487,12 +498,11 @@ code{font-family:'Share Tech Mono',monospace;color:var(--brand-light);font-size:
         <p class="sub">Submitted to the live inference endpoint</p>
         <form id="predictForm">
           <label>Route</label>
-          <input id="pRoute" list="routeOptions" required placeholder="Colombo Fort - Kandy">
-          <datalist id="routeOptions"></datalist>
+          <select id="pRoute" required><option value="">Loading routes…</option></select>
           <label>Train ID</label>
-          <input id="pTrain" required placeholder="PM-4082">
+          <select id="pTrain" required disabled><option value="">— select a route first —</option></select>
           <label>Station</label>
-          <input id="pStation" placeholder="Rambukkana">
+          <select id="pStation" disabled><option value="">— select a route first —</option></select>
           <label>Scheduled time</label>
           <input id="pTime" type="datetime-local" required>
           <label>Weather</label>
@@ -562,7 +572,7 @@ code{font-family:'Share Tech Mono',monospace;color:var(--brand-light);font-size:
         <select id="iStatus">
           <option value="">All statuses</option><option value="pending">pending</option>
           <option value="corrected">corrected</option><option value="approved">approved</option>
-          <option value="rejected">rejected</option>
+          <option value="verified">verified</option><option value="rejected">rejected</option>
         </select>
         <button class="button alt sm" onclick="incidents.reset()">Apply</button>
         <span class="spacer"></span>
@@ -585,8 +595,8 @@ code{font-family:'Share Tech Mono',monospace;color:var(--brand-light);font-size:
 <div class="modal" id="incidentModal"><form id="incidentForm">
   <h3>Report operational incident</h3>
   <p class="sub">The raw text is sanitised, then classified and summarised by the NLP pipeline before it is stored.</p>
-  <label>Train ID</label><input id="nTrain" required placeholder="PM-4082">
-  <label>Station</label><input id="nStation" required placeholder="Rambukkana">
+  <label>Station</label><select id="nStation" required><option value="">Loading stations…</option></select>
+  <label>Train</label><input id="nTrain" required>
   <label>Raw incident report</label><textarea id="nText" required placeholder="Describe what the field staff reported…"></textarea>
   <div class="modal-actions">
     <button type="button" class="button alt" onclick="closeModal('incidentModal')">Cancel</button>
@@ -624,6 +634,9 @@ code{font-family:'Share Tech Mono',monospace;color:var(--brand-light);font-size:
 
 <div class="toast-stack" id="toastStack"></div>
 
+<script src="/shared/incident-map.js"></script>
+<script src="/shared/train-picker.js"></script>
+<script src="/shared/ops-agent.js"></script>
 <script>
 /* RailSense M2 — Operations Control Room.
    Three screens, all reading real data:
@@ -735,7 +748,7 @@ function renderDashboard(){
   $('causeChart').innerHTML = mix.length ? mix.map(x =>
     `<div style="margin:13px 0"><div class="row" style="padding:0 0 5px;border:0">
        <span>${esc(x.type.replaceAll('_',' '))}</span><b>${x.count}</b></div>
-     <div class="progress"><i style="width:${x.count / cmax * 100}%"></i></div></div>`).join('')
+     <div class="progress"><i style="width:${x.count / cmax * 100}%;background:${incidentColor(x.type)}"></i></div></div>`).join('')
     : '<div class="empty">No incidents recorded in the corpus.</div>';
 
   const routes = dash.routes || [];
@@ -776,9 +789,25 @@ function renderDashboard(){
   ];
   $('evalList').innerHTML = evidence.map(e =>
     `<div class="row"><div><b>${e[0]}</b><small>${e[2]}</small></div><b>${e[1]}</b></div>`).join('');
+}
 
-  const routeList = $('routeOptions');
-  if(routeList) routeList.innerHTML = routes.map(r => `<option value="${esc(r.route)}">`).join('');
+// Same colour per incident type as the incident map markers.
+function incidentColor(type){
+  const styles = window.RailSenseIncidentMap ? RailSenseIncidentMap.TYPE_STYLES : {};
+  return (styles[type] || styles.other || {}).color || '';
+}
+
+let incidentMap = null;
+function startIncidentMap(){
+  if(incidentMap || !window.RailSenseIncidentMap) return;
+  incidentMap = RailSenseIncidentMap.create($('incidentMap'), {
+    theme: document.documentElement.getAttribute('data-theme'),
+    scrollWheelZoom: false,
+    onUpdate: items => { $('incidentMapCount').textContent = `${items.length} today`; },
+  });
+  // Follow the portal's light/dark toggle.
+  new MutationObserver(() => incidentMap.setTheme(document.documentElement.getAttribute('data-theme')))
+    .observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 }
 
 async function refreshDashboard(){
@@ -793,6 +822,43 @@ async function refreshDashboard(){
 }
 
 /* --------------------- screen 2: prediction + RAG ---------------------- */
+// Route drives the Train ID and Station dropdowns: both are filled from
+// /api/route-options, the same operations corpus the model was trained on.
+let routeOptions = [];
+
+function fillSelect(el, values, placeholder){
+  el.innerHTML = `<option value="">${esc(placeholder)}</option>` +
+    values.map(v => `<option value="${esc(v)}">${esc(v)}</option>`).join('');
+  el.disabled = !values.length;
+}
+
+function onRouteChange(){
+  const r = routeOptions.find(o => o.route === $('pRoute').value);
+  if(!r){
+    fillSelect($('pTrain'), [], '— select a route first —');
+    fillSelect($('pStation'), [], '— select a route first —');
+    return;
+  }
+  fillSelect($('pTrain'), r.trains, `— select a train (${r.trains.length}) —`);
+  fillSelect($('pStation'), r.stations, '— not specified —');
+}
+
+async function loadRouteOptions(){
+  try {
+    const result = await api('/api/route-options');
+    routeOptions = result.routes || [];
+    const current = $('pRoute').value;
+    fillSelect($('pRoute'), routeOptions.map(o => o.route),
+      routeOptions.length ? '— select a route —' : 'No routes in the operations corpus');
+    if(current && routeOptions.some(o => o.route === current)) $('pRoute').value = current;
+    onRouteChange();
+  } catch(err){
+    $('pRoute').innerHTML = '<option value="">Routes unavailable — is M2 running?</option>';
+    toast(err.message, 'error');
+  }
+}
+$('pRoute').onchange = onRouteChange;
+
 function renderFeatures(features){
   const el = $('featureChart');
   if(!features.length){
@@ -961,10 +1027,27 @@ const incidents = (function(){
   };
 })();
 
+// Stations come from the operations corpus, so every filed incident has a
+// known location and can be placed on the map once an admin verifies it.
+async function loadStations(){
+  try {
+    const { stations } = await api('/api/stations');
+    $('nStation').innerHTML = '<option value="">— select a station —</option>' +
+      stations.map(s => `<option value="${esc(s.station)}">${esc(s.station)}</option>`).join('');
+  } catch(err){
+    $('nStation').innerHTML = '<option value="">Stations unavailable</option>';
+  }
+}
+
+// Staff pick the train by name ("Podi Menike") instead of recalling its id.
+const trainPicker = RailSenseTrainPicker.attach($('nTrain'), { getStation: () => $('nStation').value });
+$('nStation').addEventListener('change', () => trainPicker.refresh());
+
 function openIncidentModal(){ openModal('incidentModal'); }
 
 $('incidentForm').onsubmit = async e => {
   e.preventDefault();
+  if(!trainPicker.validate()){ toast('Choose the train from the list', 'error'); $('nTrain').focus(); return; }
   const btn = $('incidentSubmit');
   btn.disabled = true;
   btn.innerHTML = '<span class="spin"></span> Filing…';
@@ -972,7 +1055,7 @@ $('incidentForm').onsubmit = async e => {
     const created = await api('/incident-report', {
       method: 'POST',
       body: JSON.stringify({
-        train_id: $('nTrain').value.trim(),
+        train_id: trainPicker.value,
         station: $('nStation').value.trim(),
         raw_text: $('nText').value.trim(),
       }),
@@ -980,6 +1063,7 @@ $('incidentForm').onsubmit = async e => {
     toast(`Filed as ${created.classified_type} (${created.nlp_method})`, 'success');
     closeModal('incidentModal');
     $('incidentForm').reset();
+    trainPicker.reset();
     incidents.reset();
   } catch(err){ toast(err.message, 'error'); }
   finally { btn.disabled = false; btn.textContent = 'File incident'; }
@@ -1044,6 +1128,7 @@ $('opsLoginForm').onsubmit = async e => {
 };
 
 $('opsLogoutBtn').onclick = () => {
+  if(window.RailSenseOpsAgent) RailSenseOpsAgent.destroy();
   localStorage.removeItem('railsense_m2_token');
   localStorage.removeItem('railsense_m2_officer');
   $('opsLoginModal').classList.add('open');
@@ -1058,6 +1143,11 @@ function boot(){
   now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
   $('pTime').value = now.toISOString().slice(0, 16);
   refreshDashboard();
+  loadRouteOptions();
+  loadStations();
+  startIncidentMap();
+  // Operations Assistant: appears only if the signed-in role may use it.
+  if(window.RailSenseOpsAgent) RailSenseOpsAgent.init();
 }
 
 setupNav();

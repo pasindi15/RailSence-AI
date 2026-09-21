@@ -508,7 +508,9 @@ def health_status(identity: dict = Depends(require_admin)):
 
     upstash_configured = bool(os.getenv("UPSTASH_REDIS_URL") and os.getenv("UPSTASH_REDIS_TOKEN"))
 
-    hub_base = os.getenv("HUB_BASE_URL", "http://localhost:8000")
+    # Same default as hub_client.HUB_BASE_URL (the Hub runs on :8002); the old
+    # :8000 default made the Hub pill report "down" whenever the env var was unset.
+    hub_base = os.getenv("HUB_BASE_URL", "http://localhost:8002")
     hub_reachable = False
     try:
         resp = httpx.get(f"{hub_base}/health", timeout=2.0)

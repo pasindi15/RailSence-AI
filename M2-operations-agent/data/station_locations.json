@@ -1,0 +1,20 @@
+{
+  "_note": "Station -> WGS84 coordinates for the incident map. Keys are exactly the station names used in data/operations_history.csv; tests/test_incident_map.py fails if a corpus station is missing here. Coordinates are approximate station positions, accurate enough for a network overview map.",
+  "Colombo Fort": [6.9344, 79.8500],
+  "Panadura": [6.7132, 79.9026],
+  "Kalutara": [6.5854, 79.9607],
+  "Galle": [6.0333, 80.2134],
+  "Matara": [5.9451, 80.5460],
+  "Polgahawela": [7.3359, 80.2995],
+  "Peradeniya": [7.2567, 80.5930],
+  "Kandy": [7.2893, 80.6326],
+  "Nanu Oya": [6.9433, 80.7461],
+  "Ella": [6.8761, 81.0463],
+  "Badulla": [6.9846, 81.0573],
+  "Anuradhapura": [8.3350, 80.4010],
+  "Vavuniya": [8.7514, 80.4971],
+  "Jaffna": [9.6599, 80.0120],
+  "Trincomalee": [8.5790, 81.2240],
+  "Polonnaruwa": [7.9403, 81.0188],
+  "Batticaloa": [7.7102, 81.6924]
+}
