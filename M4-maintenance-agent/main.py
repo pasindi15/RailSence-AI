@@ -640,6 +640,57 @@ async def maintenance_report(request: Request, payload: MaintenanceReportRequest
     return report_record
 
 
+class ResolveReportRequest(BaseModel):
+    action_taken: str = Field("", max_length=200)
+    health_after: str = Field("GREEN", pattern="^(GREEN|AMBER|RED)$")
+    priority: str = Field("routine", pattern="^(routine|urgent|critical)$")
+    notes: str = Field("", max_length=300)
+
+
+@app.patch("/api/reports/{report_id}/resolve")
+@limiter.limit("30/minute")
+async def resolve_report(
+    request: Request,
+    report_id: str,
+    payload: Optional[ResolveReportRequest] = None,
+    _: None = Depends(_require_token),
+):
+    """Mark a field report as resolved with resolution details."""
+    target = next((r for r in _in_memory_reports if r.get("report_id") == report_id), None)
+    if target is None:
+        raise HTTPException(status_code=404, detail=f"Report '{report_id}' not found.")
+    if target.get("resolved"):
+        return {"status": "already_resolved", "report": target}
+
+    now = datetime.now(timezone.utc).isoformat()
+    target["resolved"] = True
+    target["resolved_at"] = now
+    if payload:
+        target["resolution"] = {
+            "action_taken": payload.action_taken,
+            "health_after": payload.health_after,
+            "priority": payload.priority,
+            "notes": payload.notes,
+            "resolved_at": now,
+        }
+
+    try:
+        REPORTS_PATH.parent.mkdir(parents=True, exist_ok=True)
+        with open(REPORTS_PATH, "w", encoding="utf-8") as f:
+            for rec in _in_memory_reports:
+                f.write(json.dumps(rec) + "\n")
+    except Exception as exc:
+        logger.warning("Could not persist resolved state: %s", exc)
+
+    client_ip = request.client.host if request.client else "unknown"
+    _write_audit("report_resolved", client_ip, {
+        "report_id": report_id,
+        "action_taken": payload.action_taken if payload else "",
+        "health_after": payload.health_after if payload else "GREEN",
+    })
+    return {"status": "resolved", "report": target}
+
+
 @app.get("/manual-search")
 @limiter.limit("30/minute")
 async def manual_search(

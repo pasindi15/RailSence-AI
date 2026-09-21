@@ -372,6 +372,49 @@ body.dark .pred-info-cell{background:var(--surface);border-color:#334155}
 .ov-report-sum{font-size:0.75rem;color:var(--text-muted);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .ov-report-meta{display:flex;gap:6px;align-items:center;margin-top:5px;flex-wrap:wrap}
 .ov-report-pill{font-size:0.64rem;font-weight:600;padding:2px 7px;border-radius:20px;background:var(--surface);border:1px solid var(--border);color:var(--text-muted)}
+.ov-report-card.resolved{opacity:0.6}
+.ov-report-card.resolved .ov-report-dot{background:var(--green)!important}
+.btn-resolve{display:inline-flex;align-items:center;gap:4px;background:transparent;border:1px solid var(--border);border-radius:7px;padding:3px 9px;font-size:0.67rem;font-weight:600;font-family:inherit;color:var(--text-muted);cursor:pointer;transition:all 0.15s;white-space:nowrap;margin-left:auto}
+.btn-resolve:hover{border-color:var(--green);color:var(--green);background:rgba(16,185,129,0.06)}
+.btn-resolve:disabled{opacity:0.4;cursor:not-allowed}
+.resolve-badge{font-size:0.64rem;font-weight:600;padding:2px 7px;border-radius:20px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.25);color:var(--green)}
+/* ── Resolution Modal ── */
+.res-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:500;display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;pointer-events:none;transition:opacity 0.2s ease}
+.res-backdrop.open{opacity:1;pointer-events:all}
+.res-modal{background:#fff;border-radius:18px;width:100%;max-width:480px;box-shadow:0 24px 64px rgba(0,0,0,0.18);overflow:hidden;transform:translateY(12px);transition:transform 0.2s ease}
+.res-backdrop.open .res-modal{transform:translateY(0)}
+.res-header{padding:18px 20px 14px;border-bottom:1px solid var(--border)}
+.res-header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.res-title{font-size:0.95rem;font-weight:700;color:var(--text)}
+.res-close{background:none;border:none;cursor:pointer;color:var(--text-light);padding:2px;border-radius:6px;line-height:1;font-size:1.1rem}
+.res-close:hover{background:var(--bg);color:var(--text)}
+.res-report-info{background:var(--bg);border-radius:10px;padding:10px 12px;margin-bottom:14px;border:1px solid var(--border)}
+.res-report-row{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:0.75rem;margin-bottom:4px}
+.res-report-row:last-child{margin-bottom:0}
+.res-report-label{color:var(--text-light);font-weight:500;flex-shrink:0}
+.res-report-val{color:var(--text);font-weight:600;text-align:right}
+.res-body{padding:14px 20px}
+.res-field{margin-bottom:12px}
+.res-field:last-child{margin-bottom:0}
+.res-label{font-size:0.72rem;font-weight:600;color:var(--text-muted);margin-bottom:5px;display:block}
+.res-select{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:9px;font-size:0.78rem;font-family:inherit;color:var(--text);background:#fff;cursor:pointer;outline:none;transition:border-color 0.15s}
+.res-select:focus{border-color:var(--primary)}
+.res-textarea{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:9px;font-size:0.78rem;font-family:inherit;color:var(--text);resize:vertical;min-height:60px;max-height:110px;outline:none;transition:border-color 0.15s;box-sizing:border-box}
+.res-textarea:focus{border-color:var(--primary)}
+.res-health-row{display:flex;gap:8px}
+.res-health-btn{flex:1;padding:8px 6px;border:1.5px solid var(--border);border-radius:9px;font-size:0.73rem;font-weight:700;font-family:inherit;cursor:pointer;background:#fff;transition:all 0.15s;text-align:center}
+.res-health-btn.green{color:#059669;border-color:#d1fae5}
+.res-health-btn.green.active,.res-health-btn.green:hover{background:#d1fae5;border-color:#059669}
+.res-health-btn.amber{color:#d97706;border-color:#fef3c7}
+.res-health-btn.amber.active,.res-health-btn.amber:hover{background:#fef3c7;border-color:#d97706}
+.res-health-btn.red{color:#dc2626;border-color:#fee2e2}
+.res-health-btn.red.active,.res-health-btn.red:hover{background:#fee2e2;border-color:#dc2626}
+.res-footer{padding:12px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
+.res-btn-cancel{background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:7px 16px;font-size:0.78rem;font-weight:600;font-family:inherit;cursor:pointer;color:var(--text-muted)}
+.res-btn-cancel:hover{background:var(--border)}
+.res-btn-submit{background:var(--green,#10b981);border:none;border-radius:9px;padding:7px 20px;font-size:0.78rem;font-weight:700;font-family:inherit;cursor:pointer;color:#fff;transition:all 0.15s}
+.res-btn-submit:hover{filter:brightness(1.08)}
+.res-btn-submit:disabled{opacity:0.5;cursor:not-allowed}
 
 /* ── Field Observation Modal ── */
 .rpt-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:400;display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;pointer-events:none;transition:opacity 0.2s ease}
@@ -1995,20 +2038,34 @@ function _timeAgo(iso){
 function renderReports(reports){
   const el=document.getElementById('reports-list');
   if(!reports||!reports.length){
-    el.innerHTML='<div class="empty-state"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:5px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>No reports yet — submit one with Log Observation</div>';
+    el.innerHTML='<div class="empty-state"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:5px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2"/><polyline points="14 2 14 8 20 8"/></svg>No reports yet — submit one with Log Observation</div>';
     return;
   }
+  const open=reports.filter(r=>!r.resolved).length;
+  const total=reports.length;
   const cntEl=document.getElementById('rpt-feed-count');
-  if(cntEl) cntEl.textContent=reports.length+' total · showing latest 10';
+  if(cntEl) cntEl.textContent=`${total} total · ${open} open · showing latest 10`;
   const sorted=[...reports].reverse().slice(0,10);
   el.innerHTML=sorted.map(r=>{
-    const hasFault=r.detected_fault_type&&r.detected_fault_type!=='none';
-    const dotColor=hasFault?'var(--amber)':'var(--green)';
+    const resolved=!!r.resolved;
+    const hasFault=r.detected_fault_type&&r.detected_fault_type!=='none'&&!resolved;
+    const dotColor=resolved?'var(--green)':hasFault?'var(--amber)':'var(--green)';
     const typeLbl=(r.asset_type||'').replace(/_/g,' ');
     const parts=(r.parts_mentioned||[]).length;
     const actions=(r.actions_taken||[]).length;
     const timeStr=_timeAgo(r.received_at);
-    return `<div class="ov-report-card">
+    const resolvedAt=r.resolved_at?_timeAgo(r.resolved_at):'';
+    const sourceTag=r.source==='passenger'
+      ?'<span class="ov-report-pill" style="border-color:#6366f1;color:#6366f1">passenger</span>'
+      :'';
+    const resArgs=`'${r.report_id}','${esc(r.asset_id||'')}','${esc(r.asset_type||'')}','${esc(r.station||'')}','${esc(r.detected_fault_type||'')}','${esc((r.summary||'').slice(0,120).replace(/'/g,"\\'"))}'`;
+    const resolveBtn=resolved
+      ?`<span class="resolve-badge">✓ Resolved ${resolvedAt?resolvedAt:''}</span>`
+      :`<button class="btn-resolve" onclick="openResolveModal(${resArgs})" title="Mark as resolved">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Resolve
+        </button>`;
+    return `<div class="ov-report-card${resolved?' resolved':''}" id="rcard-${r.report_id}">
       <div class="ov-report-left"><div class="ov-report-dot" style="background:${dotColor}"></div></div>
       <div class="ov-report-body">
         <div class="ov-report-hdr">
@@ -2017,14 +2074,17 @@ function renderReports(reports){
         </div>
         <div class="ov-report-sum">${esc(r.summary||'')}</div>
         <div class="ov-report-meta">
-          <span class="badge ${hasFault?'badge-amber':'badge-green'}">${esc(r.detected_fault_type||'none')}</span>
+          <span class="badge ${resolved?'badge-green':hasFault?'badge-amber':'badge-green'}">${esc(r.detected_fault_type||'none')}</span>
+          ${sourceTag}
           ${parts>0?`<span class="ov-report-pill">${parts} part${parts>1?'s':''}</span>`:''}
           ${actions>0?`<span class="ov-report-pill">${actions} action${actions>1?'s':''}</span>`:''}
+          ${resolveBtn}
         </div>
       </div>
     </div>`;
   }).join('');
 }
+
 
 /* ═══ REPORT MODAL ═══ */
 const ASSET_TYPE_LABELS={'DE':'diesel_engine','BG':'bogie','BR':'brake_system'};
@@ -3028,6 +3088,152 @@ function mapCloseInfo(){
 heroInit();
 loadDashboard();
 setInterval(loadDashboard,30000);
+</script>
+
+<!-- ═══ RESOLUTION MODAL ═══ -->
+<div class="res-backdrop" id="res-backdrop" onclick="closeResolveModal(event)">
+  <div class="res-modal" role="dialog" aria-modal="true">
+    <div class="res-header">
+      <div class="res-header-top">
+        <div class="res-title">Resolve Report</div>
+        <button class="res-close" onclick="closeResolveModal()">&times;</button>
+      </div>
+      <div id="res-report-info" class="res-report-info"></div>
+    </div>
+    <div class="res-body">
+      <!-- Action taken -->
+      <div class="res-field">
+        <label class="res-label">Action taken</label>
+        <select class="res-select" id="res-action">
+          <option value="">— Select —</option>
+          <option value="Inspected — no further action required">Inspected — no further action required</option>
+          <option value="Part replaced">Part replaced</option>
+          <option value="Part repaired">Part repaired</option>
+          <option value="Cleaned and serviced">Cleaned and serviced</option>
+          <option value="Adjusted and calibrated">Adjusted and calibrated</option>
+          <option value="Fluid topped up / replaced">Fluid topped up / replaced</option>
+          <option value="Escalated to depot workshop">Escalated to depot workshop</option>
+          <option value="Monitoring — no immediate fix">Monitoring — no immediate fix</option>
+          <option value="Passenger complaint acknowledged">Passenger complaint acknowledged</option>
+          <option value="False alarm — no fault found">False alarm — no fault found</option>
+        </select>
+      </div>
+      <!-- Health after fix -->
+      <div class="res-field">
+        <label class="res-label">Asset health after fix</label>
+        <div class="res-health-row">
+          <button class="res-health-btn green active" id="rh-green" onclick="selectHealth('GREEN')">GREEN</button>
+          <button class="res-health-btn amber" id="rh-amber" onclick="selectHealth('AMBER')">AMBER</button>
+          <button class="res-health-btn red" id="rh-red" onclick="selectHealth('RED')">RED — still critical</button>
+        </div>
+      </div>
+      <!-- Priority -->
+      <div class="res-field">
+        <label class="res-label">Priority</label>
+        <select class="res-select" id="res-priority">
+          <option value="routine">Routine</option>
+          <option value="urgent">Urgent</option>
+          <option value="critical">Critical — out of service</option>
+        </select>
+      </div>
+      <!-- Notes (optional short) -->
+      <div class="res-field">
+        <label class="res-label">Notes <span style="font-weight:400;color:var(--text-light)">(optional)</span></label>
+        <textarea class="res-textarea" id="res-notes" placeholder="e.g. replaced brake pad set 3, torqued to spec…" maxlength="300"></textarea>
+      </div>
+    </div>
+    <div class="res-footer">
+      <button class="res-btn-cancel" onclick="closeResolveModal()">Cancel</button>
+      <button class="res-btn-submit" id="res-submit-btn" onclick="submitResolve()">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:4px"><polyline points="20 6 9 17 4 12"/></svg>
+        Mark Resolved
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══ RESOLUTION MODAL LOGIC ═══ */
+let _resReportId=null;
+let _resHealthAfter='GREEN';
+
+function openResolveModal(reportId, assetId, assetType, station, fault, summary){
+  _resReportId=reportId;
+  _resHealthAfter='GREEN';
+  // Reset form
+  document.getElementById('res-action').value='';
+  document.getElementById('res-priority').value='routine';
+  document.getElementById('res-notes').value='';
+  selectHealth('GREEN');
+  // Populate report info panel
+  const typeLbl=(assetType||'').replace(/_/g,' ');
+  document.getElementById('res-report-info').innerHTML=`
+    <div class="res-report-row"><span class="res-report-label">Report</span><span class="res-report-val">${esc(reportId)}</span></div>
+    <div class="res-report-row"><span class="res-report-label">Asset</span><span class="res-report-val">${esc(assetId)} · ${esc(typeLbl)}</span></div>
+    <div class="res-report-row"><span class="res-report-label">Station</span><span class="res-report-val">${esc(station||'—')}</span></div>
+    <div class="res-report-row"><span class="res-report-label">Fault</span><span class="res-report-val">${esc(fault||'none')}</span></div>
+    <div class="res-report-row"><span class="res-report-label">Summary</span><span class="res-report-val" style="max-width:240px;word-break:break-word;font-weight:500">${esc((summary||'').slice(0,120))}</span></div>
+  `;
+  document.getElementById('res-submit-btn').disabled=false;
+  document.getElementById('res-submit-btn').textContent='';
+  document.getElementById('res-submit-btn').innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:4px"><polyline points="20 6 9 17 4 12"/></svg>Mark Resolved';
+  document.getElementById('res-backdrop').classList.add('open');
+}
+
+function closeResolveModal(e){
+  if(e&&e.target!==document.getElementById('res-backdrop'))return;
+  document.getElementById('res-backdrop').classList.remove('open');
+  _resReportId=null;
+}
+
+function selectHealth(val){
+  _resHealthAfter=val;
+  ['GREEN','AMBER','RED'].forEach(h=>{
+    const el=document.getElementById('rh-'+h.toLowerCase());
+    if(el) el.classList.toggle('active',h===val);
+  });
+}
+
+async function submitResolve(){
+  if(!_resReportId) return;
+  const token=localStorage.getItem('m4_eng_token')||'';
+  if(!token){alert('Please log in as engineer to resolve reports.');return;}
+  const action=document.getElementById('res-action').value;
+  if(!action){document.getElementById('res-action').focus();return;}
+  const notes=document.getElementById('res-notes').value.trim();
+  const priority=document.getElementById('res-priority').value;
+  const btn=document.getElementById('res-submit-btn');
+  btn.disabled=true;
+  btn.textContent='Saving…';
+  try{
+    const res=await fetch(`/api/reports/${encodeURIComponent(_resReportId)}/resolve`,{
+      method:'PATCH',
+      headers:{'Content-Type':'application/json','X-Engineer-Token':token},
+      body:JSON.stringify({action_taken:action,health_after:_resHealthAfter,priority,notes})
+    });
+    if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.detail||'Failed');}
+    // Update card in place
+    const card=document.getElementById('rcard-'+_resReportId);
+    if(card){
+      card.classList.add('resolved');
+      const dot=card.querySelector('.ov-report-dot');
+      if(dot) dot.style.background='var(--green)';
+      const resolveBtn=card.querySelector('.btn-resolve');
+      if(resolveBtn) resolveBtn.replaceWith(Object.assign(document.createElement('span'),{className:'resolve-badge',textContent:'✓ Resolved just now'}));
+    }
+    // Update counter
+    const allCards=Array.from(document.querySelectorAll('.ov-report-card'));
+    const openCnt=allCards.filter(c=>!c.classList.contains('resolved')).length;
+    const cntEl=document.getElementById('rpt-feed-count');
+    if(cntEl) cntEl.textContent=`${allCards.length} total · ${openCnt} open · showing latest 10`;
+    document.getElementById('res-backdrop').classList.remove('open');
+  }catch(e){
+    btn.disabled=false;
+    btn.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:4px"><polyline points="20 6 9 17 4 12"/></svg>Mark Resolved';
+    alert('Could not resolve: '+e.message);
+  }
+}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeResolveModal();});
 </script>
 </body>
 </html>
