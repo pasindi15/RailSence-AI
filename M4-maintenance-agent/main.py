@@ -349,6 +349,7 @@ class TrainFlagRequest(BaseModel):
     severity: str = Field("RED", pattern="^(AMBER|RED)$")
     flagged_by: Optional[str] = Field(None, max_length=50)
     estimated_clear: Optional[str] = Field(None, max_length=50)  # e.g. "18:00" or ISO datetime
+    delay_minutes: Optional[int] = Field(None, ge=0, le=1440)    # expected service delay in minutes
 
 
 class EngineerLoginRequest(BaseModel):
@@ -916,14 +917,11 @@ async def flag_train(request: Request, payload: TrainFlagRequest, _: None = Depe
     syncs maintenance_status to Supabase so M3 Booking Agent blocks new bookings."""
     canonical_id = payload.train_id.strip().upper()
 
-    # Validate against shared canonical trains table.
-    # If Supabase is reachable and the train doesn't exist, reject the flag.
+    # Best-effort registry lookup — log but never block flagging.
+    # The trains table may not be seeded in all environments.
     canonical = supabase_store.get_train_from_registry(canonical_id)
     if canonical is None and supabase_store.get_client() is not None:
-        raise HTTPException(
-            status_code=404,
-            detail=f"TRAIN_NOT_FOUND: Train '{canonical_id}' is not in the canonical train registry.",
-        )
+        logger.warning("flag_train: train %s not in Supabase registry — flagging anyway", canonical_id)
 
     record = {
         "train_id": canonical_id,
@@ -932,6 +930,7 @@ async def flag_train(request: Request, payload: TrainFlagRequest, _: None = Depe
         "severity": payload.severity,
         "flagged_by": payload.flagged_by or "engineer",
         "estimated_clear": payload.estimated_clear,
+        "delay_minutes": payload.delay_minutes,
         "flagged_at": datetime.now(timezone.utc).isoformat(),
     }
     _train_flags[canonical_id] = record
@@ -977,6 +976,7 @@ async def get_train_status(request: Request, train_id: str):
     if canonical_id in _train_flags:
         flag = _train_flags[canonical_id]
         eta = f" Expected back in service by {flag['estimated_clear']}." if flag.get("estimated_clear") else ""
+        delay_msg = f" Expected service delay: {flag['delay_minutes']} minutes." if flag.get("delay_minutes") else ""
         return {
             "train_id": canonical_id,
             "under_maintenance": True,
@@ -984,7 +984,8 @@ async def get_train_status(request: Request, train_id: str):
             "reason": flag["reason"],
             "flagged_at": flag["flagged_at"],
             "estimated_clear": flag.get("estimated_clear"),
-            "message": f"Train {canonical_id} is currently under maintenance. Reason: {flag['reason']}.{eta}",
+            "delay_minutes": flag.get("delay_minutes"),
+            "message": f"Train {canonical_id} is currently under maintenance. Reason: {flag['reason']}.{delay_msg}{eta}",
         }
 
     # Validate against shared registry — reject invented train IDs
@@ -1121,6 +1122,7 @@ async def hub_message(request: Request, payload: HubMessageRequest):
         elif train_id in _train_flags:
             flag = _train_flags[train_id]
             eta = f" Expected back in service by {flag['estimated_clear']}." if flag.get("estimated_clear") else ""
+            delay_msg = f" Expected service delay: {flag['delay_minutes']} minutes." if flag.get("delay_minutes") else ""
             status_payload = {
                 "train_id": train_id,
                 "under_maintenance": True,
@@ -1128,9 +1130,10 @@ async def hub_message(request: Request, payload: HubMessageRequest):
                 "reason": flag["reason"],
                 "flagged_at": flag["flagged_at"],
                 "estimated_clear": flag.get("estimated_clear"),
+                "delay_minutes": flag.get("delay_minutes"),
                 "message": (
                     f"Train {train_id} is currently under maintenance and may not be in service. "
-                    f"Reason: {flag['reason']}.{eta} We apologise for the inconvenience."
+                    f"Reason: {flag['reason']}.{delay_msg}{eta} We apologise for the inconvenience."
                 ),
             }
         else:

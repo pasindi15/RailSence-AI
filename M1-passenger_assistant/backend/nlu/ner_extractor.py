@@ -48,6 +48,37 @@ STATION_ALIASES = {
     "Badulla": ["badulla", "බදුල්ල", "பதுளை"],
 }
 
+# Maps common train name aliases to M4 canonical T-IDs.
+# Ordered longest-first so "intercity express" wins over bare "intercity".
+_TRAIN_NAME_TO_ID: list[tuple[str, str]] = [
+    ("udarata menike",   "T-001"),
+    ("intercity express","T-002"),
+    ("yal devi",         "T-003"),
+    ("ruhunu kumari",    "T-004"),
+    ("podi menike",      "T-005"),
+    ("galu kumari",      "T-006"),
+    ("night mail",       "T-007"),
+    ("denuwara menike",  "T-008"),
+    # shorter aliases after full names
+    ("udarata",          "T-001"),
+    ("intercity",        "T-002"),
+    ("yal",              "T-003"),
+    ("ruhunu",           "T-004"),
+    ("podi",             "T-005"),
+    ("galu",             "T-006"),
+    ("denuwara",         "T-008"),
+]
+
+
+def _extract_train_name_id(text: str) -> str | None:
+    """Return a T-xxx ID if any known train name appears in the text."""
+    lowered = text.lower()
+    for alias, tid in _TRAIN_NAME_TO_ID:
+        if alias in lowered:
+            return tid
+    return None
+
+
 TIME_PATTERN = re.compile(r"\b([01]?\d|2[0-3]):[0-5]\d\b")
 DATE_PATTERN = re.compile(r"\b\d{4}-\d{2}-\d{2}\b")
 TRAIN_ID_PATTERN = re.compile(r"\b[A-Z]{2,12}-\d{3,5}\b", re.IGNORECASE)
@@ -239,6 +270,7 @@ def extract_entities(text: str) -> dict:
     date_match = DATE_PATTERN.search(text)
     train_id_match = TRAIN_ID_PATTERN.search(text)
     bare_train_number = None if train_id_match else _extract_bare_train_number(text)
+    name_based_train_id = None if (train_id_match or bare_train_number) else _extract_train_name_id(text)
     booking_ref_match = BOOKING_REF_PATTERN.search(text)
     passenger_count_match = PASSENGER_COUNT_PATTERN.search(text) or PASSENGER_COUNT_FOR_PATTERN.search(text)
     lowered = text.lower()
@@ -295,7 +327,7 @@ def extract_entities(text: str) -> dict:
         "to_station": route_destination,
         "time": time_match.group(0) if time_match else None,
         "travel_date": travel_date,
-        "train_id": train_id_match.group(0) if train_id_match else bare_train_number,
+        "train_id": train_id_match.group(0) if train_id_match else (bare_train_number or name_based_train_id),
         "booking_reference": booking_ref,
         "reason": reason,
         "seat_class": next((keyword.title() for keyword in SEAT_CLASS_KEYWORDS if keyword in lowered), None),

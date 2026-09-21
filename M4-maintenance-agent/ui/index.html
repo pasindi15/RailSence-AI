@@ -626,6 +626,33 @@ body.dark .rpt-tag{background:#1e3a5f;border-color:#1e40af;color:#93c5fd}
 .cat-asset-train{font-size:0.62rem;color:var(--text-light);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1}
 .cat-fault-chip{font-size:0.58rem;font-weight:700;padding:2px 6px;border-radius:8px;background:var(--amber-bg);color:#92400e;white-space:nowrap;flex-shrink:0}
 .cat-fault-chip.sev-hi{background:var(--red-bg);color:#991b1b}
+/* ── Train Service Flags card ── */
+.flag-row{display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+.flag-row:last-child{border-bottom:none}
+.flag-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:5px}
+.flag-body{flex:1;min-width:0}
+.flag-train{font-size:0.82rem;font-weight:600;color:var(--text);display:flex;align-items:center;gap:6px}
+.flag-id{font-size:0.72rem;font-weight:500;color:var(--text-light);background:var(--bg-card2);padding:1px 5px;border-radius:4px}
+.flag-reason{font-size:0.78rem;color:var(--text-muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.flag-meta{font-size:0.7rem;color:var(--text-light);margin-top:3px}
+.flag-clear-btn{font-size:0.72rem;padding:3px 10px;flex-shrink:0;color:var(--red);border-color:var(--red)}
+.flag-clear-btn:hover{background:var(--red-bg)}
+/* Flag modal */
+.flag-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.5);backdrop-filter:blur(3px);z-index:1000;display:none;align-items:center;justify-content:center}
+.flag-backdrop.open{display:flex}
+.flag-modal{background:var(--bg-card);border-radius:16px;padding:26px 28px;width:100%;max-width:440px;box-shadow:0 20px 60px rgba(0,0,0,0.25)}
+.flag-modal-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px}
+.flag-modal-title{font-size:1rem;font-weight:700;color:var(--text)}
+.flag-modal-sub{font-size:0.75rem;color:var(--text-light);margin-top:2px}
+.flag-modal-close{width:26px;height:26px;border-radius:50%;border:none;background:var(--bg-card2);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text-light)}
+.flag-field{margin-bottom:13px}
+.flag-label{display:block;font-size:0.75rem;font-weight:600;color:var(--text-muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px}
+.flag-label span{color:var(--red)}
+.flag-input,.flag-select,.flag-textarea{width:100%;padding:8px 11px;border:1.5px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-size:0.83rem;box-sizing:border-box;font-family:inherit}
+.flag-textarea{min-height:72px;resize:vertical}
+.flag-row-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.flag-error{font-size:0.78rem;color:var(--red);margin-top:6px;min-height:1em}
+.flag-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}
 .pred-hist-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
 .pred-hist-id{font-weight:700;color:var(--text);flex:1}
 .pred-hist-score{font-weight:800;min-width:28px;text-align:right}
@@ -1257,6 +1284,21 @@ body.dark .rpt-tag{background:#1e3a5f;border-color:#1e40af;color:#93c5fd}
             <div class="kpi-desc">AMBER + RED assets</div>
           </div>
         </div>
+      </div>
+
+      <!-- Train Service Flags -->
+      <div class="card" id="flags-card" style="margin-bottom:18px">
+        <div class="card-hdr" style="margin-bottom:12px">
+          <div>
+            <div class="card-title">Train Service Flags</div>
+            <div class="card-sub">Active maintenance holds · affects passenger service info</div>
+          </div>
+          <button class="btn btn-primary" style="font-size:0.78rem;padding:6px 14px;display:flex;align-items:center;gap:6px" onclick="openFlagModal()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Flag Train
+          </button>
+        </div>
+        <div id="flags-list"><div class="empty-state" style="padding:16px 0;font-size:0.8rem">No active service flags</div></div>
       </div>
 
       <!-- Main 2-col: Fleet at a Glance + right stack -->
@@ -1931,6 +1973,58 @@ body.dark .rpt-tag{background:#1e3a5f;border-color:#1e40af;color:#93c5fd}
   </div>
 </div>
 
+<!-- Flag Train Modal -->
+<div class="flag-backdrop" id="flag-backdrop" onclick="if(event.target===this)closeFlagModal()">
+  <div class="flag-modal" role="dialog" aria-modal="true" aria-labelledby="flag-modal-title">
+    <div class="flag-modal-hdr">
+      <div>
+        <div class="flag-modal-title" id="flag-modal-title">Flag Train for Maintenance</div>
+        <div class="flag-modal-sub">Passengers asking about this train will see the maintenance reason</div>
+      </div>
+      <button class="flag-modal-close" onclick="closeFlagModal()" aria-label="Close">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <form onsubmit="submitTrainFlag(event)">
+      <div class="flag-field">
+        <label class="flag-label" for="flag-train-sel">Train<span>*</span></label>
+        <select class="flag-select" id="flag-train-sel" required>
+          <option value="">— Select train —</option>
+        </select>
+      </div>
+      <div class="flag-field">
+        <label class="flag-label" for="flag-reason">Reason / Issue<span>*</span></label>
+        <textarea class="flag-textarea" id="flag-reason" maxlength="500" placeholder="e.g. Brake system fault detected — repair in progress at Colombo depot" required></textarea>
+      </div>
+      <div class="flag-row-2">
+        <div class="flag-field">
+          <label class="flag-label" for="flag-severity">Severity</label>
+          <select class="flag-select" id="flag-severity">
+            <option value="AMBER" selected>AMBER — Needs attention</option>
+            <option value="RED">RED — Out of service</option>
+          </select>
+        </div>
+        <div class="flag-field">
+          <label class="flag-label" for="flag-delay">Expected Delay (min)</label>
+          <input class="flag-input" id="flag-delay" type="number" min="0" max="1440" placeholder="e.g. 45">
+        </div>
+      </div>
+      <div class="flag-field">
+        <label class="flag-label" for="flag-clear">Estimated Clear Time</label>
+        <input class="flag-input" id="flag-clear" type="text" placeholder="e.g. 14:30 today or 2026-09-21 15:00" maxlength="80">
+      </div>
+      <div class="flag-error" id="flag-error"></div>
+      <div class="flag-footer">
+        <button type="button" class="btn-ghost" onclick="closeFlagModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="flag-submit-btn" style="display:flex;align-items:center;gap:6px">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+          Flag Train
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <!-- ═══ Chat FAB ═══ -->
@@ -2337,6 +2431,7 @@ async function doEngineerLogin(e){
     if(res.ok && d.token){
       localStorage.setItem('m4_eng_auth','1');
       localStorage.setItem('m4_eng_token',d.token);
+      localStorage.setItem('m4_eng_name',d.name||id);
       // Show success state
       document.getElementById('lg-form-wrap').style.display='none';
       var suc=document.getElementById('lg-success');
@@ -2409,6 +2504,7 @@ async function loadDashboard() {
     renderFleetGlance();
     if(document.getElementById('page-trains').classList.contains('active')) renderTrains();
     heroUpdateContent(heroIdx);
+    loadMaintenanceFlags();
   } catch(e){console.error('Dashboard error:',e)}
 }
 
@@ -2653,7 +2749,7 @@ async function submitReport(){
     errEl.className='rpt-error show';
   }
 }
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closeReportModal()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeReportModal();closeFlagModal();}});
 
 /* ═══ FLEET ═══ */
 let fleetFilter='ALL', fleetTypeFilter='ALL', fleetSort={col:null,dir:1}, fleetOpenRow=null;
@@ -3690,6 +3786,78 @@ function mapCloseInfo(){
   document.getElementById('map-info-panel').classList.remove('visible');
   document.querySelectorAll('.map-train-card').forEach(c=>c.classList.remove('selected'));
   document.querySelectorAll('[id^="map-dot-"]').forEach(d=>{d.setAttribute('fill','#2563eb');d.setAttribute('r','6');});
+}
+
+/* ═══ TRAIN SERVICE FLAGS ═══ */
+async function loadMaintenanceFlags(){
+  try{
+    const r=await fetch('/api/trains-under-maintenance',{headers:{'X-Engineer-Token':localStorage.getItem('m4_eng_token')||''}});
+    const d=await r.json();
+    const flags=d.trains||[];
+    const el=document.getElementById('flags-list');
+    if(!el)return;
+    if(!flags.length){
+      el.innerHTML='<div class="empty-state" style="padding:16px 0;font-size:0.8rem">No active service flags</div>';
+      return;
+    }
+    el.innerHTML=flags.map(f=>{
+      const tr=TRAINS.find(t=>t.id===f.train_id)||{};
+      const sev=f.severity||'medium';
+      const sevColor={AMBER:'var(--amber)',RED:'var(--red)'}[sev]||'var(--amber)';
+      const delay=f.delay_minutes!=null?`${f.delay_minutes} min delay`:'';
+      const eta=f.estimated_clear?`· Clears ~${esc(f.estimated_clear)}`:'';
+      const by=f.flagged_by?`by ${esc(f.flagged_by)}`:'';
+      const meta=[delay,eta,by].filter(Boolean).join(' ');
+      return `<div class="flag-row"><div class="flag-dot" style="background:${sevColor}"></div><div class="flag-body"><div class="flag-train">${esc(tr.name||f.train_id)}<span class="flag-id">${esc(f.train_id)}</span></div><div class="flag-reason">${esc(f.reason||'')}</div>${meta?`<div class="flag-meta">${meta}</div>`:''}</div><button class="btn-ghost flag-clear-btn" onclick="clearFlag('${esc(f.train_id)}')">Clear</button></div>`;
+    }).join('');
+  }catch(e){console.warn('loadMaintenanceFlags:',e);}
+}
+
+function openFlagModal(){
+  const sel=document.getElementById('flag-train-sel');
+  sel.innerHTML='<option value="">— Select train —</option>'+TRAINS.map(t=>`<option value="${t.id}">${esc(t.name)} (${t.id})</option>`).join('');
+  document.getElementById('flag-reason').value='';
+  document.getElementById('flag-severity').value='AMBER';
+  document.getElementById('flag-delay').value='';
+  document.getElementById('flag-clear').value='';
+  document.getElementById('flag-error').textContent='';
+  document.getElementById('flag-backdrop').classList.add('open');
+}
+
+function closeFlagModal(){document.getElementById('flag-backdrop').classList.remove('open');}
+
+async function submitTrainFlag(e){
+  e.preventDefault();
+  const trainId=document.getElementById('flag-train-sel').value;
+  const reason=document.getElementById('flag-reason').value.trim();
+  const severity=document.getElementById('flag-severity').value;
+  const delayVal=document.getElementById('flag-delay').value;
+  const estClear=document.getElementById('flag-clear').value.trim();
+  const errEl=document.getElementById('flag-error');
+  const btn=document.getElementById('flag-submit-btn');
+  if(!trainId||!reason){errEl.textContent='Train and reason are required.';return;}
+  const engName=localStorage.getItem('m4_eng_name')||'Engineer';
+  btn.disabled=true;btn.textContent='Flagging…';errEl.textContent='';
+  try{
+    const payload={train_id:trainId,reason,severity,flagged_by:engName};
+    if(delayVal)payload.delay_minutes=parseInt(delayVal,10);
+    if(estClear)payload.estimated_clear=estClear;
+    const res=await fetch('/api/flag-train',{method:'POST',headers:{'Content-Type':'application/json','X-Engineer-Token':localStorage.getItem('m4_eng_token')||''},body:JSON.stringify(payload)});
+    if(res.status===401){closeFlagModal();localStorage.removeItem('m4_eng_token');localStorage.removeItem('m4_eng_auth');_lgResetAndShow();toast('Session expired — please sign in again.');return;}
+    if(!res.ok){const d2=await res.json().catch(()=>({}));const det=d2.detail;errEl.textContent=Array.isArray(det)?det.map(e=>e.msg||JSON.stringify(e)).join('; '):(typeof det==='string'?det:'Failed to flag train.');return;}
+    closeFlagModal();toast('Train flagged for maintenance.');loadMaintenanceFlags();
+  }catch(ex){errEl.textContent='Connection error.';}
+  finally{btn.disabled=false;btn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Flag Train';}
+}
+
+async function clearFlag(trainId){
+  if(!confirm(`Clear maintenance flag for ${trainId}?`))return;
+  try{
+    const res=await fetch(`/api/flag-train/${encodeURIComponent(trainId)}`,{method:'DELETE',headers:{'X-Engineer-Token':localStorage.getItem('m4_eng_token')||''}});
+    if(res.status===401){localStorage.removeItem('m4_eng_token');localStorage.removeItem('m4_eng_auth');_lgResetAndShow();toast('Session expired — please sign in again.');return;}
+    if(!res.ok){const d2=await res.json().catch(()=>({}));const det=d2.detail;toast(Array.isArray(det)?det.map(e=>e.msg||JSON.stringify(e)).join('; '):(typeof det==='string'?det:'Failed to clear flag.'));return;}
+    toast('Maintenance flag cleared.');loadMaintenanceFlags();
+  }catch(ex){toast('Connection error.');}
 }
 
 /* ═══ INIT ═══ */

@@ -57,9 +57,10 @@ limiter = Limiter(key_func=get_remote_address, default_limits=["120/minute"])
 async def lifespan(_app):
     try:
         incident_retriever._load_root_env()
-        if os.getenv("SUPABASE_URL") and os.getenv("SUPABASE_PUBLISHABLE_KEY"):
-            await asyncio.to_thread(incident_retriever._get_embedding_model)
-            logger.info("Warmed RAG embedding model")
+        # Warm up unconditionally — the embedding model is always needed for
+        # predictions, and lazy-loading it blocks the async event loop.
+        await asyncio.to_thread(incident_retriever._get_embedding_model)
+        logger.info("Warmed RAG embedding model")
     except Exception as exc:
         logger.warning("RAG model warm-up skipped: %s", exc.__class__.__name__)
     try:
