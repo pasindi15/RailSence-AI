@@ -8,6 +8,7 @@
 > **Service Port**: `8005` | **Swagger API**: `http://localhost:8005/docs`  
 > **Operations Control Room**: `http://localhost:8005/`  
 > **Admin Operations Console**: `http://localhost:8005/admin`  
+> **Also embedded in**: the unified portal at `http://localhost:3000/admin/operations`, and the passenger portal `http://localhost:3000/user` (delay popup + incident map)
 
 ---
 
@@ -15,29 +16,35 @@
 1. [Executive Summary & Role in RailSense AI](#1-executive-summary--role-in-railsense-ai)
 2. [What I Built (My Deliverables as Member B)](#2-what-i-built-my-deliverables-as-member-b)
 3. [User-Side Functionalities (Passenger Experience)](#3-user-side-functionalities-passenger-experience)
-4. [Admin-Side Functionalities (Traffic Controller & Admin Experience)](#4-admin-side-functionalities-traffic-controller--admin-experience)
-5. [Inter-Agent Collaboration (How M2 Works with the Mesh)](#5-inter-agent-collaboration-how-m2-works-with-the-mesh)
-6. [Deep-Dive: Machine Learning Delay Model](#6-deep-dive-machine-learning-delay-model)
-7. [Deep-Dive: NLP Incident Triage & Summarization](#7-deep-dive-nlp-incident-triage--summarization)
-8. [Deep-Dive: Information Retrieval & Grounded RAG](#8-deep-dive-information-retrieval--grounded-rag)
-9. [Graceful Degradation & Resilience Engineering](#9-graceful-degradation--resilience-engineering)
-10. [Empirical Evaluation Benchmarks & Evidence](#10-empirical-evaluation-benchmarks--evidence)
-11. [API Contracts & Endpoints](#11-api-contracts--endpoints)
-12. [🎓 Viva Examination Q&A Defense Master](#12-viva-examination-qa-defense-master)
+4. [Admin-Side Functionalities (Control Room & Admin Console)](#4-admin-side-functionalities-control-room--admin-console)
+5. [Verified Incident Map (Admin-Approved, Today Only)](#5-verified-incident-map-admin-approved-today-only)
+6. [Operations Assistant (Role-Aware Tool-Calling Chatbot)](#6-operations-assistant-role-aware-tool-calling-chatbot)
+7. [3D Banners & "Loco" the Train Robot](#7-3d-banners--loco-the-train-robot)
+8. [Roles & Permissions (RBAC)](#8-roles--permissions-rbac)
+9. [Inter-Agent Collaboration (How M2 Works with the Mesh)](#9-inter-agent-collaboration-how-m2-works-with-the-mesh)
+10. [Deep-Dive: Machine Learning Delay Model](#10-deep-dive-machine-learning-delay-model)
+11. [Deep-Dive: NLP (Incident Triage, Passenger Answers, Assistant)](#11-deep-dive-nlp-incident-triage-passenger-answers-assistant)
+12. [Deep-Dive: Information Retrieval & Grounded RAG](#12-deep-dive-information-retrieval--grounded-rag)
+13. [Graceful Degradation & Resilience Engineering](#13-graceful-degradation--resilience-engineering)
+14. [Empirical Evaluation Benchmarks & Test Suite](#14-empirical-evaluation-benchmarks--test-suite)
+15. [Setup, Configuration & Running](#15-setup-configuration--running)
+16. [API Contracts & Endpoints](#16-api-contracts--endpoints)
+17. [Project Structure](#17-project-structure)
+18. [🎓 Viva Examination Q&A Defense Master](#18-viva-examination-qa-defense-master)
 
 ---
 
 ## 1. Executive Summary & Role in RailSense AI
 
-The **Operations & Delay-Prediction Agent (M2)** is the operational intelligence core of the RailSense AI platform. While other agents handle conversational passenger intake (M1), ticket reservation (M3 Booking), and rolling-stock health (M4), **M2 is responsible for railway network situational awareness, real-time delay forecasting, incident triage, and grounded operational explanations.**
+The **Operations & Delay-Prediction Agent (M2)** is the operational intelligence core of the RailSense AI platform. While other agents handle conversational passenger intake (M1), ticket reservation (M3 Booking), and rolling-stock health (M4), **M2 is responsible for railway network situational awareness, delay forecasting, incident triage and approval, and grounded operational explanations** — for passengers, operations engineers and administrators alike.
 
 ```
-                        PASSENGER INQUIRY (M1)
-                                  │
-                                  ▼
-                        AGENT HUB ROUTER (M3)
-                                  │  POST /internal/messages (intent: delay_check)
-                                  ▼
+                        PASSENGER INQUIRY (M1)            PASSENGER PORTAL (:3000/user)
+                                  │                          │ Delay / Operations popup
+                                  ▼                          │ Verified incident map
+                        AGENT HUB ROUTER (M3)                │
+                                  │  POST /internal/messages │
+                                  ▼                          ▼
 ┌────────────────────────────────────────────────────────────────────────┐
 │                   M2 OPERATIONS AGENT (Port 8005)                      │
 │                                                                        │
@@ -45,80 +52,88 @@ The **Operations & Delay-Prediction Agent (M2)** is the operational intelligence
 │   2. Exact Historical Lookup -> ML Delay Regressor (GBR)               │
 │   3. Vector IR / RAG Precedent Search (Supabase pgvector / TF-IDF)     │
 │   4. Grounded Plain-Language Explanation Synthesis                     │
-│   5. Auto-Alert Publishing (Delay >= 5.0m -> Hub & Redis)              │
-│   6. Immutable Audit Trail (Supabase audit_events + local JSONL)       │
+│   5. Passenger NLP answers (intent detection + template NLG)           │
+│   6. Incident triage → admin approval → today's verified-incident map  │
+│   7. Operations Assistant: role-aware Gemini tool calling, no guessing │
+│   8. Auto-Alert Publishing (Delay >= 5.0m -> Hub & Redis)              │
+│   9. Immutable Audit Trail (Supabase audit_events + local JSONL)       │
 │                                                                        │
 │   [ Operations Control Room UI ]     [ Admin Operations Console ]      │
+│     3D delay-skyline banner            3D governance banner            │
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
-M2 solves three critical railway problems:
-1. **Eliminating Unexplained Delays**: Instead of telling a passenger "Train delayed 15 min", M2 provides a scientifically calculated delay grounded in real operational factors (e.g. *"Heavy rain near Kandy resulting in a 16.2 min precautionary speed restriction"*).
-2. **Preventing AI Hallucinations**: Delays and causes are never invented by an LLM. Predictions stem from a trained `GradientBoostingRegressor`, and explanations are strictly grounded in retrieved historical precedents.
-3. **Empowering Control Room Operators**: Provides dispatchers with live delay heatmaps, hourly congestion pressure graphs, incident categorization, automated triage, and model retraining controls.
+M2 solves four critical railway problems:
+1. **Eliminating Unexplained Delays**: Instead of telling a passenger "Train delayed 15 min", M2 provides a calculated delay grounded in real operational factors (e.g. *"Heavy rain near Kandy resulting in a 16.2 min precautionary speed restriction"*).
+2. **Preventing AI Hallucinations**: Delays and causes are never invented by an LLM. Predictions come from a trained `GradientBoostingRegressor`, explanations are grounded in retrieved precedents, and the Operations Assistant may only phrase results returned by fixed data tools — with a number-check that rejects any figure not found in those results.
+3. **Controlling What the Public Sees**: Staff-filed incidents stay private until an administrator approves them; only approved incidents, with an allowlisted set of fields, reach the public map — and only for the current day.
+4. **Empowering Control Room Operators**: Live delay heatmaps, hourly delay pressure, incident management, model retraining with rollback, an audit trail, and an assistant that answers operational questions from live data.
 
 ---
 
 ## 2. What I Built (My Deliverables as Member B)
 
-As the developer of **Module 2**, I engineered the following end-to-end components:
-
-* **Machine Learning Pipeline (`ml/`)**:
-  * `train_delay_model.py`: End-to-end training pipeline with One-Hot feature encoding and cross-validation.
-  * `predict.py`: Real-time inference engine loading serialized artifacts (`delay_model.pkl`, `feature_importances.json`).
-  * Real observation matcher prioritizing exact historical train records before general regression.
-* **Natural Language Processing Pipeline (`nlp/`)**:
-  * Input sanitization layer using `bleach` and Pydantic validators preventing XSS and injection attacks.
-  * `classify_incident.py`: Incident classifier categorizing raw text into 5 operational classes.
-  * `summarize_incident.py`: Extractive frequency-scored sentence summarizer generating 1–2 sentence operator briefs.
-* **Information Retrieval (IR) & Grounded RAG (`rag/`)**:
-  * `embed_documents.py`: Vector embedding pipeline utilizing `sentence-transformers/all-MiniLM-L6-v2`.
-  * `incident_retriever.py`: Dual-backend retriever querying Supabase `pgvector` (`match_incidents` RPC) with local Scikit-Learn TF-IDF cosine similarity fallback.
-  * `explanation.py`: Grounded explanation synthesizer combining numerical delay, top model feature importances, and retrieved incident citations.
-* **Full-Stack Operations Interfaces (`ui/` & `admin_ui/`)**:
-  * **Operations Control Room (`ui/index.html`)**: Three screens — a consolidated network dashboard, a delay prediction lab that shows the ML result together with its RAG-grounded explanation, and full incident CRUD.
-  * **Admin Operations Console (`admin_ui/index.html`)**: Incident management, delay-model retraining with rollback, the read-only agent audit log, and the RBAC officer/role administration that gates them.
-* **Resilience & Storage Layer (`supabase_store.py`, `hub_client.py`)**:
-  * Dual-persistence architecture ensuring complete functionality online (Supabase PostgreSQL + pgvector) and offline (local CSV, TF-IDF, JSONL).
-  * Outbound alert publisher broadcasting alerts to the Agent Hub and Upstash Redis.
+* **Machine Learning Pipeline (`ml/`)**
+  * `train_delay_model.py`: training pipeline with one-hot feature encoding, held-out evaluation and model archiving.
+  * `predict.py`: inference engine loading `delay_model.pkl` / `feature_importances.json`, hot-reloaded when the model file changes.
+  * Exact historical-observation matcher that is preferred over regression when a train/route was actually observed.
+* **Natural Language Processing (`nlp/`)**
+  * Input sanitisation (`bleach` + Pydantic validators) against XSS / injection.
+  * `classify_incident.py` and `summarize_incident.py`: incident classification and extractive summarisation.
+  * `passenger_answer.py`: passenger question **intent detection** (delay, arrival, departure, location, reason, maintenance, incidents, stops, booking hand-off) and **template NLG** producing friendly, data-grounded answers.
+* **Information Retrieval & Grounded RAG (`rag/`)**
+  * `embed_documents.py`: `all-MiniLM-L6-v2` 384-d embeddings into Supabase `pgvector`.
+  * `incident_retriever.py`: pgvector `match_incidents` RPC with offline TF-IDF cosine fallback.
+  * `explanation.py`: grounded explanation synthesis from prediction + feature importances + precedents.
+* **Incident Approval Workflow & Map (`incident_map.py`, `data/station_locations.json`)**
+  * Admin-only Approve / Reject; a public, allowlisted, **today-only** map feed; one shared Leaflet map on three pages.
+* **Operations Assistant (`ops_agent.py`, `ops_agent_tools.py`)**
+  * Gemini function calling over seven fixed tools, filtered by role; fixed refusal messages; number-grounding guard; per-user history; audit logging.
+* **Full-Stack Interfaces (`ui/`, `admin_ui/`, `ui/shared/`)**
+  * **Operations Control Room (`ui/index.html`)** — 3D delay-skyline banner, consolidated dashboard, verified-incident map, delay prediction lab (route → train/station dropdowns), incident CRUD with station dropdown and searchable train picker.
+  * **Admin Operations Console (`admin_ui/`)** — 3D governance banner, incident management with Approve/Reject and map, model retraining with rollback, read-only audit log, RBAC officer/role administration.
+  * **Shared browser modules (`ui/shared/`)** — incident map, train picker, Operations Assistant widget, 3D stage and train robot, used by both consoles (and the map by the passenger portal).
+* **Resilience & Storage Layer (`supabase_store.py`, `admin/admin_db.py`, `hub_client.py`)**
+  * Dual persistence (Supabase PostgreSQL + pgvector online; CSV / TF-IDF / JSONL offline) and the Hub / Upstash alert publisher.
+* **Automated tests (`tests/`)** — 32 pytest cases covering the approval workflow, map privacy, midnight cut-off, assistant grounding, role restrictions and history scoping.
 
 ---
 
 ## 3. User-Side Functionalities (Passenger Experience)
 
-Although M2 is an operations microservice, it powers the passenger intelligence delivered through the **User Portal** (`http://localhost:3000/user`) and the **M1 Passenger Chat**:
+M2 powers the passenger intelligence delivered through the **User Portal** (`http://localhost:3000/user`) and the **M1 Passenger Chat**.
 
-### 1. Conversational Delay Inquiries
-When a passenger in the chat asks:
-> *"Is the 14:35 train from Colombo Fort to Kandy delayed?"*
+### 3.1 Conversational Delay Inquiries (via M1 → Hub → M2)
+When a passenger asks M1 *"Is the 14:35 train from Colombo Fort to Kandy delayed?"*, M2:
+1. **Validates the train** against the shared Supabase `trains` registry (`PM-4082`, bare service numbers such as `1005` are resolved too).
+2. **Looks up an exact observation** in `operations_history` (e.g. `YD-9337` → 16.2 min, track-bed flooding near Kandy).
+3. **Falls back to the ML model** (route, hour, day type, weather, station, incident type) when there is no exact record.
+4. **Retrieves precedents** with the IR retriever and composes a grounded explanation.
+5. Returns `predicted_delay_minutes`, `confidence`, `explanation`, `similar_past_incidents`, `model_version`.
 
-M2 performs the following behind the scenes:
-1. **Canonical Train Validation**: Resolves `PM-4082` / `YD-9337` against the shared Supabase `trains` registry.
-2. **Exact Observation Retrieval**: Checks if this specific train on this route has a recorded observation in `operations_history`. For example, for train `YD-9337`, it discovers an exact recorded delay of **16.2 minutes** caused by track bed flooding near Kandy.
-3. **ML Prediction Fallback**: If the train is not an exact historical record, M2 extracts the scheduled hour (14:00 = rush hour), route, day type, and weather, feeding them into the trained `GradientBoostingRegressor` to compute an expected delay.
-4. **Historical Precedent Citations**: M2's IR retriever fetches similar historical incidents (e.g. *"Signal failure reported near Kandy, historical delay 9.4 min"*).
-5. **Grounded Response Envelope**: Packages a comprehensive payload containing:
-   * `predicted_delay_minutes`: 16.2
-   * `confidence`: "high"
-   * `explanation`: *"Historical observation for YD-9337: 16.2 minutes on Colombo Fort - Kandy. Recorded operational cause: Flooding risk reported on the track bed near Kandy, service ran at reduced speed as a precaution."*
-   * `similar_past_incidents`: List of matching historical precedents.
-   * `model_version`: "phase2-gbr-v1" or "historical-observation-v1"
+### 3.2 "Delay" / "Operations" Popup on Today's Services
+Each row of the passenger portal's *Today's services* board has **Delay** and **Operations** buttons. They open an animated popup (glassmorphism card that grows from the clicked button, rail progress track with the train's live position, delay gauge, word-by-word typed answers, suggestion chips, follow-up question box; closes on background click or Esc).
 
-### 2. Live Train Status Board on Web Portal
-On the Passenger Portal (`/user`), users view real-time train board statuses. The gateway queries M2's `/route-status/{route_id}` endpoint, which calculates real-time route health (`normal`, `watch`, `critical`), average line delay, and active train count.
+The popup calls **`POST /passenger/ask`** with the question and the clicked service's live context:
+
+| Step | What happens |
+|---|---|
+| Intent detection | `nlp/passenger_answer.detect_intent()` classifies the question: delay, eta, departure, location, reason, maintenance, incidents, stops, greeting, status — or `handoff` for tickets/fares/refunds. |
+| Evidence | The board route is mapped to a model corridor; the delay comes from this train's recorded journeys or the delay model (no Hub alert); today's incident reports and, for "why" questions, retrieved precedents are added. |
+| NLG | `compose_answer()` builds a headline, friendly paragraphs ("Instead of the scheduled 08:35, you can expect it at Kandy around 08:42"), fact tiles, a gauge and suggested follow-ups — every figure traced to data. |
+| Hand-off | Booking/fare questions return `handoff: true` and the popup forwards them to the Passenger Assistant (`/api/chat`). |
+
+### 3.3 Incidents on the Network (Passenger Map)
+The home page shows a read-only map of incidents **approved by an administrator today** (see §5): type, station, train, a short summary and "verified 12 min ago". No internal fields and no admin controls.
+
+### 3.4 Route Status
+The gateway can query `GET /route-status/{route_id}` for a corridor's posture (`normal` / `watch` / `critical`), average delay and train count.
 
 ---
 
-## 4. Admin-Side Functionalities (Traffic Controller & Admin Experience)
+## 4. Admin-Side Functionalities (Control Room & Admin Console)
 
-The operations surface was deliberately reduced from ~15 panels to **four graded feature
-areas plus one consolidated dashboard**. Every panel that remains maps 1:1 to a rubric
-item (ML, NLP, IR/RAG, agent-hub integration, auditability), and every figure it shows is
-read from the real persistence layer — Supabase Postgres/pgvector when online, the local
-CSV / JSONL / TF-IDF stores when offline. **There are no hardcoded, mocked, or randomly
-generated values in any surviving screen.** When Supabase is unreachable each screen shows
-an explicit *"Offline mode — showing local data"* banner rather than silently serving
-stale or empty results.
+The operations surface was deliberately reduced from ~15 panels to **graded feature areas plus one consolidated dashboard**. Every figure shown is read from the real persistence layer — Supabase Postgres/pgvector when online, the local CSV / JSONL / TF-IDF stores when offline. **There are no hardcoded, mocked or randomly generated values.** When Supabase is unreachable each screen shows an explicit *"Offline mode — showing local data"* banner.
 
 ### Interface A: Operations Control Room (`http://localhost:8005/`)
 
@@ -126,142 +141,167 @@ stale or empty results.
 ┌──────────────────────────────────────────────────────────────────────────┐
 │ RailSense AI — Operations Control Room          [SUPABASE LIVE] 17:04:22 │
 ├──────────────────────────────────────────────────────────────────────────┤
-│ SCREEN 1 · NETWORK DASHBOARD          (one /api/dashboard aggregate)      │
-│ [Network delay 8.4m] [On-time 43.8%] [Trips 2,999] [Audited 330]         │
-│ ├ Delay pressure by hour (24h curve)  ├ Cause of delay (incident mix)    │
-│ ├ Route delay heatmap — 7 corridors, trips / avg / max / incident rate   │
+│ SCREEN 1 · NETWORK DASHBOARD                                             │
+│ ┌─ 3D banner: Loco the train robot + corridor delay skyline + 24h ring ─┐│
+│ [Network delay 8.4m] [On-time 43.8%] [Trips 2,999] [Audited 490]         │
+│ ├ Delay pressure by hour (24h curve)  ├ Cause of delay (type-coloured)   │
+│ ├ Route delay heatmap (7 corridors)   ├ Verified incident map (today)    │
 │ └ Model evidence (R², MAE, RMSE)      └ NLP & retrieval evidence         │
 ├──────────────────────────────────────────────────────────────────────────┤
 │ SCREEN 2 · DELAY PREDICTION & RAG EXPLANATION                            │
-│ Request form ──POST /predict-delay──▶ prediction + confidence + version  │
-│                                       grounded explanation               │
-│                                       similar_past_incidents (real)      │
-│                                       feature importances (real file)    │
+│ Route ▾ → Train ID ▾ / Station ▾ ──POST /predict-delay──▶ prediction,    │
+│   confidence, grounded explanation, similar incidents, feature chart     │
 ├──────────────────────────────────────────────────────────────────────────┤
 │ SCREEN 3 · INCIDENT MANAGEMENT — create · read · update · delete         │
+│   Report form: Station ▾ + searchable Train picker ("Podi Menike · 1005")│
 └──────────────────────────────────────────────────────────────────────────┘
+                                          ✦ Operations Assistant (floating)
 ```
 
-**1. Network Dashboard (consolidated).** What were three separate panels making three
-separate calls — *Network KPI Overview*, *Route Delay Heatmap* and *Hourly Delay Pressure
-Curve* — are now one section backed by a **single** `GET /api/dashboard` aggregate. It
-reports network-wide mean delay, on-time rate, corpus size and audit volume; the 24-hour
-delay-pressure curve (each bar annotated with its sample count); the per-corridor heatmap
-with trips, mean delay, max delay and incident rate; the incident-type mix; and the
-committed ML / NLP / retrieval evaluation metrics. The response carries a `data_source`
-block (`{history, events, offline}`) that drives the offline banner.
+**1. Network Dashboard.** One `GET /api/dashboard` aggregate feeds the KPIs, the 24-hour delay-pressure curve, the per-corridor heatmap, the incident mix and the committed ML / NLP / retrieval metrics. `data_source` drives the offline banner. The **verified incident map** sits beside the heatmap (§5), and the *Cause of delay* bars use the same per-type colours as the map markers.
 
-**2. Delay Prediction & RAG Explanation (merged).** The old *Interactive Delay Simulation
-Drawer* and the separate display of `similar_past_incidents` are now one screen, because
-a prediction and the evidence it rests on should not be read in two places. The form posts
-to the **existing** `/predict-delay` endpoint — no forked route. The backend chain is:
+**2. Delay Prediction & RAG Explanation.** The **Route** field is a dropdown; choosing a route fills the **Train ID** and **Station** dropdowns with that corridor's trains and stations in travel order, from `GET /api/route-options` (the same corpus the model was trained on; every train id exists in the shared registry). The form posts to `/predict-delay`:
 
-&nbsp;&nbsp;&nbsp;&nbsp;`shared.train_repository` train validity check →
-exact historical match in `operations_history` →
-else `ml/predict.py` against `delay_model.pkl` →
-`rag/incident_retriever.py` (pgvector `match_incidents` RPC, TF-IDF fallback) →
-`rag/explanation.py`
+&nbsp;&nbsp;&nbsp;&nbsp;`shared.train_repository` train check → exact historical match → `ml/predict.py` → `rag/incident_retriever.py` → `rag/explanation.py`
 
-The screen renders `predicted_delay_minutes`, `confidence`, the grounded `explanation`,
-the retrieved incidents with their real route / station / delay / similarity, the
-`model_version`, and both the `retrieval_method` and `explanation_method` so the examiner
-can see which path served the answer. The feature-importance chart reads
-`ml/feature_importances.json` as written by the most recent training run.
-
-**3. Incident Management — full CRUD (merged).** The *Incident Triage & Staff Briefing
-Modal* (create) and the admin *Incident Review Queue* (review/reclassify) are now a single
-screen:
+**3. Incident Management — full CRUD.**
 
 | Operation | Route | Behaviour |
 |---|---|---|
-| **Create** | `POST /incident-report` *(contract unchanged)* | `bleach` + Pydantic sanitisation → `nlp/classify_incident.py` → `nlp/summarize_incident.py` → persisted to `incident_reports` → **fed to the embeddings pipeline** so RAG can cite it from then on |
-| **Read** | `GET /incidents` | Paginated live listing with real `classified_type`, `summary`, `nlp_method`, `review_status` and timestamp; filter by text, classification and status |
-| **Update** | `PATCH /incidents/{id}` | Controller corrects the classification or edits the summary; written back to the stored row **and** re-indexed for retrieval |
-| **Delete** | `DELETE /incidents/{id}` | Removes the row **and** its `incident_embeddings` vector, so RAG never retrieves a ghost record |
-
-`GET`/`PATCH`/`DELETE` are **additive** — the `POST /incident-report` request/response
-shape that M1 and the Hub rely on is untouched.
+| **Create** | `POST /incident-report` *(contract unchanged)* | Sanitisation → classification → summarisation → `incident_reports` → embedded for RAG. The form's **Station** is a dropdown of mappable corpus stations and **Train** is a searchable picker over `GET /api/trains` (named services such as *Podi Menike · 1005* first, ranked by the chosen station; any train by id, name or route). |
+| **Read** | `GET /incidents` | Paginated listing; filter by text, classification and status (incl. `verified`). |
+| **Update** | `PATCH /incidents/{id}` | Correct classification/summary; re-indexed for retrieval. A correction to a *verified* incident takes it off the public map until it is re-approved. |
+| **Delete** | `DELETE /incidents/{id}` | Removes the row and its embedding. |
 
 ### Interface B: Admin Operations Console (`http://localhost:8005/admin`)
 
-**4. Model Retraining with Rollback.** "Retrain Now" runs `ml/train_delay_model.py`
-against the **current** corpus — Supabase `operations_history` when reachable, the CSV
-otherwise, never a cached sample. Before the new `delay_model.pkl` is written, the
-outgoing model is archived to `ml/model_versions/delay_model_<unix_ts>.pkl` together with
-a `.json` sidecar holding the metrics *that* model scored, so the rollback list shows real
-filenames, real timestamps and real per-version metrics instead of placeholder text.
-Retraining refreshes `feature_importances.json`, and `ml/predict.py` re-reads the model
-whenever its mtime changes — **so both retrain and rollback take effect without a service
-restart**. Rollback archives the current model first and restores the selected version's
-metrics alongside it.
+* **Home** — 3D governance banner (§7) plus live stats: data source, incidents logged, audit events, model versions.
+* **Incident Management** — the same CRUD, plus **Approve / Reject** buttons (administrators only) and the verified-incident map with an "unmapped" note for stations without coordinates.
+* **Model Retraining with Rollback** — "Retrain Now" runs `ml/train_delay_model.py` on the current corpus, archives the outgoing model to `ml/model_versions/` with a metrics sidecar, refreshes feature importances, and hot-reloads the predictor. Rollback restores any archived version without a restart.
+* **Audit & Agent Communication Log (read-only)** — `audit_events` with filters pushed down to Postgres; no update/delete routes exist (write verbs return 405).
+* **Officers & Access / Roles & Permissions** — the RBAC layer (§8).
+* **Operations Assistant** — floating ✦ button on every tab (§6).
 
-**5. Audit & Agent Communication Log (read-only).** Reads `audit_events` directly
-(Supabase primary, `data/audit_log.jsonl` fallback). Every row is a genuinely logged event
-carrying `message_id`, `sender_agent`, `receiver_agent`, `intent`, `timestamp` and
-`outcome`. Search and filter by agent, intent and date range are **pushed down to
-Postgres** when Supabase is reachable, so a large table is never pulled into the process
-to be filtered in Python; the JSONL fallback applies the same predicates locally. The
-screen is **tamper-evident by construction**: no update or delete route exists for
-`audit_events`, and every write verb against it returns 405.
-
-*Officers & Access* and *Roles & Permissions* also remain. They are not themselves graded
-rubric items, but they are the RBAC layer that gates all four screens above, and the
-unified gateway routes to them directly at `/admin/operations/admin/officers`.
-
-### Panels removed in this consolidation
+### Panels removed in the consolidation
 
 | Removed | Why | What was kept |
 |---|---|---|
-| Active Risk Zones & Level Crossing Monitors | Simulated data, outside graded scope | — (the backing `/api/operations` mock store was deleted outright) |
-| Live Auto-Refreshing Event Feed | Duplicated the audit explorer | Events still surface in `/api/dashboard` and the audit log |
-| Data Management (CSV import/export screen) | Not a graded rubric item | `data/import_to_supabase.py`, `data/generate_dataset.py` and the ML training pipeline remain fully runnable from the CLI |
-| Hub & Upstash Control (connectivity probe) | Diagnostics, not a graded item | **All alert-publishing code in `hub_client.py` is untouched** — the ≥ 5.0-minute `delay_alert` broadcast still fires exactly as before |
-| System Health & Config | Diagnostics screen | `GET /admin/api/health/status` remains — the offline banners and topbar pills read it |
-| Live Map, Alert Dispatch, Operations Analytics | Simulated entity data | Real analytics folded into the consolidated dashboard |
-
-### Verified incident map (real data, admin-approved only)
-
-The simulated Live Map above was replaced by a map of **real incidents that an
-administrator has verified**, shown in three places: the Control Room dashboard
-(beside the Route Delay Heatmap), the Admin Console's Incident Management screen,
-and the passenger home page on `:3000/user`.
-
-| Piece | Where |
-|---|---|
-| Review workflow | `POST /incidents/{id}/approve` → `review_status = verified` + `verified_at`; `POST /incidents/{id}/reject` → `rejected`. Both need capability `m2.incidents.review` (administrators only). Any later edit (`PATCH`) drops the incident back to `corrected`, so changed text must be re-approved before it is public. |
-| Public feed | `GET /api/incidents/map-feed` — verified rows only, allowlisted fields only (`id, train_id, station, lat, lon, incident_type, summary, verified_at, status`). No `raw_text`, `nlp_method`, `reviewed_by` or audit ids. |
-| Coordinates | `data/station_locations.json`, keyed by the stations of `operations_history.csv` (a test fails if one is missing). The incident forms offer these stations as a dropdown; a verified incident at an unknown station is counted as `unmapped`, never placed at a guessed position. |
-| Live updates | Every map polls the feed every 5 s (paused while the tab is hidden). Each poll replaces the marker set, so a rejected or re-edited incident disappears on the next cycle. Supabase Realtime was not used: it would stream whole rows, including internal fields, to the unauthenticated passenger page. |
-| Front end | `ui/shared/incident-map.js`, served at `/shared/incident-map.js` and loaded by all three pages. Leaflet 1.9.4 (cdnjs) + keyless OpenStreetMap tiles. One colour per incident type, also used by the Control Room's "Cause of delay" chart. |
-| Degradation | Store unreachable → last known feed with `stale: true` ("Offline · last known"). Leaflet unreachable → plain list of verified incidents. |
-| Migration | `admin/incident_map_migration.sql` adds `verified_at`. Until it is applied, approvals still work and the feed uses `reviewed_at`. |
-| Tests | `python -m pytest M2-operations-agent/tests/test_incident_map.py -q` |
-
-### Operations Assistant (floating chatbot for admins and operations engineers)
-
-A gold "spark" button in the bottom-right of the **Control Room** and every
-**Admin Console** tab opens a chat panel (history rail + conversation). It is
-shown only when `GET /api/ops-agent/capabilities` confirms the signed-in role
-holds `m2.assistant.use` (administrators and operations engineers), and it is
-removed on logout. It does not exist on the passenger pages.
-
-| Piece | Where |
-|---|---|
-| Endpoints | `GET /api/ops-agent/capabilities`, `POST /api/ops-agent/ask`, `GET /api/ops-agent/history`, all behind `m2.assistant.use`. The officer id always comes from the signed token; a mismatching `session_user_id` / `user_id` gets 403. |
-| Agent | `ops_agent.py`: Gemini function calling (`GEMINI_MODEL`) over a **fixed** tool set; the model only phrases tool results. |
-| Tools and roles | `ops_agent_tools.py`. Each tool carries the RBAC capability of the screen it mirrors: dashboard KPIs, route status and the incident queue (`m2.control_room.view`), delay prediction (`m2.prediction.run`, no Hub alert) for both roles; model metrics (`m2.model.manage`), audit log (`m2.audit.view`) and system health (`m2.system.config`) for administrators only. The model is only offered the tools the role may use, and `_execute` refuses any other. |
-| Clear refusals | Instead of improvising, the model calls `report_restricted`, `report_insufficient` or `report_out_of_scope`, and the backend answers with a fixed message. Every response has an `answer_type`: `answer`, `restricted` (admin-only topic asked by an engineer), `insufficient_data` (missing details, unknown route, a date the data can't be broken down by, or an action such as managing officers), `out_of_scope`, or `unavailable`. The widget shows these as labelled notices. |
-| Grounding | Every number in a model answer must appear in the tool results, or the answer is replaced by a template built from the same results. Free text written without any tool call is never shown. Stat chips (`highlights`) and citation chips (`sources`) are generated by code. |
-| Degradation | No Gemini / Gemini error: keyword router + templates, with the same role rules. Tool or data failure: "I can't reach the live operations data right now", never a guess. |
-| Front end | `ui/shared/ops-agent.js` (styles included), loaded by `ui/index.html` and `admin_ui/index.html`. |
-| History | `ops_agent_queries` (Supabase, `admin/ops_agent_migration.sql`) with a `data/ops_agent_queries.jsonl` mirror; per officer, newest first. Replaying a history item never re-queries. Every question also writes an `ops_agent_query` audit event with the role and answer type. |
-| Tests | `python -m pytest M2-operations-agent/tests/test_ops_agent.py -q` |
+| Active Risk Zones & Level Crossing Monitors | Simulated data, outside graded scope | — (the `/api/operations` mock store was deleted) |
+| Live Auto-Refreshing Event Feed | Duplicated the audit explorer | Events surface in `/api/dashboard` and the audit log |
+| Data Management (CSV import/export) | Not a graded item | `data/import_to_supabase.py`, `data/generate_dataset.py` and training remain CLI-runnable |
+| Hub & Upstash Control | Diagnostics | `hub_client.py` alert publishing untouched; health is available to admins through the Operations Assistant |
+| System Health & Config | Diagnostics | `GET /admin/api/health/status` remains (topbar pills, offline banners) |
+| Simulated Live Map, Alert Dispatch, Analytics | Simulated entity data | Replaced by the **real** verified-incident map (§5) |
 
 ---
 
-## 5. Inter-Agent Collaboration (How M2 Works with the Mesh)
+## 5. Verified Incident Map (Admin-Approved, Today Only)
 
-In RailSense AI, agents do not operate in silos. M2 collaborates across the entire ecosystem:
+Approved incidents appear as markers on a map in **three places**: the Control Room dashboard (beside the Route Delay Heatmap), the Admin Console's Incident Management screen, and the passenger home page on `:3000/user`.
+
+```
+ staff files incident ──► review_status = pending      (never on any map)
+                               │
+            admin clicks Approve (m2.incidents.review)   admin clicks Reject
+                               │                               │
+                               ▼                               ▼
+      review_status = verified, verified_at = now       review_status = rejected
+                               │                          (never on any map)
+                               ▼
+     GET /api/incidents/map-feed  ── only verified, only today, allowlisted fields
+                               │   (polled every 5 s by all three maps)
+                               ▼
+      Control Room map · Admin Console map · Passenger map
+```
+
+| Piece | Detail |
+|---|---|
+| Approval | `POST /incidents/{id}/approve` → `verified` + `verified_at`; `POST /incidents/{id}/reject` → `rejected`. Both require capability `m2.incidents.review` (administrators). `PATCH` cannot set `verified`, and any later edit returns the incident to `corrected`. |
+| Public feed | `GET /api/incidents/map-feed` returns only verified incidents with `id, train_id, station, lat, lon, incident_type, summary (≤180 chars), verified_at, status`. No `raw_text`, `nlp_method`, `reviewed_by` or audit ids ever leave the server. The browser also discards anything not marked `VERIFIED`. |
+| Today only | The feed keeps incidents verified since **00:00 Sri Lanka time** (Asia/Colombo). The cut-off is recomputed on every request, so at midnight the previous day's markers disappear within one poll — including from the last-known copy served during an outage. |
+| Coordinates | `data/station_locations.json`, keyed by the 17 stations of `operations_history.csv` (a test fails if one is missing). An approved incident at an unknown station is counted as `unmapped`, never placed at a guessed position. |
+| Live updates | 5-second polling from one shared script; each poll replaces the marker set. Supabase Realtime was not used because it would stream whole rows, including internal fields, to the unauthenticated passenger page. |
+| Front end | `ui/shared/incident-map.js` — Leaflet 1.9.4 (cdnjs) + keyless OpenStreetMap tiles (a CSS filter gives the dark version). One colour/icon per incident type, click popups with relative time, pulse on recent markers, legend and live/offline status pill. |
+| Migration | `admin/incident_map_migration.sql` adds `verified_at`. Until applied, approvals still work and the feed falls back to `reviewed_at`. |
+
+---
+
+## 6. Operations Assistant (Role-Aware Tool-Calling Chatbot)
+
+A gold ✦ button in the bottom-right of the **Control Room** and every **Admin Console** tab opens a chat panel with a **history rail** (the officer's own past questions, replayed read-only) and a conversation with example-question chips, stat chips and source citations. It appears only when `GET /api/ops-agent/capabilities` confirms the role holds `m2.assistant.use` (administrators and operations engineers).
+
+### How an answer is produced
+```
+question ─► Gemini (GEMINI_MODEL) with ONLY the tools this role may use
+              │
+              ├─ calls data tools ─► backend runs them on real data ─► Gemini phrases the JSON
+              │                                                         │
+              │                                   number guard: every figure must exist in the
+              │                                   tool results, else a code-built template answer
+              │
+              └─ calls a signal tool ─► fixed, properly worded message
+                   report_restricted / report_insufficient / report_out_of_scope
+```
+
+| Tool | Wraps | Admin | Ops Engineer |
+|---|---|---|---|
+| `get_dashboard_kpis` | `/api/dashboard` | ✔ | ✔ |
+| `get_route_status` | `/route-status` + corridor incident breakdown | ✔ | ✔ |
+| `predict_delay` | `_compute_prediction` (same as `/predict-delay`, **no Hub alert**) | ✔ | ✔ |
+| `get_incident_queue` | incident store (rejected incidents never returned) | ✔ | ✔ |
+| `get_model_metrics` | evaluation artifacts + feature importances | ✔ | 🔒 |
+| `get_audit_log` | `audit_events` | ✔ | 🔒 |
+| `check_system_health` | Supabase / Hub / Upstash checks | ✔ | 🔒 |
+
+### Every reply has an `answer_type`
+| Type | When | Example |
+|---|---|---|
+| `answer` | Grounded answer | "Across **2,999** trips the network averages **8.4 min**…" + stat chips + citations |
+| `restricted` 🔒 | An engineer asks about an admin topic | "🔒 **The audit log** is only available to administrators, so I can't share it with your Operations Engineer account…" |
+| `insufficient_data` ℹ | Missing details, unknown route, a date the data can't be broken down by, or an action (officers, passwords, retraining, approving) | "…The operations data covers 2025-01-01 to 2025-07-30 as a whole and can't be broken down by a specific date or month." |
+| `out_of_scope` ↪ | Not about railway operations | "That's outside what I can help with…" |
+| `unavailable` ⚠ | The data source can't be reached | "I can't reach the live operations data right now, so I won't guess." |
+
+**Safeguards:** free text the model writes without calling a tool is never shown; model-supplied reasons containing figures are dropped; highlights and citations are generated by code; without Gemini (or when it fails) a keyword router with the same role rules takes over. Every question is stored in `ops_agent_queries` (Supabase, local JSONL mirror) scoped to the officer's token identity, and written to `audit_events` with the role and answer type.
+
+---
+
+## 7. 3D Banners & "Loco" the Train Robot
+
+Both consoles open with a live Three.js banner built from shared modules:
+
+* **`ui/shared/train-robot.js` — "Loco"**: a locomotive-bodied robot (headlight, gold livery, cowcatcher, driver's-cab head with visor and blinking eyes, smokestack puffing steam, pantograph antenna, piston arms, wheeled bogie on a rail). Motions: rolls along its rail with spinning wheels, bobs and leans, head follows the mouse, and gestures **wave, point, nod, cheer, alert**.
+* **`ui/shared/hero-deck.js`**: the shared stage — lights, holographic platform (rings, radar sweep, grid, dust), speech bubble that tracks Loco's head and types each line while he performs its gesture, floating labels, mouse parallax, pause when hidden, still frame in background tabs, reduced-motion and no-WebGL fallbacks.
+
+| Banner | Scene | Loco says (live) |
+|---|---|---|
+| **Control Room** — "Keep every corridor running on time." | A **delay skyline**: one bar per corridor (height = average delay, colour = posture, labelled), a **24-hour delay-pressure ring** with the current hour pulsing | Points at the worst corridor, nods through the network average and on-time rate, points at the peak hour, alerts on today's incidents or cheers when there are none |
+| **Admin Console** — "Govern the model, guard the network." | A gold **R² gauge** (arc = model R²), **pending-incident cards** orbiting it, green **approval beacons** for today, a rising **audit stream** | Greets the officer by name, points at pending work or cheers when the queue is clear, explains model accuracy, points at the audit stream |
+
+All bars, cards, beacons, stats and speech come from `/api/dashboard`, the incident queue and the today-only map feed.
+
+---
+
+## 8. Roles & Permissions (RBAC)
+
+Officers sign in with bcrypt-hashed passwords and receive signed, expiring JWTs. Permissions (`admin/admin_auth.py`) gate every route:
+
+| Capability | Admin | Ops Engineer | Purpose |
+|---|---|---|---|
+| `m2.control_room.view` / `.action` | ✔ | ✔ | Control Room, dashboard, incidents |
+| `m2.prediction.view` / `.run` | ✔ | ✔ | Delay prediction |
+| `m2.assistant.use` | ✔ | ✔ | Operations Assistant |
+| `m2.incidents.review` | ✔ | — | Approve / Reject incidents (publishes to the map) |
+| `m2.model.manage` | ✔ | — | Retrain / rollback, model metrics |
+| `m2.audit.view` | ✔ | — | Audit log |
+| `m2.system.config` | ✔ | — | System health |
+| `m2.officers.*` | ✔ | — | Officer & role administration |
+
+Operations managers, dispatchers, analysts and viewers keep their existing subsets. `require_permission()` reads the standard `Authorization` header, and the last active administrator cannot be deactivated or demoted.
+
+---
+
+## 9. Inter-Agent Collaboration (How M2 Works with the Mesh)
 
 ```mermaid
 sequenceDiagram
@@ -290,33 +330,20 @@ sequenceDiagram
     M1-->>Passenger: Conversational grounded explanation
 ```
 
-### Collaboration Summary by Agent:
-1. **With M1 (Passenger Assistant)**:
-   * M1 sends `delay_check` requests.
-   * M2 validates station names against Sri Lankan rail routes to prevent hallucinated journeys.
-   * M2 returns structured delay numbers, confidence ratings, and plain-language explanations that M1 presents conversationally.
-2. **With M3 (Agent Communication Hub)**:
-   * M2 registers its base URL at startup.
-   * Receives all requests on `POST /internal/messages` wrapped in verified `AgentMessage` schemas.
-   * If a predicted delay is $\ge 5.0$ minutes, M2 automatically emits a `delay_alert` message to the Hub.
-3. **With M3 (Booking Agent)**:
-   * Both agents reference the same canonical Supabase `trains` table.
-   * If M2 flags high operational disruption or severe delays on a route, booking agents and passengers receive immediate visibility.
-4. **With M4 (Maintenance Agent)**:
-   * When M4 flags rolling stock as `OUT_OF_SERVICE` or under maintenance, route operations and delay risk assessments in M2 reflect rolling-stock constraints.
-5. **With Supabase PostgreSQL & pgvector**:
-   * Single source of truth for canonical train identities, 3,000 operations records, 384-dimensional vector embeddings, and audit event logs.
+1. **With M1 (Passenger Assistant)** — receives `delay_check` requests; answers booking hand-offs from the passenger popup are forwarded back to M1 via the gateway.
+2. **With M3 (Communication Hub)** — registers at startup, receives `AgentMessage`s on `POST /internal/messages`, emits `delay_alert` for predictions ≥ 5.0 min (the Operations Assistant's predictions deliberately do **not** alert).
+3. **With M3 (Booking Agent)** — both use the canonical Supabase `trains` table; the train picker and prediction dropdowns read it.
+4. **With M4 (Maintenance Agent)** — out-of-service trains are reflected in the passenger popup ("This train isn't running right now").
+5. **With the unified gateway (:3000)** — the portal embeds the Control Room and Admin Console; the passenger page loads M2's shared map script and calls `/passenger/ask` and `/api/incidents/map-feed` directly (CORS enabled, public data only).
 
 ---
 
-## 6. Deep-Dive: Machine Learning Delay Model
+## 10. Deep-Dive: Machine Learning Delay Model
 
-### 1. Algorithm Selection: Gradient Boosting Regressor
-I selected **`GradientBoostingRegressor` (Scikit-Learn)** after benchmarking against Linear Regression, Random Forest, and Decision Trees.
-* **Why Gradient Boosting?** Railway delays exhibit non-linear interactions: heavy rain on a mountainous route (Colombo–Badulla) during evening rush hour causes exponential delays compared to the same rain on a flat coastal route at noon. Gradient boosting builds sequential trees that correct prior residual errors, perfectly capturing these multi-feature interactions.
+### 10.1 Algorithm Selection: Gradient Boosting Regressor
+**`GradientBoostingRegressor`** was selected after benchmarking against Linear Regression, Random Forest and Decision Trees. Railway delays exhibit non-linear interactions (heavy rain on a hill-country route at rush hour compounds far more than the same rain on a coastal route at noon); boosting's sequential residual correction captures these interactions while staying fast and interpretable.
 
-### 2. Feature Engineering
-The model transforms categorical and continuous operational variables into numerical representations:
+### 10.2 Feature Engineering
 
 | Feature Name | Type | Processing |
 |---|---|---|
@@ -327,34 +354,20 @@ The model transforms categorical and continuous operational variables into numer
 | `day_type` | Categorical | One-Hot Encoded (`weekday`, `weekend`, `public_holiday`) |
 | `incident_type` | Categorical | One-Hot Encoded (`none`, `signal_fault`, `mechanical`, `weather`, `track_obstruction`, `staffing`) |
 
-### 3. Feature Importance Analysis
-Extracted directly from the trained model (`ml/feature_importances.json`, as of the latest
-committed retrain against the live Supabase corpus):
-1. **`incident_type_none` (Importance: 0.7332)**: By far the dominant signal — whether an
-   incident occurred at all separates on-time trips from delayed ones more than any other
-   factor.
-2. **`incident_type_mechanical` (0.0769)**, **`incident_type_staffing` (0.0368)** and
-   **`incident_type_track_obstruction` (0.0182)**: Cause the highest magnitude delay spikes
-   once an incident is present.
-3. **`weather_clear` (0.0363)** and **`weather_heavy_rain` (0.0316)**: Weather state is the
-   next strongest driver — heavy rain triggers precautionary speed restrictions on hill
-   country routes.
-4. **`day_type_public_holiday` (0.0234)** and **`scheduled_hour` (0.0060)**: Calendar and
-   time-of-day effects are real but secondary once incident type and weather are accounted
-   for.
+### 10.3 Feature Importance Analysis
+From `ml/feature_importances.json` (latest retrain against the live Supabase corpus):
+1. **`incident_type_none` (0.7332)** — whether an incident occurred at all dominates.
+2. **`incident_type_mechanical` (0.0769)**, **`incident_type_staffing` (0.0368)**, **`incident_type_track_obstruction` (0.0182)** — the largest delay spikes once an incident is present.
+3. **`weather_clear` (0.0363)** and **`weather_heavy_rain` (0.0316)** — weather is the next strongest driver.
+4. **`day_type_public_holiday` (0.0234)** and **`scheduled_hour` (0.0060)** — real but secondary effects.
 
-Retraining is non-deterministic across runs (the corpus, the Supabase/CSV split, and which
-rows are sampled into the held-out set all shift), so exact weights move slightly between
-runs — the ranking of `incident_type_none` as the dominant feature is stable across every
-retrain observed. The admin console's Model Operations screen always reflects whichever
-values `ml/feature_importances.json` currently holds.
+Exact weights shift slightly between retrains; the dominance of `incident_type_none` is stable. The Admin Console's Model Operations screen always shows the current file.
 
 ---
 
-## 7. Deep-Dive: NLP Incident Triage & Summarization
+## 11. Deep-Dive: NLP (Incident Triage, Passenger Answers, Assistant)
 
-When station masters submit free-text incident reports, M2 processes them through a secure, multi-stage NLP pipeline:
-
+### 11.1 Incident Triage
 ```
 Raw Staff Input
       │
@@ -365,30 +378,33 @@ Raw Staff Input
       ▼                               ▼
 [ Incident Classification ]     [ Sentence Summarization ]
 • Rule-based keyword matching   • Frequency-scored extractive ranking
-• Categorizes into 5 classes    • Condenses logs to 1-2 sentence briefs
-• Optional LLM zero-shot mode   • Optional Claude/Gemini generation
+• 6 operational classes         • Condenses logs to 1-2 sentence briefs
+• Optional LLM zero-shot mode   • Optional LLM generation
       │                               │
       └───────────────┬───────────────┘
                       ▼
-        Persisted to Incident Queue & Audit
+   Persisted as `pending` → admin review → (verified) public map
 ```
+1. **Sanitisation** — HTML, scripts and control characters are rejected (HTTP 422).
+2. **Classification (`nlp/classify_incident.py`)** — `mechanical`, `signal_fault`, `weather`, `track_obstruction`, `staffing`, `other`.
+3. **Summarisation (`nlp/summarize_incident.py`)** — frequency-scored extractive summary.
 
-1. **Input Sanitization**: Text is filtered using `bleach` and Pydantic field validators. Any attempt to inject HTML tags, script tags, or control characters is rejected with an HTTP 422 error.
-2. **Classification (`nlp/classify_incident.py`)**: Categorizes text into `mechanical`, `signal_fault`, `weather`, `track_obstruction`, `staffing`, or `other`.
-3. **Summarization (`nlp/summarize_incident.py`)**: An extractive frequency-based sentence ranker strips stopwords, scores sentences by significant word frequencies, and selects the top 1–2 most informative sentences.
+### 11.2 Passenger Answers (`nlp/passenger_answer.py`)
+* **Intent detection** — weighted keyword rules over ten intents plus a `handoff` intent for booking/fare/refund questions (which always wins, even in "refund for a late train"). Explicit departure verbs win the "what time" tie.
+* **Template NLG** — delay levels (on time ≤ 2, minor ≤ 5, moderate ≤ 15, major), expected-arrival arithmetic, live-position sentences, confidence phrasing and cause phrasing ("signal problems", "crew availability") — deterministic, so every sentence traces to data.
+
+### 11.3 Operations Assistant Language Layer
+Gemini only chooses tools and phrases their JSON; refusals are chosen from three signal tools and worded by fixed templates (§6). A regex number guard compares every figure in the model's text with the tool results (allowing rounding and ratio → percentage), and the rule-based router provides the same behaviour offline.
 
 ---
 
-## 8. Deep-Dive: Information Retrieval & Grounded RAG
+## 12. Deep-Dive: Information Retrieval & Grounded RAG
 
-To explain predictions without LLM hallucinations, M2 incorporates a state-of-the-art Information Retrieval and Retrieval-Augmented Generation (RAG) architecture:
+### 12.1 Vector Embedding Pipeline
+Each of the 3,000 operations incident notes is embedded with `sentence-transformers/all-MiniLM-L6-v2` into **384-dimensional** vectors; newly filed incidents are embedded on creation and removed on deletion.
 
-### 1. Vector Embedding Pipeline
-* Each of the 3,000 operations incident notes was embedded using `sentence-transformers/all-MiniLM-L6-v2`.
-* Produces dense **384-dimensional vector embeddings** capturing semantic similarity regardless of exact vocabulary.
-
-### 2. Dual-Engine Retrieval (`rag/incident_retriever.py`)
-* **Primary (Cloud)**: Queries Supabase `pgvector` using the custom stored procedure `match_incidents`:
+### 12.2 Dual-Engine Retrieval (`rag/incident_retriever.py`)
+* **Primary** — Supabase `pgvector` via the `match_incidents` RPC:
   ```sql
   SELECT id, route, station, incident_type, incident_note, delay_minutes,
          1 - (embedding <=> query_embedding) AS similarity
@@ -396,144 +412,211 @@ To explain predictions without LLM hallucinations, M2 incorporates a state-of-th
   WHERE 1 - (embedding <=> query_embedding) > match_threshold
   ORDER BY similarity DESC LIMIT match_count;
   ```
-* **Fallback (Offline)**: If internet or Supabase is unavailable, M2 automatically falls back to an offline Scikit-Learn `TfidfVectorizer` computing cosine similarity over `data/operations_history.csv`.
+* **Fallback** — Scikit-Learn `TfidfVectorizer` cosine similarity over `data/operations_history.csv`.
 
-### 3. Grounded Explanation Generator (`rag/explanation.py`)
-The explanation layer takes three strictly factual inputs:
-1. The numerical delay output from the ML regressor.
-2. The top contributing features from the model's feature importance weights.
-3. The top 3 retrieved historical incident precedents.
-
-It synthesizes these facts into a concise, plain-language paragraph without inventing details.
+### 12.3 Grounded Explanation Generator (`rag/explanation.py`)
+Inputs: the ML delay, the top feature importances and the top-3 retrieved precedents — synthesised into a short paragraph without inventing details. The passenger popup reuses retrieval for "why might it be late?" questions.
 
 ---
 
-## 9. Graceful Degradation & Resilience Engineering
+## 13. Graceful Degradation & Resilience Engineering
 
-A core requirement of enterprise railway software is fault tolerance. M2 is engineered so that **no single cloud dependency failure will crash the service**:
+**No single cloud dependency failure crashes the service:**
 
-| Dependency | When Online | When Offline / Failed (Graceful Degradation) |
+| Dependency | When Online | When Offline / Failed |
 |---|---|---|
-| **Supabase Database** | Reads historical operations from PostgreSQL | Reads from local `data/operations_history.csv` |
-| **pgvector Retrieval** | Executes semantic similarity search via RPC | Uses offline Scikit-Learn TF-IDF vectorizer |
-| **Audit Persistence** | Writes to Supabase `audit_events` table | Appends locally to `data/audit_log.jsonl` |
-| **Agent Hub** | Routes delay alerts to Hub on Port 8002 | Retains alerts in-memory and continues locally |
-| **Upstash Redis** | Publishes real-time pub/sub notifications | Skips publishing cleanly without throwing exceptions |
-| **ML Model File** | Runs `GradientBoostingRegressor` inference | Calculates median historical delay from matching records |
+| **Supabase Database** | Reads operations history and incidents from PostgreSQL | Local `data/operations_history.csv` and `data/incident_reports.jsonl` |
+| **pgvector Retrieval** | Semantic search via RPC | Local TF-IDF vectorizer |
+| **Audit Persistence** | Supabase `audit_events` | `data/audit_log.jsonl` |
+| **Agent Hub (:8002)** | Routes delay alerts | Alerts retained in memory; M2 continues |
+| **Upstash Redis** | Publishes notifications | Skipped cleanly |
+| **ML Model File** | `GradientBoostingRegressor` inference | Median historical delay from matching records |
+| **Incident map feed** | Today's verified incidents from Supabase | Local incident mirror; if unreadable, last known feed with `stale: true` ("Offline · last known"), still cut at midnight |
+| **Leaflet / map tiles (CDN)** | Interactive map | Plain list of verified incidents |
+| **Shared train registry** | Train picker lists ~2,900 trains with names | Picker builds the list from the operations corpus; typed ids still accepted |
+| **Gemini (Operations Assistant)** | Tool calling | Keyword router + templates with the same role rules |
+| **`verified_at` / `ops_agent_queries` not migrated** | Stored in Supabase | `reviewed_at` fallback; history kept in `data/ops_agent_queries.jsonl` |
+| **WebGL (3D banners)** | Animated Three.js scene | Static gradient panel; text, stats and buttons unaffected |
 
 ---
 
-## 10. Empirical Evaluation Benchmarks & Evidence
+## 14. Empirical Evaluation Benchmarks & Test Suite
 
-All metrics reported below were computed from committed evaluation scripts and datasets.
-
-### 1. Delay Prediction Model Performance (`ml/train_delay_model.py`)
-
-Training now reads the **current** corpus — Supabase `operations_history` when reachable,
-`data/operations_history.csv` otherwise — so the figures depend on which source served the
-run. `data_source` is recorded in `delay_model_metrics.json` and shown in the admin console.
+### 14.1 Delay Prediction Model (`ml/train_delay_model.py`)
 
 | Corpus | Records | MAE (min) | RMSE (min) | $R^2$ |
 |---|---|---|---|---|
 | Local CSV (`data/operations_history.csv`) | 3,000 | **2.239** | **2.876** | **0.8716** |
 | Supabase `operations_history` (live) | 2,999 | **2.315** | **2.934** | **0.8551** |
 
-Both are 80% train / 20% test at `random_state=42`. The small gap is **not** a regression:
-Supabase currently holds 2,999 of the CSV's 3,000 rows, which shifts the split. The CSV
-figures remain reproducible offline with `python M2-operations-agent/ml/train_delay_model.py`
-when Supabase is unreachable.
+Both use an 80/20 split at `random_state=42`; the small gap comes from Supabase holding 2,999 of the CSV's 3,000 rows.
 
-### 2. Incident NLP Classification (`nlp/evaluate_nlp.py`)
-* **Templated Dataset Accuracy (400 records)**: **100.00%** (Macro F1 = 1.00).
-* **Out-of-Template Paraphrased Stress Test (6 samples)**: **33.33%** (2/6 correct).
-  * *Viva Honesty Note*: This gap demonstrates that keyword matching works well on standard terminology, but motivates our optional LLM zero-shot classifier for unstructured field text.
+### 14.2 Incident NLP Classification (`nlp/evaluate_nlp.py`)
+* **Templated dataset (400 records)**: **100.00%** accuracy (Macro F1 = 1.00).
+* **Out-of-template paraphrase stress test (6 samples)**: **33.33%** — keyword matching generalises poorly to unstructured text, motivating the optional LLM classifier.
 
-### 3. Historical Incident RAG Retrieval (`evaluation/rag/evaluate_retrieval.py`)
-* **Evaluated on 150 held-out incident queries**:
-  * **Precision@1**: **1.0000**
-  * **Precision@3**: **1.0000**
-  * **Precision@5**: **0.9987**
+### 14.3 Incident RAG Retrieval (`evaluation/rag/evaluate_retrieval.py`)
+On 150 held-out queries: **P@1 1.0000 · P@3 1.0000 · P@5 0.9987**.
+
+### 14.4 Automated Tests (`tests/`)
+`python -m pytest M2-operations-agent/tests -q` → **40 passed** (32 test functions, some parametrised). Tests use in-memory stores and fake LLMs, so they are deterministic and never write to Supabase.
+
+| File | Covers |
+|---|---|
+| `test_incident_map.py` | Corpus stations all have coordinates; only `verified` rows are public; pending/rejected never mapped; Approve/Reject need admin (401/403); allowlisted fields only; unknown stations counted not guessed; edits un-verify; `PATCH` cannot set `verified`; outage serves last known; **midnight cut-off**, including during an outage |
+| `test_ops_agent.py` | Role access (401/403/200); per-role capabilities; grounded + cited answers; hallucinated numbers rejected; tool-less free text never shown; rejected incidents never cited; engineer restrictions for audit/health/model; forbidden tools never execute; missing-details, action and unknown-route replies; out-of-scope; offline "unavailable"; per-user private history; number guard |
 
 ---
 
-## 11. API Contracts & Endpoints
+## 15. Setup, Configuration & Running
 
-| Method | Path | Description | Key Request / Response Parameters |
+### 15.1 Install
+```powershell
+python -m pip install -r M2-operations-agent/requirements.txt
+```
+(`fastapi`, `uvicorn`, `pandas`, `scikit-learn`, `sentence-transformers`, `supabase`, `bleach`, `slowapi`, `pyjwt`, `bcrypt`, `python-dotenv`, `google-generativeai`, `pytest`, …)
+
+### 15.2 Environment (repository-root `.env`)
+```dotenv
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SECRET_KEY=your-server-side-key
+JWT_SECRET_KEY=replace-with-a-long-random-secret
+GEMINI_API_KEY=your-gemini-key          # Operations Assistant (optional: falls back to rules)
+GEMINI_MODEL=gemini-3.5-flash-lite
+HUB_BASE_URL=http://localhost:8002      # default if unset
+UPSTASH_REDIS_URL=...                   # optional
+UPSTASH_REDIS_TOKEN=...                 # optional
+```
+
+### 15.3 Database migrations (Supabase SQL editor, safe to re-run)
+| File | Adds |
+|---|---|
+| `supabase_phase5_schema.sql`, `admin/admin_schema.sql`, `admin/officers_schema.sql` | Operations history, embeddings, audit, incidents, officers |
+| `admin/incident_map_migration.sql` | `incident_reports.verified_at` + index |
+| `admin/ops_agent_migration.sql` | `ops_agent_queries` (per-officer assistant history, with `answer_type`) |
+
+M2 runs before these are applied — see the fallbacks in §13.
+
+### 15.4 Run
+```powershell
+cd M2-operations-agent
+python -m uvicorn main:app --host 127.0.0.1 --port 8005 --reload
+```
+Open `http://localhost:8005/` (Control Room) and `http://localhost:8005/admin` (Admin Console), or `.\start_all.ps1` from the repository root to start every agent and the portals.
+
+### 15.5 Test and evaluate
+```powershell
+python -m pytest M2-operations-agent/tests -q
+python M2-operations-agent/ml/train_delay_model.py
+python M2-operations-agent/nlp/evaluate_nlp.py
+python M2-operations-agent/evaluation/rag/evaluate_retrieval.py
+```
+
+> **Browser caching:** M2 now sends `Cache-Control: no-cache` for `/`, `/admin/*` and `/shared/*`, so browsers revalidate UI files on every load. Copies cached **before** this header existed may need one hard refresh (Ctrl + F5).
+
+---
+
+## 16. API Contracts & Endpoints
+
+### 16.1 Operations & passenger API
+
+| Method | Path | Auth | Description |
 |---|---|---|---|
-| `GET` | `/health` | Liveness probe | `{"service": "operations-agent", "status": "ok"}` |
-| `GET` | `/` | Operations Control Room UI | Serves `ui/index.html` |
-| `GET` | `/admin` | Admin Operations Console | Serves `admin_ui/index.html` |
-| `GET` | `/api/dashboard` | Consolidated control-room aggregate | **Out**: `overview`, `routes`, `hourly`, `incident_mix`, `feature_importance`, `ml_metrics`, `nlp_metrics`, `rag_metrics`, `events`, `data_source` (drives the offline banner) |
-| `POST` | `/predict-delay` | ML delay inference | **In**: `route`, `train_id`, `station`, `weather`, `scheduled_time`<br>**Out**: `predicted_delay_minutes`, `explanation`, `top_features`, `similar_past_incidents` |
-| `GET` | `/route-status/{id}`| Real-time route health | **Out**: `status` (normal/watch/critical), `average_delay_minutes`, `active_trains` |
-| `POST` | `/incident-report` | NLP incident triage *(contract unchanged)* | **In**: `raw_text`, `train_id`, `station`<br>**Out**: `incident_id`, `classified_type`, `summary`, `nlp_method`, `received_at` |
-| `GET` | `/incidents` | List triaged incidents *(added)* | **In**: `limit`, `offset`, `review_status`, `classified_type`, `search`<br>**Out**: `rows`, `count`, `source`, `offline` |
-| `PATCH` | `/incidents/{id}` | Correct a classification or summary *(added)* | **In**: `classified_type`, `summary`, `review_status`<br>**Out**: `incident`, `source`, `offline` |
-| `DELETE` | `/incidents/{id}` | Delete an incident and its embedding *(added)* | **Out**: `deleted`, `embedding_removed`, `source`, `offline` |
-| `POST` | `/internal/messages`| Inbound Hub routing | Accepts `AgentMessage` (`intent: delay_check`), returns `delay_check_response` |
-| `POST` | `/hub/message` | Direct Hub message handler | Legacy alias for `/internal/messages` |
+| `GET` | `/health` | — | Liveness probe |
+| `GET` | `/` · `/admin` | — | Control Room UI · Admin Console UI |
+| `GET` | `/shared/*` | — | Shared browser modules (map, train picker, assistant, 3D stage, robot) |
+| `GET` | `/api/dashboard` | — | Control-room aggregate: `overview`, `routes`, `hourly`, `incident_mix`, `feature_importance`, `ml_metrics`, `nlp_metrics`, `rag_metrics`, `events`, `data_source` |
+| `GET` | `/api/route-options` | — | Route → ordered stations and train ids (prediction dropdowns) |
+| `GET` | `/api/trains` | — | Train catalogue for the picker: `train_id`, `name`, `route`, `corridor_stations` (gzip-compressed) |
+| `GET` | `/api/stations` | — | Corpus stations with coordinates |
+| `POST` | `/predict-delay` | — | ML delay inference (+ Hub alert ≥ 5 min + audit). **In**: `route`, `train_id`, `station`, `weather`, `day_type`, `incident_type`, `scheduled_time` |
+| `POST` | `/passenger/ask` | — | Passenger popup answer. **In**: `question`, `mode`, `service` (board context). **Out**: `intent`, `headline`, `paragraphs`, `facts`, `gauge`, `suggestions`, `sources`, `handoff` |
+| `GET` | `/route-status/{id}` | — | Corridor posture, average delay, train count |
+| `POST` | `/incident-report` | — | NLP incident triage *(contract unchanged)* |
+| `GET` | `/incidents` | — | List incidents (`limit`, `offset`, `review_status`, `classified_type`, `search`) |
+| `PATCH` | `/incidents/{id}` | — | Correct classification/summary (un-verifies) |
+| `DELETE` | `/incidents/{id}` | — | Delete incident and its embedding |
+| `POST` | `/incidents/{id}/approve` | `m2.incidents.review` | Verify → public map |
+| `POST` | `/incidents/{id}/reject` | `m2.incidents.review` | Reject → never mapped |
+| `GET` | `/api/incidents/map-feed` | — | Today's verified incidents, allowlisted fields; `day`, `since`, `stale`, `unmapped` |
+| `GET` | `/api/ops-agent/capabilities` | `m2.assistant.use` | Role, tools, restricted topics, example questions |
+| `POST` | `/api/ops-agent/ask` | `m2.assistant.use` | **In**: `question`. **Out**: `answer`, `answer_type`, `sources`, `highlights`, `tool_calls_made`, `answer_method` |
+| `GET` | `/api/ops-agent/history` | `m2.assistant.use` | The officer's own past questions (newest first) |
+| `POST` | `/internal/messages` · `/hub/message` | Hub JWT | Inbound Hub `delay_check` |
 
-**Admin console API** (prefix `/admin/api`, all admin-only, JWT-authenticated):
+### 16.2 Admin console API (prefix `/admin/api`, JWT)
 
 | Method | Path | Description |
 |---|---|---|
-| `GET` | `/health/status` | Supabase / Hub / Upstash / Anthropic liveness — drives the offline banners |
-| `GET` | `/model/metrics-history` | Current held-out metrics + the real retrain/rollback run log |
-| `GET` | `/model/feature-importances` | `ml/feature_importances.json` as written by the last run |
-| `POST` | `/model/retrain` | Runs `ml/train_delay_model.py`; archives the outgoing model, reloads the predictor |
-| `GET` | `/model/versions` | Real backup files with per-version metrics sidecars |
-| `POST` | `/model/rollback/{filename}` | Restores a prior `.pkl` and its metrics |
-| `GET` | `/audit/events` | **Read-only** agent audit trail; filter by `agent`, `intent`, `date_from`, `date_to` |
-| `GET` | `/audit/summary` | Intent / sender distribution over the trail |
-| — | `/officers/*`, `/roles/matrix` | RBAC administration (gates every screen above) |
-
-> **Removed with the panel consolidation:** `GET /api/operations` (+ its `POST`/`PATCH`/`DELETE`),
-> `GET /api/events`, `/admin/api/data/*`, `/admin/api/hub/*`, `/admin/api/health/data-sources`,
-> `/admin/api/health/config`, `/admin/api/incidents/queue`. None are consumed by M1, M3 or M4 —
-> they existed solely to serve retired admin screens. The `hub_client.py` alert publisher is
-> untouched.
-
+| `POST` | `/login` · `/logout` · `GET /me` | Officer session; `/me` returns role and permissions |
+| `GET` | `/health/status` | Supabase / Hub (`:8002` default) / Upstash liveness |
+| `GET` | `/model/metrics` · `/model/metrics-history` · `/model/feature-importances` | Evaluation artifacts, run log, importances |
+| `POST` | `/model/retrain` | Retrain, archive previous model, hot-reload |
+| `GET` | `/model/versions` · `POST /model/rollback/{filename}` | Archived versions and rollback |
+| `GET` | `/audit/events` · `/audit/summary` | **Read-only** audit trail and summary |
+| — | `/officers/*`, `/roles/matrix` | RBAC administration |
 
 ---
 
-## 12. 🎓 Viva Examination Q&A Defense Master
+## 17. Project Structure
 
-Use this section to prepare for examiner questions regarding Module 2:
+```text
+M2-operations-agent/
+├── main.py                      FastAPI app: prediction, dashboard, incidents, map feed,
+│                                passenger answers, train catalogue, Operations Assistant
+├── incident_map.py              Verified-only, today-only, allowlisted map feed
+├── ops_agent.py                 Assistant: roles, Gemini tool loop, signals, number guard, history
+├── ops_agent_tools.py           The seven data tools (+ templates, citations, stat chips)
+├── hub_client.py · supabase_store.py
+├── admin/                       RBAC (admin_auth.py), stores (admin_db.py), admin API,
+│                                SQL schemas and migrations
+├── ml/                          train_delay_model.py, predict.py, delay_model.pkl, versions
+├── nlp/                         classify_incident.py, summarize_incident.py, passenger_answer.py
+├── rag/                         embed_documents.py, incident_retriever.py, explanation.py
+├── data/                        operations_history.csv, station_locations.json,
+│                                local JSONL mirrors (incidents, audit, assistant history)
+├── evaluation/                  Committed ML / NLP / RAG metrics
+├── ui/
+│   ├── index.html               Operations Control Room
+│   └── shared/                  incident-map.js · train-picker.js · ops-agent.js ·
+│                                hero-deck.js · train-robot.js · hero.css
+├── admin_ui/                    Admin Console (index.html, css/, js/views/)
+└── tests/                       test_incident_map.py · test_ops_agent.py
+```
+
+---
+
+## 18. 🎓 Viva Examination Q&A Defense Master
 
 ### Q1: "What was your specific contribution to RailSense AI?"
-> **Answer**: "I designed and implemented **Module 2 (Operations & Delay-Prediction Agent)**. My responsibilities included:
-> 1. Training and evaluating the machine learning delay regressor using Gradient Boosting on 3,000 historical operations records (achieving an MAE of 2.24 minutes and an $R^2$ of 0.87).
-> 2. Engineering the NLP incident triage pipeline that sanitizes text against XSS using Bleach, classifies incident types, and extracts executive summaries.
-> 3. Developing the dual-engine IR/RAG system utilizing 384-dimensional `all-MiniLM-L6-v2` embeddings in Supabase `pgvector` with local TF-IDF fallback.
-> 4. Synthesizing grounded, non-hallucinated delay explanations combining model feature importances and historical precedents.
-> 5. Building both the live Operations Control Room dashboard and Admin Console, while establishing full inter-agent integration with M1 and the Central Hub."
+> "I designed and implemented **Module 2**: the Gradient Boosting delay regressor (MAE 2.24 min, $R^2$ 0.87 on 3,000 records), the NLP incident triage pipeline, the dual-engine IR/RAG system with 384-d embeddings in pgvector and TF-IDF fallback, grounded explanations, the incident approval workflow and today-only public map, the passenger delay popup's intent detection and NLG, a role-aware tool-calling Operations Assistant, and both operator consoles with live 3D banners — all integrated with M1 and the Hub."
 
-### Q2: "Why did you choose Gradient Boosting over Linear Regression or Deep Learning?"
-> **Answer**: "Railway delays are governed by complex non-linear feature interactions. For example, severe weather on a mountainous route during rush hour creates compounding delays that linear models cannot capture. 
-> While Deep Learning (like neural networks) can model non-linearities, it requires massive datasets to avoid overfitting, has high inference latency, and acts as an uninterpretable black box. 
-> `GradientBoostingRegressor` is ideal for tabular operational data: it handles mixed categorical and continuous features, resists overfitting through shrinkage and shallow trees, operates with sub-10ms inference latency, and natively exposes feature importance weights that feed directly into our grounded explanation layer."
+### Q2: "Why Gradient Boosting over Linear Regression or Deep Learning?"
+> "Delays come from non-linear feature interactions that linear models miss. Deep learning needs far more data, is slower and is a black box. Gradient boosting handles mixed tabular features, resists overfitting, infers in milliseconds, and exposes feature importances that feed the explanation layer."
 
 ### Q3: "How does your RAG pipeline prevent hallucinations in delay explanations?"
-> **Answer**: "We enforce strict factual grounding:
-> 1. The delay number is strictly generated by our trained ML regressor or historical database record—never invented by a language model.
-> 2. The incident reasons are retrieved from verified historical precedents in Supabase `pgvector` using cosine similarity.
-> 3. The explanation layer only receives the numerical prediction, the mathematical feature importances, and the retrieved incident citations as prompt context. The model is forbidden from introducing outside facts, guaranteeing verifiable citations for passengers."
+> "The number comes from the regressor or a historical record, the reasons are retrieved precedents, and the explanation layer only receives those facts as context — nothing else can enter the explanation."
 
 ### Q4: "What happens if Supabase or the Agent Hub goes down during your demo?"
-> **Answer**: "M2 is built with full graceful degradation:
-> - If Supabase is unreachable, M2 seamlessly falls back to reading `operations_history.csv` and switches from `pgvector` to local TF-IDF cosine similarity.
-> - If the Agent Hub is offline, M2 records audit events to a local `audit_log.jsonl` file and stores live alerts in-memory.
-> As a result, both the API and the Operations Control Room remain 100% functional offline."
+> "M2 falls back to the local CSV, TF-IDF retrieval and JSONL audit; the map serves its last known feed marked 'Offline · last known'; the assistant says it can't reach live data instead of guessing. Both consoles stay usable."
 
-### Q5: "What are the limitations of your NLP incident classifier and how can it be improved?"
-> **Answer**: "Our default classifier is a deterministic rule-based keyword matcher. On our dataset's templated notes, it achieves 100% accuracy. However, in our honest paraphrased stress test on unstructured text, accuracy dropped to 33% because staff often describe incidents without standard keywords. 
-> To address this, we implemented an optional zero-shot LLM classification path in `nlp/classify_incident.py` that can be toggled via Anthropic or Gemini API keys, providing semantic generalization on free-form text."
+### Q5: "What are the limitations of your NLP incident classifier?"
+> "Keyword matching scores 100% on templated notes but 33% on paraphrased text. An optional zero-shot LLM classifier path exists to generalise to free-form reports."
 
-### Q6: "How do you ensure security against malicious input in incident reports?"
-> **Answer**: "We implement multi-tier defense:
-> 1. Request-level validation using Pydantic v2 schemas enforcing string lengths and strict data types.
-> 2. HTML and script sanitization using `bleach.clean()` to neutralize potential Cross-Site Scripting (XSS) or SQL injection payloads before text reaches the NLP pipeline.
-> 3. Rate limiting via SlowAPI (120 requests/minute per IP) to mitigate Denial of Service (DoS) attempts."
+### Q6: "How do you secure input in incident reports?"
+> "Pydantic v2 validation, `bleach` sanitisation before NLP, SlowAPI rate limiting, and the passenger map's strict field allowlist so raw text never reaches the public."
+
+### Q7: "How do you stop unapproved incidents from reaching passengers?"
+> "Only `review_status = verified` rows pass `public_item()`, which copies an explicit allowlist. `verified` can only be set by the admin-only approve endpoint; edits reset it; rejected rows are never serialised. The browser also drops anything not marked `VERIFIED`, and each 5-second poll replaces the whole marker set, so a rejection disappears within one cycle. I avoided Supabase Realtime because it would have pushed whole rows, including internal fields, to an unauthenticated page."
+
+### Q8: "Why does the map only show today's incidents, and how does midnight work?"
+> "Operators and passengers care about current disruption. The server computes 00:00 Asia/Colombo on every request, so markers drop at midnight without a page refresh — even the last-known copy served during an outage is filtered. Tests simulate 23:59 vs 00:01 and a midnight outage."
+
+### Q9: "Your assistant uses an LLM — how do you prove it doesn't make things up?"
+> "The model can only call seven fixed data tools, filtered by the user's role. Its text is rejected unless every number appears in the tool results; text written without any tool call is never shown; refusals come from three signal tools and fixed wording; stat chips and citations are generated by code. Without Gemini, a keyword router gives the same behaviour. Every question is audited."
+
+### Q10: "How do different roles experience the assistant?"
+> "Tools carry the same RBAC capability as the screens they mirror. Operations engineers can ask about KPIs, routes, predictions and the incident queue; asking about the audit log, system health, model metrics or officer management returns a clear 🔒 'administrator only' reply rather than an answer. Actions such as creating officers are explained as things the assistant can't do, for every role."
 
 ---
 
