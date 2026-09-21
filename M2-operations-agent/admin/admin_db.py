@@ -581,7 +581,7 @@ LOCAL_INCIDENTS_PATH = ROOT_DIR / "data" / "incident_reports.jsonl"
 INCIDENT_FIELDS = (
     "incident_id", "train_id", "station", "raw_text", "summary",
     "classified_type", "nlp_method", "review_status", "reviewed_by",
-    "reviewed_at", "received_at",
+    "reviewed_at", "received_at", "verified_at",
 )
 
 
@@ -712,7 +712,17 @@ def update_incident(incident_id: str, patch: dict[str, Any]) -> dict[str, Any]:
     client = get_client()
     if client is not None:
         try:
-            res = client.table("incident_reports").update(clean).eq("incident_id", incident_id).execute()
+            try:
+                res = client.table("incident_reports").update(clean).eq("incident_id", incident_id).execute()
+            except Exception as exc:
+                # verified_at arrives with the incident-map migration
+                # (admin/incident_map_migration.sql). Until it is applied, write
+                # the rest of the patch; the map derives verified_at from
+                # reviewed_at, and the local mirror still records it.
+                if "verified_at" not in clean or "verified_at" not in str(exc):
+                    raise
+                remote = {k: v for k, v in clean.items() if k != "verified_at"}
+                res = client.table("incident_reports").update(remote).eq("incident_id", incident_id).execute()
             if res.data:
                 updated = res.data[0]
             else:

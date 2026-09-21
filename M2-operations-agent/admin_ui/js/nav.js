@@ -132,6 +132,7 @@ window.addEventListener("hashchange", () => {
 function showLoginScreen() {
   document.getElementById("login-screen").style.display = "flex";
   document.getElementById("app").classList.remove("visible");
+  if (window.RailSenseOpsAgent) RailSenseOpsAgent.destroy();
 }
 
 function showApp() {
@@ -148,11 +149,15 @@ function showApp() {
     AdminAPI.setSession(AdminAPI.getToken(), meData);
     updateUserDisplay(meData);
     buildSidebar();
+    // Operations Assistant: shown only when the server says this role may use it.
+    if (window.RailSenseOpsAgent) RailSenseOpsAgent.init();
     const hash = window.location.hash.replace("#", "");
     navigateTo(hash || "home");
   }).catch(() => {
     buildSidebar();
     navigateTo(window.location.hash.replace("#", "") || "home");
+    // The assistant checks its own permission with the server.
+    if (window.RailSenseOpsAgent) RailSenseOpsAgent.init();
   });
 
   refreshTopbarStatus();

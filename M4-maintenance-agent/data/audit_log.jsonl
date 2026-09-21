@@ -112,3 +112,12 @@
 {"ts": "2026-09-20T22:17:35.954066+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "4085", "sender": "passenger-agent"}
 {"ts": "2026-09-20T22:53:49.750001+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "55", "sender": "passenger-agent"}
 {"ts": "2026-09-20T22:54:52.605645+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "4085", "sender": "passenger-agent"}
+{"ts": "2026-09-20T23:03:48.881796+00:00", "action": "hub_issue_report", "agent": "maintenance-agent", "client": "127.0.0.1", "ticket_id": "MT-2DEFF4", "sender": "passenger-agent", "description": "The AC is broken in my compartment"}
+{"ts": "2026-09-21T09:13:09.544719+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "PM-4082", "sender": "passenger-agent"}
+{"ts": "2026-09-21T09:13:23.043163+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "PM-4082", "sender": "passenger-agent"}
+{"ts": "2026-09-21T17:47:08.644096+00:00", "action": "engineer_login_success", "agent": "maintenance-agent", "client": "127.0.0.1", "engineer_id": "ENG-001", "username": "admin"}
+{"ts": "2026-09-21T17:47:40.039784+00:00", "action": "engineer_chat", "agent": "maintenance-agent", "client": "127.0.0.1", "detected_asset_type": "diesel_engine", "answer_method": "template_grounded", "retrieval_method": "local_tfidf"}
+{"ts": "2026-09-21T17:52:53.358792+00:00", "action": "engineer_chat", "agent": "maintenance-agent", "client": "127.0.0.1", "detected_asset_type": "brake_system", "answer_method": "template_grounded", "retrieval_method": "local_tfidf"}
+{"ts": "2026-09-21T18:06:15.217070+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "4085", "sender": "passenger-agent"}
+{"ts": "2026-09-21T18:06:29.253550+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "4085", "sender": "passenger-agent"}
+{"ts": "2026-09-21T18:06:38.674158+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "4085", "sender": "passenger-agent"}
