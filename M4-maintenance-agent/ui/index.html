@@ -751,52 +751,163 @@ body.dark .rpt-tag{background:#1e3a5f;border-color:#1e40af;color:#93c5fd}
 <body>
 
 <!-- ═══ Engineer Login Gate ═══ -->
-<div id="login-gate" style="position:fixed;inset:0;z-index:9999;background:rgba(15,23,42,0.82);backdrop-filter:blur(14px);display:flex;align-items:center;justify-content:center;padding:20px;font-family:'DM Sans',system-ui,sans-serif;">
-  <div style="background:#fff;border-radius:22px;padding:40px 36px;width:100%;max-width:400px;box-shadow:0 32px 80px rgba(0,0,0,0.40);position:relative;overflow:hidden;">
-    <div style="position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#1d4ed8,#2563eb,#3b82f6,#60a5fa);"></div>
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:28px;">
-      <div style="width:46px;height:46px;border-radius:13px;background:linear-gradient(135deg,#1d4ed8,#2563eb);display:grid;place-items:center;flex-shrink:0;box-shadow:0 4px 16px rgba(37,99,235,0.35);">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="2" y="7" width="20" height="13" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
-          <line x1="12" y1="12" x2="12" y2="16"/><line x1="8" y1="14" x2="16" y2="14"/>
-        </svg>
-      </div>
+<!-- Robot Login Gate — full-screen, matches frontend/app/page.tsx design -->
+<style>
+#login-gate{position:fixed;inset:0;z-index:9999;display:flex;font-family:'DM Sans',system-ui,sans-serif;overflow:hidden}
+#lg-left{flex:1;display:none;position:relative;flex-direction:column;justify-content:space-between;padding:40px;background:#050810;overflow:hidden}
+@media(min-width:768px){#lg-left{display:flex}}
+#lg-left .lg-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(59,130,246,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(59,130,246,0.04) 1px,transparent 1px);background-size:48px 48px;pointer-events:none}
+#lg-left .lg-orb1{position:absolute;top:-15%;left:-10%;width:400px;height:400px;background:rgba(37,99,235,0.15);border-radius:50%;filter:blur(80px);pointer-events:none}
+#lg-left .lg-orb2{position:absolute;bottom:-10%;right:-5%;width:300px;height:300px;background:rgba(79,70,229,0.15);border-radius:50%;filter:blur(80px);pointer-events:none}
+#lg-right{width:100%;background:#fff;display:flex;flex-direction:column;justify-content:center;padding:40px;position:relative;overflow-y:auto}
+@media(min-width:768px){#lg-right{width:420px;flex-shrink:0}}
+#lg-right .lg-accent{position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#1e40af,#06b6d4);display:block}
+@media(min-width:768px){#lg-right .lg-accent{display:none}}
+#lg-form-wrap{transition:opacity 0.3s,transform 0.3s}
+#lg-success{display:none;flex-direction:column;align-items:center;text-align:center;gap:20px}
+#lg-success-icon{width:64px;height:64px;border-radius:50%;background:#d1fae5;display:flex;align-items:center;justify-content:center;animation:lgPop 0.4s cubic-bezier(.34,1.56,.64,1) both}
+@keyframes lgPop{from{transform:scale(0)}to{transform:scale(1)}}
+.lg-demo-btn{text-align:left;padding:10px 12px;border-radius:12px;border:1.5px solid #e2e8f0;background:#f8fafc;cursor:pointer;transition:all 0.15s;font-family:inherit}
+.lg-demo-btn:hover{background:#eff6ff;border-color:#bfdbfe}
+#lg-input-user,#lg-input-pw{width:100%;padding:12px 12px 12px 40px;border:1.5px solid #e2e8f0;border-radius:12px;font-size:0.88rem;font-family:inherit;background:#f8fafc;color:#0f172a;outline:none;transition:border-color 0.15s,box-shadow 0.15s;box-sizing:border-box}
+#lg-input-user:focus,#lg-input-pw:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,0.12);background:#fff}
+#lg-error-box{display:none;padding:10px 14px;background:#fef2f2;border:1px solid #fecaca;border-radius:12px;font-size:0.78rem;color:#dc2626;font-weight:600;gap:8px;align-items:flex-start}
+#lg-submit-btn{width:100%;padding:13px;border-radius:12px;border:none;color:#fff;font-size:0.93rem;font-weight:700;cursor:pointer;font-family:inherit;background:linear-gradient(135deg,#1e40af 0%,#3b82f6 60%,#06b6d4 100%);box-shadow:0 4px 16px rgba(37,99,235,0.35);transition:opacity 0.15s,transform 0.1s;display:flex;align-items:center;justify-content:center;gap:8px}
+#lg-submit-btn:hover:not(:disabled){opacity:0.9}
+#lg-submit-btn:active:not(:disabled){transform:scale(0.98)}
+#lg-submit-btn:disabled{opacity:0.6;cursor:not-allowed}
+.lg-spin{width:16px;height:16px;border:2px solid rgba(255,255,255,0.4);border-top-color:#fff;border-radius:50%;animation:lgSpin 0.7s linear infinite}
+@keyframes lgSpin{to{transform:rotate(360deg)}}
+</style>
+
+<div id="login-gate" style="display:flex">
+  <!-- LEFT: dark panel with 3D robot scene -->
+  <div id="lg-left">
+    <div class="lg-grid"></div>
+    <div class="lg-orb1"></div>
+    <div class="lg-orb2"></div>
+    <!-- Logo top-left -->
+    <div style="position:relative;z-index:10;display:flex;align-items:center;gap:12px">
+      <img src="/static/logo.png" alt="RailSense" style="height:40px;width:auto;object-fit:contain;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.5))"/>
       <div>
-        <div style="font-size:1.1rem;font-weight:800;color:#0f172a;letter-spacing:-0.3px;">RailSense AI</div>
-        <div style="font-size:0.7rem;color:#2563eb;font-weight:700;text-transform:uppercase;letter-spacing:0.9px;margin-top:1px;">Maintenance Portal · M4</div>
+        <p style="color:#fff;font-weight:700;font-size:0.875rem;margin:0">RailSense AI</p>
+        <p style="color:rgba(147,197,253,0.6);font-size:0.625rem;letter-spacing:0.15em;text-transform:uppercase;margin:0">Maintenance Agent</p>
       </div>
     </div>
-    <h2 style="font-size:1.35rem;font-weight:800;color:#0f172a;margin-bottom:5px;letter-spacing:-0.4px;">Engineer Sign In</h2>
-    <p style="font-size:0.8rem;color:#64748b;margin-bottom:26px;line-height:1.55;">Access is restricted to authorised maintenance engineers. Enter your credentials to continue.</p>
-    <form id="login-form" onsubmit="doEngineerLogin(event)" style="display:flex;flex-direction:column;gap:14px;">
-      <div>
-        <label for="eng-id" style="display:block;font-size:0.77rem;font-weight:700;color:#374151;margin-bottom:5px;">Engineer ID</label>
-        <input id="eng-id" name="engineer_id" type="text" placeholder="e.g. engineer" autocomplete="username"
-          style="width:100%;padding:11px 14px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:0.88rem;font-family:inherit;background:#f8fafc;color:#0f172a;outline:none;transition:border-color 0.15s,box-shadow 0.15s;"
-          onfocus="this.style.borderColor='#3b82f6';this.style.boxShadow='0 0 0 3px rgba(59,130,246,0.12)'"
-          onblur="this.style.borderColor='#e2e8f0';this.style.boxShadow='none'"/>
+    <!-- Spline 3D robot -->
+    <div style="position:absolute;inset:0;z-index:1">
+      <script type="module" src="https://unpkg.com/@splinetool/viewer@1.9.82/build/spline-viewer.js"></script>
+      <spline-viewer url="https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode" style="width:100%;height:100%;display:block"></spline-viewer>
+    </div>
+    <!-- Bottom text -->
+    <div style="position:relative;z-index:10">
+      <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,0.1);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.1);border-radius:999px;padding:4px 12px;margin-bottom:16px">
+        <span style="width:6px;height:6px;border-radius:50%;background:#34d399;display:inline-block;animation:lgPulse 2s infinite"></span>
+        <span style="color:rgba(255,255,255,0.8);font-size:0.7rem;font-weight:500">System Online</span>
+      </div>
+      <h2 style="color:#fff;font-size:1.5rem;font-weight:800;line-height:1.35;margin:0 0 8px">Maintenance &amp;<br>Asset Intelligence</h2>
+      <p style="color:rgba(147,197,253,0.6);font-size:0.8rem;margin:0;max-width:260px">Real-time fleet health monitoring across all Sri Lanka Railways routes.</p>
+    </div>
+    <style>@keyframes lgPulse{0%,100%{opacity:1}50%{opacity:0.4}}</style>
+  </div>
+
+  <!-- RIGHT: white login form -->
+  <div id="lg-right">
+    <div class="lg-accent"></div>
+
+    <!-- Mobile logo -->
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:28px" class="lg-mobile-logo">
+      <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#1e40af,#06b6d4);display:flex;align-items:center;justify-content:center">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      </div>
+      <p style="font-weight:700;color:#0f172a;margin:0">RailSense AI</p>
+    </div>
+    <style>@media(min-width:768px){.lg-mobile-logo{display:none!important}}</style>
+
+    <!-- Login form wrapper -->
+    <div id="lg-form-wrap">
+      <div style="display:flex;justify-content:center;margin-bottom:24px">
+        <img src="/static/logo.png" alt="RailSense" style="height:100px;width:auto;object-fit:contain"/>
+      </div>
+      <h1 style="font-size:1.75rem;font-weight:800;color:#0f172a;margin:0 0 4px;letter-spacing:-0.5px">Welcome back</h1>
+      <p style="font-size:0.82rem;color:#94a3b8;margin:0 0 28px">Sign in to your engineer account</p>
+
+      <form id="login-form" onsubmit="doEngineerLogin(event)" style="display:flex;flex-direction:column;gap:18px">
+        <!-- Username -->
+        <div>
+          <label style="display:block;font-size:0.7rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">Username</label>
+          <div style="position:relative">
+            <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94a3b8;pointer-events:none">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </span>
+            <input id="eng-id" name="engineer_id" type="text" placeholder="Enter your username" autocomplete="username" required style="width:100%;padding:12px 12px 12px 40px;border:1.5px solid #e2e8f0;border-radius:12px;font-size:0.88rem;font-family:inherit;background:#f8fafc;color:#0f172a;outline:none;transition:border-color 0.15s,box-shadow 0.15s;box-sizing:border-box"
+              onfocus="this.style.borderColor='#3b82f6';this.style.boxShadow='0 0 0 3px rgba(59,130,246,0.12)';this.style.background='#fff'"
+              onblur="this.style.borderColor='#e2e8f0';this.style.boxShadow='none';this.style.background='#f8fafc'"/>
+          </div>
+        </div>
+        <!-- Password -->
+        <div>
+          <label style="display:block;font-size:0.7rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">Password</label>
+          <div style="position:relative">
+            <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94a3b8;pointer-events:none">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </span>
+            <input id="eng-pw" name="password" type="password" placeholder="••••••••" autocomplete="current-password" required style="width:100%;padding:12px 12px 12px 40px;border:1.5px solid #e2e8f0;border-radius:12px;font-size:0.88rem;font-family:inherit;background:#f8fafc;color:#0f172a;outline:none;transition:border-color 0.15s,box-shadow 0.15s;box-sizing:border-box"
+              onfocus="this.style.borderColor='#3b82f6';this.style.boxShadow='0 0 0 3px rgba(59,130,246,0.12)';this.style.background='#fff'"
+              onblur="this.style.borderColor='#e2e8f0';this.style.boxShadow='none';this.style.background='#f8fafc'"/>
+          </div>
+        </div>
+        <!-- Error -->
+        <div id="login-error" style="display:none;padding:10px 14px;background:#fef2f2;border:1px solid #fecaca;border-radius:12px;font-size:0.78rem;color:#dc2626;font-weight:600"></div>
+        <!-- Submit -->
+        <button type="submit" id="login-btn" style="width:100%;padding:13px;border-radius:12px;border:none;color:#fff;font-size:0.93rem;font-weight:700;cursor:pointer;font-family:inherit;background:linear-gradient(135deg,#1e40af 0%,#3b82f6 60%,#06b6d4 100%);box-shadow:0 4px 16px rgba(37,99,235,0.35);transition:opacity 0.15s,transform 0.1s;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:2px"
+          onmouseover="if(!this.disabled)this.style.opacity='0.9'"
+          onmouseout="this.style.opacity='1'">
+          Sign In
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </button>
+      </form>
+
+      <!-- Demo accounts -->
+      <div style="margin-top:24px;padding-top:20px;border-top:1px solid #f1f5f9">
+        <p style="font-size:0.72rem;color:#94a3b8;text-align:center;margin:0 0 12px">Demo accounts — click to autofill</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <button type="button" class="lg-demo-btn" onclick="lgFill('admin','admin123')">
+            <p style="font-size:0.72rem;font-weight:700;color:#334155;margin:0">Chief</p>
+            <p style="font-size:0.66rem;color:#94a3b8;font-family:monospace;margin:0">admin</p>
+          </button>
+          <button type="button" class="lg-demo-btn" onclick="lgFill('menike','menike2024')">
+            <p style="font-size:0.72rem;font-weight:700;color:#334155;margin:0">Asitha</p>
+            <p style="font-size:0.66rem;color:#94a3b8;font-family:monospace;margin:0">menike</p>
+          </button>
+          <button type="button" class="lg-demo-btn" onclick="lgFill('silva','silva2024')">
+            <p style="font-size:0.72rem;font-weight:700;color:#334155;margin:0">Rohan</p>
+            <p style="font-size:0.66rem;color:#94a3b8;font-family:monospace;margin:0">silva</p>
+          </button>
+          <button type="button" class="lg-demo-btn" onclick="lgFill('perera','perera2024')">
+            <p style="font-size:0.72rem;font-weight:700;color:#334155;margin:0">Nilantha</p>
+            <p style="font-size:0.66rem;color:#94a3b8;font-family:monospace;margin:0">perera</p>
+          </button>
+        </div>
+      </div>
+
+      <p style="text-align:center;color:#cbd5e1;font-size:0.68rem;margin-top:28px">RailSense AI · M4 Maintenance Intelligence · IT3041</p>
+    </div>
+
+    <!-- Success state (shown after login) -->
+    <div id="lg-success" style="display:none;flex-direction:column;align-items:center;text-align:center;gap:20px">
+      <div id="lg-success-icon" style="width:64px;height:64px;border-radius:50%;background:#d1fae5;display:flex;align-items:center;justify-content:center">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" width="32" height="32"><polyline points="20 6 9 17 4 12"/></svg>
       </div>
       <div>
-        <label for="eng-pw" style="display:block;font-size:0.77rem;font-weight:700;color:#374151;margin-bottom:5px;">Password</label>
-        <input id="eng-pw" name="password" type="password" placeholder="••••••••" autocomplete="current-password"
-          style="width:100%;padding:11px 14px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:0.88rem;font-family:inherit;background:#f8fafc;color:#0f172a;outline:none;transition:border-color 0.15s,box-shadow 0.15s;"
-          onfocus="this.style.borderColor='#3b82f6';this.style.boxShadow='0 0 0 3px rgba(59,130,246,0.12)'"
-          onblur="this.style.borderColor='#e2e8f0';this.style.boxShadow='none'"/>
+        <p id="lg-welcome-name" style="font-size:1.25rem;font-weight:800;color:#0f172a;margin:0">Welcome!</p>
+        <p id="lg-welcome-role" style="font-size:0.8rem;color:#64748b;margin:4px 0 0"></p>
+        <p id="lg-welcome-id" style="font-size:0.72rem;color:#3b82f6;background:#eff6ff;padding:2px 10px;border-radius:999px;display:inline-block;margin-top:6px;font-family:monospace"></p>
       </div>
-      <div id="login-error" style="display:none;padding:9px 13px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;font-size:0.78rem;color:#dc2626;font-weight:600;"></div>
-      <button type="submit" id="login-btn"
-        style="background:linear-gradient(135deg,#1d4ed8,#2563eb);color:#fff;border:none;border-radius:10px;padding:13px;font-size:0.92rem;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 4px 16px rgba(37,99,235,0.35);transition:all 0.15s;margin-top:2px;"
-        onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 6px 20px rgba(37,99,235,0.45)'"
-        onmouseout="this.style.transform='';this.style.boxShadow='0 4px 16px rgba(37,99,235,0.35)'">
-        Sign In
-      </button>
-    </form>
-    <div style="margin-top:20px;padding-top:16px;border-top:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;">
-      <div style="display:flex;align-items:center;gap:6px;">
-        <div style="width:7px;height:7px;border-radius:50%;background:#10b981;box-shadow:0 0 5px #10b981;flex-shrink:0;"></div>
-        <span style="font-size:0.7rem;color:#64748b;font-weight:500;">M4 Maintenance Agent · Port 8006</span>
+      <div style="display:flex;align-items:center;gap:8px;color:#94a3b8;font-size:0.83rem">
+        <div style="width:16px;height:16px;border:2px solid #93c5fd;border-top-color:transparent;border-radius:50%;animation:lgSpin 0.7s linear infinite"></div>
+        Loading dashboard…
       </div>
-      <span style="font-size:0.68rem;color:#94a3b8;">Sri Lanka Railways</span>
     </div>
   </div>
 </div>
@@ -1889,7 +2000,7 @@ function renderTrains() {
 /* ═══ UTILITIES ═══ */
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
 function toast(msg,ms=2600){const e=document.getElementById('toast');e.textContent=msg;e.style.display='block';setTimeout(()=>e.style.display='none',ms)}
-function handleLogout(){if(confirm('Sign out of the Maintenance Portal?')){localStorage.removeItem('m4_eng_auth');localStorage.removeItem('m4_eng_token');location.replace('http://localhost:3002');}}
+function handleLogout(){if(confirm('Sign out of the Maintenance Portal?')){localStorage.removeItem('m4_eng_auth');localStorage.removeItem('m4_eng_token');location.reload();}}
 
 /* ── Sidebar toggle ── */
 function _applySidebarState(collapsed){
@@ -1916,43 +2027,74 @@ function toggleSidebar(){
 
 /* ── Engineer Login Gate ── */
 (function(){
-  var g=document.getElementById('login-gate');
-  var params=new URLSearchParams(window.location.search);
-  if(params.get('m4auth')==='1'){
-    localStorage.setItem('m4_eng_auth','1');
-    history.replaceState(null,'',window.location.pathname);
-    g.style.display='none';
-    return;
+  var hasToken=!!(localStorage.getItem('m4_eng_token')||'').trim();
+  if(hasToken){
+    var g=document.getElementById('login-gate');
+    if(g) g.style.display='none';
   }
-  if(localStorage.getItem('m4_eng_auth')==='1'){g.style.display='none';return;}
-  // Not authenticated — redirect to robot login
-  window.location.replace('http://localhost:3002');
+  // Clear stale auth flag if no token
+  if(!hasToken) localStorage.removeItem('m4_eng_auth');
 })();
+
+function lgFill(u,p){
+  document.getElementById('eng-id').value=u;
+  document.getElementById('eng-pw').value=p;
+  document.getElementById('login-error').style.display='none';
+}
+function _lgResetAndShow(){
+  var g=document.getElementById('login-gate');
+  if(!g) return;
+  // Reset to form state in case success state is showing
+  var fw=document.getElementById('lg-form-wrap');
+  var suc=document.getElementById('lg-success');
+  if(fw) fw.style.display='';
+  if(suc) suc.style.display='none';
+  var btn=document.getElementById('login-btn');
+  if(btn){btn.disabled=false;btn.innerHTML='Sign In <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>';}
+  g.style.opacity='1';
+  g.style.display='flex';
+}
+
 async function doEngineerLogin(e){
   e.preventDefault();
   var id=document.getElementById('eng-id').value.trim();
   var pw=document.getElementById('eng-pw').value;
   var err=document.getElementById('login-error');
   var btn=document.getElementById('login-btn');
-  if(!id||!pw){err.textContent='Please enter both Engineer ID and password.';err.style.display='block';return;}
-  btn.disabled=true;btn.textContent='Signing in…';err.style.display='none';
+  if(!id||!pw){err.textContent='Please enter both username and password.';err.style.display='block';return;}
+  // Loading state
+  btn.disabled=true;
+  btn.innerHTML='<div style="width:16px;height:16px;border:2px solid rgba(255,255,255,0.4);border-top-color:#fff;border-radius:50%;animation:lgSpin 0.7s linear infinite"></div>Authenticating…';
+  err.style.display='none';
   try{
     var res=await fetch('/api/engineer-login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({engineer_id:id,password:pw})});
-    if(res.ok){
-      var d=await res.json().catch(function(){return{};});
+    var d=await res.json().catch(function(){return{};});
+    if(res.ok && d.token){
       localStorage.setItem('m4_eng_auth','1');
-      if(d.token) localStorage.setItem('m4_eng_token',d.token);
-      var g=document.getElementById('login-gate');
-      g.style.transition='opacity 0.35s ease';g.style.opacity='0';
-      setTimeout(function(){g.remove();},370);
+      localStorage.setItem('m4_eng_token',d.token);
+      // Show success state
+      document.getElementById('lg-form-wrap').style.display='none';
+      var suc=document.getElementById('lg-success');
+      suc.style.display='flex';
+      document.getElementById('lg-welcome-name').textContent='Welcome, '+(d.name||id).split(' ')[0]+'!';
+      document.getElementById('lg-welcome-role').textContent=d.role||'Maintenance Engineer';
+      document.getElementById('lg-welcome-id').textContent=d.eng_id||'';
+      // Fade gate out and remove
+      setTimeout(function(){
+        var g=document.getElementById('login-gate');
+        if(g){g.style.transition='opacity 0.4s ease';g.style.opacity='0';setTimeout(function(){g.remove();loadDashboard();},420);}
+      },1400);
     }else{
-      var d=await res.json().catch(function(){return{};});
-      err.textContent=d.detail||'Invalid credentials. Please try again.';err.style.display='block';
-      btn.disabled=false;btn.textContent='Sign In';
+      err.textContent=d.detail||'Invalid credentials. Please try again.';
+      err.style.display='block';
+      btn.disabled=false;
+      btn.innerHTML='Sign In <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>';
     }
   }catch(ex){
-    err.textContent='Connection error. Make sure the M4 agent is running.';err.style.display='block';
-    btn.disabled=false;btn.textContent='Sign In';
+    err.textContent='Connection error. Make sure the M4 agent is running.';
+    err.style.display='block';
+    btn.disabled=false;
+    btn.innerHTML='Sign In <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>';
   }
 }
 function setBadge(id,ok,okL,failL){const e=document.getElementById(id);e.className='badge '+(ok?'badge-green':'badge-gray');e.innerHTML=(ok?'<span class="badge-dot"></span>':'')+esc(ok?okL:failL)}
@@ -3197,7 +3339,13 @@ function selectHealth(val){
 async function submitResolve(){
   if(!_resReportId) return;
   const token=localStorage.getItem('m4_eng_token')||'';
-  if(!token){alert('Please log in as engineer to resolve reports.');return;}
+  if(!token){
+    closeResolveModal();
+    localStorage.removeItem('m4_eng_auth');
+    _lgResetAndShow();
+    toast('Session expired — please sign in again to resolve reports.',4000);
+    return;
+  }
   const action=document.getElementById('res-action').value;
   if(!action){document.getElementById('res-action').focus();return;}
   const notes=document.getElementById('res-notes').value.trim();
@@ -3211,6 +3359,16 @@ async function submitResolve(){
       headers:{'Content-Type':'application/json','X-Engineer-Token':token},
       body:JSON.stringify({action_taken:action,health_after:_resHealthAfter,priority,notes})
     });
+    if(res.status===401){
+      closeResolveModal();
+      localStorage.removeItem('m4_eng_token');
+      localStorage.removeItem('m4_eng_auth');
+      _lgResetAndShow();
+      toast('Session expired — please sign in again.',4000);
+      btn.disabled=false;
+      btn.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:4px"><polyline points="20 6 9 17 4 12"/></svg>Mark Resolved';
+      return;
+    }
     if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.detail||'Failed');}
     // Update card in place
     const card=document.getElementById('rcard-'+_resReportId);

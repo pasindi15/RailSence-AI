@@ -67,6 +67,14 @@ UI_DIR = AGENT_DIR / "ui"
 _in_memory_events: list[dict] = []
 _in_memory_reports: list[dict] = []
 _train_flags: dict[str, dict] = {}  # train_id -> maintenance flag record
+
+# Engineer accounts — keyed by username (matches frontend page.tsx)
+_ENGINEER_ACCOUNTS: dict[str, dict] = {
+    "admin":   {"id": "ENG-001", "password": "admin123",   "name": "Chief Engineer",  "role": "Chief Mechanical Engineer"},
+    "menike":  {"id": "ENG-102", "password": "menike2024", "name": "Asitha Menike",   "role": "Locomotive Inspector"},
+    "silva":   {"id": "ENG-205", "password": "silva2024",  "name": "Rohan Silva",     "role": "Track Maintenance Officer"},
+    "perera":  {"id": "ENG-308", "password": "perera2024", "name": "Nilantha Perera", "role": "Signal Technician"},
+}
 _active_tokens: set[str] = set()    # valid session tokens issued on engineer login
 
 
@@ -728,15 +736,15 @@ async def manual_search(
 @app.post("/api/engineer-login")
 @limiter.limit("10/minute")
 async def engineer_login(request: Request, payload: EngineerLoginRequest):
-    """Validate engineer credentials. Credentials are set via ENGINEER_ID and ENGINEER_PASSWORD env vars."""
-    expected_id = os.getenv("ENGINEER_ID", "engineer")
-    expected_pw = os.getenv("ENGINEER_PASSWORD", "railsense2024")
+    """Validate engineer credentials against the known engineer accounts."""
     client_ip = request.client.host if request.client else "unknown"
-    if payload.engineer_id.strip() == expected_id and payload.password == expected_pw:
+    username = payload.engineer_id.strip().lower()
+    account = _ENGINEER_ACCOUNTS.get(username)
+    if account and payload.password == account["password"]:
         token = secrets.token_hex(32)
         _active_tokens.add(token)
-        _write_audit("engineer_login_success", client_ip, {"engineer_id": payload.engineer_id})
-        return {"success": True, "name": payload.engineer_id, "token": token}
+        _write_audit("engineer_login_success", client_ip, {"engineer_id": account["id"], "username": username})
+        return {"success": True, "name": account["name"], "role": account["role"], "eng_id": account["id"], "token": token}
     _write_audit("engineer_login_failed", client_ip, {"engineer_id": payload.engineer_id})
     raise HTTPException(status_code=401, detail="Invalid engineer credentials. Please try again.")
 
