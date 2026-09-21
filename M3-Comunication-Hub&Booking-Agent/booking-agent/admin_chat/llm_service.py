@@ -70,18 +70,18 @@ def verify_factual_consistency(
                     discrepancies.append(f"Inconsistent seat availability for {s_cls}: stated {stated_num}, actual {avail}")
 
     # 3. Fraud case counts
-    if "total_flagged" in db_ev:
-        tot = db_ev["total_flagged"]
+    tot_fraud = db_ev.get("count") or db_ev.get("total_flagged")
+    if tot_fraud is not None:
         for m in re.findall(r"\b(\d+)\s+(?:flagged|pending|fraud)\b", answer, re.IGNORECASE):
-            if int(m) != tot:
-                discrepancies.append(f"Answer mentions {m} cases, but DB has {tot}.")
+            if int(m) != tot_fraud:
+                discrepancies.append(f"Answer mentions {m} cases, but DB has {tot_fraud}.")
 
     # 4. Cancellation counts
-    if "total_pending" in db_ev:
-        tot = db_ev["total_pending"]
+    tot_canc = db_ev.get("count") or db_ev.get("total_pending")
+    if tot_canc is not None:
         for m in re.findall(r"\b(\d+)\s+(?:cancellations?|pending)\b", answer, re.IGNORECASE):
-            if int(m) != tot:
-                discrepancies.append(f"Answer mentions {m} cancellations, but DB has {tot}.")
+            if int(m) != tot_canc:
+                discrepancies.append(f"Answer mentions {m} cancellations, but DB has {tot_canc}.")
 
     return (len(discrepancies) == 0, discrepancies)
 
@@ -101,8 +101,9 @@ def _call_gemini_chat(
         return None
 
     models_to_try = [
-        os.getenv("GEMINI_MODEL", "gemini-2.5-flash"),
-        "gemini-1.5-flash",
+        os.getenv("GEMINI_MODEL", "gemini-flash-lite-latest"),
+        "gemini-flash-latest",
+        "gemini-pro-latest",
     ]
 
     system_prompt = (
@@ -111,9 +112,10 @@ def _call_gemini_chat(
         "Rules:\n"
         "1. Never invent or hallucinate seat numbers, availability counts, refund figures, risk scores, or booking references.\n"
         "2. Ground every single claim in the provided EVIDENCE dictionary.\n"
-        "3. If information is not in the evidence, answer: 'I could not find matching booking information for that request.'\n"
-        "4. Never approve, cancel, or modify any database records. If asked to modify, refuse and direct the user to administrative review controls.\n"
-        "5. Output valid JSON matching this schema:\n"
+        "3. If a specific booking reference, cancellation case, or fraud case was queried but found is False in evidence, clearly state that the reference (e.g. RS-12345 or CR-12345) was not found in the RailSense database.\n"
+        "4. If general information is missing from evidence, answer: 'I could not find matching booking information for that request.'\n"
+        "5. Never approve, cancel, or modify any database records. If asked to modify, refuse and direct the user to administrative review controls.\n"
+        "6. Output valid JSON matching this schema:\n"
         "   {\n"
         "     \"answer\": \"concise natural language explanation\",\n"
         "     \"sources\": [{\"type\": \"...\", \"id\": \"...\", \"label\": \"...\"}],\n"
@@ -130,7 +132,7 @@ def _call_gemini_chat(
             "contents": [{"parts": [{"text": user_prompt}]}],
             "generationConfig": {
                 "temperature": 0.0,
-                "maxOutputTokens": 600,
+                "maxOutputTokens": 2048,
                 "response_mime_type": "application/json",
             },
         }
@@ -143,7 +145,7 @@ def _call_gemini_chat(
                 headers={"Content-Type": "application/json"},
                 method="POST",
             )
-            with urllib.request.urlopen(req, timeout=6.0) as resp:
+            with urllib.request.urlopen(req, timeout=7.0) as resp:
                 resp_data = json.loads(resp.read().decode("utf-8"))
                 candidates = resp_data.get("candidates", [])
                 if candidates:
@@ -151,7 +153,8 @@ def _call_gemini_chat(
                     if parts and "text" in parts[0]:
                         raw_json = parts[0]["text"].strip()
                         return json.loads(raw_json)
-        except Exception:
+        except Exception as e:
+            logger.debug(f"Gemini model {model} attempt error: {e}")
             continue
 
     return None
