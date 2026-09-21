@@ -154,6 +154,24 @@ def retrieve_seat_availability(db: Session, entities: dict[str, Any]) -> dict[st
                     "available": available,
                 })
 
+        # Deduplicate: Multiple schedule rows can exist for the same train+date+departure_time
+        # (e.g. "Colombo" and "Colombo Fort" are two rows for the same physical service).
+        # Collapse by (departure_time, seat_class) — merge confirmed/held, take minimum
+        # available (most conservative), prefer the longer/canonical origin station name.
+        seen_dedup: dict[tuple, dict] = {}
+        for r in records:
+            key = (r["departure_time"], r["seat_class"])
+            if key not in seen_dedup:
+                seen_dedup[key] = dict(r)
+            else:
+                prev = seen_dedup[key]
+                prev["confirmed"] = max(prev["confirmed"], r["confirmed"])
+                prev["held"] = prev["held"] + r["held"]
+                prev["available"] = min(prev["available"], r["available"])
+                if len(r["from_station"]) > len(prev["from_station"]):
+                    prev["from_station"] = r["from_station"]
+        records = list(seen_dedup.values())
+
         return {
             "found": True,
             "train_name": train.train_name,
@@ -162,7 +180,13 @@ def retrieve_seat_availability(db: Session, entities: dict[str, Any]) -> dict[st
             "records": records,
         }
 
-    # 2. General / Threshold Query (e.g. "Which trains have less than 10 seats?")
+    # 2. General / Threshold Query (e.g. "Which trains have less than 10 seats?", "Show available First, Second, and Third Class seats")
+    from booking.availability import ensure_journeys_for_date
+    try:
+        ensure_journeys_for_date(db, parsed_date)
+    except Exception:
+        pass
+
     active_schedules = (
         db.query(TrainSchedule, Train)
         .join(Train, TrainSchedule.train_id == Train.id)
@@ -173,28 +197,39 @@ def retrieve_seat_availability(db: Session, entities: dict[str, Any]) -> dict[st
         .all()
     )
 
+    classes_to_check = entities.get("seat_classes") or ([target_class] if target_class else ["First Class", "Second Class"])
     records = []
     for s, t in active_schedules:
-        for cname in ["First Class", "Second Class"]:
-            avail = get_available_seats(db, schedule=s, seat_class=cname)
-            if threshold_op == "<" and threshold_val is not None:
-                if avail >= threshold_val:
-                    continue
-            records.append({
-                "schedule_id": s.id,
-                "train_id": t.train_id,
-                "train_name": t.train_name,
-                "seat_class": cname,
-                "available": avail,
-                "from_station": s.from_station,
-                "to_station": s.to_station,
-            })
+        for cname in classes_to_check:
+            if cname in ["First Class", "Second Class"]:
+                avail = get_available_seats(db, schedule=s, seat_class=cname)
+                if threshold_op == "<" and threshold_val is not None:
+                    if avail >= threshold_val:
+                        continue
+                records.append({
+                    "schedule_id": s.id,
+                    "train_id": t.train_id,
+                    "train_name": t.train_name,
+                    "seat_class": cname,
+                    "available": avail,
+                    "from_station": s.from_station,
+                    "to_station": s.to_station,
+                    "departure_time": s.departure_time.strftime("%H:%M") if s.departure_time else "",
+                    "arrival_time": s.arrival_time.strftime("%H:%M") if s.arrival_time else "",
+                })
+
+    has_third_class = "Third Class" in classes_to_check or entities.get("all_classes_requested")
 
     return {
         "found": len(records) > 0,
         "travel_date": parsed_date.isoformat(),
         "seat_class": target_class,
-        "records": records[:10],
+        "seat_classes": classes_to_check,
+        "records": records[:12],
+        "third_class_note": (
+            "Third Class is operated as general unreserved seating on Sri Lanka Railways intercity express trains and is available directly on station platforms without reservation."
+            if has_third_class else None
+        ),
     }
 
 
@@ -210,11 +245,17 @@ def retrieve_fraud_reviews(db: Session, entities: dict[str, Any]) -> dict[str, A
 
     # 1. Lookup specific case by reference
     if case_ref:
-        case = db.query(FraudReview).filter(FraudReview.case_reference.ilike(f"%{case_ref.strip()}%")).first()
+        clean_cr = case_ref.strip().upper()
+        case = db.query(FraudReview).filter(FraudReview.case_reference.ilike(f"%{clean_cr}%")).first()
+        if not case and "-" in clean_cr:
+            num_part = clean_cr.split("-")[-1]
+            if len(num_part) >= 3:
+                case = db.query(FraudReview).filter(FraudReview.case_reference.ilike(f"%{num_part}%")).first()
         if case:
             payload = json.loads(case.booking_payload) if case.booking_payload else {}
             return {
                 "type": "single_case",
+                "found": True,
                 "case_reference": case.case_reference,
                 "risk_score": float(case.risk_score),
                 "risk_level": case.risk_level,
@@ -231,17 +272,23 @@ def retrieve_fraud_reviews(db: Session, entities: dict[str, Any]) -> dict[str, A
                     "passenger_count": payload.get("passenger_count"),
                 },
             }
+        return {
+            "type": "single_case",
+            "found": False,
+            "case_reference": clean_cr,
+            "message": f"Fraud review case '{clean_cr}' was not found in the review queue.",
+        }
 
     # 2. Lookup by booking reference
     if bkg_ref:
         bkg_clean = bkg_ref.strip().upper()
-        # Find if booking payload contains this reference or case reference
         all_cases = db.query(FraudReview).all()
         for c in all_cases:
             if bkg_clean in (c.case_reference or "") or bkg_clean in (c.booking_payload or ""):
                 payload = json.loads(c.booking_payload) if c.booking_payload else {}
                 return {
                     "type": "single_case",
+                    "found": True,
                     "case_reference": c.case_reference,
                     "risk_score": float(c.risk_score),
                     "risk_level": c.risk_level,
@@ -255,6 +302,12 @@ def retrieve_fraud_reviews(db: Session, entities: dict[str, Any]) -> dict[str, A
                         "travel_date": payload.get("travel_date"),
                     },
                 }
+        return {
+            "type": "single_case",
+            "found": False,
+            "booking_reference": bkg_clean,
+            "message": f"No fraud review record was found for booking reference '{bkg_clean}'.",
+        }
 
     # 3. Query queue / aggregates
     query = db.query(FraudReview)
@@ -309,11 +362,17 @@ def retrieve_cancellations(db: Session, entities: dict[str, Any]) -> dict[str, A
 
     # 1. Specific Case Lookup
     if case_ref:
-        cr = db.query(CancellationRequest).filter(CancellationRequest.case_reference.ilike(f"%{case_ref.strip()}%")).first()
+        clean_cr = case_ref.strip().upper()
+        cr = db.query(CancellationRequest).filter(CancellationRequest.case_reference.ilike(f"%{clean_cr}%")).first()
+        if not cr and "-" in clean_cr:
+            num_part = clean_cr.split("-")[-1]
+            if len(num_part) >= 3:
+                cr = db.query(CancellationRequest).filter(CancellationRequest.case_reference.ilike(f"%{num_part}%")).first()
         if cr:
             b = cr.booking
             return {
                 "type": "single_case",
+                "found": True,
                 "case_reference": cr.case_reference,
                 "booking_reference": b.booking_reference if b else None,
                 "reason": cr.reason,
@@ -324,14 +383,22 @@ def retrieve_cancellations(db: Session, entities: dict[str, Any]) -> dict[str, A
                 "admin_decision": cr.admin_decision,
                 "admin_reason": cr.admin_reason,
             }
+        return {
+            "type": "single_case",
+            "found": False,
+            "case_reference": clean_cr,
+            "message": f"Cancellation request case '{clean_cr}' was not found in the cancellation queue.",
+        }
 
     # 2. Specific Booking Reference Lookup
     if bkg_ref:
-        bkg = db.query(Booking).filter(Booking.booking_reference == bkg_ref.strip().upper()).first()
+        bkg_clean = bkg_ref.strip().upper()
+        bkg = db.query(Booking).filter(Booking.booking_reference == bkg_clean).first()
         if bkg and bkg.cancellation_request:
             cr = bkg.cancellation_request
             return {
                 "type": "single_case",
+                "found": True,
                 "case_reference": cr.case_reference,
                 "booking_reference": bkg.booking_reference,
                 "gross_fare": f"{bkg.fare:.2f}",
@@ -343,6 +410,12 @@ def retrieve_cancellations(db: Session, entities: dict[str, Any]) -> dict[str, A
                 "admin_decision": cr.admin_decision,
                 "admin_reason": cr.admin_reason,
             }
+        return {
+            "type": "single_case",
+            "found": False,
+            "booking_reference": bkg_clean,
+            "message": f"No cancellation request was found for booking reference '{bkg_clean}'.",
+        }
 
     # 3. Queue / Aggregate Query
     query = db.query(CancellationRequest)
@@ -385,10 +458,14 @@ def retrieve_manifest(db: Session, entities: dict[str, Any]) -> dict[str, Any]:
     """
     travel_date_str = entities.get("travel_date")
     parsed_date = date.fromisoformat(travel_date_str) if travel_date_str else get_current_colombo_date()
+    has_date_in_query = bool(travel_date_str)
+
     train_name = entities.get("train_name")
     train_id = entities.get("train_id")
     target_class = entities.get("seat_class")
     is_count = entities.get("is_count_request", False)
+    from_station = entities.get("origin_station")
+    to_station = entities.get("destination_station")
 
     train = _resolve_train(db, train_name, train_id)
 
@@ -400,12 +477,19 @@ def retrieve_manifest(db: Session, entities: dict[str, Any]) -> dict[str, Any]:
 
     if train:
         query = query.filter(Booking.train_id == train.id)
-    if parsed_date:
+    if from_station:
+        query = query.filter(Booking.from_station.ilike(f"%{from_station}%"))
+    if to_station:
+        query = query.filter(Booking.to_station.ilike(f"%{to_station}%"))
+    if has_date_in_query and parsed_date:
         query = query.filter(Booking.travel_date == parsed_date)
+    elif parsed_date:
+        query = query.filter(Booking.travel_date >= parsed_date)
+
     if target_class:
         query = query.filter(func.lower(func.trim(Booking.seat_class)) == target_class.lower())
 
-    # Default to confirmed bookings for manifests unless requested otherwise
+    # Default to confirmed bookings for manifests
     query = query.filter(Booking.status == BookingStatus.CONFIRMED)
 
     total_bookings = query.count()
@@ -413,14 +497,34 @@ def retrieve_manifest(db: Session, entities: dict[str, Any]) -> dict[str, Any]:
         Booking.id.in_(query.with_entities(Booking.id))
     ).scalar() or 0
 
+    route_label = f"{from_station} to {to_station}" if (from_station and to_station) else (from_station or to_station or "")
+
+    # If 0 bookings on a requested route, look up available scheduled trains
+    operating_services = []
+    if total_bookings == 0 and (from_station or to_station or train):
+        try:
+            from booking.availability import find_matching_services
+            services = find_matching_services(origin=from_station, destination=to_station, train_id=train.train_id if train else None)
+            for svc, orig_stop, dest_stop in services[:4]:
+                operating_services.append({
+                    "train_id": svc.train_id,
+                    "train_name": svc.train_name,
+                    "departure_time": orig_stop.departure_time.strftime("%H:%M") if orig_stop.departure_time else "",
+                    "arrival_time": dest_stop.arrival_time.strftime("%H:%M") if dest_stop.arrival_time else "",
+                })
+        except Exception:
+            pass
+
     if is_count:
         return {
             "type": "count",
             "train_name": train.train_name if train else "All Trains",
             "travel_date": parsed_date.isoformat(),
+            "route": route_label,
             "seat_class": target_class,
             "total_bookings": total_bookings,
             "total_passengers": int(total_passengers),
+            "operating_services": operating_services,
         }
 
     bookings = query.order_by(Booking.created_at.desc()).limit(15).all()
@@ -452,9 +556,11 @@ def retrieve_manifest(db: Session, entities: dict[str, Any]) -> dict[str, Any]:
         "type": "manifest",
         "train_name": train.train_name if train else "All Trains",
         "travel_date": parsed_date.isoformat(),
+        "route": route_label,
         "total_bookings": total_bookings,
         "total_passengers": int(total_passengers),
         "bookings": results,
+        "operating_services": operating_services,
     }
 
 
@@ -488,7 +594,7 @@ def retrieve_booking_lookup(db: Session, booking_ref: str) -> dict[str, Any]:
         "booking_reference": booking.booking_reference,
         "train_id": booking.train.train_id if booking.train else "",
         "train_name": booking.train.train_name if booking.train else "",
-        "route": f"{booking.from_station} → {booking.to_station}",
+        "route": f"{booking.from_station} to {booking.to_station}",
         "travel_date": booking.travel_date.isoformat(),
         "seat_class": booking.seat_class,
         "passenger_count": booking.passenger_count,
@@ -513,44 +619,65 @@ def retrieve_booking_summary(db: Session, entities: dict[str, Any]) -> dict[str,
     today = get_current_colombo_date()
     now_utc = datetime.now(timezone.utc)
 
-    # 1. Confirmed bookings & passengers
-    confirmed_bookings = db.query(Booking).filter(
+    # 1. Confirmed bookings created today
+    created_today_bookings = db.query(Booking).filter(
         Booking.status == BookingStatus.CONFIRMED,
         func.date(Booking.created_at) == today,
     ).count()
 
-    passenger_count = db.query(func.coalesce(func.sum(Booking.passenger_count), 0)).filter(
+    created_today_pax = db.query(func.coalesce(func.sum(Booking.passenger_count), 0)).filter(
         Booking.status == BookingStatus.CONFIRMED,
         func.date(Booking.created_at) == today,
     ).scalar() or 0
 
-    # 2. Pending cancellations
+    # 2. Confirmed bookings travelling today
+    travel_today_bookings = db.query(Booking).filter(
+        Booking.status == BookingStatus.CONFIRMED,
+        Booking.travel_date == today,
+    ).count()
+
+    travel_today_pax = db.query(func.coalesce(func.sum(Booking.passenger_count), 0)).filter(
+        Booking.status == BookingStatus.CONFIRMED,
+        Booking.travel_date == today,
+    ).scalar() or 0
+
+    # 3. Total active bookings in system
+    total_active_bookings = db.query(Booking).filter(
+        Booking.status == BookingStatus.CONFIRMED
+    ).count()
+
+    # 4. Pending cancellations
     pending_cancellations = db.query(CancellationRequest).filter(
         CancellationRequest.status == CancellationStatus.PENDING_ADMIN_REVIEW
     ).count()
 
-    # 3. Pending fraud reviews
+    # 5. Pending fraud reviews
     pending_fraud = db.query(FraudReview).filter(
         FraudReview.status == FraudReviewStatus.PENDING_REVIEW
     ).count()
 
-    # 4. Active seat holds
+    # 6. Active seat holds
     active_holds = db.query(SeatHold).filter(
         SeatHold.status == HoldStatus.ACTIVE,
         SeatHold.expires_at > now_utc,
     ).count()
 
-    # 5. Waiting list passengers
+    # 7. Waiting list passengers
     waiting_count = db.query(func.coalesce(func.sum(Booking.passenger_count), 0)).filter(
         Booking.status == BookingStatus.HELD
     ).scalar() or 0
 
     return {
         "date": today.isoformat(),
-        "confirmed_bookings": int(confirmed_bookings),
-        "passengers": int(passenger_count),
+        "confirmed_bookings": int(created_today_bookings),
+        "passengers": int(created_today_pax),
+        "created_today_bookings": int(created_today_bookings),
+        "travel_today_bookings": int(travel_today_bookings),
+        "travel_today_pax": int(travel_today_pax),
+        "total_active_bookings": int(total_active_bookings),
         "pending_cancellations": int(pending_cancellations),
         "pending_fraud_reviews": int(pending_fraud),
         "active_seat_holds": int(active_holds),
         "waiting_list_passengers": int(waiting_count),
+        "is_count_request": entities.get("is_count_request", False),
     }
