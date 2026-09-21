@@ -99,6 +99,16 @@ RECOMMENDED_ACTIONS = {
                "brake_system":  "Withdraw from service immediately. Brake system replacement required. See Brake Manual Section 5."},
 }
 
+FAULT_SEVERITY = {
+    "none": 0, "pad_worn": 1, "suspension_worn": 1,
+    "brake_fade": 2, "bearing_noise": 2, "wheel_flat": 2,
+    "cylinder_leak": 2, "starter_failure": 2,
+    "oil_leak": 3, "overheating": 3, "fuel_pump_fault": 3,
+    "axle_crack": 5,
+}
+
+SERVICE_INTERVAL = {"diesel_engine": 90, "bogie": 60, "brake_system": 45}
+
 
 def get_health_status(score: float) -> str:
     if score >= 70:
@@ -175,6 +185,9 @@ def generate_asset_history(asset: dict, n_records: int = 25) -> list[dict]:
         recommended_action = RECOMMENDED_ACTIONS[health_status].get(
             asset["asset_type"], f"Schedule {health_status.lower()} priority maintenance."
         )
+        severity = FAULT_SEVERITY.get(fault_type, 0)
+        interval = SERVICE_INTERVAL.get(asset["asset_type"], 90)
+        overdue_days = max(0, days_since - interval)
 
         records.append({
             "record_id":               str(uuid.uuid4()),
@@ -190,6 +203,8 @@ def generate_asset_history(asset: dict, n_records: int = 25) -> list[dict]:
             "health_status":           health_status,
             "technician_note":         technician_note,
             "recommended_action":      recommended_action,
+            "fault_severity":          severity,
+            "overdue_days":            overdue_days,
             **sensors,
         })
 
@@ -200,7 +215,7 @@ def generate_asset_history(asset: dict, n_records: int = 25) -> list[dict]:
 if __name__ == "__main__":
     all_records: list[dict] = []
     for asset in TRAIN_ASSETS:
-        all_records.extend(generate_asset_history(asset, n_records=25))
+        all_records.extend(generate_asset_history(asset, n_records=60))
 
     out_path = Path(__file__).parent / "assets_history.csv"
     if all_records:

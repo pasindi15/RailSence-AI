@@ -544,6 +544,50 @@ body.dark .rpt-tag{background:#1e3a5f;border-color:#1e40af;color:#93c5fd}
 .pred-hist-list{display:flex;flex-direction:column;gap:6px}
 .pred-hist-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;border:1px solid var(--border);background:var(--white);cursor:pointer;transition:all 0.12s;font-size:0.76rem}
 .pred-hist-item:hover{border-color:#94a3b8;background:var(--bg)}
+/* ── Health Intelligence upgrades ── */
+.fleet-summary-row{display:grid;grid-template-columns:repeat(4,1fr) auto;gap:12px;margin-bottom:16px}
+@media(max-width:960px){.fleet-summary-row{grid-template-columns:repeat(2,1fr)}}
+.fleet-stat-card{background:var(--white);border:1px solid var(--border);border-radius:14px;padding:16px 18px}
+.fleet-stat-val{font-size:1.6rem;font-weight:800;letter-spacing:-0.5px;line-height:1;margin-bottom:4px}
+.fleet-stat-lbl{font-size:0.67rem;font-weight:700;text-transform:uppercase;letter-spacing:0.7px;color:var(--text-light)}
+.fleet-donut-card{background:var(--white);border:1px solid var(--border);border-radius:14px;padding:16px 20px;display:flex;align-items:center;gap:16px}
+.fleet-donut-legend{font-size:0.72rem;display:flex;flex-direction:column;gap:5px}
+.fleet-donut-leg-row{display:flex;align-items:center;gap:6px}
+.fleet-donut-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.conf-band-wrap{margin:10px 0 4px;padding:10px 14px;background:var(--bg);border-radius:10px;border:1px solid var(--border)}
+.conf-band-label{font-size:0.67rem;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:var(--text-light);margin-bottom:7px}
+.conf-band-track{height:8px;background:#e2e8f0;border-radius:4px;position:relative;margin-bottom:5px}
+.conf-band-range{position:absolute;top:0;height:100%;border-radius:4px;opacity:0.3;transition:all 0.5s ease}
+.conf-band-point{position:absolute;top:-3px;width:14px;height:14px;border-radius:50%;border:2.5px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.18);transform:translateX(-50%);transition:all 0.5s ease}
+.conf-band-vals{display:flex;justify-content:space-between;font-size:0.67rem;color:var(--text-light)}
+.risk-factors-wrap{margin:10px 0}
+.risk-factors-lbl{font-size:0.67rem;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:var(--text-light);margin-bottom:7px}
+.risk-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:999px;font-size:0.71rem;font-weight:600;margin:2px 3px 2px 0}
+.risk-chip-high{background:#fef2f2;color:#dc2626;border:1px solid #fecaca}
+.risk-chip-low{background:#fefce8;color:#854d0e;border:1px solid #fde68a}
+.dtf-row{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg);border-radius:10px;border:1px solid var(--border);margin:10px 0}
+.dtf-icon{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.dtf-val{font-size:1.05rem;font-weight:800;letter-spacing:-0.3px}
+.dtf-sub{font-size:0.69rem;color:var(--text-light)}
+.trend-card{background:var(--white);border:1px solid var(--border);border-radius:14px;padding:16px 20px;margin-bottom:16px}
+.trend-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.trend-title{font-size:0.77rem;font-weight:700;color:var(--text)}
+.trend-asset-select{font-size:0.75rem;padding:5px 10px;border:1.5px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-family:inherit;cursor:pointer;outline:none}
+.feat-imp-wrap{margin:10px 0}
+.feat-imp-lbl{font-size:0.67rem;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:var(--text-light);margin-bottom:8px}
+.feat-imp-row{display:flex;align-items:center;gap:8px;margin-bottom:5px;font-size:0.72rem}
+.feat-imp-name{width:124px;flex-shrink:0;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.feat-imp-bar-track{flex:1;height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden}
+.feat-imp-bar-fill{height:100%;border-radius:3px;background:var(--primary);transition:width 0.6s cubic-bezier(0.34,1.1,0.64,1)}
+.feat-imp-pct{width:34px;text-align:right;font-weight:700;color:var(--text);flex-shrink:0}
+.watchlist-card{background:var(--white);border:1px solid var(--border);border-radius:14px;padding:16px 20px;margin-bottom:16px}
+.watchlist-title{font-size:0.67rem;font-weight:800;text-transform:uppercase;letter-spacing:0.7px;color:var(--text-light);margin-bottom:10px}
+.watchlist-item{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);font-size:0.77rem}
+.watchlist-item:last-child{border-bottom:none}
+.watchlist-score{font-size:0.92rem;font-weight:800;min-width:30px}
+.watchlist-info{flex:1;min-width:0}
+.watchlist-id{font-weight:700;color:var(--text)}
+.watchlist-sub{font-size:0.66rem;color:var(--text-light);margin-top:1px}
 .pred-hist-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
 .pred-hist-id{font-weight:700;color:var(--text);flex:1}
 .pred-hist-score{font-weight:800;min-width:28px;text-align:right}
@@ -1317,14 +1361,48 @@ body.dark .rpt-tag{background:#1e3a5f;border-color:#1e40af;color:#93c5fd}
   <!-- ═══ PAGE: Prediction ═══ -->
   <div class="page" id="page-predict">
     <div class="page-content">
+
+      <!-- Fleet Health Summary -->
+      <div class="fleet-summary-row">
+        <div class="fleet-stat-card"><div class="fleet-stat-val tc-green" id="fss-green">—</div><div class="fleet-stat-lbl">Healthy (GREEN)</div></div>
+        <div class="fleet-stat-card"><div class="fleet-stat-val tc-amber" id="fss-amber">—</div><div class="fleet-stat-lbl">Monitor (AMBER)</div></div>
+        <div class="fleet-stat-card"><div class="fleet-stat-val tc-red" id="fss-red">—</div><div class="fleet-stat-lbl">Critical (RED)</div></div>
+        <div class="fleet-stat-card"><div class="fleet-stat-val" id="fss-avg" style="color:var(--primary)">—</div><div class="fleet-stat-lbl">Avg Health Score</div></div>
+        <div class="fleet-donut-card">
+          <svg width="70" height="70" viewBox="0 0 70 70">
+            <circle cx="35" cy="35" r="27" fill="none" stroke="#e2e8f0" stroke-width="10"/>
+            <circle id="fd-green" cx="35" cy="35" r="27" fill="none" stroke="var(--green)" stroke-width="10" stroke-linecap="butt" stroke-dasharray="169.6" stroke-dashoffset="169.6" transform="rotate(-90 35 35)" style="transition:all 0.8s ease"/>
+            <circle id="fd-amber" cx="35" cy="35" r="27" fill="none" stroke="var(--amber)" stroke-width="10" stroke-linecap="butt" stroke-dasharray="169.6" stroke-dashoffset="169.6" transform="rotate(-90 35 35)" style="transition:all 0.8s ease"/>
+            <circle id="fd-red"   cx="35" cy="35" r="27" fill="none" stroke="var(--red)"   stroke-width="10" stroke-linecap="butt" stroke-dasharray="169.6" stroke-dashoffset="169.6" transform="rotate(-90 35 35)" style="transition:all 0.8s ease"/>
+          </svg>
+          <div class="fleet-donut-legend">
+            <div class="fleet-donut-leg-row"><span class="fleet-donut-dot" style="background:var(--green)"></span>Healthy</div>
+            <div class="fleet-donut-leg-row"><span class="fleet-donut-dot" style="background:var(--amber)"></span>Monitor</div>
+            <div class="fleet-donut-leg-row"><span class="fleet-donut-dot" style="background:var(--red)"></span>Critical</div>
+          </div>
+        </div>
+      </div>
+
       <div class="pred-layout">
 
-        <!-- ── LEFT: Input Form ── -->
+        <!-- ── LEFT: Watchlist + Input Form ── -->
+        <div>
+
+          <!-- At-Risk Watchlist -->
+          <div class="watchlist-card">
+            <div class="watchlist-title">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:middle;margin-right:5px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              At-Risk Watchlist
+            </div>
+            <div id="watchlist-body"><div style="font-size:0.75rem;color:var(--text-light)">Loading…</div></div>
+          </div>
+
+        <!-- Input Form -->
         <div class="card" style="padding:22px 24px">
           <div class="card-hdr" style="margin-bottom:18px">
             <div>
-              <div class="card-title">Asset Health Prediction</div>
-              <div class="card-sub">GradientBoostingRegressor · live sensor inputs</div>
+              <div class="card-title">Health Prediction</div>
+              <div class="card-sub" id="pred-model-badge">HistGBR · per-type models · live sensor inputs</div>
             </div>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-light)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
           </div>
@@ -1363,6 +1441,31 @@ body.dark .rpt-tag{background:#1e3a5f;border-color:#1e40af;color:#93c5fd}
               <input class="form-input" id="pred-faults" type="number" value="0" min="0"/>
             </div>
           </div>
+          <div class="form-row" style="margin-bottom:14px">
+            <div class="form-group" style="grid-column:1/-1">
+              <label class="form-label">Recent Fault Type</label>
+              <select class="form-select" id="pred-fault-type">
+                <option value="none">None (routine)</option>
+                <optgroup label="Diesel Engine">
+                  <option value="oil_leak">Oil Leak (severity 3)</option>
+                  <option value="overheating">Overheating (severity 3)</option>
+                  <option value="fuel_pump_fault">Fuel Pump Fault (severity 3)</option>
+                  <option value="starter_failure">Starter Failure (severity 2)</option>
+                </optgroup>
+                <optgroup label="Bogie">
+                  <option value="wheel_flat">Wheel Flat (severity 2)</option>
+                  <option value="bearing_noise">Bearing Noise (severity 2)</option>
+                  <option value="axle_crack">Axle Crack — Critical (severity 5)</option>
+                  <option value="suspension_worn">Suspension Worn (severity 1)</option>
+                </optgroup>
+                <optgroup label="Brake System">
+                  <option value="brake_fade">Brake Fade (severity 2)</option>
+                  <option value="pad_worn">Pad Worn (severity 1)</option>
+                  <option value="cylinder_leak">Cylinder Leak (severity 2)</option>
+                </optgroup>
+              </select>
+            </div>
+          </div>
 
           <!-- Sensor inputs (dynamic by type) -->
           <div class="pred-section-lbl" style="margin-bottom:10px">
@@ -1396,9 +1499,10 @@ body.dark .rpt-tag{background:#1e3a5f;border-color:#1e40af;color:#93c5fd}
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
             Run Health Prediction
           </button>
-        </div>
+        </div><!-- /form card -->
+        </div><!-- /left col -->
 
-        <!-- ── RIGHT: Result + History ── -->
+        <!-- ── RIGHT: Result + Trend + History ── -->
         <div>
           <!-- Result panel -->
           <div class="card" style="padding:22px 24px;margin-bottom:16px" id="pred-result-card">
@@ -1435,12 +1539,49 @@ body.dark .rpt-tag{background:#1e3a5f;border-color:#1e40af;color:#93c5fd}
                 </div>
               </div>
 
+              <!-- Confidence band -->
+              <div class="conf-band-wrap">
+                <div class="conf-band-label">Confidence Interval (±1.5 × MAE)</div>
+                <div class="conf-band-track">
+                  <div class="conf-band-range" id="conf-band-range" style="left:30%;width:20%;background:var(--green)"></div>
+                  <div class="conf-band-point" id="conf-band-point" style="left:50%;background:var(--green)"></div>
+                </div>
+                <div class="conf-band-vals">
+                  <span id="conf-low-val">—</span>
+                  <span style="font-weight:700" id="conf-mid-val">—</span>
+                  <span id="conf-high-val">—</span>
+                </div>
+              </div>
+
+              <!-- Days to failure -->
+              <div class="dtf-row" id="dtf-row" style="display:none">
+                <div class="dtf-icon" id="dtf-icon" style="background:#fef2f2">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                </div>
+                <div>
+                  <div class="dtf-val" id="dtf-val">—</div>
+                  <div class="dtf-sub">Estimated days until maintenance threshold</div>
+                </div>
+              </div>
+
+              <!-- Risk factor chips -->
+              <div class="risk-factors-wrap" id="risk-factors-wrap" style="display:none">
+                <div class="risk-factors-lbl">Sensor Alerts</div>
+                <div id="risk-chips"></div>
+              </div>
+
               <!-- Info grid -->
               <div class="pred-info-grid">
                 <div class="pred-info-cell"><div class="pred-info-key">Asset ID</div><div class="pred-info-val" id="pi-id">—</div></div>
                 <div class="pred-info-cell"><div class="pred-info-key">Asset Type</div><div class="pred-info-val" id="pi-type">—</div></div>
                 <div class="pred-info-cell"><div class="pred-info-key">Days Since Service</div><div class="pred-info-val" id="pi-days">—</div></div>
                 <div class="pred-info-cell"><div class="pred-info-key">Faults (30d)</div><div class="pred-info-val" id="pi-faults">—</div></div>
+              </div>
+
+              <!-- Feature importance -->
+              <div class="feat-imp-wrap" id="feat-imp-wrap" style="display:none">
+                <div class="feat-imp-lbl">Feature Importance</div>
+                <div id="feat-imp-bars"></div>
               </div>
 
               <!-- Urgency bar -->
@@ -1474,6 +1615,22 @@ body.dark .rpt-tag{background:#1e3a5f;border-color:#1e40af;color:#93c5fd}
             <span id="result-asset-type" style="display:none"></span>
             <span id="result-badges" style="display:none"></span>
             <span id="health-rec" style="display:none"></span>
+          </div>
+
+          <!-- Asset Health Trend -->
+          <div class="trend-card">
+            <div class="trend-hdr">
+              <div class="trend-title">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:middle;margin-right:5px"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                Asset Health Trend
+              </div>
+              <select class="trend-asset-select" id="trend-asset-select" onchange="loadTrend(this.value)">
+                <option value="">Select asset…</option>
+              </select>
+            </div>
+            <div id="trend-svg-wrap" style="border-radius:8px;overflow:hidden;background:var(--bg)">
+              <div style="font-size:0.75rem;color:var(--text-light);padding:14px;text-align:center">Select an asset to view its health history</div>
+            </div>
           </div>
 
           <!-- Session History -->
@@ -2138,6 +2295,7 @@ async function loadDashboard() {
     fleetAll=ar.assets||[];
     initFleetTrainSel();
     initPredQuickPick();
+    populateTrendSelect();
     renderFleet();
     renderFleetGlance();
     if(document.getElementById('page-trains').classList.contains('active')) renderTrains();
@@ -2905,19 +3063,18 @@ async function runPrediction(){
   const assetType=document.getElementById('pred-asset-type').value;
   const days=parseInt(document.getElementById('pred-days').value)||0;
   const faults=parseInt(document.getElementById('pred-faults').value)||0;
+  const faultType=(document.getElementById('pred-fault-type')||{}).value||'none';
   const sensors=buildSensorsPayload();
   try{
     const res=await fetch('/asset-health',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({asset_id:assetId,asset_type:assetType,days_since_service:days,fault_count_30d:faults,sensors})});
+      body:JSON.stringify({asset_id:assetId,asset_type:assetType,days_since_service:days,fault_count_30d:faults,sensors,fault_type:faultType})});
     const d=await res.json();
     const score=Math.round(d.health_score??0), status=d.health_status||'GREEN';
     predLastResult={assetId:d.asset_id||assetId,assetType:d.asset_type||assetType,score,status};
 
-    // Show result panel
     document.getElementById('pred-empty').style.display='none';
     document.getElementById('pred-result').style.display='block';
 
-    // Populate all result sections
     setPredGauge(score,status);
     setPredBanner(score,status,d.asset_id||assetId,d.asset_type||assetType);
     document.getElementById('pi-id').textContent=d.asset_id||assetId;
@@ -2926,11 +3083,64 @@ async function runPrediction(){
     document.getElementById('pi-faults').textContent=faults;
     setPredUrgency(score,status);
     document.getElementById('pred-rec-text').textContent=d.recommendation||'—';
-
-    // Legacy hidden fields (for dashboard compatibility)
     document.getElementById('score-num').textContent=score;
     document.getElementById('result-asset-id').textContent=d.asset_id||assetId;
     document.getElementById('result-asset-type').textContent=(d.asset_type||assetType).replace(/_/g,' ');
+
+    // ── Confidence band ──
+    const bColor=status==='GREEN'?'var(--green)':status==='AMBER'?'var(--amber)':'var(--red)';
+    const cLow=d.confidence_low??Math.max(0,score-8);
+    const cHigh=d.confidence_high??Math.min(100,score+8);
+    const rng=document.getElementById('conf-band-range');
+    const pt=document.getElementById('conf-band-point');
+    if(rng){rng.style.left=cLow+'%';rng.style.width=(cHigh-cLow)+'%';rng.style.background=bColor;}
+    if(pt){pt.style.left=score+'%';pt.style.background=bColor;}
+    const clEl=document.getElementById('conf-low-val');const chEl=document.getElementById('conf-high-val');const cmEl=document.getElementById('conf-mid-val');
+    if(clEl)clEl.textContent=cLow.toFixed(1);if(chEl)chEl.textContent=cHigh.toFixed(1);
+    if(cmEl){cmEl.textContent=score;cmEl.style.color=bColor;}
+
+    // ── Days to failure ──
+    const dtfRow=document.getElementById('dtf-row');
+    if(dtfRow&&d.days_to_failure!=null){
+      dtfRow.style.display='flex';
+      const dv=document.getElementById('dtf-val');
+      if(d.days_to_failure===0){dv.textContent='Critical now';dv.style.color='var(--red)';}
+      else{dv.textContent='~'+d.days_to_failure+' days';dv.style.color=status==='GREEN'?'var(--green)':'var(--amber)';}
+    }else if(dtfRow){dtfRow.style.display='none';}
+
+    // ── Risk factor chips ──
+    const rfWrap=document.getElementById('risk-factors-wrap');
+    const rfChips=document.getElementById('risk-chips');
+    if(rfWrap&&rfChips&&d.risk_factors&&d.risk_factors.length){
+      rfWrap.style.display='block';
+      rfChips.innerHTML=d.risk_factors.map(rf=>{
+        const cls=rf.direction==='high'?'risk-chip-high':'risk-chip-low';
+        const arrow=rf.direction==='high'?'↑':'↓';
+        return `<span class="risk-chip ${cls}">${arrow} ${esc(rf.label)}: ${rf.value} <span style="opacity:0.65">(ok: ${esc(rf.range)})</span></span>`;
+      }).join('');
+    }else if(rfWrap){rfWrap.style.display='none';}
+
+    // ── Feature importance bars ──
+    const fiWrap=document.getElementById('feat-imp-wrap');
+    const fiBars=document.getElementById('feat-imp-bars');
+    if(fiWrap&&fiBars&&d.top_contributing_features&&d.top_contributing_features.length){
+      fiWrap.style.display='block';
+      const maxI=Math.max(...d.top_contributing_features.map(f=>f.importance||0))||1;
+      fiBars.innerHTML=d.top_contributing_features.slice(0,5).map(f=>{
+        const pct=((f.importance||0)/maxI*100).toFixed(0);
+        const name=(f.feature||'').replace(/_/g,' ');
+        return `<div class="feat-imp-row">
+          <div class="feat-imp-name" title="${esc(name)}">${esc(name)}</div>
+          <div class="feat-imp-bar-track"><div class="feat-imp-bar-fill" style="width:0%" data-w="${pct}"></div></div>
+          <div class="feat-imp-pct">${((f.importance||0)*100).toFixed(0)}%</div>
+        </div>`;
+      }).join('');
+      setTimeout(()=>document.querySelectorAll('.feat-imp-bar-fill[data-w]').forEach(b=>{b.style.width=b.dataset.w+'%'}),30);
+    }else if(fiWrap){fiWrap.style.display='none';}
+
+    // ── Auto-load trend ──
+    const tSel=document.getElementById('trend-asset-select');
+    if(tSel&&assetId&&tSel.querySelector(`option[value="${assetId}"]`)){tSel.value=assetId;loadTrend(assetId);}
 
     addPredHistory(d.asset_id||assetId,score,status);
     toast(`Health: ${status} · Score ${score}`);
@@ -2940,6 +3150,91 @@ async function runPrediction(){
     btn.disabled=false;
     btn.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> Run Health Prediction';
   }
+}
+
+/* ── Fleet Health Summary ── */
+async function loadFleetSummary(){
+  try{
+    const d=await fetch('/api/fleet-health-summary').then(r=>r.json());
+    document.getElementById('fss-green').textContent=d.green_count||0;
+    document.getElementById('fss-amber').textContent=d.amber_count||0;
+    document.getElementById('fss-red').textContent=d.red_count||0;
+    document.getElementById('fss-avg').textContent=(d.avg_score||0).toFixed(1);
+    // Donut (circumference=169.6 for r=27)
+    const circ=169.6,t=d.total||1;
+    const gLen=(d.green_count||0)/t*circ,aLen=(d.amber_count||0)/t*circ,rLen=(d.red_count||0)/t*circ;
+    const gEl=document.getElementById('fd-green'),aEl=document.getElementById('fd-amber'),rEl=document.getElementById('fd-red');
+    if(gEl){gEl.setAttribute('stroke-dasharray',gLen+' '+(circ-gLen));gEl.setAttribute('stroke-dashoffset','0');}
+    if(aEl){aEl.setAttribute('stroke-dasharray',aLen+' '+(circ-aLen));aEl.setAttribute('transform',`rotate(${-90+(d.green_count||0)/t*360} 35 35)`);}
+    if(rEl){rEl.setAttribute('stroke-dasharray',rLen+' '+(circ-rLen));rEl.setAttribute('transform',`rotate(${-90+((d.green_count||0)+(d.amber_count||0))/t*360} 35 35)`);}
+    // Watchlist
+    const wb=document.getElementById('watchlist-body');
+    if(wb){
+      if(!d.at_risk||!d.at_risk.length){wb.innerHTML='<div style="font-size:0.74rem;color:var(--text-light)">All assets within healthy range</div>';return;}
+      wb.innerHTML=d.at_risk.map(a=>{
+        const sc=parseFloat(a.health_score||0);
+        const col=a.health_status==='RED'?'var(--red)':'var(--amber)';
+        return `<div class="watchlist-item">
+          <span class="watchlist-score" style="color:${col}">${sc.toFixed(0)}</span>
+          <div class="watchlist-info">
+            <div class="watchlist-id">${esc(a.asset_id||'')}</div>
+            <div class="watchlist-sub">${esc((a.asset_type||'').replace(/_/g,' '))} · ${esc(a.station||'')} · ${esc(a.fault_type||'no fault')}</div>
+          </div>
+          <button class="quick-btn" style="font-size:0.65rem;padding:3px 8px" onclick="predPickAsset('${esc(a.asset_id||'')}')">Predict →</button>
+        </div>`;
+      }).join('');
+    }
+  }catch(e){console.warn('Fleet summary error',e);}
+}
+
+/* ── Asset Health Trend Sparkline ── */
+async function loadTrend(assetId){
+  const wrap=document.getElementById('trend-svg-wrap');
+  if(!assetId){wrap.innerHTML='<div style="font-size:0.74rem;color:var(--text-light);padding:14px;text-align:center">Select an asset to view its health history</div>';return;}
+  wrap.innerHTML='<div style="font-size:0.74rem;color:var(--text-light);padding:14px;text-align:center">Loading…</div>';
+  try{
+    const d=await fetch('/api/asset-trend/'+encodeURIComponent(assetId)).then(r=>r.json());
+    const records=d.records||[];
+    if(!records.length){wrap.innerHTML='<div style="font-size:0.74rem;color:var(--text-light);padding:14px;text-align:center">No history found</div>';return;}
+    wrap.innerHTML=_renderSparkline(records);
+  }catch(e){wrap.innerHTML='<div style="font-size:0.74rem;color:var(--red);padding:14px;text-align:center">Failed to load trend</div>';}
+}
+
+function _renderSparkline(records){
+  const W=380,H=90,P=14;
+  const scores=records.map(r=>parseFloat(r.health_score||0));
+  const minS=Math.min(0,...scores),maxS=Math.max(100,...scores);
+  const rng=maxS-minS||1;
+  const xs=(W-P*2)/(records.length-1||1);
+  const pts=scores.map((s,i)=>`${(P+i*xs).toFixed(1)},${(H-P-((s-minS)/rng)*(H-P*2)).toFixed(1)}`);
+  const last=scores[scores.length-1]||0;
+  const lc=last>=70?'var(--green)':last>=40?'var(--amber)':'var(--red)';
+  const y70=(H-P-((70-minS)/rng)*(H-P*2)).toFixed(1);
+  const y40=(H-P-((40-minS)/rng)*(H-P*2)).toFixed(1);
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" preserveAspectRatio="none" style="display:block">
+    <defs><linearGradient id="spkG" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${lc}" stop-opacity="0.16"/><stop offset="100%" stop-color="${lc}" stop-opacity="0.01"/></linearGradient></defs>
+    ${minS<70&&maxS>=70?`<line x1="${P}" y1="${y70}" x2="${W-P}" y2="${y70}" stroke="var(--green)" stroke-width="0.8" stroke-dasharray="3 3" opacity="0.5"/>`:''}
+    ${minS<40&&maxS>=40?`<line x1="${P}" y1="${y40}" x2="${W-P}" y2="${y40}" stroke="var(--red)" stroke-width="0.8" stroke-dasharray="3 3" opacity="0.5"/>`:''}
+    <polygon points="${P},${H-P} ${pts.join(' ')} ${W-P},${H-P}" fill="url(#spkG)"/>
+    <polyline points="${pts.join(' ')}" fill="none" stroke="${lc}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    ${scores.map((s,i)=>{const[x,y]=pts[i].split(',');const c=s>=70?'var(--green)':s>=40?'var(--amber)':'var(--red)';return `<circle cx="${x}" cy="${y}" r="2.5" fill="${c}" stroke="#fff" stroke-width="1.2"/>`;}).join('')}
+    <text x="${P}" y="${H-3}" font-size="8" fill="var(--text-light)">${esc(records[0]?.last_service_date?.slice(0,7)||'')}</text>
+    <text x="${W-P}" y="${H-3}" font-size="8" fill="var(--text-light)" text-anchor="end">${esc(records[records.length-1]?.last_service_date?.slice(0,7)||'')}</text>
+  </svg>`;
+}
+
+function populateTrendSelect(){
+  const sel=document.getElementById('trend-asset-select');
+  if(!sel||!window.fleetAll)return;
+  const existing=new Set([...sel.options].map(o=>o.value).filter(Boolean));
+  (window.fleetAll||[]).forEach(a=>{
+    if(a.asset_id&&!existing.has(a.asset_id)){
+      const o=document.createElement('option');
+      o.value=a.asset_id;
+      o.textContent=`${a.asset_id} — ${(a.asset_type||'').replace(/_/g,' ')}`;
+      sel.appendChild(o);
+    }
+  });
 }
 
 /* ═══ CHATBOT POPUP ═══ */
@@ -3229,7 +3524,9 @@ function mapCloseInfo(){
 /* ═══ INIT ═══ */
 heroInit();
 loadDashboard();
+loadFleetSummary();
 setInterval(loadDashboard,30000);
+setInterval(loadFleetSummary,60000);
 </script>
 
 <!-- ═══ RESOLUTION MODAL ═══ -->

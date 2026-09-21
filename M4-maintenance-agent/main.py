@@ -257,6 +257,7 @@ class AssetHealthRequest(BaseModel):
     days_since_service: int = Field(0, ge=0, le=3650)
     fault_count_30d: int = Field(0, ge=0, le=100)
     sensors: dict[str, Any] = Field(default_factory=dict)
+    fault_type: Optional[str] = Field("none", max_length=50)
 
     @field_validator("asset_type")
     @classmethod
@@ -521,6 +522,7 @@ async def asset_health(request: Request, payload: AssetHealthRequest):
         days_since_service=payload.days_since_service,
         fault_count_30d=payload.fault_count_30d,
         sensors=payload.sensors,
+        fault_type=payload.fault_type or "none",
     )
 
     query = f"{payload.asset_type} {' '.join(str(v) for v in payload.sensors.values())}"
@@ -545,7 +547,11 @@ async def asset_health(request: Request, payload: AssetHealthRequest):
         "health_score": prediction["health_score"],
         "health_status": prediction["health_status"],
         "confidence": prediction["confidence"],
+        "confidence_low": prediction.get("confidence_low", round(prediction["health_score"] - 8, 1)),
+        "confidence_high": prediction.get("confidence_high", round(prediction["health_score"] + 8, 1)),
         "model_version": prediction["model_version"],
+        "risk_factors": prediction.get("risk_factors", []),
+        "days_to_failure": prediction.get("days_to_failure"),
         "top_contributing_features": prediction["top_contributing_features"],
         "manual_sections_cited": [
             {
@@ -605,6 +611,78 @@ async def asset_status(request: Request, asset_id: str):
         raise HTTPException(status_code=404, detail=f"Asset '{asset_id}' not found.")
     latest = sorted(matches, key=lambda r: r.get("last_service_date", ""), reverse=True)[0]
     return {"asset_id": asset_id, "latest_record": latest, "total_records": len(matches)}
+
+
+def _get_current_assets() -> list[dict]:
+    """Return the most-recent record per asset_id."""
+    rows = _get_history()
+    seen: set = set()
+    current = []
+    for r in sorted(rows, key=lambda x: x.get("last_service_date", ""), reverse=True):
+        aid = r.get("asset_id", "")
+        if aid and aid not in seen:
+            seen.add(aid)
+            current.append(r)
+    return current
+
+
+@app.get("/api/asset-trend/{asset_id}")
+async def asset_trend(asset_id: str):
+    """Return the last 25 health records for one asset (oldest-first, for sparkline chart)."""
+    uid = asset_id.strip().upper()
+    rows = _get_history()
+    matches = [r for r in rows if r.get("asset_id", "").upper() == uid]
+    matches.sort(key=lambda r: r.get("last_service_date", ""), reverse=True)
+    matches = matches[:25]
+    return {
+        "asset_id": uid,
+        "records": [
+            {
+                "last_service_date": r.get("last_service_date"),
+                "health_score": float(r.get("health_score") or 0),
+                "health_status": r.get("health_status"),
+                "fault_type": r.get("fault_type"),
+                "days_since_service": r.get("days_since_service"),
+            }
+            for r in reversed(matches)  # oldest-first for left-to-right charting
+        ],
+    }
+
+
+@app.get("/api/fleet-health-summary")
+async def fleet_health_summary():
+    """Aggregated fleet health distribution and at-risk asset list."""
+    assets = _get_current_assets()
+    green = [a for a in assets if a.get("health_status") == "GREEN"]
+    amber = [a for a in assets if a.get("health_status") == "AMBER"]
+    red   = [a for a in assets if a.get("health_status") == "RED"]
+    scores = []
+    for a in assets:
+        try:
+            scores.append(float(a.get("health_score") or 0))
+        except (ValueError, TypeError):
+            pass
+    avg_score = round(sum(scores) / len(scores), 1) if scores else 0.0
+    at_risk = sorted(red + amber, key=lambda a: float(a.get("health_score") or 100))[:8]
+    return {
+        "total": len(assets),
+        "green_count": len(green),
+        "amber_count": len(amber),
+        "red_count": len(red),
+        "avg_score": avg_score,
+        "at_risk": [
+            {
+                "asset_id": a.get("asset_id"),
+                "asset_type": a.get("asset_type"),
+                "health_score": a.get("health_score"),
+                "health_status": a.get("health_status"),
+                "days_since_service": a.get("days_since_service"),
+                "station": a.get("station"),
+                "fault_type": a.get("fault_type"),
+            }
+            for a in at_risk
+        ],
+    }
 
 
 @app.post("/maintenance-report")
