@@ -86,13 +86,35 @@ window.RailSenseOpsAgent = (function () {
     st.id = "oa-styles";
     st.textContent = `
 .oa-root{position:fixed;right:22px;bottom:22px;z-index:900;font-family:inherit;--oa-tint:var(--brand-tint,rgba(59,130,246,.12));--oa-gold:var(--gold,#C9A22A)}
-.oa-ball{width:54px;height:54px;border-radius:50%;border:1px solid rgba(255,255,255,.25);display:grid;place-items:center;cursor:pointer;color:#1a1300;
-  background:radial-gradient(circle at 32% 28%,#F5D776 0%,var(--oa-gold) 55%,#8A6B12 100%);
-  box-shadow:0 8px 24px rgba(0,0,0,.45),0 0 0 0 rgba(201,162,42,.45);animation:oa-glow 4.5s ease-in-out infinite;transition:transform .2s ease}
-.oa-ball svg{width:24px;height:24px;fill:currentColor}
-.oa-ball:hover{transform:translateY(-2px) scale(1.05)}
+.oa-ball{width:54px;height:54px;padding:0;border-radius:50%;border:1px solid rgba(103,232,249,.35);display:grid;place-items:center;cursor:pointer;overflow:visible;
+  background:radial-gradient(circle at 35% 25%,#1E3A8A 0%,#0B1220 70%);
+  box-shadow:0 8px 24px rgba(0,0,0,.45),0 0 0 0 rgba(103,232,249,.45);animation:oa-glow 4.5s ease-in-out infinite;transition:transform .2s ease}
+.oa-ball:hover{transform:translateY(-2px) scale(1.06)}
 .oa-root.open .oa-ball{animation:none;box-shadow:0 0 0 3px rgba(59,130,246,.55),0 8px 24px rgba(0,0,0,.45)}
-@keyframes oa-glow{0%,100%{box-shadow:0 8px 24px rgba(0,0,0,.45),0 0 0 0 rgba(201,162,42,.40)}50%{box-shadow:0 8px 24px rgba(0,0,0,.45),0 0 0 12px rgba(201,162,42,0)}}
+@keyframes oa-glow{0%,100%{box-shadow:0 8px 24px rgba(0,0,0,.45),0 0 0 0 rgba(103,232,249,.40)}50%{box-shadow:0 8px 24px rgba(0,0,0,.45),0 0 0 12px rgba(103,232,249,0)}}
+/* The caped assistant robot (vector, drawn for RailSense) */
+.oa-bot{width:50px;height:50px;overflow:visible;margin-top:-3px}
+.oa-bot *{transform-box:fill-box}
+.oa-bot .bot-float{animation:oa-float 3.2s ease-in-out infinite;transform-origin:center}
+.oa-bot .bot-shadow{animation:oa-shadow 3.2s ease-in-out infinite;transform-origin:center}
+.oa-bot .bot-cape{animation:oa-cape 1.6s ease-in-out infinite;transform-origin:50% 0%}
+.oa-bot .bot-wave{animation:oa-wave 2.4s ease-in-out infinite;transform-origin:0% 100%}
+.oa-bot .bot-armL{animation:oa-armL 3.2s ease-in-out infinite;transform-origin:100% 0%}
+.oa-bot .bot-legs{animation:oa-legs 3.2s ease-in-out infinite;transform-origin:50% 0%}
+.oa-bot .bot-eye{animation:oa-blink 4.2s infinite;transform-origin:center}
+.oa-bot .bot-tip{animation:oa-tip 1.4s steps(1) infinite}
+.oa-bot .bot-chest{animation:oa-chest 2.2s ease-in-out infinite}
+.oa-ball:hover .bot-wave{animation-duration:.9s}
+.oa-root.open .oa-bot .bot-wave{animation:none;transform:rotate(-8deg)}
+@keyframes oa-float{0%,100%{transform:translateY(1.5px)}50%{transform:translateY(-2.5px)}}
+@keyframes oa-shadow{0%,100%{transform:scaleX(1);opacity:.55}50%{transform:scaleX(.7);opacity:.3}}
+@keyframes oa-cape{0%,100%{transform:skewX(0deg) scaleY(1)}50%{transform:skewX(-7deg) scaleY(.94)}}
+@keyframes oa-wave{0%,55%,100%{transform:rotate(0deg)}10%{transform:rotate(-28deg)}20%{transform:rotate(12deg)}30%{transform:rotate(-28deg)}40%{transform:rotate(12deg)}}
+@keyframes oa-armL{0%,100%{transform:rotate(0deg)}50%{transform:rotate(10deg)}}
+@keyframes oa-legs{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(5deg)}}
+@keyframes oa-blink{0%,92%,100%{transform:scaleY(1)}95%{transform:scaleY(.1)}}
+@keyframes oa-tip{0%{fill:#67E8F9}50%{fill:#0E7490}}
+@keyframes oa-chest{0%,100%{opacity:.55}50%{opacity:1}}
 .oa-panel{position:absolute;right:0;bottom:68px;width:min(760px,calc(100vw - 44px));height:min(580px,calc(100vh - 120px));display:flex;border-radius:16px;overflow:hidden;
   background:linear-gradient(135deg,var(--card,#0e1424) 0%,var(--card-hi,#16203a) 100%);border:1px solid var(--border-hi,rgba(96,165,250,.5));
   backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);box-shadow:0 24px 70px rgba(0,0,0,.6);
@@ -169,7 +191,7 @@ window.RailSenseOpsAgent = (function () {
   .oa-rail-toggle{display:inline-block}
 }
 @media (max-width:480px){.oa-root{right:12px;bottom:12px}.oa-panel{width:calc(100vw - 24px);height:calc(100vh - 96px)}}
-@media (prefers-reduced-motion:reduce){.oa-ball,.oa-msg,.oa-typing i{animation:none!important}}
+@media (prefers-reduced-motion:reduce){.oa-ball,.oa-msg,.oa-typing i,.oa-bot *{animation:none!important}}
 [data-theme="light"] .oa-rail{background:rgba(241,245,253,.7)}
 [data-theme="light"] .oa-msg.agent,[data-theme="light"] .oa-input input{background:#fff}
 [data-theme="light"] .oa-src,[data-theme="light"] .oa-replay,[data-theme="light"] .t-restricted .oa-notice{color:#8A6B12}
@@ -293,7 +315,36 @@ window.RailSenseOpsAgent = (function () {
     root.className = "oa-root";
     root.innerHTML = `
       <button type="button" class="oa-ball" aria-label="Open Operations Assistant" title="Operations Assistant">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l1.9 5.6L19.5 9.5l-5.6 1.9L12 17l-1.9-5.6L4.5 9.5l5.6-1.9z"/><path d="M18.5 15l.9 2.4 2.4.9-2.4.9-.9 2.4-.9-2.4-2.4-.9 2.4-.9z" opacity=".75"/></svg>
+        <svg class="oa-bot" viewBox="0 0 64 64" aria-hidden="true">
+          <defs>
+            <radialGradient id="oa-shell" cx="38%" cy="30%" r="75%"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".7" stop-color="#E5E7EB"/><stop offset="1" stop-color="#9CA3AF"/></radialGradient>
+            <radialGradient id="oa-eye" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#1F2937"/><stop offset="1" stop-color="#030712"/></radialGradient>
+            <linearGradient id="oa-capeg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#EF4444"/><stop offset="1" stop-color="#B91C1C"/></linearGradient>
+          </defs>
+          <ellipse class="bot-shadow" cx="32" cy="61" rx="11" ry="2" fill="#000"/>
+          <g class="bot-float">
+            <path class="bot-cape" d="M21 33 Q32 30 43 33 L54 52 Q46 49 41 54 Q35 50 30 55 Q24 50 18 54 Q14 50 9 53 Z" fill="url(#oa-capeg)"/>
+            <g class="bot-legs">
+              <rect x="25" y="44" width="5.5" height="9" rx="2.7" fill="url(#oa-shell)"/>
+              <rect x="33.5" y="44" width="5.5" height="9" rx="2.7" fill="url(#oa-shell)"/>
+              <rect x="25" y="45" width="5.5" height="2.4" rx="1" fill="#111827"/>
+              <rect x="33.5" y="45" width="5.5" height="2.4" rx="1" fill="#111827"/>
+            </g>
+            <g class="bot-armL"><rect x="13" y="34" width="10" height="4.6" rx="2.3" fill="url(#oa-shell)" transform="rotate(-22 23 36)"/><circle cx="13.6" cy="39.4" r="2.4" fill="#E5E7EB"/></g>
+            <ellipse cx="32" cy="38" rx="10" ry="9" fill="url(#oa-shell)"/>
+            <rect class="bot-chest" x="28.5" y="35" width="7" height="2.4" rx="1.2" fill="#67E8F9"/>
+            <path d="M22 31.5 Q32 28.5 42 31.5" stroke="#DC2626" stroke-width="3" fill="none" stroke-linecap="round"/>
+            <g class="bot-wave"><rect x="41" y="23" width="4.6" height="11" rx="2.3" fill="url(#oa-shell)" transform="rotate(28 43 34)"/><circle cx="48.3" cy="23.4" r="2.6" fill="#E5E7EB"/><rect x="47" y="19.6" width="1.4" height="3" rx=".7" fill="#E5E7EB"/><rect x="49" y="19.8" width="1.4" height="3" rx=".7" fill="#E5E7EB"/></g>
+            <line x1="29" y1="11" x2="25" y2="2.5" stroke="#111827" stroke-width="1.6" stroke-linecap="round"/>
+            <circle class="bot-tip" cx="24.8" cy="2.4" r="1.7" fill="#67E8F9"/>
+            <circle cx="17.6" cy="19.5" r="3.4" fill="#111827"/><circle cx="17.6" cy="19.5" r="1.6" fill="#374151"/>
+            <circle cx="46.4" cy="19.5" r="3.4" fill="#111827"/><circle cx="46.4" cy="19.5" r="1.6" fill="#374151"/>
+            <ellipse cx="32" cy="19.5" rx="15" ry="12.5" fill="url(#oa-shell)"/>
+            <g class="bot-eye"><ellipse cx="26" cy="18.6" rx="4.4" ry="4.8" fill="url(#oa-eye)" stroke="#22D3EE" stroke-width="1"/><circle cx="24.6" cy="17" r="1.1" fill="#fff"/></g>
+            <g class="bot-eye"><ellipse cx="38" cy="18.6" rx="4.4" ry="4.8" fill="url(#oa-eye)" stroke="#22D3EE" stroke-width="1"/><circle cx="36.6" cy="17" r="1.1" fill="#fff"/></g>
+            <path d="M29.6 25 Q32 27 34.4 25" stroke="#111827" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+          </g>
+        </svg>
       </button>
       <section class="oa-panel" role="dialog" aria-label="Operations Assistant">
         <aside class="oa-rail"><div class="oa-rail-head">History</div><div class="oa-history-list"></div></aside>
