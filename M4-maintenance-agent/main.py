@@ -25,6 +25,7 @@ import csv
 import json
 import logging
 import os
+import re
 import secrets
 import uuid
 from typing import Any, Optional
@@ -62,12 +63,43 @@ DATA_PATH = AGENT_DIR / "data" / "assets_history.csv"
 AUDIT_LOG = AGENT_DIR / "data" / "audit_log.jsonl"
 FLAGS_PATH = AGENT_DIR / "data" / "train_flags.jsonl"
 REPORTS_PATH = AGENT_DIR / "data" / "field_reports.jsonl"
+TOKENS_PATH = AGENT_DIR / "data" / "session_tokens.json"
 UI_DIR = AGENT_DIR / "ui"
 
 _in_memory_events: list[dict] = []
 _in_memory_reports: list[dict] = []
 _train_flags: dict[str, dict] = {}  # train_id -> maintenance flag record
+
+# Engineer accounts — keyed by username (matches frontend page.tsx)
+_ENGINEER_ACCOUNTS: dict[str, dict] = {
+    "admin":   {"id": "ENG-001", "password": "admin123",   "name": "Chief Engineer",  "role": "Chief Mechanical Engineer"},
+    "menike":  {"id": "ENG-102", "password": "menike2024", "name": "Asitha Menike",   "role": "Locomotive Inspector"},
+    "silva":   {"id": "ENG-205", "password": "silva2024",  "name": "Rohan Silva",     "role": "Track Maintenance Officer"},
+    "perera":  {"id": "ENG-308", "password": "perera2024", "name": "Nilantha Perera", "role": "Signal Technician"},
+}
 _active_tokens: set[str] = set()    # valid session tokens issued on engineer login
+
+
+def _load_tokens_from_disk() -> None:
+    """Restore _active_tokens from disk so sessions survive server restarts."""
+    if not TOKENS_PATH.exists():
+        return
+    try:
+        data = json.loads(TOKENS_PATH.read_text(encoding="utf-8"))
+        _active_tokens.update(t for t in data.get("tokens", []) if isinstance(t, str) and len(t) == 64)
+        if _active_tokens:
+            logger.info("Restored %d session token(s) from disk", len(_active_tokens))
+    except Exception as exc:
+        logger.warning("Could not load session tokens from disk: %s", exc)
+
+
+def _save_tokens_to_disk() -> None:
+    """Persist current _active_tokens to disk."""
+    try:
+        TOKENS_PATH.parent.mkdir(parents=True, exist_ok=True)
+        TOKENS_PATH.write_text(json.dumps({"tokens": list(_active_tokens)}), encoding="utf-8")
+    except Exception as exc:
+        logger.warning("Could not save session tokens to disk: %s", exc)
 
 
 async def _require_token(x_engineer_token: str = Header(default="")) -> None:
@@ -165,9 +197,10 @@ _CACHE_TTL = 60.0  # seconds
 
 @asynccontextmanager
 async def lifespan(_app):
-    # Restore maintenance flags and field reports from disk across restarts
+    # Restore maintenance flags, field reports, and session tokens from disk across restarts
     _load_flags_from_disk()
     _load_reports_from_disk()
+    _load_tokens_from_disk()
 
     # Reconcile: any train still OUT_OF_SERVICE in Supabase that isn't in our flag file
     # gets a minimal stub entry so /api/train-status keeps returning the right answer.
@@ -248,6 +281,7 @@ class AssetHealthRequest(BaseModel):
     days_since_service: int = Field(0, ge=0, le=3650)
     fault_count_30d: int = Field(0, ge=0, le=100)
     sensors: dict[str, Any] = Field(default_factory=dict)
+    fault_type: Optional[str] = Field("none", max_length=50)
 
     @field_validator("asset_type")
     @classmethod
@@ -315,6 +349,7 @@ class TrainFlagRequest(BaseModel):
     severity: str = Field("RED", pattern="^(AMBER|RED)$")
     flagged_by: Optional[str] = Field(None, max_length=50)
     estimated_clear: Optional[str] = Field(None, max_length=50)  # e.g. "18:00" or ISO datetime
+    delay_minutes: Optional[int] = Field(None, ge=0, le=1440)    # expected service delay in minutes
 
 
 class EngineerLoginRequest(BaseModel):
@@ -512,6 +547,7 @@ async def asset_health(request: Request, payload: AssetHealthRequest):
         days_since_service=payload.days_since_service,
         fault_count_30d=payload.fault_count_30d,
         sensors=payload.sensors,
+        fault_type=payload.fault_type or "none",
     )
 
     query = f"{payload.asset_type} {' '.join(str(v) for v in payload.sensors.values())}"
@@ -536,7 +572,11 @@ async def asset_health(request: Request, payload: AssetHealthRequest):
         "health_score": prediction["health_score"],
         "health_status": prediction["health_status"],
         "confidence": prediction["confidence"],
+        "confidence_low": prediction.get("confidence_low", round(prediction["health_score"] - 8, 1)),
+        "confidence_high": prediction.get("confidence_high", round(prediction["health_score"] + 8, 1)),
         "model_version": prediction["model_version"],
+        "risk_factors": prediction.get("risk_factors", []),
+        "days_to_failure": prediction.get("days_to_failure"),
         "top_contributing_features": prediction["top_contributing_features"],
         "manual_sections_cited": [
             {
@@ -598,6 +638,78 @@ async def asset_status(request: Request, asset_id: str):
     return {"asset_id": asset_id, "latest_record": latest, "total_records": len(matches)}
 
 
+def _get_current_assets() -> list[dict]:
+    """Return the most-recent record per asset_id."""
+    rows = _get_history()
+    seen: set = set()
+    current = []
+    for r in sorted(rows, key=lambda x: x.get("last_service_date", ""), reverse=True):
+        aid = r.get("asset_id", "")
+        if aid and aid not in seen:
+            seen.add(aid)
+            current.append(r)
+    return current
+
+
+@app.get("/api/asset-trend/{asset_id}")
+async def asset_trend(asset_id: str):
+    """Return the last 25 health records for one asset (oldest-first, for sparkline chart)."""
+    uid = asset_id.strip().upper()
+    rows = _get_history()
+    matches = [r for r in rows if r.get("asset_id", "").upper() == uid]
+    matches.sort(key=lambda r: r.get("last_service_date", ""), reverse=True)
+    matches = matches[:25]
+    return {
+        "asset_id": uid,
+        "records": [
+            {
+                "last_service_date": r.get("last_service_date"),
+                "health_score": float(r.get("health_score") or 0),
+                "health_status": r.get("health_status"),
+                "fault_type": r.get("fault_type"),
+                "days_since_service": r.get("days_since_service"),
+            }
+            for r in reversed(matches)  # oldest-first for left-to-right charting
+        ],
+    }
+
+
+@app.get("/api/fleet-health-summary")
+async def fleet_health_summary():
+    """Aggregated fleet health distribution and at-risk asset list."""
+    assets = _get_current_assets()
+    green = [a for a in assets if a.get("health_status") == "GREEN"]
+    amber = [a for a in assets if a.get("health_status") == "AMBER"]
+    red   = [a for a in assets if a.get("health_status") == "RED"]
+    scores = []
+    for a in assets:
+        try:
+            scores.append(float(a.get("health_score") or 0))
+        except (ValueError, TypeError):
+            pass
+    avg_score = round(sum(scores) / len(scores), 1) if scores else 0.0
+    at_risk = sorted(red + amber, key=lambda a: float(a.get("health_score") or 100))[:8]
+    return {
+        "total": len(assets),
+        "green_count": len(green),
+        "amber_count": len(amber),
+        "red_count": len(red),
+        "avg_score": avg_score,
+        "at_risk": [
+            {
+                "asset_id": a.get("asset_id"),
+                "asset_type": a.get("asset_type"),
+                "health_score": a.get("health_score"),
+                "health_status": a.get("health_status"),
+                "days_since_service": a.get("days_since_service"),
+                "station": a.get("station"),
+                "fault_type": a.get("fault_type"),
+            }
+            for a in at_risk
+        ],
+    }
+
+
 @app.post("/maintenance-report")
 @limiter.limit("20/minute")
 async def maintenance_report(request: Request, payload: MaintenanceReportRequest, _: None = Depends(_require_token)):
@@ -640,6 +752,57 @@ async def maintenance_report(request: Request, payload: MaintenanceReportRequest
     return report_record
 
 
+class ResolveReportRequest(BaseModel):
+    action_taken: str = Field("", max_length=200)
+    health_after: str = Field("GREEN", pattern="^(GREEN|AMBER|RED)$")
+    priority: str = Field("routine", pattern="^(routine|urgent|critical)$")
+    notes: str = Field("", max_length=300)
+
+
+@app.patch("/api/reports/{report_id}/resolve")
+@limiter.limit("30/minute")
+async def resolve_report(
+    request: Request,
+    report_id: str,
+    payload: Optional[ResolveReportRequest] = None,
+    _: None = Depends(_require_token),
+):
+    """Mark a field report as resolved with resolution details."""
+    target = next((r for r in _in_memory_reports if r.get("report_id") == report_id), None)
+    if target is None:
+        raise HTTPException(status_code=404, detail=f"Report '{report_id}' not found.")
+    if target.get("resolved"):
+        return {"status": "already_resolved", "report": target}
+
+    now = datetime.now(timezone.utc).isoformat()
+    target["resolved"] = True
+    target["resolved_at"] = now
+    if payload:
+        target["resolution"] = {
+            "action_taken": payload.action_taken,
+            "health_after": payload.health_after,
+            "priority": payload.priority,
+            "notes": payload.notes,
+            "resolved_at": now,
+        }
+
+    try:
+        REPORTS_PATH.parent.mkdir(parents=True, exist_ok=True)
+        with open(REPORTS_PATH, "w", encoding="utf-8") as f:
+            for rec in _in_memory_reports:
+                f.write(json.dumps(rec) + "\n")
+    except Exception as exc:
+        logger.warning("Could not persist resolved state: %s", exc)
+
+    client_ip = request.client.host if request.client else "unknown"
+    _write_audit("report_resolved", client_ip, {
+        "report_id": report_id,
+        "action_taken": payload.action_taken if payload else "",
+        "health_after": payload.health_after if payload else "GREEN",
+    })
+    return {"status": "resolved", "report": target}
+
+
 @app.get("/manual-search")
 @limiter.limit("30/minute")
 async def manual_search(
@@ -677,15 +840,16 @@ async def manual_search(
 @app.post("/api/engineer-login")
 @limiter.limit("10/minute")
 async def engineer_login(request: Request, payload: EngineerLoginRequest):
-    """Validate engineer credentials. Credentials are set via ENGINEER_ID and ENGINEER_PASSWORD env vars."""
-    expected_id = os.getenv("ENGINEER_ID", "engineer")
-    expected_pw = os.getenv("ENGINEER_PASSWORD", "railsense2024")
+    """Validate engineer credentials against the known engineer accounts."""
     client_ip = request.client.host if request.client else "unknown"
-    if payload.engineer_id.strip() == expected_id and payload.password == expected_pw:
+    username = payload.engineer_id.strip().lower()
+    account = _ENGINEER_ACCOUNTS.get(username)
+    if account and payload.password == account["password"]:
         token = secrets.token_hex(32)
         _active_tokens.add(token)
-        _write_audit("engineer_login_success", client_ip, {"engineer_id": payload.engineer_id})
-        return {"success": True, "name": payload.engineer_id, "token": token}
+        _save_tokens_to_disk()
+        _write_audit("engineer_login_success", client_ip, {"engineer_id": account["id"], "username": username})
+        return {"success": True, "name": account["name"], "role": account["role"], "eng_id": account["id"], "token": token}
     _write_audit("engineer_login_failed", client_ip, {"engineer_id": payload.engineer_id})
     raise HTTPException(status_code=401, detail="Invalid engineer credentials. Please try again.")
 
@@ -698,12 +862,94 @@ async def chatbot_ui():
     return {"message": "Chat UI not found. Place ui/chat.html to enable it."}
 
 
+def _inject_report_context(message: str) -> str:
+    """If the message references a ticket ID (MT-XXXXXX), prepend the matching report data."""
+    ticket_ids = re.findall(r'\bMT-[A-Z0-9]+\b', message, re.IGNORECASE)
+    if not ticket_ids:
+        return message
+    matched = []
+    for tid in ticket_ids:
+        for r in _in_memory_reports:
+            if r.get("ticket_id", "").upper() == tid.upper():
+                matched.append(r)
+                break
+    if not matched:
+        return message
+    lines = ["[FIELD REPORT CONTEXT — injected from RailSense M4 database]"]
+    for r in matched:
+        resolved = r.get("resolved_at") or ""
+        lines.append(
+            f"Ticket: {r.get('ticket_id','')} | Status: {'RESOLVED' if resolved else 'OPEN'} | "
+            f"Asset: {r.get('asset_id','')} ({r.get('asset_type','')}) | Station: {r.get('station','')} | "
+            f"Priority: {r.get('priority','routine')} | Source: {r.get('source','engineer')}"
+        )
+        lines.append(f"Fault/Observation: {r.get('fault_type','')}")
+        lines.append(f"Summary: {r.get('summary','')}")
+        if r.get("action_taken"):
+            lines.append(f"Action Taken: {r['action_taken']} | Health After: {r.get('health_after','')}")
+        lines.append(f"Reported: {r.get('created_at','')}")
+    return "\n".join(lines) + "\n\n" + message
+
+
+_PREDICT_KEYWORDS = re.compile(
+    r"\b(predict|health\s*score|health\s*check|check\s*health|run\s*prediction|"
+    r"how\s*healthy|condition|status\s*of|diagnos)\b",
+    re.IGNORECASE,
+)
+_ASSET_ID_RE = re.compile(r"\b(DE|BG|BR|BK)-\d{4}\b", re.IGNORECASE)
+
+
+_ASSET_TYPE_BY_PREFIX = {"DE": "diesel_engine", "BG": "bogie", "BR": "brake_system", "BK": "brake_system"}
+
+
+def _chat_predict_form(asset_id: str) -> dict:
+    """Return pre-filled form data for the chat prediction card.
+    Falls back to defaults when the asset has no history row."""
+    rows = _get_history()
+    aid = asset_id.upper()
+    prefix = aid.split("-")[0] if "-" in aid else aid[:2]
+    row = next((r for r in rows if r.get("asset_id", "").upper() == aid), None)
+    asset_type = (row or {}).get("asset_type") or _ASSET_TYPE_BY_PREFIX.get(prefix, "diesel_engine")
+    sensor_keys = list(health_model.SENSOR_RANGES.get(asset_type, {}).keys())
+    sensors: dict = {}
+    if row:
+        sensors = {k: round(float(v), 2) for k in sensor_keys if (v := row.get(k)) is not None}
+    return {
+        "answer": "",
+        "citations": [],
+        "retrieval_method": "fleet_data",
+        "answer_method": "prediction_form",
+        "detected_asset_type": asset_type,
+        "detected_train": None,
+        "prediction_form": {
+            "asset_id": aid,
+            "asset_type": asset_type,
+            "days_since_service": int((row or {}).get("days_since_service") or 30),
+            "fault_count_30d": int((row or {}).get("fault_count_30d") or 0),
+            "fault_type": (row or {}).get("last_fault_type") or (row or {}).get("fault_type") or "none",
+            "sensors": sensors,
+        },
+    }
+
+
 @app.post("/chat")
 @limiter.limit("30/minute")
 async def chat(request: Request, payload: ChatRequest):
     history = [{"role": t.role, "content": t.content} for t in payload.history]
+    enriched_message = _inject_report_context(payload.message)
+
+    # Health prediction fast-path: show pre-filled form card in chat.
+    asset_match = _ASSET_ID_RE.search(payload.message)
+    if asset_match and _PREDICT_KEYWORDS.search(payload.message):
+        form_result = _chat_predict_form(asset_match.group(0))
+        _write_audit("engineer_chat_predict", request.client.host if request.client else "unknown", {
+            "asset_id": asset_match.group(0).upper(),
+            "answer_method": "prediction_form",
+        })
+        return form_result
+
     result = engineer_chatbot.answer_engineer_question(
-        message=payload.message,
+        message=enriched_message,
         asset_type=payload.asset_type or "",
         history=history,
     )
@@ -723,14 +969,11 @@ async def flag_train(request: Request, payload: TrainFlagRequest, _: None = Depe
     syncs maintenance_status to Supabase so M3 Booking Agent blocks new bookings."""
     canonical_id = payload.train_id.strip().upper()
 
-    # Validate against shared canonical trains table.
-    # If Supabase is reachable and the train doesn't exist, reject the flag.
+    # Best-effort registry lookup — log but never block flagging.
+    # The trains table may not be seeded in all environments.
     canonical = supabase_store.get_train_from_registry(canonical_id)
     if canonical is None and supabase_store.get_client() is not None:
-        raise HTTPException(
-            status_code=404,
-            detail=f"TRAIN_NOT_FOUND: Train '{canonical_id}' is not in the canonical train registry.",
-        )
+        logger.warning("flag_train: train %s not in Supabase registry — flagging anyway", canonical_id)
 
     record = {
         "train_id": canonical_id,
@@ -739,6 +982,7 @@ async def flag_train(request: Request, payload: TrainFlagRequest, _: None = Depe
         "severity": payload.severity,
         "flagged_by": payload.flagged_by or "engineer",
         "estimated_clear": payload.estimated_clear,
+        "delay_minutes": payload.delay_minutes,
         "flagged_at": datetime.now(timezone.utc).isoformat(),
     }
     _train_flags[canonical_id] = record
@@ -784,6 +1028,7 @@ async def get_train_status(request: Request, train_id: str):
     if canonical_id in _train_flags:
         flag = _train_flags[canonical_id]
         eta = f" Expected back in service by {flag['estimated_clear']}." if flag.get("estimated_clear") else ""
+        delay_msg = f" Expected service delay: {flag['delay_minutes']} minutes." if flag.get("delay_minutes") else ""
         return {
             "train_id": canonical_id,
             "under_maintenance": True,
@@ -791,7 +1036,8 @@ async def get_train_status(request: Request, train_id: str):
             "reason": flag["reason"],
             "flagged_at": flag["flagged_at"],
             "estimated_clear": flag.get("estimated_clear"),
-            "message": f"Train {canonical_id} is currently under maintenance. Reason: {flag['reason']}.{eta}",
+            "delay_minutes": flag.get("delay_minutes"),
+            "message": f"Train {canonical_id} is currently under maintenance. Reason: {flag['reason']}.{delay_msg}{eta}",
         }
 
     # Validate against shared registry — reject invented train IDs
@@ -928,6 +1174,7 @@ async def hub_message(request: Request, payload: HubMessageRequest):
         elif train_id in _train_flags:
             flag = _train_flags[train_id]
             eta = f" Expected back in service by {flag['estimated_clear']}." if flag.get("estimated_clear") else ""
+            delay_msg = f" Expected service delay: {flag['delay_minutes']} minutes." if flag.get("delay_minutes") else ""
             status_payload = {
                 "train_id": train_id,
                 "under_maintenance": True,
@@ -935,9 +1182,10 @@ async def hub_message(request: Request, payload: HubMessageRequest):
                 "reason": flag["reason"],
                 "flagged_at": flag["flagged_at"],
                 "estimated_clear": flag.get("estimated_clear"),
+                "delay_minutes": flag.get("delay_minutes"),
                 "message": (
                     f"Train {train_id} is currently under maintenance and may not be in service. "
-                    f"Reason: {flag['reason']}.{eta} We apologise for the inconvenience."
+                    f"Reason: {flag['reason']}.{delay_msg}{eta} We apologise for the inconvenience."
                 ),
             }
         else:

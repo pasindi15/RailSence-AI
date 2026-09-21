@@ -1,9 +1,24 @@
 {
-  "model": "GradientBoostingRegressor",
-  "version": "phase2-gbr-v1",
-  "train_samples": 480,
-  "test_samples": 120,
-  "mae": 2.8173,
-  "rmse": 3.5992,
-  "r2": 0.9332
+  "model": "HistGradientBoostingRegressor (per-type)",
+  "version": "phase3-hgbr-per-type-v1",
+  "asset_types": {
+    "diesel_engine": {
+      "mae": 2.6568,
+      "rmse": 3.4287,
+      "r2": 0.9495
+    },
+    "bogie": {
+      "mae": 3.3477,
+      "rmse": 4.2564,
+      "r2": 0.9114
+    },
+    "brake_system": {
+      "mae": 3.6097,
+      "rmse": 4.4565,
+      "r2": 0.8833
+    }
+  },
+  "overall_mae_avg": 3.2047,
+  "overall_r2_avg": 0.9147,
+  "total_rows": 1440
 }

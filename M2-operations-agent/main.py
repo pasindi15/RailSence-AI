@@ -27,7 +27,7 @@ ROOT_DIR = Path(__file__).resolve().parents[1]
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-from fastapi import FastAPI, HTTPException, Query, Request, status
+from fastapi import Depends, FastAPI, HTTPException, Query, Request, Response, status
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 import bleach
@@ -40,12 +40,15 @@ from slowapi.util import get_remote_address
 from ml import predict as delay_model
 from nlp import classify_incident as incident_classifier
 from nlp import summarize_incident as incident_summarizer
+from nlp import passenger_answer
 from rag import explanation as explanation_layer
 from rag import incident_retriever
 import hub_client
 import supabase_store
 from admin import admin_db
 from admin.admin_router import router as admin_router
+from admin.admin_auth import ROLE_DISPLAY_NAMES, get_permissions_for_role, require_permission
+import incident_map
 from shared.train_repository import TrainRepositoryUnavailable, get_train, resolve_train
 
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO").upper())
@@ -57,9 +60,10 @@ limiter = Limiter(key_func=get_remote_address, default_limits=["120/minute"])
 async def lifespan(_app):
     try:
         incident_retriever._load_root_env()
-        if os.getenv("SUPABASE_URL") and os.getenv("SUPABASE_PUBLISHABLE_KEY"):
-            await asyncio.to_thread(incident_retriever._get_embedding_model)
-            logger.info("Warmed RAG embedding model")
+        # Warm up unconditionally — the embedding model is always needed for
+        # predictions, and lazy-loading it blocks the async event loop.
+        await asyncio.to_thread(incident_retriever._get_embedding_model)
+        logger.info("Warmed RAG embedding model")
     except Exception as exc:
         logger.warning("RAG model warm-up skipped: %s", exc.__class__.__name__)
     try:
@@ -82,6 +86,9 @@ app = FastAPI(
 )
 app.include_router(admin_router)
 app.mount("/admin", StaticFiles(directory=Path(__file__).parent / "admin_ui", html=True), name="admin_ui")
+# Browser code shared by the Control Room, the Admin Console and the passenger
+# portal on :3000 (the incident map), so all three render incidents identically.
+app.mount("/shared", StaticFiles(directory=Path(__file__).parent / "ui" / "shared"), name="shared_ui")
 app.state.limiter = limiter
 
 from fastapi.middleware.cors import CORSMiddleware
@@ -93,6 +100,26 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.add_middleware(SlowAPIMiddleware)
+# The train catalogue (~3,000 trains) and dashboard aggregates are repetitive
+# JSON; gzip cuts them to a fraction of their size on the wire.
+from fastapi.middleware.gzip import GZipMiddleware
+app.add_middleware(GZipMiddleware, minimum_size=2048)
+
+
+@app.middleware("http")
+async def revalidate_ui_assets(request: Request, call_next):
+    """Make browsers re-check the UI files on every load.
+
+    StaticFiles sends no Cache-Control, so browsers cached index.html / nav.js
+    heuristically and kept serving old copies after an update (e.g. without
+    the Operations Assistant). `no-cache` still allows the cached copy, but
+    only after an ETag revalidation (a cheap 304 when nothing changed).
+    """
+    response = await call_next(request)
+    path = request.url.path
+    if path == "/" or path.startswith(("/admin/", "/shared/")) and not path.startswith("/admin/api/") or path == "/admin":
+        response.headers.setdefault("Cache-Control", "no-cache")
+    return response
 
 
 async def rate_limit_handler(request, exc):
@@ -648,10 +675,196 @@ def dashboard_data():
     }
 
 
-@app.post("/predict-delay", response_model=DelayPredictionResponse)
-@limiter.limit("30/minute")
-async def predict_delay(request: Request, req: DelayPredictionRequest):
+def _route_options(history: list[dict]) -> list[dict]:
+    """Group the operations corpus into route -> {trains, stations}.
+
+    Stations are ordered along the corridor: the origin and destination named
+    in the route string bracket the intermediate stops, which sit between them
+    alphabetically. Train ids come from the same corpus the model was trained
+    on, and every one of them is seeded into the shared canonical registry.
     """
+    grouped: dict[str, dict[str, set]] = {}
+    for row in history:
+        route = row.get("route")
+        if not route:
+            continue
+        bucket = grouped.setdefault(route, {"trains": set(), "stations": set()})
+        if row.get("train_id"):
+            bucket["trains"].add(str(row["train_id"]))
+        if row.get("station"):
+            bucket["stations"].add(str(row["station"]))
+
+    options = []
+    for route, bucket in grouped.items():
+        ends = [part.strip() for part in route.split(" - ")]
+        origin, destination = ends[0], ends[-1]
+        stations = bucket["stations"]
+        middle = sorted(s for s in stations if s not in (origin, destination))
+        ordered = ([origin] if origin in stations else []) + middle + (
+            [destination] if destination in stations and destination != origin else [])
+        options.append({
+            "route": route,
+            "trains": sorted(bucket["trains"]),
+            "stations": ordered,
+        })
+    return sorted(options, key=lambda item: item["route"])
+
+
+@app.get("/api/route-options")
+def route_options():
+    """Route -> train ids and stations, feeding the prediction form dropdowns."""
+    supabase_history = supabase_store.fetch_history()
+    history = supabase_history if supabase_history else HISTORY
+    return {
+        "source": "supabase" if supabase_history else "local_csv",
+        "routes": _route_options(history),
+    }
+
+
+class PassengerServiceContext(BaseModel):
+    """Today's-board snapshot of the train the passenger clicked on."""
+    train_id: str = Field(..., min_length=1, max_length=20)
+    train_name: Optional[str] = Field(None, max_length=80)
+    route: Optional[str] = Field(None, max_length=120)
+    from_station: Optional[str] = Field(None, max_length=80)
+    to_station: Optional[str] = Field(None, max_length=80)
+    departure_time: Optional[str] = Field(None, max_length=8)
+    arrival_time: Optional[str] = Field(None, max_length=8)
+    service_status: Optional[str] = Field(None, max_length=30)
+    maintenance_status: Optional[str] = Field(None, max_length=30)
+    live_status: Optional[str] = Field(None, max_length=30)
+    current_station: Optional[str] = Field(None, max_length=80)
+    next_station: Optional[str] = Field(None, max_length=80)
+    progress_percent: Optional[float] = None
+    stops: list[str] = Field(default_factory=list, max_length=40)
+
+
+class PassengerAskRequest(BaseModel):
+    question: str = Field(..., min_length=1, max_length=300)
+    mode: Optional[str] = Field(None, pattern="^(delay|operations)$")
+    service: PassengerServiceContext
+
+
+def _corridor_for(route: Optional[str], origin: Optional[str], destination: Optional[str]) -> Optional[str]:
+    """Map a board route ("Colombo - Jaffna") onto a corridor the model knows."""
+    known = {row.get("route") for row in HISTORY if row.get("route")}
+    if route in known:
+        return route
+    route_end = route.split(" - ")[-1].strip() if route and " - " in route else None
+    for station in (route_end, destination, origin):
+        if not station:
+            continue
+        needle = station.casefold()
+        for corridor in sorted(known):
+            if corridor.casefold().split(" - ")[-1] == needle:
+                return corridor
+        for corridor in sorted(known):
+            if needle in corridor.casefold():
+                return corridor
+    return None
+
+
+def _passenger_delay_estimate(ctx: PassengerServiceContext, corridor: Optional[str]) -> Optional[dict]:
+    """Delay estimate for a passenger question, without prediction side effects."""
+    if not corridor:
+        return None
+    try:
+        train, _ = resolve_train(ctx.train_id)
+        canonical_id = (train or {}).get("train_id") or ctx.train_id
+    except TrainRepositoryUnavailable:
+        canonical_id = ctx.train_id
+    observed = _find_historical_train(canonical_id, corridor)
+    if observed:
+        return {"minutes": float(observed.get("delay_minutes") or 0), "confidence": "high",
+                "corridor": corridor, "method": "historical_record"}
+
+    known_stations = {row.get("station") for row in HISTORY if row.get("route") == corridor}
+    station = next((s for s in (ctx.current_station, ctx.from_station) if s in known_stations), None)
+    departure = datetime.now(timezone.utc)
+    try:
+        departure = datetime.strptime(ctx.departure_time or "", "%H:%M:%S")
+    except ValueError:
+        pass
+    day_type = "weekend" if datetime.now().weekday() >= 5 else "weekday"
+    try:
+        if delay_model.is_model_available():
+            result = delay_model.predict_delay(route=corridor, scheduled_hour=departure.hour,
+                                               day_type=day_type, station=station)
+            minutes = result["predicted_delay_minutes"]
+            confidence = "medium" if abs(minutes) < 20 else "low"
+        else:
+            minutes, samples = _historical_delay_estimate(corridor, datetime.now(), station, None, None, None)
+            confidence = "low" if samples < 10 else "medium"
+    except Exception:
+        logger.exception("passenger delay estimate failed")
+        return None
+    return {"minutes": float(minutes), "confidence": confidence, "corridor": corridor, "method": "model"}
+
+
+def _todays_incidents(ctx: PassengerServiceContext) -> list[dict]:
+    """Incident reports filed in the last 24h that touch this train or its stations."""
+    try:
+        rows = admin_db.list_incidents(limit=100).get("rows", [])
+    except Exception:
+        return []
+    stations = {s.casefold() for s in [ctx.from_station, ctx.to_station, ctx.current_station,
+                                       ctx.next_station, *ctx.stops] if s}
+    cutoff = datetime.now(timezone.utc).timestamp() - 24 * 3600
+    matches = []
+    for row in rows:
+        try:
+            received = datetime.fromisoformat(str(row.get("received_at")).replace("Z", "+00:00")).timestamp()
+        except ValueError:
+            continue
+        same_train = str(row.get("train_id", "")).casefold() == ctx.train_id.casefold()
+        on_route = str(row.get("station", "")).casefold() in stations
+        if received >= cutoff and (same_train or on_route):
+            matches.append(row)
+    return matches[:3]
+
+
+@app.post("/passenger/ask")
+@limiter.limit("30/minute")
+def passenger_ask(request: Request, req: PassengerAskRequest):
+    """Friendly, grounded answer to a passenger's question about one train.
+
+    Powers the Delay / Operations popup on the user portal. The question is
+    classified by nlp/passenger_answer.detect_intent(); the answer is built
+    from the delay model (or this train's own history), retrieved incident
+    precedent, today's incident reports and the board's live schedule.
+    Booking/fare questions come back with handoff=true for the Booking flow.
+    """
+    question = bleach.clean(req.question, tags=[], strip=True).strip()
+    default = "delay" if req.mode == "delay" else "status"
+    intent = passenger_answer.detect_intent(question, default=default)
+    ctx = req.service
+    if intent == "handoff":
+        return passenger_answer.compose_answer(intent, ctx.model_dump(), None, [], [])
+
+    corridor = _corridor_for(ctx.route, ctx.from_station, ctx.to_station)
+    estimate = _passenger_delay_estimate(ctx, corridor)
+    live_incidents = _todays_incidents(ctx)
+    precedent: list[dict] = []
+    if intent == "reason" and corridor:
+        try:
+            precedent = incident_retriever.retrieve_similar_incidents(
+                f"{corridor} delay", top_k=2, route=corridor)["incidents"]
+        except Exception:
+            precedent = []
+
+    answer = passenger_answer.compose_answer(intent, ctx.model_dump(), estimate, live_incidents, precedent)
+    answer["train_id"] = ctx.train_id
+    answer["corridor"] = corridor
+    return answer
+
+
+def _compute_prediction(req: DelayPredictionRequest) -> DelayPredictionResponse:
+    """Pure prediction: no Hub alert, no audit, no in-memory log.
+
+    Shared by POST /predict-delay (which adds those side effects) and the
+    admin Operations Assistant, whose questions must never broadcast a
+    delay_alert to the other agents.
+
     Phase 2: serves predictions from the trained GradientBoostingRegressor
     (ml/train_delay_model.py), with feature importances attached.
 
@@ -701,10 +914,6 @@ async def predict_delay(request: Request, req: DelayPredictionRequest):
             retrieval_method="historical_record",
             explanation_method="historical_record",
         )
-        _predictions.append(response.model_dump())
-        _start_prediction_side_effects(
-            request, req.route, req.train_id, observed_delay, response.model_version
-        )
         return response
 
     retrieval = incident_retriever.retrieve_similar_incidents(
@@ -743,14 +952,6 @@ async def predict_delay(request: Request, req: DelayPredictionRequest):
             retrieval_method=retrieval["method"],
             explanation_method=grounded["method"],
         )
-        _predictions.append(response.model_dump())
-        _start_prediction_side_effects(
-            request,
-            req.route,
-            req.train_id,
-            response.predicted_delay_minutes,
-            response.model_version,
-        )
         return response
 
     result = delay_model.predict_delay(
@@ -785,13 +986,18 @@ async def predict_delay(request: Request, req: DelayPredictionRequest):
         retrieval_method=retrieval["method"],
         explanation_method=grounded["method"],
     )
+    return response
+
+
+@app.post("/predict-delay", response_model=DelayPredictionResponse)
+@limiter.limit("30/minute")
+async def predict_delay(request: Request, req: DelayPredictionRequest):
+    """Delay prediction with its operational side effects (Hub alert + audit)."""
+    response = _compute_prediction(req)
     _predictions.append(response.model_dump())
     _start_prediction_side_effects(
-        request,
-        req.route,
-        req.train_id,
-        response.predicted_delay_minutes,
-        response.model_version,
+        request, response.route, response.train_id,
+        response.predicted_delay_minutes, response.model_version,
     )
     return response
 
@@ -929,6 +1135,149 @@ class IncidentUpdateRequest(BaseModel):
         return cleaned
 
 
+# ---------------------------------------------------------------------------
+# Incident map: admin review workflow + verified-only public feed
+# ---------------------------------------------------------------------------
+
+MAP_FEED = incident_map.MapFeed(
+    lambda: admin_db.list_incidents(limit=500, review_status=incident_map.VERIFIED)
+)
+
+
+def _review_incident(request: Request, incident_id: str, officer: dict, decision: str) -> dict:
+    existing = admin_db.get_incident(incident_id)
+    if existing is None:
+        raise HTTPException(status_code=404, detail=f"INCIDENT_NOT_FOUND: {incident_id}")
+    now = datetime.now(timezone.utc)
+    patch = {
+        "review_status": decision,
+        "reviewed_by": officer.get("email") or officer.get("name") or officer.get("sub"),
+        "reviewed_at": now.timestamp(),
+        "verified_at": now.isoformat() if decision == incident_map.VERIFIED else None,
+    }
+    result = admin_db.update_incident(incident_id, patch)
+    if result["row"] is None:
+        raise HTTPException(status_code=500, detail=result.get("error", "incident review failed"))
+    MAP_FEED.invalidate()
+    mapped_station = incident_map.canonical_station(existing.get("station"))
+    _audit(f"incident_{'approve' if decision == incident_map.VERIFIED else 'reject'}", request, {
+        "incident_id": incident_id,
+        "reviewed_by": patch["reviewed_by"],
+        "intent": "incident_review",
+        "outcome": f"{decision}:{result['source']}",
+    })
+    return {
+        "incident": result["row"],
+        "source": result["source"],
+        "offline": result["source"] != "supabase",
+        "write_error": result.get("error"),
+        # Tells the reviewer when an approval cannot be placed on the map.
+        "mapped": decision == incident_map.VERIFIED and mapped_station is not None,
+        "station": mapped_station or existing.get("station"),
+    }
+
+
+@app.post("/incidents/{incident_id}/approve")
+def approve_incident(request: Request, incident_id: str,
+                     officer: dict = Depends(require_permission("m2.incidents.review"))):
+    """Admin approval: PENDING/corrected -> VERIFIED, which publishes it to the map."""
+    return _review_incident(request, incident_id, officer, incident_map.VERIFIED)
+
+
+@app.post("/incidents/{incident_id}/reject")
+def reject_incident(request: Request, incident_id: str,
+                    officer: dict = Depends(require_permission("m2.incidents.review"))):
+    """Admin rejection: the incident never appears on any map."""
+    return _review_incident(request, incident_id, officer, "rejected")
+
+
+@app.get("/api/incidents/map-feed")
+def incident_map_feed(response: Response):
+    """VERIFIED incidents only, allowlisted fields only (safe for passengers).
+
+    Polled every ~5 s by all three maps. Never raises: when the incident store
+    is unreachable the last known feed is returned with stale=true.
+    """
+    response.headers["Cache-Control"] = "no-store"
+    return MAP_FEED.get()
+
+
+_TRAIN_CATALOG: dict = {"at": 0.0, "payload": None}
+TRAIN_CATALOG_TTL_SECONDS = 300
+
+
+def _registry_trains() -> list[dict]:
+    """Active trains from the shared canonical registry (read-only)."""
+    from shared import train_repository
+    client = train_repository.get_client()
+    rows, start = [], 0
+    while True:
+        page = (client.table("trains")
+                .select("train_id,train_name,route,origin_station,destination_station,active")
+                .eq("active", True).range(start, start + 999).execute().data or [])
+        rows.extend(page)
+        if len(page) < 1000:
+            return rows
+        start += 1000
+
+
+def _build_train_catalog() -> dict:
+    """Train picker data: id, human name and the stations each train serves.
+
+    Registry rows seeded from the operations corpus carry placeholder names
+    ("Historical IC-1036"); those are sent with name=None so the picker leads
+    with real service names (Podi Menike, Yal Devi Express…) people remember.
+    """
+    source = "registry"
+    try:
+        trains = _registry_trains()
+    except Exception as exc:
+        logger.warning("train registry unavailable for picker, using corpus: %s", exc)
+        source = "local_corpus"
+        from shared import train_repository
+        trains = list(train_repository._LOCAL_TRAINS.values())
+        known = {t["train_id"] for t in trains}
+        for row in HISTORY:
+            if row.get("train_id") and row["train_id"] not in known:
+                known.add(row["train_id"])
+                trains.append({"train_id": row["train_id"], "train_name": None, "route": row.get("route")})
+
+    # Stations are sent once per corridor, not repeated on ~3,000 trains.
+    corridor_stations = {o["route"]: o["stations"] for o in _route_options(HISTORY)}
+
+    catalog = []
+    for t in trains:
+        train_id = str(t.get("train_id") or "").strip()
+        if not train_id:
+            continue
+        name = (t.get("train_name") or "").strip() or None
+        if name and name.lower().startswith("historical "):
+            name = None
+        corridor = _corridor_for(t.get("route"), t.get("origin_station"), t.get("destination_station"))
+        item = {"train_id": train_id, "name": name, "route": t.get("route") or corridor}
+        if corridor and corridor != item["route"]:
+            item["corridor"] = corridor  # e.g. "Colombo - Badulla" -> "Colombo Fort - Badulla"
+        catalog.append(item)
+    catalog.sort(key=lambda t: (t["name"] is None, (t["name"] or "").lower(), t["train_id"]))
+    return {"source": source, "corridor_stations": corridor_stations, "trains": catalog}
+
+
+@app.get("/api/trains")
+def train_catalog():
+    """Trains for the incident form's picker (named services first)."""
+    now = datetime.now(timezone.utc).timestamp()
+    if _TRAIN_CATALOG["payload"] is None or now - _TRAIN_CATALOG["at"] > TRAIN_CATALOG_TTL_SECONDS:
+        _TRAIN_CATALOG["payload"] = _build_train_catalog()
+        _TRAIN_CATALOG["at"] = now
+    return _TRAIN_CATALOG["payload"]
+
+
+@app.get("/api/stations")
+def stations():
+    """Corpus stations with map coordinates (incident form + map bounds)."""
+    return {"stations": incident_map.station_list()}
+
+
 @app.patch("/incidents/{incident_id}")
 def update_incident(request: Request, incident_id: str, req: IncidentUpdateRequest):
     """Write a controller's correction back to the incident's DB row."""
@@ -937,6 +1286,9 @@ def update_incident(request: Request, incident_id: str, req: IncidentUpdateReque
         raise HTTPException(status_code=400, detail="no fields supplied to update")
     patch = {k: (v.value if isinstance(v, Enum) else v) for k, v in patch.items()}
     patch.setdefault("review_status", "corrected")
+    # ReviewStatus cannot be "verified", so any edit takes a verified incident
+    # off the public map until an administrator approves the corrected text.
+    patch["verified_at"] = None
     # incident_reports.reviewed_at is `double precision` (see admin/admin_schema.sql),
     # so this must be a Unix timestamp — an ISO string makes Postgres reject the whole
     # update, which would silently demote the write to the local fallback store.
@@ -949,6 +1301,7 @@ def update_incident(request: Request, incident_id: str, req: IncidentUpdateReque
     result = admin_db.update_incident(incident_id, patch)
     if result["row"] is None:
         raise HTTPException(status_code=500, detail=result.get("error", "incident update failed"))
+    MAP_FEED.invalidate()
 
     # Keep the retrieval corpus consistent with the corrected classification.
     _index_incident_for_retrieval({
@@ -987,6 +1340,7 @@ def delete_incident(request: Request, incident_id: str):
     result = admin_db.delete_incident(incident_id)
     if not result["deleted"]:
         raise HTTPException(status_code=500, detail="incident delete failed")
+    MAP_FEED.invalidate()
 
     embedding_result = _unindex_incident(incident_id)
 
@@ -1137,6 +1491,85 @@ async def hub_message(request: Request, message: HubMessage):
         },
     )
     return result
+
+
+# ---------------------------------------------------------------------------
+# Admin Operations Assistant (floating chatbot in the Admin Console)
+# ---------------------------------------------------------------------------
+import ops_agent  # noqa: E402
+from ops_agent_tools import build_tools  # noqa: E402
+
+_OPS_TOOLS, _ops_known_routes, _ops_coverage = build_tools(sys.modules[__name__])
+OPS_AGENT = ops_agent.OpsAgent(_OPS_TOOLS, _ops_known_routes, coverage=_ops_coverage)
+OPS_HISTORY = ops_agent.QueryHistory(admin_db.get_client)
+
+
+class OpsAgentAskRequest(BaseModel):
+    question: str = Field(..., min_length=2, max_length=500)
+    # Accepted for API compatibility only: identity always comes from the
+    # signed officer token, so one admin can never write another's history.
+    session_user_id: Optional[str] = Field(None, max_length=120)
+
+
+def _officer_id(officer: dict) -> str:
+    return str(officer.get("sub") or officer.get("email") or "unknown")
+
+
+def _officer_access(officer: dict) -> tuple[str, set[str]]:
+    role = officer.get("role", "")
+    return role, set(get_permissions_for_role(role))
+
+
+@app.get("/api/ops-agent/capabilities")
+def ops_agent_capabilities(officer: dict = Depends(require_permission("m2.assistant.use"))):
+    """What this officer's role may ask; the widget uses it for examples and help."""
+    role, permissions = _officer_access(officer)
+    return {"role": role, "role_display": ROLE_DISPLAY_NAMES.get(role, role),
+            **OPS_AGENT.capabilities(permissions)}
+
+
+@app.post("/api/ops-agent/ask")
+@limiter.limit("20/minute")
+def ops_agent_ask(request: Request, req: OpsAgentAskRequest,
+                  officer: dict = Depends(require_permission("m2.assistant.use"))):
+    """Answer an officer's question by calling M2's own data tools (never free-form).
+
+    The tools offered to the model are filtered by the officer's role, so an
+    operations engineer asking about admin-only data gets a clear
+    "restricted" reply instead of an answer.
+    """
+    user_id = _officer_id(officer)
+    if req.session_user_id and req.session_user_id != user_id:
+        raise HTTPException(status_code=403, detail="session_user_id does not match the signed-in officer")
+    question = bleach.clean(req.question, tags=[], strip=True).strip()
+    if len(question) < 2:
+        raise HTTPException(status_code=400, detail="question is empty")
+
+    role, permissions = _officer_access(officer)
+    result = OPS_AGENT.ask(question, permissions=permissions, role=role)
+    stored = OPS_HISTORY.record(user_id, question, result)
+    _audit("ops_agent_query", request, {
+        "admin_user_id": user_id,
+        "tools": [c["tool"] for c in result["tool_calls_made"]],
+        "answer_method": result["answer_method"],
+        "answer_type": result["answer_type"],
+        "role": role,
+        "intent": "ops_agent_query",
+        "outcome": f"answered:{stored['stored']}",
+    })
+    return {**result, "id": stored["row"]["id"], "question": question,
+            "created_at": stored["row"]["created_at"], "stored": stored["stored"]}
+
+
+@app.get("/api/ops-agent/history")
+def ops_agent_history(user_id: Optional[str] = None,
+                      limit: int = Query(50, ge=1, le=100), offset: int = Query(0, ge=0),
+                      officer: dict = Depends(require_permission("m2.assistant.use"))):
+    """This officer's own past questions, newest first (feeds the history rail)."""
+    own_id = _officer_id(officer)
+    if user_id and user_id != own_id:
+        raise HTTPException(status_code=403, detail="History is private to each officer")
+    return OPS_HISTORY.list(own_id, limit=limit, offset=offset)
 
 
 if __name__ == "__main__":

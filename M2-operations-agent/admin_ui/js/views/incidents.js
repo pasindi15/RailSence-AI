@@ -14,6 +14,17 @@ window.ViewIncidents = (function () {
 
   let offset = 0;
   let lastCount = 0;
+  let incidentMap = null;
+  let themeObserver = null;
+  let stations = [];
+
+  // Approve/Reject is an administrator capability (m2.incidents.review); the
+  // server enforces it, this only hides buttons that would be refused.
+  function canReview() {
+    const user = AdminAPI.getCurrentUser();
+    return !!user && (user.role === "admin" ||
+      (Array.isArray(user.permissions) && user.permissions.includes("m2.incidents.review")));
+  }
 
   // The incident CRUD routes live on the agent itself, not under /admin/api.
   async function agentFetch(path, options = {}) {
@@ -49,6 +60,19 @@ window.ViewIncidents = (function () {
       <div id="inc-offline-banner"></div>
 
       <div class="card" style="margin-bottom:18px;">
+        <div class="toolbar" style="margin-bottom:10px;">
+          <div>
+            <strong>Verified incident map</strong>
+            <div class="muted" style="font-size:12px;">Incidents approved today (since 00:00 Sri Lanka time) · also shown in the Control Room and on the passenger portal · updates every 5 s</div>
+          </div>
+          <span class="spacer"></span>
+          <span class="source-tag" id="inc-map-count">—</span>
+        </div>
+        <div id="inc-map" style="height:360px;"></div>
+        <div class="muted" id="inc-map-unmapped" style="font-size:12px;margin-top:8px;"></div>
+      </div>
+
+      <div class="card" style="margin-bottom:18px;">
         <div class="toolbar" style="flex-wrap:wrap;gap:8px;">
           <input id="inc-search" placeholder="Search summary, train, station…" style="min-width:220px;" />
           <select id="inc-type-filter">
@@ -60,6 +84,7 @@ window.ViewIncidents = (function () {
             <option value="pending">pending</option>
             <option value="corrected">corrected</option>
             <option value="approved">approved</option>
+            <option value="verified">verified</option>
             <option value="rejected">rejected</option>
           </select>
           <button class="btn btn-ghost btn-sm" id="inc-apply">Apply</button>
@@ -150,6 +175,7 @@ window.ViewIncidents = (function () {
           <td><span class="muted" style="font-size:11.5px;">${escapeHtml(r.nlp_method || "—")}</span></td>
           <td><span class="badge ${escapeHtml(r.review_status || "pending")}">${escapeHtml(r.review_status || "pending")}</span></td>
           <td style="white-space:nowrap;">
+            ${reviewButtons(r)}
             <button class="btn btn-ghost btn-sm" onclick="ViewIncidents.edit('${payload}')">Edit</button>
             <button class="btn btn-danger btn-sm" onclick="ViewIncidents.remove('${escapeHtml(r.incident_id)}')">Delete</button>
           </td>
@@ -166,14 +192,21 @@ window.ViewIncidents = (function () {
       <p class="card-desc" style="margin-bottom:12px;">
         The raw text is sanitised, then classified and summarised by the NLP pipeline before it is stored.
       </p>
-      <div class="field"><label>Train ID</label><input id="inc-fld-train" placeholder="PM-4082" /></div>
-      <div class="field"><label>Station</label><input id="inc-fld-station" placeholder="Rambukkana" /></div>
+      <div class="field"><label>Station</label><select id="inc-fld-station">
+        <option value="">— select a station —</option>
+        ${stations.map((s) => `<option value="${escapeHtml(s.station)}">${escapeHtml(s.station)}</option>`).join("")}
+      </select></div>
+      <div class="field"><label>Train</label><input id="inc-fld-train" /></div>
       <div class="field">
         <label>Raw incident report</label>
         <textarea id="inc-fld-text" rows="4" placeholder="Describe what the field staff reported…"></textarea>
       </div>
     `, async () => {
-      const train_id = document.getElementById("inc-fld-train").value.trim();
+      if (!trainPicker.validate()) {
+        toast("Choose the train from the list.", "error");
+        return;
+      }
+      const train_id = trainPicker.value;
       const station = document.getElementById("inc-fld-station").value.trim();
       const raw_text = document.getElementById("inc-fld-text").value.trim();
       if (!train_id || !station || raw_text.length < 5) {
@@ -193,6 +226,13 @@ window.ViewIncidents = (function () {
         toast(err.message, "error");
       }
     }, "File Incident");
+
+    // Pick the train by name ("Podi Menike") instead of recalling its id.
+    const stationEl = document.getElementById("inc-fld-station");
+    const trainPicker = RailSenseTrainPicker.attach(document.getElementById("inc-fld-train"), {
+      getStation: () => stationEl.value,
+    });
+    stationEl.addEventListener("change", () => trainPicker.refresh());
   }
 
   // ------------------------------------------------------------- UPDATE
@@ -217,10 +257,12 @@ window.ViewIncidents = (function () {
       <div class="field">
         <label>Review Status</label>
         <select id="inc-edit-status">
-          ${["corrected", "approved", "rejected", "pending"].map((s) =>
+          ${["corrected", "rejected", "pending"].map((s) =>
             `<option value="${s}" ${row.review_status === s ? "selected" : ""}>${s}</option>`).join("")}
         </select>
       </div>
+      ${row.review_status === "verified" ? `<p class="muted" style="font-size:12px;margin:-4px 0 10px;">
+        This incident is verified. Saving a correction takes it off the map until it is approved again.</p>` : ""}
       <div class="field">
         <label>Original report (read-only)</label>
         <textarea rows="3" readonly style="background:var(--surface-2);">${escapeHtml(row.raw_text || "")}</textarea>
@@ -266,6 +308,67 @@ window.ViewIncidents = (function () {
     }
   }
 
-  function load() { render(); fetchRows(); }
-  return { load, edit, remove, refresh: fetchRows };
+  // ------------------------------------------------------------- REVIEW
+  function reviewButtons(r) {
+    if (!canReview()) return "";
+    const id = escapeHtml(r.incident_id);
+    const status = r.review_status || "pending";
+    const approve = status !== "verified"
+      ? `<button class="btn btn-primary btn-sm" onclick="ViewIncidents.review('${id}','approve')">Approve</button>` : "";
+    const reject = status !== "rejected"
+      ? `<button class="btn btn-danger btn-sm" onclick="ViewIncidents.review('${id}','reject')">Reject</button>` : "";
+    return approve + " " + reject;
+  }
+
+  async function review(incidentId, action) {
+    try {
+      const result = await agentFetch(`/incidents/${encodeURIComponent(incidentId)}/${action}`, { method: "POST" });
+      if (result.write_error) {
+        toast(`Database rejected the review: ${result.write_error}`, "error");
+      } else if (action === "approve") {
+        toast(result.mapped
+          ? `Verified — now on the incident map at ${result.station}`
+          : `Verified, but "${result.station}" has no known map location, so it is not shown on the map`,
+          result.mapped ? "success" : "error");
+      } else {
+        toast("Incident rejected — it will not appear on any map", "success");
+      }
+      fetchRows();
+      if (incidentMap) incidentMap.refresh();
+    } catch (err) {
+      toast(err.message, "error");
+    }
+  }
+
+  async function loadStations() {
+    try {
+      const res = await agentFetch("/api/stations");
+      stations = res.stations || [];
+    } catch (_) { stations = []; }
+  }
+
+  function startMap() {
+    if (incidentMap) { incidentMap.destroy(); incidentMap = null; }
+    const el = document.getElementById("inc-map");
+    if (!el || !window.RailSenseIncidentMap) return;
+    const theme = () => document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
+    incidentMap = RailSenseIncidentMap.create(el, {
+      theme: theme(),
+      scrollWheelZoom: false,
+      onUpdate: (items, feed) => {
+        const count = document.getElementById("inc-map-count");
+        if (count) count.textContent = `${items.length} today`;
+        const note = document.getElementById("inc-map-unmapped");
+        if (note) note.textContent = feed.unmapped
+          ? `${feed.unmapped} incident(s) approved today are at stations with no known map location and are not shown.` : "";
+      },
+    });
+    if (!themeObserver) {
+      themeObserver = new MutationObserver(() => incidentMap && incidentMap.setTheme(theme()));
+      themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    }
+  }
+
+  function load() { render(); fetchRows(); loadStations(); startMap(); }
+  return { load, edit, remove, review, refresh: fetchRows };
 })();

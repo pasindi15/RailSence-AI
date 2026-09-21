@@ -814,6 +814,32 @@
     flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0;
   }
 
+  /* ── Health prediction form card ── */
+  .cpf-card,.cpf-result{background:var(--white);border:1px solid var(--border);border-radius:16px;padding:14px 16px;box-shadow:var(--shadow-sm);max-width:420px;width:100%}
+  .cpf-hdr,.cpf-res-hdr{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+  .cpf-asset-id{font-size:0.88rem;font-weight:800;color:var(--text);letter-spacing:-0.3px}
+  .cpf-type-badge{font-size:0.65rem;background:rgba(37,99,235,0.07);color:var(--primary);padding:2px 8px;border-radius:8px;text-transform:capitalize;font-weight:600}
+  .cpf-section{font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-light);margin:10px 0 6px 0}
+  .cpf-row{display:flex;flex-direction:column;gap:3px;margin-bottom:7px}
+  .cpf-lbl{font-size:0.75rem;color:var(--text-muted);font-weight:500}
+  .cpf-unit{font-weight:400;opacity:.7}
+  .cpf-inp{width:100%;padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--text);font-size:0.82rem;box-sizing:border-box;font-family:inherit;transition:border-color 0.15s}
+  .cpf-inp:focus{outline:none;border-color:var(--border-focus)}
+  .cpf-btn{width:100%;margin-top:12px;padding:9px;background:var(--primary);color:white;border:none;border-radius:10px;font-size:0.82rem;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 2px 8px rgba(37,99,235,0.25);transition:opacity 0.15s}
+  .cpf-btn:hover{opacity:.9}.cpf-btn:disabled{opacity:.5;cursor:default}
+  .cpf-res-conf{font-size:0.72rem;color:var(--text-light);margin-bottom:6px}
+  .cpf-res-row{display:flex;justify-content:space-between;font-size:0.8rem;padding:4px 0;border-bottom:1px solid var(--border)}
+  .cpf-res-row:last-child{border-bottom:none}
+  .cpf-res-row.oor{background:rgba(239,68,68,0.06);margin:0 -6px;padding:4px 6px;border-radius:4px;border-bottom:none;margin-bottom:2px}
+  .cpf-res-lbl{color:var(--text-muted)}
+  .cpf-res-val{font-weight:500;color:var(--text)}
+  .cpf-res-range{font-size:0.68rem;color:var(--text-light)}
+  .cpf-res-dtf{font-size:0.8rem;margin-top:10px;color:var(--text)}
+  .cpf-res-dtf.warn{color:var(--red);font-weight:700}
+  .cpf-score-badge{font-size:0.78rem;font-weight:700;padding:3px 10px;border-radius:8px;background:var(--surface-2)}
+  .cpf-score-badge.green{color:var(--green)}.cpf-score-badge.amber{color:var(--amber)}.cpf-score-badge.red{color:var(--red)}
+  .bubble.cpf-card,.bubble.cpf-result{padding:14px 16px !important;border-radius:16px !important}
+
   /* ── Responsive ── */
   @media (max-width: 768px) {
     .sidebar { position: fixed; left: 0; top: 62px; bottom: 0; z-index: 40; box-shadow: var(--shadow-lg); }
@@ -825,6 +851,206 @@
     .header-text p { display: none; }
     .chat-window { padding: 20px 14px 12px; }
     .input-wrap { padding: 10px 14px 14px; }
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════
+     M4 Premium Chat Layer — deliberately visual only; chat/session/API
+     contracts and generated element hooks remain intact.
+     ══════════════════════════════════════════════════════════════════════ */
+  :root {
+    --chat-panel-shadow: 0 16px 38px rgba(15,23,42,0.075), 0 2px 9px rgba(15,23,42,0.04);
+    --chat-panel-shadow-hover: 0 20px 48px rgba(15,23,42,0.12), 0 4px 14px rgba(15,23,42,0.055);
+  }
+  body.dark {
+    --chat-panel-shadow: 0 16px 38px rgba(0,0,0,0.3), 0 2px 9px rgba(0,0,0,0.18);
+    --chat-panel-shadow-hover: 0 20px 48px rgba(0,0,0,0.43), 0 4px 14px rgba(0,0,0,0.24);
+  }
+  header { background: var(--glass); box-shadow: 0 1px 0 var(--border), 0 9px 25px rgba(15,23,42,0.035); }
+  body.dark header { box-shadow: 0 1px 0 var(--border), 0 9px 25px rgba(0,0,0,0.14); }
+  .header-text h1 { font-size: 0.96rem; letter-spacing: -0.2px; }
+  .sidebar { background: linear-gradient(180deg, var(--surface-2), var(--bg)); }
+  .sb-top { padding: 16px 12px 12px; }
+  .sb-new-btn { border-radius: 13px; box-shadow: 0 7px 17px rgba(37,99,235,0.22); }
+  .sb-item { border: 1px solid transparent; transition: background 0.16s, border-color 0.16s, transform 0.16s; }
+  .sb-item:hover { border-color: var(--border); transform: translateX(2px); }
+  .sb-item.active { border-color: rgba(37,99,235,0.16); box-shadow: inset 0 1px 0 rgba(255,255,255,0.35); }
+
+  .chat-window { padding-top: 28px; gap: 22px; }
+  .welcome {
+    position: relative; isolation: isolate; overflow: hidden;
+    margin: 4px auto 20px; padding: 30px 26px 24px;
+    background: linear-gradient(145deg, var(--white), var(--surface-2));
+    border: 1px solid var(--border); border-radius: 26px;
+    box-shadow: var(--chat-panel-shadow);
+  }
+  .welcome::before {
+    content: ''; position: absolute; z-index: -1; width: 300px; height: 300px;
+    top: -205px; right: -112px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(59,130,246,0.16), transparent 68%);
+  }
+  .welcome::after {
+    content: ''; position: absolute; z-index: -1; width: 230px; height: 230px;
+    bottom: -170px; left: -105px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(16,185,129,0.10), transparent 70%);
+  }
+  .welcome-logo-wrap { margin-bottom: 22px; }
+  .welcome-logo-ring { box-shadow: 0 8px 24px rgba(37,99,235,0.2); }
+  .welcome-badge { box-shadow: inset 0 1px 0 rgba(255,255,255,0.55); }
+  .welcome > p { margin-bottom: 28px; }
+
+  .categories { gap: 12px; max-width: 640px; margin-bottom: 18px; }
+  .cat-btn {
+    min-height: 148px; align-items: flex-start; text-align: left;
+    padding: 16px 15px 14px; border-radius: 17px;
+    box-shadow: 0 4px 12px rgba(15,23,42,0.035);
+    transition: transform 0.2s cubic-bezier(0.16,1,0.3,1), box-shadow 0.2s ease, border-color 0.2s ease;
+  }
+  .cat-btn::before { z-index: 0; }
+  .cat-btn > * { position: relative; z-index: 1; }
+  .cat-btn::after {
+    position: relative; z-index: 1; display: block; min-height: 29px;
+    color: var(--text-light); font-size: 0.67rem; font-weight: 500;
+    line-height: 1.42; text-align: left;
+  }
+  .cat-btn[data-cat="engine"]::after { content: 'Diesel & powertrain'; }
+  .cat-btn[data-cat="brakes"]::after { content: 'Stopping & air systems'; }
+  .cat-btn[data-cat="track"]::after { content: 'Geometry & rail safety'; }
+  .cat-btn[data-cat="signals"]::after { content: 'Control & signalling'; }
+  .cat-btn:hover, .cat-btn.active { box-shadow: var(--chat-panel-shadow-hover); transform: translateY(-4px); }
+  .cat-icon-circle { width: 46px; height: 46px; border-radius: 14px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.4); }
+  .cat-label { font-size: 0.82rem; margin-top: 1px; }
+  .cat-btn:focus-visible, .suggestion-item:focus-visible, .send-btn:focus-visible, .dark-toggle:focus-visible, .sb-toggle-btn:focus-visible, .nav-link:focus-visible, .logout-btn:focus-visible { outline: 3px solid rgba(59,130,246,0.34); outline-offset: 3px; }
+
+  .suggestion-panel { border-radius: 17px; box-shadow: var(--chat-panel-shadow); border-color: var(--border); }
+  .suggestion-panel-header {
+    padding: 12px 16px; background: linear-gradient(90deg, var(--surface-2), transparent);
+    color: var(--primary); letter-spacing: 0.85px;
+  }
+  .suggestion-item { padding: 12px 16px; transition: background 0.16s, padding-left 0.16s; }
+  .suggestion-item:hover { padding-left: 20px; background: var(--surface-2); }
+  .suggestion-icon { width: 32px; height: 32px; border-radius: 10px; }
+
+  .msg-wrap { max-width: min(680px, calc(100vw - 128px)); }
+  .msg.bot .bubble:not(.card-bubble):not(.cpf-card):not(.cpf-result) { box-shadow: var(--chat-panel-shadow); }
+  .msg.user .bubble { box-shadow: 0 7px 20px rgba(37,99,235,0.26); }
+  .answer-cards { gap: 12px; }
+  .ac-status, .ac-details, .ac-fleet, .ac-action, .ac-cta { border-radius: 16px; box-shadow: var(--chat-panel-shadow); }
+  .ac-status-inner { padding: 15px 17px; }
+  .ac-detail-item { padding: 9px 16px; }
+  .ac-fleet-asset { transition: background 0.16s, transform 0.16s; }
+  .ac-fleet-asset:hover { transform: translateY(-2px); }
+  .citation-chip { box-shadow: inset 0 1px 0 rgba(255,255,255,0.5); }
+
+  .input-wrap { background: var(--glass); box-shadow: 0 -10px 30px rgba(15,23,42,0.025); }
+  body.dark .input-wrap { box-shadow: 0 -10px 30px rgba(0,0,0,0.14); }
+  .input-card { border-radius: 22px; box-shadow: var(--chat-panel-shadow); }
+  .input-card:focus-within { box-shadow: 0 0 0 4px rgba(37,99,235,0.09), var(--chat-panel-shadow-hover); }
+  .input-field-row { padding: 15px 19px 7px; }
+  .pill-select-wrap, .pill-btn { border: 1px solid transparent; }
+  .pill-select-wrap:hover, .pill-btn:hover { border-color: var(--border); }
+  .method-badge { font-weight: 600; }
+  .send-btn { width: 39px; height: 39px; }
+
+  /* Interactive prediction form and returned result cards */
+  .cpf-card, .cpf-result { max-width: 480px; border-radius: 18px; box-shadow: var(--chat-panel-shadow); }
+  .bubble.cpf-card, .bubble.cpf-result { padding: 16px 17px !important; }
+  .cpf-hdr, .cpf-res-hdr { padding-bottom: 10px; margin-bottom: 11px; border-bottom: 1px solid var(--border); }
+  .cpf-asset-id { font-size: 0.94rem; }
+  .cpf-type-badge { border: 1px solid rgba(37,99,235,0.12); }
+  .cpf-section { margin: 13px 0 7px; letter-spacing: 0.65px; }
+  .cpf-sensor-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 7px 9px; }
+  .cpf-sensor-grid .cpf-row { margin-bottom: 0; }
+  .cpf-row { gap: 4px; }
+  .cpf-inp { padding: 7px 10px; border-radius: 9px; transition: border-color 0.15s, box-shadow 0.15s, background 0.15s; }
+  .cpf-inp:focus { box-shadow: 0 0 0 3px rgba(37,99,235,0.09); background: var(--white); }
+  .cpf-btn { padding: 10px; border-radius: 11px; box-shadow: 0 5px 13px rgba(37,99,235,0.22); transition: transform 0.16s, opacity 0.16s; }
+  .cpf-btn:hover:not(:disabled) { transform: translateY(-1px); }
+  .cpf-btn:disabled { background-image: linear-gradient(100deg, var(--primary) 0%, var(--primary-light) 40%, var(--primary) 80%); background-size: 180% 100%; animation: cpfLoading 1.2s linear infinite; }
+  .cpf-score-badge { position: relative; padding: 5px 10px 5px 23px; border: 1px solid currentColor; background: var(--surface-2); }
+  .cpf-score-badge::before { content: ''; position: absolute; left: 8px; top: 50%; width: 8px; height: 8px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; transform: translateY(-50%); }
+  .cpf-res-row { padding: 6px 0; }
+  .cpf-res-row.oor { border: 1px solid rgba(239,68,68,0.12); border-radius: 8px; }
+  @keyframes cpfLoading { to { background-position: 180% 0; } }
+
+  /* Dark-mode coverage for the legacy hard-coded answer-card palette. */
+  body.dark .ac-status-icon, body.dark .ac-status-badge.fg, body.dark .ac-fleet-badge.fg { background: var(--green-bg); }
+  body.dark .ac-status.ac-red .ac-status-icon, body.dark .ac-status-badge.fr, body.dark .ac-fleet-badge.fr { background: var(--red-bg); }
+  body.dark .ac-status.ac-amber .ac-status-icon, body.dark .ac-status-badge.fa, body.dark .ac-fleet-badge.fa { background: var(--amber-bg); }
+  body.dark .ac-action { background: var(--white); border-color: rgba(245,158,11,0.36); }
+  body.dark .ac-action-header { background: var(--amber-bg); border-color: rgba(245,158,11,0.34); color: #fbbf24; }
+  body.dark .ac-step-text { color: var(--text); }
+  body.dark .citation-chip, body.dark .ac-fleet-rpt-btn { background: var(--surface-2); border-color: rgba(59,130,246,0.36); color: #93c5fd; }
+  body.dark .ac-cta { background: var(--white); border-color: rgba(59,130,246,0.4); }
+  body.dark .ac-cta-header { background: var(--blue-bg); border-color: rgba(59,130,246,0.34); color: #93c5fd; }
+  body.dark .ac-cta-btn { color: white; }
+  body.dark .logout-btn:hover, body.dark .clear-btn:hover { background: var(--red-bg); color: #fca5a5; }
+
+  @media (max-width: 760px) {
+    .categories { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .welcome { padding: 25px 20px 20px; }
+  }
+  @media (max-width: 600px) {
+    .header-text h1 { font-size: 0.84rem; }
+    .nav-link { padding: 7px 10px; font-size: 0.72rem; }
+    .logout-btn { padding: 7px 9px; font-size: 0; gap: 0; }
+    .logout-btn svg { width: 15px; height: 15px; }
+    .chat-window { gap: 16px; }
+    .welcome { border-radius: 20px; }
+    .cat-btn { min-height: 126px; padding: 13px 12px; gap: 7px; }
+    .cat-btn::after { display: none; }
+    .cat-icon-circle { width: 40px; height: 40px; border-radius: 12px; }
+    .input-bottom-row { align-items: flex-end; flex-wrap: wrap; }
+    .input-pills { width: 100%; justify-content: space-between; }
+    .input-right { margin-left: auto; }
+    .method-badge { display: none; }
+    .msg-wrap { max-width: calc(100vw - 74px); }
+    .bubble { font-size: 0.83rem; }
+    .ac-fleet-grid { grid-template-columns: 1fr; }
+    .ac-fleet-asset { border-right: none; border-bottom: 1px solid var(--border); }
+    .ac-fleet-asset:last-child { border-bottom: none; }
+    .ac-cta-body { align-items: stretch; flex-direction: column; }
+    .ac-cta-btn { justify-content: center; }
+    .cpf-sensor-grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 420px) {
+    header { gap: 8px; }
+    .header-logo { width: 29px; height: 29px; }
+    .nav-link { font-size: 0; width: 34px; height: 34px; padding: 0; display: grid; place-items: center; }
+    .nav-link::after { content: '←'; font-size: 1rem; }
+    .welcome h2 { font-size: 1.5rem; }
+    .categories { gap: 8px; }
+    .suggestion-item { font-size: 0.8rem; }
+  }
+
+  /* ── M4 Motion Layer: inline bot and intentionally restrained feedback ── */
+  :root { --green-bg:#ecfdf5; --amber-bg:#fffbeb; --red-bg:#fef2f2; --blue-bg:#eff6ff; }
+  body.dark { --green-bg:#052e16; --amber-bg:#1c1400; --red-bg:#1c0606; --blue-bg:#0f1e3d; }
+  @keyframes m4ChatBotBreathe{0%,100%{transform:scale(1)}50%{transform:scale(1.035)}}
+  @keyframes m4ChatEye{0%,100%{opacity:.68;transform:scale(1)}50%{opacity:1;transform:scale(1.18)}}
+  @keyframes m4ChatLight{0%,100%{opacity:.45;transform:scale(.82)}50%{opacity:1;transform:scale(1.24)}}
+  @keyframes m4ChatScan{0%,100%{transform:translateX(-1.8px)}50%{transform:translateX(1.8px)}}
+  @keyframes m4ChatNod{0%{transform:translateY(-3px) rotate(-5deg)}55%{transform:translateY(1px) rotate(3deg)}100%{transform:none}}
+  @keyframes m4ChatUserIn{0%{opacity:0;transform:translate3d(22px,5px,0) scale(.92)}72%{opacity:1;transform:translate3d(-2px,0,0) scale(1.02)}100%{opacity:1;transform:none}}
+  @keyframes m4ChatBotIn{0%{opacity:0;transform:translate3d(-22px,5px,0) scale(.92)}72%{opacity:1;transform:translate3d(2px,0,0) scale(1.02)}100%{opacity:1;transform:none}}
+  @keyframes m4ChatWave{0%,100%{transform:translateY(1px) scale(.78);opacity:.38}45%{transform:translateY(-5px) scale(1.12);opacity:1}}
+  @keyframes m4ChatUnfold{0%{opacity:0;transform:perspective(700px) rotateX(-11deg) translateY(-8px)}100%{opacity:1;transform:none}}
+  @keyframes m4ChatReveal{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
+  @keyframes m4ChatFill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+  @keyframes m4ChatFocus{0%{box-shadow:0 0 0 0 rgba(59,130,246,.24)}100%{box-shadow:0 0 0 4px rgba(59,130,246,.08)}}
+  @keyframes m4ChatSpin{to{transform:rotate(360deg)}}
+  @keyframes m4ChatStatus{0%,100%{opacity:1;box-shadow:0 0 0 0 currentColor}50%{opacity:.72;box-shadow:0 0 0 5px color-mix(in srgb,currentColor 20%,transparent)}}
+
+  .rs-bot{width:100%;height:100%;display:block;overflow:visible}.rs-bot-body,.rs-bot-eyes,.rs-bot-light{transform-box:fill-box;transform-origin:center}.rs-bot-body{animation:m4ChatBotBreathe 3.4s ease-in-out infinite}.rs-bot-eye{fill:#dbeafe;filter:drop-shadow(0 0 2px rgba(96,165,250,.9));animation:m4ChatEye 1.8s ease-in-out infinite}.rs-bot-light{fill:#fbbf24;filter:drop-shadow(0 0 2px rgba(251,191,36,.88));animation:m4ChatLight 1.5s ease-in-out infinite}.rs-bot-head{fill:var(--primary);stroke:rgba(255,255,255,.48);stroke-width:1.5}.rs-bot-face{fill:var(--primary-dark)}.rs-bot-body-panel{fill:var(--primary-light);stroke:rgba(255,255,255,.42);stroke-width:1.4}.rs-bot-antenna-line{stroke:var(--primary-light);stroke-width:2.5;stroke-linecap:round}.avatar.bot-av{overflow:visible}.avatar.bot-av .rs-bot{width:29px;height:29px}.msg.bot:not(#typing-msg) .rs-bot{animation:m4ChatNod .42s .1s cubic-bezier(.34,1.56,.64,1) both}#typing-msg .rs-bot-eyes{animation:m4ChatScan .55s linear infinite}#typing-msg .rs-bot-light{animation-duration:.36s}
+
+  .msg.user{animation:m4ChatUserIn .36s cubic-bezier(.16,1,.3,1) both;will-change:transform,opacity}.msg.bot:not(#typing-msg),#typing-msg{animation:m4ChatBotIn .4s .07s cubic-bezier(.16,1,.3,1) both;will-change:transform,opacity}.typing-indicator span{animation:m4ChatWave 1.05s ease-in-out infinite}.input-card:focus-within,.cpf-inp:focus{animation:m4ChatFocus .42s ease}.input-card:focus-within{border-color:var(--border-focus)}button:not(:disabled):active,.nav-link:active{transform:scale(.97)}
+
+  .cat-btn{animation:m4ChatReveal .42s cubic-bezier(.16,1,.3,1) backwards}.cat-btn:nth-child(2){animation-delay:55ms}.cat-btn:nth-child(3){animation-delay:110ms}.cat-btn:nth-child(4){animation-delay:165ms}.suggestion-panel{animation:none!important}.suggestion-panel.visible{animation:m4SuggestIn .32s cubic-bezier(.16,1,.3,1) both}@keyframes m4SuggestIn{from{opacity:0;transform:translateY(-10px) scale(.98)}to{opacity:1;transform:none}}body.m4-thinking .welcome-logo-ring{animation-duration:2.7s}
+
+  .msg.bot .cpf-card{transform-origin:top left;animation:m4ChatUnfold .42s cubic-bezier(.16,1,.3,1) both}.msg.bot .cpf-result{animation:m4ChatReveal .38s cubic-bezier(.16,1,.3,1) both}.cpf-btn.m4-predict-loading{display:flex;align-items:center;justify-content:center;gap:7px}.m4-btn-spinner{width:12px;height:12px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:m4ChatSpin .65s linear infinite}.cpf-score-track{height:4px;margin:9px 0 2px;background:var(--surface-2);border-radius:999px;overflow:hidden}.cpf-score-fill{display:block;height:100%;width:var(--m4-score);border-radius:inherit;transform-origin:left;animation:m4ChatFill .7s .1s cubic-bezier(.16,1,.3,1) both}.cpf-result .cpf-res-row{animation:m4ChatReveal .3s ease both}.ac-status.ac-green .ac-status-badge-dot,.method-dot{animation:m4ChatStatus 2.4s ease-in-out infinite}.ac-status.ac-amber .ac-status-badge-dot{animation-duration:3.2s}.ac-status.ac-red .ac-status-badge-dot{animation-duration:1.15s}
+
+  @media (prefers-reduced-motion: reduce) {
+    .welcome-logo-ring, .welcome-badge-dot, .ac-status-badge-dot, .typing-indicator span, .animate-gradient, .cpf-btn:disabled, .rs-bot-body, .rs-bot-eye, .rs-bot-light, .msg, .cat-btn, .cpf-score-fill, .cpf-result .cpf-res-row, .m4-btn-spinner { animation: none !important; }
+    .cat-btn, .sb-item, .cpf-btn, .suggestion-item, .ac-fleet-asset, .suggestion-panel { transition: none !important; }
   }
 </style>
 </head>
@@ -1111,6 +1337,28 @@ let history = [];
 let isTyping = false;
 let activeCategory = null;
 
+/* ── Health prediction constants ── */
+const _CPF_SENSOR_META = {
+  diesel_engine:[
+    {key:'temperature_celsius',  label:'Temperature',    unit:'°C',  min:0,   max:200, step:0.1},
+    {key:'vibration_level',      label:'Vibration',      unit:'g',   min:0,   max:20,  step:0.1},
+    {key:'oil_pressure_bar',     label:'Oil Pressure',   unit:'bar', min:0,   max:10,  step:0.1},
+    {key:'fuel_efficiency_pct',  label:'Fuel Efficiency',unit:'%',   min:0,   max:100, step:0.1},
+  ],
+  bogie:[
+    {key:'vibration_level',      label:'Vibration',      unit:'g',   min:0,   max:20,  step:0.1},
+    {key:'axle_temp_celsius',    label:'Axle Temp',      unit:'°C',  min:0,   max:200, step:0.1},
+    {key:'wheel_profile_mm',     label:'Wheel Profile',  unit:'mm',  min:50,  max:200, step:0.1},
+  ],
+  brake_system:[
+    {key:'pad_thickness_mm',            label:'Pad Thickness',  unit:'mm',  min:0,  max:30,  step:0.1},
+    {key:'brake_cylinder_pressure_bar', label:'Cyl. Pressure',  unit:'bar', min:0,  max:15,  step:0.1},
+    {key:'stopping_distance_m',         label:'Stopping Dist.', unit:'m',   min:0,  max:600, step:1},
+  ],
+};
+const _CPF_FAULT_TYPES = ['none','pad_worn','suspension_worn','brake_fade','bearing_noise','wheel_flat','cylinder_leak','starter_failure','oil_leak','overheating','fuel_pump_fault','axle_crack'];
+function _round(v,d){return Math.round(v*Math.pow(10,d))/Math.pow(10,d);}
+
 /* ── Session management ── */
 const SESSION_STORE = 'm4_chat_sessions';
 const MAX_SESSIONS  = 20;
@@ -1268,11 +1516,11 @@ const SUGGESTIONS = {
   engine: {
     label: 'Engine & Diesel',
     items: [
+      { icon: '🔮', text: 'predict DE-1001' },
       { icon: '🔩', text: 'How many km until a major engine overhaul?' },
       { icon: '🛢️', text: 'How do I diagnose an engine oil leak?' },
       { icon: '🌡️', text: 'Engine overheating — emergency procedure?' },
       { icon: '⚙️', text: 'What is the correct fuel injection pressure?' },
-      { icon: '🔄', text: 'How often should engine oil be changed?' },
     ],
   },
   brakes: {
@@ -1361,8 +1609,15 @@ function hideWelcome() {
 function clearChat() { newChat(); }
 
 // ── Bubble builders ──
-const BOT_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>`;
+const BOT_SVG = `<svg class="rs-bot" viewBox="0 0 64 64" aria-hidden="true"><g class="rs-bot-antenna"><path class="rs-bot-antenna-line" d="M32 14V7"/><circle class="rs-bot-light" cx="32" cy="5" r="3.5"/></g><g class="rs-bot-body"><rect class="rs-bot-body-panel" x="21" y="44" width="22" height="13" rx="6.5"/><rect class="rs-bot-head" x="12" y="16" width="40" height="31" rx="11"/><rect class="rs-bot-face" x="17" y="22" width="30" height="18" rx="7"/><g class="rs-bot-eyes"><circle class="rs-bot-eye" cx="25" cy="31" r="3.2"/><circle class="rs-bot-eye" cx="39" cy="31" r="3.2"/></g><path d="M27 39h10" stroke="rgba(255,255,255,.65)" stroke-width="1.6" stroke-linecap="round"/></g></svg>`;
 const USR_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
+function m4AnimateChatScore(el,value){
+  if(!el)return;const target=Math.round(Number(value)||0);
+  if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches){el.textContent=target;return;}
+  const start=performance.now(),duration=480;
+  const tick=now=>{const p=Math.min(1,(now-start)/duration);el.textContent=Math.round(target*(1-Math.pow(1-p,3)));if(p<1)requestAnimationFrame(tick)};
+  requestAnimationFrame(tick);
+}
 
 function appendUserBubble(text, storedTime) {
   const w = document.getElementById('chat-window');
@@ -1388,14 +1643,50 @@ function showTyping() {
       <div class="typing-indicator"><span></span><span></span><span></span></div>
     </div>`;
   w.appendChild(div);
+  document.body.classList.add('m4-thinking');
   scrollBottom();
 }
-function removeTyping() { const el = document.getElementById('typing-msg'); if (el) el.remove(); }
+function removeTyping() { const el = document.getElementById('typing-msg'); if (el) el.remove(); document.body.classList.remove('m4-thinking'); }
 
 function appendBotBubble(data, storedTime) {
   const w = document.getElementById('chat-window');
   const div = document.createElement('div');
   div.className = 'msg bot';
+
+  if (data.answer_method === 'prediction_form' && data.prediction_form) {
+    const f = data.prediction_form;
+    const uid = 'cpf' + Date.now();
+    const sensors = _CPF_SENSOR_META[f.asset_type] || [];
+    const sensorFields = sensors.map(s => {
+      const val = f.sensors[s.key] != null ? f.sensors[s.key] : '';
+      return `<div class="cpf-row"><label class="cpf-lbl">${escHtml(s.label)} <span class="cpf-unit">(${s.unit})</span></label><input class="cpf-inp" id="${uid}-${s.key}" type="number" step="${s.step}" min="${s.min}" max="${s.max}" value="${val}" placeholder="optional"></div>`;
+    }).join('');
+    const faultOpts = _CPF_FAULT_TYPES.map(ft => `<option value="${ft}"${ft === f.fault_type ? ' selected' : ''}>${ft.replace(/_/g,' ')}</option>`).join('');
+    div.innerHTML = `
+      <div class="avatar bot-av">${BOT_SVG}</div>
+      <div class="msg-wrap">
+        <div class="bubble cpf-card">
+          <div class="cpf-hdr">
+            <span class="cpf-asset-id">${escHtml(f.asset_id)}</span>
+            <span class="cpf-type-badge">${escHtml(f.asset_type.replace(/_/g,' '))}</span>
+          </div>
+          <div class="cpf-section">Service Info</div>
+          <div class="cpf-row"><label class="cpf-lbl">Days Since Service</label><input class="cpf-inp" id="${uid}-days" type="number" min="0" max="999" value="${f.days_since_service}"></div>
+          <div class="cpf-row"><label class="cpf-lbl">Fault Count (30d)</label><input class="cpf-inp" id="${uid}-faults" type="number" min="0" max="99" value="${f.fault_count_30d}"></div>
+          <div class="cpf-row"><label class="cpf-lbl">Recent Fault Type</label><select class="cpf-inp" id="${uid}-ftype">${faultOpts}</select></div>
+          <div class="cpf-section">Sensor Readings <span style="font-weight:400;opacity:.6">(optional — uses fleet averages if blank)</span></div>
+          <div class="cpf-sensor-grid">${sensorFields}</div>
+          <button class="cpf-btn" onclick="chatRunPredict('${uid}','${escHtml(f.asset_id)}','${escHtml(f.asset_type)}')">Run Prediction</button>
+        </div>
+        <span class="msg-time">${storedTime || _msgTime()}</span>
+      </div>`;
+    w.appendChild(div);
+    scrollBottom();
+    document.getElementById('method-dot').style.background = 'var(--primary-light)';
+    document.getElementById('method-label').textContent = 'Fill in values · ML ready';
+    return;
+  }
+
   const cards = renderAnswerCards(data.answer);
   const bodyHtml = cards || renderMarkdown(data.answer);
   const bubbleClass = cards ? 'bubble card-bubble' : 'bubble';
@@ -1418,6 +1709,84 @@ function appendBotBubble(data, storedTime) {
         detail.style.display = detail.style.display === 'none' ? 'block' : 'none';
     });
   });
+}
+
+async function chatRunPredict(uid, assetId, assetType) {
+  const btn = document.querySelector(`button[onclick*="${uid}"]`);
+  if (btn) { btn.disabled = true; btn.classList.add('m4-predict-loading'); btn.innerHTML = '<span class="m4-btn-spinner" aria-hidden="true"></span>Running…'; }
+  const days   = parseInt(document.getElementById(`${uid}-days`)?.value)   || 30;
+  const faults = parseInt(document.getElementById(`${uid}-faults`)?.value) || 0;
+  const ftype  = document.getElementById(`${uid}-ftype`)?.value            || 'none';
+  const sensors = {};
+  (_CPF_SENSOR_META[assetType] || []).forEach(s => {
+    const v = document.getElementById(`${uid}-${s.key}`)?.value;
+    if (v !== '' && v != null && !isNaN(parseFloat(v))) sensors[s.key] = parseFloat(v);
+  });
+  try {
+    const res = await fetch('/asset-health', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({asset_id:assetId, asset_type:assetType, days_since_service:days, fault_count_30d:faults, fault_type:ftype, sensors}),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const p = await res.json();
+    const score = p.health_score, status = p.health_status, conf = p.confidence;
+    const cl = p.confidence_low  ?? _round(score - 8, 1);
+    const ch = p.confidence_high ?? _round(score + 8, 1);
+    const dtf = p.days_to_failure;
+    const risks = p.risk_factors || [];
+    const emoji = {'GREEN':'🟢','AMBER':'🟡','RED':'🔴'}[status] || '⚪';
+    const UNITS  = {temperature_celsius:'°C',vibration_level:'g',oil_pressure_bar:'bar',fuel_efficiency_pct:'%',axle_temp_celsius:'°C',wheel_profile_mm:'mm',pad_thickness_mm:'mm',brake_cylinder_pressure_bar:'bar',stopping_distance_m:'m'};
+    const LABELS = {temperature_celsius:'Engine Temp',vibration_level:'Vibration',oil_pressure_bar:'Oil Pressure',fuel_efficiency_pct:'Fuel Efficiency',axle_temp_celsius:'Axle Temp',wheel_profile_mm:'Wheel Profile',pad_thickness_mm:'Pad Thickness',brake_cylinder_pressure_bar:'Cyl. Pressure',stopping_distance_m:'Stopping Dist.'};
+    const oorSet = new Set(risks.map(r => r.sensor));
+    const sensorRows = Object.entries(sensors).map(([k, v]) => {
+      const lbl = LABELS[k] || k, unit = UNITS[k] || '', oor = oorSet.has(k);
+      const r = risks.find(r => r.sensor === k);
+      const arrow = r ? (r.direction === 'high' ? '▲' : '▼') : '';
+      return `<div class="cpf-res-row${oor?' oor':''}"><span class="cpf-res-lbl">${escHtml(lbl)}</span><span class="cpf-res-val">${v} ${unit}${oor?` <b>${arrow}</b> <span class="cpf-res-range">(${r.range})</span>`:''}</span></div>`;
+    }).join('');
+    const dtfLine = dtf != null
+      ? (dtf > 0 ? `<div class="cpf-res-dtf">⏱ Days to critical: <b>${dtf}</b></div>`
+                 : `<div class="cpf-res-dtf warn">⚠️ At or past critical threshold</div>`)
+      : '';
+    const nd = document.createElement('div');
+    nd.className = 'msg bot';
+    const scoreValue = Math.max(0, Math.min(100, Number(score) || 0));
+    const scoreColor = status === 'GREEN' ? 'var(--green)' : status === 'AMBER' ? 'var(--amber)' : 'var(--red)';
+    nd.innerHTML = `
+      <div class="avatar bot-av">${BOT_SVG}</div>
+      <div class="msg-wrap">
+        <div class="bubble cpf-result">
+          <div class="cpf-res-hdr">
+            <span class="cpf-asset-id">${escHtml(assetId)}</span>
+            <span class="cpf-score-badge ${status.toLowerCase()}">${emoji} <b class="m4-score-count">0</b>/100 ${status}</span>
+          </div>
+          <div class="cpf-score-track"><span class="cpf-score-fill" style="--m4-score:${scoreValue}%;background:${scoreColor}"></span></div>
+          <div class="cpf-res-conf">Confidence: ${conf} (${cl}–${ch})</div>
+          ${sensorRows ? `<div class="cpf-section" style="margin-top:8px">Sensor Readings</div>${sensorRows}` : ''}
+          ${dtfLine}
+        </div>
+        <span class="msg-time">${_msgTime()}</span>
+      </div>`;
+    document.getElementById('chat-window').appendChild(nd);
+    nd.querySelectorAll('.cpf-res-row').forEach((row,i) => row.style.animationDelay = (.1 + i * .06) + 's');
+    m4AnimateChatScore(nd.querySelector('.m4-score-count'), scoreValue);
+    if (btn) { btn.classList.remove('m4-predict-loading'); btn.textContent = 'Prediction complete'; }
+    scrollBottom();
+    document.getElementById('method-dot').style.background  = 'var(--amber)';
+    document.getElementById('method-label').textContent = 'ML Prediction · HGBR';
+  } catch (ex) {
+    if (btn) { btn.disabled = false; btn.classList.remove('m4-predict-loading'); btn.textContent = 'Run Prediction'; }
+    const nd = document.createElement('div');
+    nd.className = 'msg bot';
+    nd.innerHTML = `
+      <div class="avatar bot-av">${BOT_SVG}</div>
+      <div class="msg-wrap">
+        <div class="bubble" style="color:var(--red)">Prediction failed: ${escHtml(ex.message)}</div>
+        <span class="msg-time">${_msgTime()}</span>
+      </div>`;
+    document.getElementById('chat-window').appendChild(nd);
+    scrollBottom();
+  }
 }
 
 // ── Markdown renderer (lightweight) ──
@@ -1638,9 +2007,17 @@ function buildCitations(citations) {
 function updateMethodBadge(method, retrieval) {
   const dot   = document.getElementById('method-dot');
   const label = document.getElementById('method-label');
-  const isLLM = method === 'llm_grounded';
-  dot.style.background = isLLM ? 'var(--primary-light)' : 'var(--green)';
-  label.textContent = `${isLLM ? 'LLM · ' : 'Template · '}${retrieval === 'supabase_pgvector' ? 'pgvector' : 'TF-IDF'}`;
+  if (method === 'health_prediction') {
+    dot.style.background = 'var(--amber)';
+    label.textContent = 'ML Prediction · HGBR';
+  } else if (method === 'prediction_form') {
+    dot.style.background = 'var(--primary-light)';
+    label.textContent = 'Fill in values · ML ready';
+  } else {
+    const isLLM = method === 'llm_grounded';
+    dot.style.background = isLLM ? 'var(--primary-light)' : 'var(--green)';
+    label.textContent = `${isLLM ? 'LLM · ' : 'Template · '}${retrieval === 'supabase_pgvector' ? 'pgvector' : 'TF-IDF'}`;
+  }
 }
 
 // ── Send ──

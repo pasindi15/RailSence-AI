@@ -239,6 +239,8 @@ body::after{
 .muted{color:var(--muted);font-size:12px;line-height:1.55}
 .split{display:grid;grid-template-columns:1.35fr 1fr;gap:13px;margin-bottom:13px}
 .split.equal{grid-template-columns:1fr 1fr}
+.incident-map-card{display:flex;flex-direction:column}
+.incident-map{flex:1;min-height:340px}
 .panel-title{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:12px}
 
 /* ── Pills ───────────────────────────────────────────────────────── */
@@ -395,7 +397,8 @@ code{font-family:'Share Tech Mono',monospace;color:var(--brand-light);font-size:
   .top h1{font-size:18px}
   .intro h2{font-size:23px}
 }
-</style></head>
+</style>
+<link rel="stylesheet" href="/shared/hero.css"></head>
 <body><div class="shell">
 <aside class="side">
   <div class="brand"><div class="mark">RS</div><div><strong>RailSense AI</strong><small>M2 / OPERATIONS</small></div></div>
@@ -424,10 +427,37 @@ code{font-family:'Share Tech Mono',monospace;color:var(--brand-light);font-size:
 
   <!-- ============ SCREEN 1 — CONSOLIDATED DASHBOARD ============ -->
   <section class="view active" data-view="dashboard">
-    <div class="intro">
-      <div><div class="crumb">SCREEN 01 / NETWORK STATE</div><h2>One view of<br>network delay.</h2></div>
-      <div><p>Network KPIs, the route delay heatmap and the 24-hour delay pressure curve, all computed from the same operations corpus in a single aggregate query.</p></div>
-    </div>
+    <!-- 3D banner: Loco the train robot beside a holographic delay skyline.
+         Every bar, ring segment, stat and speech line comes from /api/dashboard
+         and today's verified-incident feed (see crHero below). -->
+    <section class="m2h" id="crHero" aria-label="Control Room overview">
+      <div class="m2h-scan"></div>
+      <div class="m2h-inner">
+        <div class="m2h-text">
+          <div class="m2h-kicker"><span class="m2h-dot"></span>Screen 01 · Operations Control Room</div>
+          <h2 class="m2h-title"><span>Keep every corridor</span><span class="m2h-grad">running on time.</span></h2>
+          <p class="m2h-sub">Live network delay, the corridor delay skyline and 24-hour delay pressure, computed from the
+            operations corpus, with today's verified incidents and ML delay predictions one click away.</p>
+          <div class="m2h-ctas">
+            <button type="button" class="m2h-btn" onclick="show('predict')">⚡ Predict a delay</button>
+            <button type="button" class="m2h-btn-alt" onclick="show('incidents')">Manage incidents</button>
+            <a class="m2h-btn-alt" href="/admin">Admin Console →</a>
+          </div>
+          <div class="m2h-stats">
+            <div class="m2h-stat"><b id="crh-delay">—</b><small>Network avg delay</small></div>
+            <div class="m2h-stat"><b id="crh-ontime">—</b><small>On time</small></div>
+            <div class="m2h-stat"><b id="crh-incidents">—</b><small>Incidents today</small></div>
+            <div class="m2h-stat"><b id="crh-worst">—</b><small>Worst corridor</small></div>
+          </div>
+        </div>
+        <div class="m2h-deck">
+          <div class="m2h-stage"></div>
+          <div class="m2h-labels"></div>
+          <div class="m2h-bubble"><span class="m2h-bubble-name">Loco · Control Room</span><span class="m2h-bubble-text"></span></div>
+          <div class="m2h-tag"><span class="m2h-dot"></span><span id="crh-tag">DELAY SKYLINE · LIVE</span></div>
+        </div>
+      </div>
+    </section>
 
     <div class="cards" id="kpis"></div>
 
@@ -446,7 +476,8 @@ code{font-family:'Share Tech Mono',monospace;color:var(--brand-light);font-size:
       </article>
     </div>
 
-    <article class="card" style="margin-bottom:13px">
+    <div class="split">
+    <article class="card">
       <div class="panel-title">
         <div><h3>Route delay heatmap</h3><p class="sub">Every corridor ranked by mean delay, with trip counts and incident rates</p></div>
         <span class="pill" id="routeCount">—</span>
@@ -456,6 +487,14 @@ code{font-family:'Share Tech Mono',monospace;color:var(--brand-light);font-size:
         <tbody id="routeTable"></tbody>
       </table>
     </article>
+    <article class="card incident-map-card">
+      <div class="panel-title">
+        <div><h3>Verified incident map</h3><p class="sub">Incidents approved today (since 00:00) · updates every 5 s</p></div>
+        <span class="pill" id="incidentMapCount">—</span>
+      </div>
+      <div id="incidentMap" class="incident-map"></div>
+    </article>
+    </div>
 
     <div class="split equal">
       <article class="card">
@@ -487,12 +526,11 @@ code{font-family:'Share Tech Mono',monospace;color:var(--brand-light);font-size:
         <p class="sub">Submitted to the live inference endpoint</p>
         <form id="predictForm">
           <label>Route</label>
-          <input id="pRoute" list="routeOptions" required placeholder="Colombo Fort - Kandy">
-          <datalist id="routeOptions"></datalist>
+          <select id="pRoute" required><option value="">Loading routes…</option></select>
           <label>Train ID</label>
-          <input id="pTrain" required placeholder="PM-4082">
+          <select id="pTrain" required disabled><option value="">— select a route first —</option></select>
           <label>Station</label>
-          <input id="pStation" placeholder="Rambukkana">
+          <select id="pStation" disabled><option value="">— select a route first —</option></select>
           <label>Scheduled time</label>
           <input id="pTime" type="datetime-local" required>
           <label>Weather</label>
@@ -562,7 +600,7 @@ code{font-family:'Share Tech Mono',monospace;color:var(--brand-light);font-size:
         <select id="iStatus">
           <option value="">All statuses</option><option value="pending">pending</option>
           <option value="corrected">corrected</option><option value="approved">approved</option>
-          <option value="rejected">rejected</option>
+          <option value="verified">verified</option><option value="rejected">rejected</option>
         </select>
         <button class="button alt sm" onclick="incidents.reset()">Apply</button>
         <span class="spacer"></span>
@@ -585,8 +623,8 @@ code{font-family:'Share Tech Mono',monospace;color:var(--brand-light);font-size:
 <div class="modal" id="incidentModal"><form id="incidentForm">
   <h3>Report operational incident</h3>
   <p class="sub">The raw text is sanitised, then classified and summarised by the NLP pipeline before it is stored.</p>
-  <label>Train ID</label><input id="nTrain" required placeholder="PM-4082">
-  <label>Station</label><input id="nStation" required placeholder="Rambukkana">
+  <label>Station</label><select id="nStation" required><option value="">Loading stations…</option></select>
+  <label>Train</label><input id="nTrain" required>
   <label>Raw incident report</label><textarea id="nText" required placeholder="Describe what the field staff reported…"></textarea>
   <div class="modal-actions">
     <button type="button" class="button alt" onclick="closeModal('incidentModal')">Cancel</button>
@@ -624,6 +662,9 @@ code{font-family:'Share Tech Mono',monospace;color:var(--brand-light);font-size:
 
 <div class="toast-stack" id="toastStack"></div>
 
+<script src="/shared/incident-map.js"></script>
+<script src="/shared/train-picker.js"></script>
+<script src="/shared/ops-agent.js"></script>
 <script>
 /* RailSense M2 — Operations Control Room.
    Three screens, all reading real data:
@@ -735,7 +776,7 @@ function renderDashboard(){
   $('causeChart').innerHTML = mix.length ? mix.map(x =>
     `<div style="margin:13px 0"><div class="row" style="padding:0 0 5px;border:0">
        <span>${esc(x.type.replaceAll('_',' '))}</span><b>${x.count}</b></div>
-     <div class="progress"><i style="width:${x.count / cmax * 100}%"></i></div></div>`).join('')
+     <div class="progress"><i style="width:${x.count / cmax * 100}%;background:${incidentColor(x.type)}"></i></div></div>`).join('')
     : '<div class="empty">No incidents recorded in the corpus.</div>';
 
   const routes = dash.routes || [];
@@ -776,15 +817,32 @@ function renderDashboard(){
   ];
   $('evalList').innerHTML = evidence.map(e =>
     `<div class="row"><div><b>${e[0]}</b><small>${e[2]}</small></div><b>${e[1]}</b></div>`).join('');
+}
 
-  const routeList = $('routeOptions');
-  if(routeList) routeList.innerHTML = routes.map(r => `<option value="${esc(r.route)}">`).join('');
+// Same colour per incident type as the incident map markers.
+function incidentColor(type){
+  const styles = window.RailSenseIncidentMap ? RailSenseIncidentMap.TYPE_STYLES : {};
+  return (styles[type] || styles.other || {}).color || '';
+}
+
+let incidentMap = null;
+function startIncidentMap(){
+  if(incidentMap || !window.RailSenseIncidentMap) return;
+  incidentMap = RailSenseIncidentMap.create($('incidentMap'), {
+    theme: document.documentElement.getAttribute('data-theme'),
+    scrollWheelZoom: false,
+    onUpdate: items => { $('incidentMapCount').textContent = `${items.length} today`; crHero.setIncidents(items); },
+  });
+  // Follow the portal's light/dark toggle.
+  new MutationObserver(() => incidentMap.setTheme(document.documentElement.getAttribute('data-theme')))
+    .observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 }
 
 async function refreshDashboard(){
   try {
     dash = await api('/api/dashboard');
     renderDashboard();
+    crHero.update();
     renderFeatures(dash.feature_importance || []);
   } catch(err){
     console.error(err);
@@ -793,6 +851,43 @@ async function refreshDashboard(){
 }
 
 /* --------------------- screen 2: prediction + RAG ---------------------- */
+// Route drives the Train ID and Station dropdowns: both are filled from
+// /api/route-options, the same operations corpus the model was trained on.
+let routeOptions = [];
+
+function fillSelect(el, values, placeholder){
+  el.innerHTML = `<option value="">${esc(placeholder)}</option>` +
+    values.map(v => `<option value="${esc(v)}">${esc(v)}</option>`).join('');
+  el.disabled = !values.length;
+}
+
+function onRouteChange(){
+  const r = routeOptions.find(o => o.route === $('pRoute').value);
+  if(!r){
+    fillSelect($('pTrain'), [], '— select a route first —');
+    fillSelect($('pStation'), [], '— select a route first —');
+    return;
+  }
+  fillSelect($('pTrain'), r.trains, `— select a train (${r.trains.length}) —`);
+  fillSelect($('pStation'), r.stations, '— not specified —');
+}
+
+async function loadRouteOptions(){
+  try {
+    const result = await api('/api/route-options');
+    routeOptions = result.routes || [];
+    const current = $('pRoute').value;
+    fillSelect($('pRoute'), routeOptions.map(o => o.route),
+      routeOptions.length ? '— select a route —' : 'No routes in the operations corpus');
+    if(current && routeOptions.some(o => o.route === current)) $('pRoute').value = current;
+    onRouteChange();
+  } catch(err){
+    $('pRoute').innerHTML = '<option value="">Routes unavailable — is M2 running?</option>';
+    toast(err.message, 'error');
+  }
+}
+$('pRoute').onchange = onRouteChange;
+
 function renderFeatures(features){
   const el = $('featureChart');
   if(!features.length){
@@ -880,6 +975,148 @@ $('predictForm').onsubmit = async e => {
   }
 };
 
+
+/* ---------------- Control Room 3D banner (Loco + delay skyline) ----------------
+   Bars = the dashboard's corridors (height ∝ average delay, colour = posture),
+   ring = the 24-hour delay pressure curve, speech = live facts about both. */
+const crHero = (function(){
+  const STATUS_COLOR = { critical: 0xEF4444, watch: 0xF59E0B, normal: 0x10B981 };
+  let deck = null, incidents = [], greeted = false;
+  const short = r => String(r || '').split(' - ').pop();
+  const fmt = n => Number(n ?? 0).toFixed(1);
+
+  function setStat(id, value){
+    const el = $(id);
+    if(!el || el.textContent === String(value)) return;
+    el.textContent = value; el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
+  }
+
+  function stats(){
+    const o = dash.overview || {}, routes = dash.routes || [];
+    if(o.average_delay !== undefined) setStat('crh-delay', `${fmt(o.average_delay)}m`);
+    if(o.on_time_rate !== undefined) setStat('crh-ontime', `${fmt(o.on_time_rate)}%`);
+    if(routes[0]) setStat('crh-worst', short(routes[0].route));
+    setStat('crh-incidents', String(incidents.length));
+    $('crh-tag').textContent = (dash.data_source || {}).offline ? 'DELAY SKYLINE · LOCAL DATA' : 'DELAY SKYLINE · LIVE';
+  }
+
+  function build(ctx){
+    const { THREE, platform, glow, addLabel, R } = ctx;
+    const bars = [], ring = [];
+    const barGroup = new THREE.Group(); platform.add(barGroup);
+    const ringGroup = new THREE.Group(); platform.add(ringGroup);
+
+    // 24-hour delay pressure ring.
+    for(let h = 0; h < 24; h++){
+      const a = (h / 24) * Math.PI * 2;
+      const m = new THREE.Mesh(new THREE.BoxGeometry(0.16, 1, 0.16),
+        new THREE.MeshStandardMaterial({ color: 0x3B82F6, emissive: 0x1D4ED8, emissiveIntensity: .8, transparent: true, opacity: .85 }));
+      m.position.set(Math.sin(a) * R * 0.9, 0, -Math.cos(a) * R * 0.9);
+      m.scale.y = 0.02; ringGroup.add(m); ring.push({ m, target: 0.02, hour: h });
+    }
+    // A glowing "train" circling the ring.
+    const runner = glow(0xF5D776, 0.5, 1); ringGroup.add(runner);
+
+    function refresh(){
+      const routes = (dash.routes || []).slice(0, 8);
+      // Corridors differ by fractions of a minute; scale between min and max so the skyline shows it.
+      const max = Math.max(...routes.map(r => r.average_delay), 0), min = Math.min(...routes.map(r => r.average_delay), max);
+      ctx.clearLabels();
+      bars.splice(0).forEach(b => { barGroup.remove(b.m); barGroup.remove(b.cap); });
+      routes.forEach((r, i) => {
+        const n = routes.length, a = -1.35 + (n > 1 ? (2.7 * i) / (n - 1) : 0);
+        const color = STATUS_COLOR[r.status] || 0x3B82F6;
+        const m = new THREE.Mesh(new THREE.BoxGeometry(0.4, 1, 0.4),
+          new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: .55, metalness: .3, roughness: .25, transparent: true, opacity: .9 }));
+        m.position.set(Math.sin(a) * R * 0.62, 0, -Math.cos(a) * R * 0.62);
+        m.scale.y = 0.02;
+        const cap = glow(color, 0.7, .9);
+        barGroup.add(m, cap);
+        const target = 0.7 + (max > min ? (r.average_delay - min) / (max - min) : 1) * 2.0;
+        if (document.hidden) m.scale.y = target;   // background tab: no grow-in animation
+        const label = addLabel(`<b>${fmt(r.average_delay)}m</b> ${esc(short(r.route))}`, '#' + color.toString(16).padStart(6, '0'),
+          new THREE.Vector3());
+        bars.push({ m, cap, target, label, route: r, lift: (i % 2) * 0.38 });
+      });
+      const hourly = dash.hourly || [];
+      const sampled = hourly.filter(h => h.samples);
+      const hmax = Math.max(...sampled.map(h => h.average_delay), 0), hmin = Math.min(...sampled.map(h => h.average_delay), hmax);
+      const norm = x => hmax > hmin ? (x - hmin) / (hmax - hmin) : 0.5;
+      ring.forEach(seg => {
+        const h = hourly.find(x => x.hour === seg.hour);
+        seg.target = h && h.samples ? 0.06 + norm(h.average_delay) * 0.5 : 0.02;
+        if (document.hidden) seg.m.scale.y = seg.target;
+        const hot = h && h.samples ? norm(h.average_delay) : 0;
+        seg.m.material.color.setHSL(0.62 - hot * 0.5, 0.85, 0.55);
+        seg.m.material.emissive.setHSL(0.62 - hot * 0.5, 0.9, 0.3);
+      });
+      stats();
+    }
+
+    const v = new THREE.Vector3();
+    function tick(dt, t){
+      bars.forEach(b => {
+        b.m.scale.y += (b.target - b.m.scale.y) * Math.min(1, dt * 3);
+        b.m.position.y = b.m.scale.y / 2;
+        b.cap.position.set(b.m.position.x, b.m.scale.y + 0.08, b.m.position.z);
+        b.cap.material.opacity = 0.7 + Math.sin(t * 3 + b.m.position.x) * 0.2;
+        b.label.anchor.copy(b.cap.position); platform.localToWorld(b.label.anchor); b.label.anchor.y += 0.25 + b.lift;
+      });
+      const nowHour = new Date().getHours();
+      ring.forEach(seg => {
+        seg.m.scale.y += (seg.target - seg.m.scale.y) * Math.min(1, dt * 2.5);
+        seg.m.position.y = seg.m.scale.y / 2;
+        seg.m.material.emissiveIntensity = seg.hour === nowHour ? 1.4 + Math.sin(t * 6) * 0.5 : 0.8;
+      });
+      const a = t * 0.5;
+      runner.position.set(Math.sin(a) * R * 0.9, 0.12, -Math.cos(a) * R * 0.9);
+    }
+
+    ctx.bars = bars; ctx.ring = ring;
+    return { refresh, tick };
+  }
+
+  function script(ctx){
+    const worldOf = obj => obj ? obj.getWorldPosition(new ctx.THREE.Vector3()) : null;
+    const o = dash.overview || {}, routes = dash.routes || [], hourly = (dash.hourly || []).filter(h => h.samples);
+    const bars = ctx.bars || [], ring = ctx.ring || [];
+    const lines = [];
+    if(!greeted){ greeted = true; lines.push({ text: "Hi! I'm Loco, your Control Room assistant. Let me walk you through the network.", gesture: 'wave' }); }
+    if((dash.data_source || {}).offline) lines.push({ text: "Heads up: Supabase is unreachable, so I'm reading the local operations data.", gesture: 'alert', tone: 'warn' });
+    if(routes[0] && bars[0]) lines.push({ text: `Worst corridor: ${routes[0].route}, averaging ${fmt(routes[0].average_delay)} min with a ${routes[0].incident_rate}% incident rate.`,
+      gesture: 'point', target: () => worldOf(bars[0].cap), tone: routes[0].status === 'critical' ? 'warn' : '' });
+    if(o.average_delay !== undefined) lines.push({ text: `Across ${Number(o.trips || 0).toLocaleString()} trips the network averages ${fmt(o.average_delay)} min of delay.`, gesture: 'nod' });
+    if(o.on_time_rate !== undefined) lines.push({ text: `${fmt(o.on_time_rate)}% of arrivals land within five minutes of schedule.`, gesture: o.on_time_rate >= 50 ? 'cheer' : 'nod', tone: o.on_time_rate >= 50 ? 'good' : '' });
+    if(hourly.length){
+      const peak = hourly.reduce((a, b) => b.average_delay > a.average_delay ? b : a);
+      const seg = ring.find(s => s.hour === peak.hour);
+      lines.push({ text: `Delay pressure peaks at ${String(peak.hour).padStart(2, '0')}:00, averaging ${fmt(peak.average_delay)} min.`, gesture: 'point', target: () => worldOf(seg && seg.m) });
+    }
+    lines.push(incidents.length
+      ? { text: `${incidents.length} incident(s) verified today. The latest is at ${incidents[0].station}.`, gesture: 'alert', tone: 'warn' }
+      : { text: 'No incidents have been verified today. Clear lines so far!', gesture: 'cheer', tone: 'good' });
+    return lines;
+  }
+
+  async function start(){
+    if(deck || !window.fetch) return;
+    try {
+      const { mountHeroDeck } = await import('/shared/hero-deck.js');
+      deck = await mountHeroDeck($('crHero'), {
+        platformAt: [1.4, -0.5], platformRadius: 3.6, robotAt: [-2.5, 0, 1.5], robotYaw: 0.5, robotScale: 0.88,
+        camera: [0.2, 4.4, 10.6], lookAt: [0.1, 1.15, 0], roam: 0.6,
+        build, script,
+      });
+      if(dash.overview) deck.refresh();
+    } catch(err){ console.warn('Control Room banner unavailable:', err); }
+  }
+
+  return {
+    update(){ if(deck) deck.refresh(); else start(); },
+    setIncidents(items){ incidents = items || []; if(dash.overview) stats(); },
+  };
+})();
+
 /* ------------------- screen 3: incident management --------------------- */
 const incidents = (function(){
   const PAGE = 20;
@@ -961,10 +1198,27 @@ const incidents = (function(){
   };
 })();
 
+// Stations come from the operations corpus, so every filed incident has a
+// known location and can be placed on the map once an admin verifies it.
+async function loadStations(){
+  try {
+    const { stations } = await api('/api/stations');
+    $('nStation').innerHTML = '<option value="">— select a station —</option>' +
+      stations.map(s => `<option value="${esc(s.station)}">${esc(s.station)}</option>`).join('');
+  } catch(err){
+    $('nStation').innerHTML = '<option value="">Stations unavailable</option>';
+  }
+}
+
+// Staff pick the train by name ("Podi Menike") instead of recalling its id.
+const trainPicker = RailSenseTrainPicker.attach($('nTrain'), { getStation: () => $('nStation').value });
+$('nStation').addEventListener('change', () => trainPicker.refresh());
+
 function openIncidentModal(){ openModal('incidentModal'); }
 
 $('incidentForm').onsubmit = async e => {
   e.preventDefault();
+  if(!trainPicker.validate()){ toast('Choose the train from the list', 'error'); $('nTrain').focus(); return; }
   const btn = $('incidentSubmit');
   btn.disabled = true;
   btn.innerHTML = '<span class="spin"></span> Filing…';
@@ -972,7 +1226,7 @@ $('incidentForm').onsubmit = async e => {
     const created = await api('/incident-report', {
       method: 'POST',
       body: JSON.stringify({
-        train_id: $('nTrain').value.trim(),
+        train_id: trainPicker.value,
         station: $('nStation').value.trim(),
         raw_text: $('nText').value.trim(),
       }),
@@ -980,6 +1234,7 @@ $('incidentForm').onsubmit = async e => {
     toast(`Filed as ${created.classified_type} (${created.nlp_method})`, 'success');
     closeModal('incidentModal');
     $('incidentForm').reset();
+    trainPicker.reset();
     incidents.reset();
   } catch(err){ toast(err.message, 'error'); }
   finally { btn.disabled = false; btn.textContent = 'File incident'; }
@@ -1044,6 +1299,7 @@ $('opsLoginForm').onsubmit = async e => {
 };
 
 $('opsLogoutBtn').onclick = () => {
+  if(window.RailSenseOpsAgent) RailSenseOpsAgent.destroy();
   localStorage.removeItem('railsense_m2_token');
   localStorage.removeItem('railsense_m2_officer');
   $('opsLoginModal').classList.add('open');
@@ -1058,6 +1314,11 @@ function boot(){
   now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
   $('pTime').value = now.toISOString().slice(0, 16);
   refreshDashboard();
+  loadRouteOptions();
+  loadStations();
+  startIncidentMap();
+  // Operations Assistant: appears only if the signed-in role may use it.
+  if(window.RailSenseOpsAgent) RailSenseOpsAgent.init();
 }
 
 setupNav();

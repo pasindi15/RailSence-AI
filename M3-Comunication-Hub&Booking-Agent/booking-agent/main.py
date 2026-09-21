@@ -963,3 +963,39 @@ def list_admin_bookings(
     )
 
 
+# ---------------------------------------------------------------------------
+# Admin Booking Intelligence Chatbot (NLP + IR/RAG + LLM)
+# ---------------------------------------------------------------------------
+
+from admin_chat.schemas import AdminChatRequest, AdminChatResponse
+
+@app.post(
+    "/admin/chat",
+    tags=["admin-chat"],
+    summary="Admin Booking Intelligence Assistant (NLP + IR/RAG + LLM)",
+    response_model=AdminChatResponse,
+)
+@app.post(
+    "/api/admin/booking-chat",
+    tags=["admin-chat"],
+    include_in_schema=False,
+    response_model=AdminChatResponse,
+)
+def admin_chat_endpoint(
+    req: AdminChatRequest,
+    db: Session = Depends(get_db),
+) -> JSONResponse:
+    """
+    Process natural-language administrative questions regarding:
+    1. 🛡️ Fraud Review Queue
+    2. 🔄 Cancellation Queue
+    3. 📋 Schedules & Seat Inventory
+    4. 🎫 Booked Tickets — Manifest
+    """
+    from admin_chat.query_router import AdminChatService
+    service = AdminChatService(db)
+    response = service.process_chat_message(req)
+    return JSONResponse(status_code=200, content=response.model_dump())
+
+
+

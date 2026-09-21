@@ -355,7 +355,7 @@ class CancellationService:
                     sender_agent="admin-adjudicator",
                     receiver_agent="booking-agent",
                     intent="cancellation_review_rejection",
-                    status=AuditStatus.REJECTED,
+                    status=AuditStatus.ROUTED,
                     error_message=(
                         f"Admin Rejection: \"{rejection_text}\" | "
                         f"NLP Category: {nlp_analysis['rejection_category']} ({nlp_analysis['category_label']}) | "

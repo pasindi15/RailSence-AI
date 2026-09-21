@@ -1055,6 +1055,13 @@ async def chat(req: ChatRequest):
         route = " - ".join(stations) if isinstance(stations, list) and len(stations) >= 2 else None
         train_id = entities.get("train_id")
         resolved_via_registry = False
+        # If train_id was resolved from a name ("Intercity Express" → "T-002")
+        # rather than typed explicitly, it won't appear in the passenger's text.
+        # Mark it as resolved so raw_text_for_hub gets "(train T-002)" appended,
+        # satisfying M2's anti-fabrication guard.
+        import re as _re
+        if train_id and not _re.search(rf'(?<![A-Za-z0-9]){_re.escape(train_id)}(?![A-Za-z0-9])', text, _re.IGNORECASE):
+            resolved_via_registry = True
         if not train_id and isinstance(stations, list) and len(stations) >= 2:
             # No explicit train ID (e.g. "Is the train from Colombo Fort to
             # Kandy delayed?"), but a route is known - M2's PredictionRequest
@@ -1082,6 +1089,39 @@ async def chat(req: ChatRequest):
             save_message(req.session_id, "user", text)
             save_message(req.session_id, "assistant", reply)
             return ChatResponse(session_id=req.session_id, reply=reply, intent=intent, language=language, entities=entities, source=source)
+
+        # ── M4 maintenance fast-path ──────────────────────────────────────────
+        # Check M4 before M2. If the engineer has flagged this train, the
+        # maintenance record is authoritative — no need to call M2 at all.
+        try:
+            maint_env = build_envelope(
+                receiver_agent="maintenance-agent",
+                intent="train_status_query",
+                payload={"train_id": train_id, "raw_text": text, "language": language},
+            )
+            maint_resp = await send_to_hub(maint_env)
+            if maint_resp.status == "ok":
+                mp = maint_resp.payload
+                if mp.get("under_maintenance"):
+                    reason_text = mp.get("reason", "Technical issue under investigation")
+                    delay_mins  = mp.get("delay_minutes")
+                    eta         = mp.get("estimated_clear")
+                    try:
+                        tr_row = await asyncio.to_thread(get_train, train_id)
+                        train_name = (tr_row or {}).get("train_name") or train_id
+                    except Exception:
+                        train_name = train_id
+                    maint_str = t("delay_maint", language, reason=reason_text)
+                    delay_str = f" Expected delay: {delay_mins} minutes." if delay_mins is not None else ""
+                    eta_str   = t("delay_maint_eta", language, eta=eta) if eta else ""
+                    reply  = f"{train_name} is currently under maintenance. {maint_str}{delay_str}{eta_str}"
+                    source = "via Maintenance Agent (Hub)"
+                    save_message(req.session_id, "user", text)
+                    save_message(req.session_id, "assistant", reply)
+                    return ChatResponse(session_id=req.session_id, reply=reply, intent=intent, language=language, entities=entities, source=source)
+        except Exception:
+            pass  # M4 unreachable — fall through to M2
+
         # Operations' own /hub/message contract (M2, unmodified) only trusts a
         # payload train_id when it's also evidenced by a matching token in
         # raw_text - an anti-fabrication guard against a caller defaulting to
@@ -1122,12 +1162,11 @@ async def chat(req: ChatRequest):
             if not similar:
                 similar = "No similar historical incident recorded"
 
-            # When M2 flags a maintenance-related cause, also query M4 via
-            # Hub — the passenger gets the live maintenance record (reason,
-            # ETA) in the same reply, not just the delay prediction.
-            _MAINT_KEYWORDS = {"maintenance", "repair", "fault", "breakdown", "mechanical", "out of service"}
+            # Always query M4 for live maintenance status — if the engineer
+            # flagged this train, the passenger gets the real reason and delay,
+            # not just M2's statistical prediction.
             maintenance_context = ""
-            if train_id and any(kw in reason.lower() for kw in _MAINT_KEYWORDS):
+            if train_id:
                 try:
                     maint_envelope = build_envelope(
                         receiver_agent="maintenance-agent",
@@ -1138,6 +1177,10 @@ async def chat(req: ChatRequest):
                     if maint_response.status == "ok":
                         mp = maint_response.payload
                         if mp.get("under_maintenance"):
+                            # M4's engineer-set delay overrides M2's prediction
+                            if mp.get("delay_minutes") is not None:
+                                delay_minutes = float(mp["delay_minutes"])
+                                delay = delay_minutes
                             maintenance_context = " " + t(
                                 "delay_maint", language,
                                 reason=mp.get("reason", "Technical issue under investigation"),

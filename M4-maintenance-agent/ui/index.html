@@ -372,6 +372,49 @@ body.dark .pred-info-cell{background:var(--surface);border-color:#334155}
 .ov-report-sum{font-size:0.75rem;color:var(--text-muted);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .ov-report-meta{display:flex;gap:6px;align-items:center;margin-top:5px;flex-wrap:wrap}
 .ov-report-pill{font-size:0.64rem;font-weight:600;padding:2px 7px;border-radius:20px;background:var(--surface);border:1px solid var(--border);color:var(--text-muted)}
+.ov-report-card.resolved{opacity:0.6}
+.ov-report-card.resolved .ov-report-dot{background:var(--green)!important}
+.btn-resolve{display:inline-flex;align-items:center;gap:4px;background:transparent;border:1px solid var(--border);border-radius:7px;padding:3px 9px;font-size:0.67rem;font-weight:600;font-family:inherit;color:var(--text-muted);cursor:pointer;transition:all 0.15s;white-space:nowrap;margin-left:auto}
+.btn-resolve:hover{border-color:var(--green);color:var(--green);background:rgba(16,185,129,0.06)}
+.btn-resolve:disabled{opacity:0.4;cursor:not-allowed}
+.resolve-badge{font-size:0.64rem;font-weight:600;padding:2px 7px;border-radius:20px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.25);color:var(--green)}
+/* ── Resolution Modal ── */
+.res-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:500;display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;pointer-events:none;transition:opacity 0.2s ease}
+.res-backdrop.open{opacity:1;pointer-events:all}
+.res-modal{background:#fff;border-radius:18px;width:100%;max-width:480px;box-shadow:0 24px 64px rgba(0,0,0,0.18);overflow:hidden;transform:translateY(12px);transition:transform 0.2s ease}
+.res-backdrop.open .res-modal{transform:translateY(0)}
+.res-header{padding:18px 20px 14px;border-bottom:1px solid var(--border)}
+.res-header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.res-title{font-size:0.95rem;font-weight:700;color:var(--text)}
+.res-close{background:none;border:none;cursor:pointer;color:var(--text-light);padding:2px;border-radius:6px;line-height:1;font-size:1.1rem}
+.res-close:hover{background:var(--bg);color:var(--text)}
+.res-report-info{background:var(--bg);border-radius:10px;padding:10px 12px;margin-bottom:14px;border:1px solid var(--border)}
+.res-report-row{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:0.75rem;margin-bottom:4px}
+.res-report-row:last-child{margin-bottom:0}
+.res-report-label{color:var(--text-light);font-weight:500;flex-shrink:0}
+.res-report-val{color:var(--text);font-weight:600;text-align:right}
+.res-body{padding:14px 20px}
+.res-field{margin-bottom:12px}
+.res-field:last-child{margin-bottom:0}
+.res-label{font-size:0.72rem;font-weight:600;color:var(--text-muted);margin-bottom:5px;display:block}
+.res-select{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:9px;font-size:0.78rem;font-family:inherit;color:var(--text);background:#fff;cursor:pointer;outline:none;transition:border-color 0.15s}
+.res-select:focus{border-color:var(--primary)}
+.res-textarea{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:9px;font-size:0.78rem;font-family:inherit;color:var(--text);resize:vertical;min-height:60px;max-height:110px;outline:none;transition:border-color 0.15s;box-sizing:border-box}
+.res-textarea:focus{border-color:var(--primary)}
+.res-health-row{display:flex;gap:8px}
+.res-health-btn{flex:1;padding:8px 6px;border:1.5px solid var(--border);border-radius:9px;font-size:0.73rem;font-weight:700;font-family:inherit;cursor:pointer;background:#fff;transition:all 0.15s;text-align:center}
+.res-health-btn.green{color:#059669;border-color:#d1fae5}
+.res-health-btn.green.active,.res-health-btn.green:hover{background:#d1fae5;border-color:#059669}
+.res-health-btn.amber{color:#d97706;border-color:#fef3c7}
+.res-health-btn.amber.active,.res-health-btn.amber:hover{background:#fef3c7;border-color:#d97706}
+.res-health-btn.red{color:#dc2626;border-color:#fee2e2}
+.res-health-btn.red.active,.res-health-btn.red:hover{background:#fee2e2;border-color:#dc2626}
+.res-footer{padding:12px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
+.res-btn-cancel{background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:7px 16px;font-size:0.78rem;font-weight:600;font-family:inherit;cursor:pointer;color:var(--text-muted)}
+.res-btn-cancel:hover{background:var(--border)}
+.res-btn-submit{background:var(--green,#10b981);border:none;border-radius:9px;padding:7px 20px;font-size:0.78rem;font-weight:700;font-family:inherit;cursor:pointer;color:#fff;transition:all 0.15s}
+.res-btn-submit:hover{filter:brightness(1.08)}
+.res-btn-submit:disabled{opacity:0.5;cursor:not-allowed}
 
 /* ── Field Observation Modal ── */
 .rpt-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:400;display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;pointer-events:none;transition:opacity 0.2s ease}
@@ -501,6 +544,115 @@ body.dark .rpt-tag{background:#1e3a5f;border-color:#1e40af;color:#93c5fd}
 .pred-hist-list{display:flex;flex-direction:column;gap:6px}
 .pred-hist-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;border:1px solid var(--border);background:var(--white);cursor:pointer;transition:all 0.12s;font-size:0.76rem}
 .pred-hist-item:hover{border-color:#94a3b8;background:var(--bg)}
+/* ── Health Intelligence upgrades ── */
+.fleet-summary-row{display:grid;grid-template-columns:repeat(4,1fr) auto;gap:12px;margin-bottom:16px}
+@media(max-width:960px){.fleet-summary-row{grid-template-columns:repeat(2,1fr)}}
+.fleet-stat-card{background:var(--white);border:1px solid var(--border);border-radius:14px;padding:16px 18px}
+.fleet-stat-val{font-size:1.6rem;font-weight:800;letter-spacing:-0.5px;line-height:1;margin-bottom:4px}
+.fleet-stat-lbl{font-size:0.67rem;font-weight:700;text-transform:uppercase;letter-spacing:0.7px;color:var(--text-light)}
+.fleet-donut-card{background:var(--white);border:1px solid var(--border);border-radius:14px;padding:16px 20px;display:flex;align-items:center;gap:16px}
+.fleet-donut-legend{font-size:0.72rem;display:flex;flex-direction:column;gap:5px}
+.fleet-donut-leg-row{display:flex;align-items:center;gap:6px}
+.fleet-donut-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.conf-band-wrap{margin:10px 0 4px;padding:10px 14px;background:var(--bg);border-radius:10px;border:1px solid var(--border)}
+.conf-band-label{font-size:0.67rem;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:var(--text-light);margin-bottom:7px}
+.conf-band-track{height:8px;background:#e2e8f0;border-radius:4px;position:relative;margin-bottom:5px}
+.conf-band-range{position:absolute;top:0;height:100%;border-radius:4px;opacity:0.3;transition:all 0.5s ease}
+.conf-band-point{position:absolute;top:-3px;width:14px;height:14px;border-radius:50%;border:2.5px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.18);transform:translateX(-50%);transition:all 0.5s ease}
+.conf-band-vals{display:flex;justify-content:space-between;font-size:0.67rem;color:var(--text-light)}
+.risk-factors-wrap{margin:10px 0}
+.risk-factors-lbl{font-size:0.67rem;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:var(--text-light);margin-bottom:7px}
+.risk-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:999px;font-size:0.71rem;font-weight:600;margin:2px 3px 2px 0}
+.risk-chip-high{background:#fef2f2;color:#dc2626;border:1px solid #fecaca}
+.risk-chip-low{background:#fefce8;color:#854d0e;border:1px solid #fde68a}
+.dtf-row{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg);border-radius:10px;border:1px solid var(--border);margin:10px 0}
+.dtf-icon{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.dtf-val{font-size:1.05rem;font-weight:800;letter-spacing:-0.3px}
+.dtf-sub{font-size:0.69rem;color:var(--text-light)}
+.trend-card{background:var(--white);border:1px solid var(--border);border-radius:14px;padding:16px 20px;margin-bottom:16px}
+.trend-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.trend-title{font-size:0.77rem;font-weight:700;color:var(--text)}
+.trend-asset-select{font-size:0.75rem;padding:5px 10px;border:1.5px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-family:inherit;cursor:pointer;outline:none}
+.feat-imp-wrap{margin:10px 0}
+.feat-imp-lbl{font-size:0.67rem;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:var(--text-light);margin-bottom:8px}
+.feat-imp-row{display:flex;align-items:center;gap:8px;margin-bottom:5px;font-size:0.72rem}
+.feat-imp-name{width:124px;flex-shrink:0;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.feat-imp-bar-track{flex:1;height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden}
+.feat-imp-bar-fill{height:100%;border-radius:3px;background:var(--primary);transition:width 0.6s cubic-bezier(0.34,1.1,0.64,1)}
+.feat-imp-pct{width:34px;text-align:right;font-weight:700;color:var(--text);flex-shrink:0}
+.watchlist-card{background:var(--white);border:1px solid var(--border);border-radius:14px;padding:16px 20px;margin-bottom:16px}
+.watchlist-title{font-size:0.67rem;font-weight:800;text-transform:uppercase;letter-spacing:0.7px;color:var(--text-light);margin-bottom:10px}
+.watchlist-item{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);font-size:0.77rem}
+.watchlist-item:last-child{border-bottom:none}
+.watchlist-score{font-size:0.92rem;font-weight:800;min-width:30px}
+.watchlist-info{flex:1;min-width:0}
+.watchlist-id{font-weight:700;color:var(--text)}
+.watchlist-sub{font-size:0.66rem;color:var(--text-light);margin-top:1px}
+/* ── Category stat cards (fleet summary) ── */
+.cat-stat-grid{display:grid;grid-template-columns:repeat(3,1fr) auto;gap:12px;margin-bottom:16px;align-items:stretch}
+@media(max-width:960px){.cat-stat-grid{grid-template-columns:repeat(2,1fr)}}
+.cat-stat-card{background:var(--white);border:1px solid var(--border);border-radius:14px;padding:14px 16px}
+.cat-stat-head{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.cat-stat-icon{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.cat-stat-name{font-size:0.67rem;font-weight:800;text-transform:uppercase;letter-spacing:0.6px;color:var(--text-light)}
+.cat-stat-avg{font-size:1.5rem;font-weight:900;letter-spacing:-0.5px;line-height:1;margin-bottom:6px}
+.cat-stat-bar-row{display:flex;height:5px;border-radius:3px;overflow:hidden;margin-bottom:7px;gap:1px}
+.cat-stat-counts{display:flex;gap:8px;font-size:0.7rem;font-weight:700}
+.cat-ct-g{color:var(--green)}.cat-ct-a{color:var(--amber)}.cat-ct-r{color:var(--red)}
+/* ── Category asset browser ── */
+.cat-browser-card{background:var(--white);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:14px}
+.cat-browser-hdr{padding:12px 16px 0}
+.cat-browser-title{font-size:0.64rem;font-weight:800;text-transform:uppercase;letter-spacing:0.7px;color:var(--text-light);margin-bottom:10px;display:flex;align-items:center;gap:5px}
+.cat-tab-row{display:flex;border-bottom:1px solid var(--border)}
+.cat-tab{flex:1;padding:8px 6px;background:none;border:none;border-bottom:2.5px solid transparent;cursor:pointer;font-family:inherit;color:var(--text-light);transition:all 0.14s;display:flex;flex-direction:column;align-items:center;gap:3px;position:relative;bottom:-1px}
+.cat-tab:hover{color:var(--text);background:var(--bg)}
+.cat-tab.active{color:var(--primary);border-bottom-color:var(--primary)}
+.cat-tab-label{font-size:0.71rem;font-weight:700;white-space:nowrap}
+.cat-tab-meta{display:flex;align-items:center;gap:5px}
+.cat-tab-count{font-size:0.61rem;color:inherit;opacity:0.7}
+.cat-tab-avg{font-size:0.67rem;font-weight:800;padding:1px 7px;border-radius:10px;background:var(--bg);min-width:30px;text-align:center;transition:color 0.3s}
+.cat-asset-list{max-height:260px;overflow-y:auto;padding:6px 0}
+.cat-asset-row{display:flex;align-items:center;gap:9px;padding:7px 16px;cursor:pointer;transition:background 0.1s;border-left:3px solid transparent}
+.cat-asset-row:hover{background:var(--bg)}
+.cat-asset-row.status-red{border-left-color:var(--red)}
+.cat-asset-row.status-amber{border-left-color:var(--amber)}
+.cat-asset-row.sel{background:var(--blue-bg);border-left-color:var(--primary)}
+.cat-asset-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.cat-asset-id{font-size:0.75rem;font-weight:700;color:var(--text);min-width:50px}
+.cat-asset-score{font-size:0.79rem;font-weight:800;min-width:30px;text-align:right}
+.cat-asset-bar-wrap{width:72px;height:5px;background:#e2e8f0;border-radius:3px;overflow:hidden;flex-shrink:0}
+.cat-asset-bar-fill{height:100%;border-radius:3px;transition:width 0.45s ease}
+.cat-asset-info{flex:1;min-width:0;display:flex;align-items:center;gap:6px}
+.cat-asset-train{font-size:0.62rem;color:var(--text-light);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1}
+.cat-fault-chip{font-size:0.58rem;font-weight:700;padding:2px 6px;border-radius:8px;background:var(--amber-bg);color:#92400e;white-space:nowrap;flex-shrink:0}
+.cat-fault-chip.sev-hi{background:var(--red-bg);color:#991b1b}
+/* ── Train Service Flags card ── */
+.flag-row{display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+.flag-row:last-child{border-bottom:none}
+.flag-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:5px}
+.flag-body{flex:1;min-width:0}
+.flag-train{font-size:0.82rem;font-weight:600;color:var(--text);display:flex;align-items:center;gap:6px}
+.flag-id{font-size:0.72rem;font-weight:500;color:var(--text-light);background:var(--bg-card2);padding:1px 5px;border-radius:4px}
+.flag-reason{font-size:0.78rem;color:var(--text-muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.flag-meta{font-size:0.7rem;color:var(--text-light);margin-top:3px}
+.flag-clear-btn{font-size:0.72rem;padding:3px 10px;flex-shrink:0;color:var(--red);border-color:var(--red)}
+.flag-clear-btn:hover{background:var(--red-bg)}
+/* Flag modal */
+.flag-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.5);backdrop-filter:blur(3px);z-index:1000;display:none;align-items:center;justify-content:center}
+.flag-backdrop.open{display:flex}
+.flag-modal{background:var(--bg-card);border-radius:16px;padding:26px 28px;width:100%;max-width:440px;box-shadow:0 20px 60px rgba(0,0,0,0.25)}
+.flag-modal-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px}
+.flag-modal-title{font-size:1rem;font-weight:700;color:var(--text)}
+.flag-modal-sub{font-size:0.75rem;color:var(--text-light);margin-top:2px}
+.flag-modal-close{width:26px;height:26px;border-radius:50%;border:none;background:var(--bg-card2);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text-light)}
+.flag-field{margin-bottom:13px}
+.flag-label{display:block;font-size:0.75rem;font-weight:600;color:var(--text-muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px}
+.flag-label span{color:var(--red)}
+.flag-input,.flag-select,.flag-textarea{width:100%;padding:8px 11px;border:1.5px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-size:0.83rem;box-sizing:border-box;font-family:inherit}
+.flag-textarea{min-height:72px;resize:vertical}
+.flag-row-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.flag-error{font-size:0.78rem;color:var(--red);margin-top:6px;min-height:1em}
+.flag-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}
 .pred-hist-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
 .pred-hist-id{font-weight:700;color:var(--text);flex:1}
 .pred-hist-score{font-weight:800;min-width:28px;text-align:right}
@@ -603,6 +755,30 @@ body.dark .rpt-tag{background:#1e3a5f;border-color:#1e40af;color:#93c5fd}
 .cp-msg.user .cp-bubble{background:var(--primary);color:white;border-bottom-right-radius:4px}
 .cp-msg.bot .cp-bubble{background:var(--white);color:var(--text);border:1px solid var(--border);border-bottom-left-radius:4px;box-shadow:var(--shadow-sm)}
 .cp-bubble p{margin:0 0 6px 0}.cp-bubble p:last-child{margin-bottom:0}.cp-bubble strong{font-weight:700}.cp-bubble ul{padding-left:14px;margin:2px 0 6px 0}.cp-bubble li{margin-bottom:4px;line-height:1.45}.cp-bubble p.cp-label{margin-bottom:2px}.cp-bubble p.cp-label+ul{margin-top:0}
+/* ── Chat prediction form card ── */
+.cpf-card,.cpf-result{max-width:290px!important;padding:10px 12px!important}
+.cpf-hdr,.cpf-res-hdr{display:flex;align-items:center;gap:7px;margin-bottom:10px}
+.cpf-asset-id{font-size:0.85rem;font-weight:700;color:var(--text)}
+.cpf-type-badge{font-size:0.65rem;background:var(--blue-bg);color:var(--primary);padding:2px 7px;border-radius:8px;text-transform:capitalize}
+.cpf-section{font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-light);margin:8px 0 5px 0}
+.cpf-row{display:flex;flex-direction:column;gap:2px;margin-bottom:6px}
+.cpf-lbl{font-size:0.7rem;color:var(--text-muted);font-weight:500}
+.cpf-unit{font-weight:400;opacity:.7}
+.cpf-inp{width:100%;padding:4px 8px;border:1.5px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:0.78rem;box-sizing:border-box}
+.cpf-inp:focus{outline:none;border-color:var(--primary)}
+.cpf-btn{width:100%;margin-top:10px;padding:7px;background:var(--primary);color:white;border:none;border-radius:8px;font-size:0.78rem;font-weight:600;cursor:pointer}
+.cpf-btn:hover{opacity:.9}.cpf-btn:disabled{opacity:.5;cursor:default}
+.cpf-res-conf{font-size:0.7rem;color:var(--text-light);margin-bottom:4px}
+.cpf-res-row{display:flex;justify-content:space-between;font-size:0.75rem;padding:3px 0;border-bottom:1px solid var(--border)}
+.cpf-res-row:last-child{border-bottom:none}
+.cpf-res-row.oor{background:var(--red-bg);margin:0 -4px;padding:3px 4px;border-radius:4px;border-bottom:none;margin-bottom:2px}
+.cpf-res-lbl{color:var(--text-muted)}
+.cpf-res-val{font-weight:500;color:var(--text)}
+.cpf-res-range{font-size:0.65rem;color:var(--text-light)}
+.cpf-res-dtf{font-size:0.75rem;margin-top:8px;color:var(--text)}
+.cpf-res-dtf.warn{color:var(--red);font-weight:600}
+.cpf-score-badge{font-size:0.75rem;font-weight:700;padding:2px 8px;border-radius:8px;background:var(--bg)}
+.cpf-score-badge.green{color:var(--green)}.cpf-score-badge.amber{color:var(--amber)}.cpf-score-badge.red{color:var(--red)}
 .cp-fleet{background:var(--bg);border:1px solid var(--border);border-radius:9px;overflow:hidden;margin:6px 0}
 .cp-fleet-hdr{font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-light);padding:6px 10px 5px;border-bottom:1px solid var(--border);background:#f8fafc}
 .cp-fleet-row{display:flex;align-items:center;gap:9px;padding:7px 10px;border-bottom:1px solid var(--border)}
@@ -703,57 +879,334 @@ body.dark .rpt-tag{background:#1e3a5f;border-color:#1e40af;color:#93c5fd}
 @keyframes mapPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(0.75)}}
 @keyframes svgPulse{0%{r:7;opacity:0.65}100%{r:15;opacity:0}}
 .train-pulse-ring{animation:svgPulse 1.8s ease-out infinite}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   M4 Premium Interface Layer — presentation only; existing dashboard hooks
+   and dynamic renderers intentionally remain unchanged.
+   ══════════════════════════════════════════════════════════════════════════ */
+:root{
+  --bg-card:var(--white);
+  --bg-card2:var(--surface);
+  --m4-panel-shadow:0 14px 34px rgba(15,23,42,.075),0 2px 8px rgba(15,23,42,.035);
+  --m4-panel-shadow-hover:0 20px 44px rgba(15,23,42,.12),0 5px 14px rgba(15,23,42,.055);
+  --m4-mobile-sidebar:min(84vw,280px);
+}
+body.dark{
+  --m4-panel-shadow:0 14px 34px rgba(0,0,0,.26),0 2px 8px rgba(0,0,0,.16);
+  --m4-panel-shadow-hover:0 20px 46px rgba(0,0,0,.36),0 5px 14px rgba(0,0,0,.2);
+}
+body{
+  background-image:radial-gradient(circle at 100% 0,rgba(59,130,246,.075),transparent 29%),radial-gradient(circle at 0 62%,rgba(16,185,129,.045),transparent 31%);
+  background-attachment:fixed;
+}
+body.dark{background-image:radial-gradient(circle at 100% 0,rgba(59,130,246,.12),transparent 30%),radial-gradient(circle at 0 62%,rgba(16,185,129,.055),transparent 31%)}
+
+.topbar{background:rgba(255,255,255,.88);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);box-shadow:0 1px 0 var(--border),0 8px 22px rgba(15,23,42,.025)}
+body.dark .topbar{background:rgba(30,41,59,.88);box-shadow:0 1px 0 var(--border),0 8px 22px rgba(0,0,0,.12)}
+.topbar-title{font-size:1.02rem;letter-spacing:-.35px}.topbar-sub{font-size:.72rem}
+
+.card,.fleet-stat,.cat-stat-card,.fleet-donut-card,.cat-browser-card,.trend-card,.watchlist-card{
+  border-radius:20px;
+  box-shadow:var(--m4-panel-shadow);
+  border-color:var(--border);
+}
+.card{padding:25px 27px;transition:transform .22s cubic-bezier(.16,1,.3,1),box-shadow .22s cubic-bezier(.16,1,.3,1),border-color .22s ease}
+.card:hover{box-shadow:var(--m4-panel-shadow-hover);transform:translateY(-2px);border-color:color-mix(in srgb,var(--border) 72%,var(--primary) 28%)}
+.card-hdr{margin-bottom:20px}.card-title{font-size:.95rem;letter-spacing:-.2px}.card-sub{font-size:.73rem;line-height:1.5}
+
+/* KPI health signals */
+.grid-4{gap:16px;margin-bottom:24px}
+.kpi{min-height:138px;padding:22px 22px 20px;border-radius:20px;box-shadow:var(--m4-panel-shadow);isolation:isolate;transition:transform .22s cubic-bezier(.16,1,.3,1),box-shadow .22s ease,border-color .22s ease}
+.kpi:hover{box-shadow:var(--m4-panel-shadow-hover);transform:translateY(-4px)}
+.kpi::after{width:112px;height:112px;right:-42px;top:-46px;opacity:1;background:radial-gradient(circle,rgba(255,255,255,.58) 0 26%,transparent 27%),conic-gradient(from 210deg,rgba(59,130,246,.16),transparent 43%,rgba(59,130,246,.04) 0)};z-index:-1}
+body.dark .kpi::after{background:radial-gradient(circle,rgba(30,41,59,.35) 0 26%,transparent 27%),conic-gradient(from 210deg,rgba(96,165,250,.19),transparent 43%,rgba(96,165,250,.05) 0)}
+.kpi-icon{position:relative;isolation:isolate;border:1px solid rgba(255,255,255,.72);box-shadow:inset 0 1px 0 rgba(255,255,255,.8),0 7px 16px rgba(15,23,42,.06)}
+.kpi-icon::after{content:'';position:absolute;inset:4px;border:1.5px solid rgba(37,99,235,.28);border-top-color:transparent;border-radius:50%;z-index:-1;animation:m4KpiOrbit 7s linear infinite}
+.kpi.green .kpi-icon::after{border-color:rgba(16,185,129,.34);border-top-color:transparent}.kpi.amber .kpi-icon::after{border-color:rgba(245,158,11,.42);border-top-color:transparent}.kpi.red .kpi-icon::after{border-color:rgba(239,68,68,.38);border-top-color:transparent}
+.kpi-value{font-size:2.25rem}.kpi-desc{display:flex;align-items:center;gap:6px;font-weight:600}.kpi-desc::before{content:'';width:20px;height:5px;border-radius:999px;background:linear-gradient(90deg,var(--primary-light),rgba(59,130,246,.22));box-shadow:0 0 10px rgba(59,130,246,.18)}
+.kpi.green .kpi-desc::before{background:linear-gradient(90deg,var(--green),rgba(16,185,129,.22));box-shadow:0 0 10px rgba(16,185,129,.15)}.kpi.amber .kpi-desc::before{background:linear-gradient(90deg,var(--amber),rgba(245,158,11,.2));box-shadow:0 0 10px rgba(245,158,11,.15)}
+@keyframes m4KpiOrbit{to{transform:rotate(360deg)}}
+
+/* Overview balance and service-flag callout */
+.ov-2col{grid-template-columns:minmax(0,1.25fr) minmax(320px,.9fr);gap:20px}
+.ov-right-stack{gap:20px}
+#flags-card{position:relative;overflow:hidden;background:linear-gradient(135deg,var(--white),var(--surface));border-color:color-mix(in srgb,var(--border) 75%,var(--amber) 25%)}
+#flags-card::before{content:'';position:absolute;inset:0 0 auto;height:3px;background:linear-gradient(90deg,var(--amber),var(--red),transparent 78%)}
+#flags-card .card-hdr{position:relative;padding-bottom:13px;margin-bottom:8px;border-bottom:1px solid var(--border)}
+#flags-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
+.flag-row{height:100%;padding:13px 14px;border:1px solid var(--border);border-radius:14px;background:var(--white);box-shadow:0 2px 7px rgba(15,23,42,.025);transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
+.flag-row:hover{transform:translateY(-2px);box-shadow:0 10px 20px rgba(15,23,42,.08);border-color:color-mix(in srgb,var(--border) 60%,var(--amber) 40%)}
+.flag-dot{width:9px;height:9px;margin-top:5px;box-shadow:0 0 0 4px color-mix(in srgb,currentColor 10%,transparent)}
+.flag-train{font-weight:750}.flag-id{background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:2px 7px}.flag-reason{white-space:normal;line-height:1.45}.flag-meta{font-weight:600}.flag-clear-btn{border-radius:999px;align-self:flex-start}
+body.dark #flags-card{background:linear-gradient(135deg,var(--white),var(--surface))}body.dark .flag-row{background:var(--surface)}
+
+/* Fleet: retain sortable table IDs and row events while rendering rich asset cards. */
+#page-fleet .tbl-wrap{overflow:visible;border:0;border-radius:0;box-shadow:none;background:transparent}
+#page-fleet .tbl-wrap table,#page-fleet .tbl-wrap tbody{display:block;width:100%}
+#page-fleet .tbl-wrap thead{display:none}
+#fleet-tbody{display:grid!important;grid-template-columns:repeat(auto-fill,minmax(294px,1fr));gap:14px}
+#fleet-tbody tr.data-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;grid-template-areas:"asset asset status" "train type status" "score score score" "service faults actions";gap:8px 12px;padding:17px 17px 15px;background:var(--white);border:1px solid var(--border);border-left:4px solid var(--primary-light);border-radius:18px;box-shadow:var(--m4-panel-shadow);overflow:hidden;position:relative;transition:transform .2s cubic-bezier(.16,1,.3,1),box-shadow .2s ease,border-color .2s ease}
+#fleet-tbody tr.data-row::after{content:'';position:absolute;right:-34px;top:-42px;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,rgba(59,130,246,.11),transparent 67%);pointer-events:none}
+#fleet-tbody tr.data-row:hover,#fleet-tbody tr.data-row.row-open{transform:translateY(-3px);box-shadow:var(--m4-panel-shadow-hover);border-color:color-mix(in srgb,var(--border) 60%,var(--primary) 40%)}
+#fleet-tbody tr.data-row.row-open{background:var(--blue-bg)}
+#fleet-tbody tr.data-row td{display:block!important;background:transparent!important;border:0!important;padding:0!important;min-width:0;position:relative;z-index:1}
+#fleet-tbody tr.data-row td:nth-child(1){grid-area:asset;font-size:1rem;letter-spacing:-.2px;align-self:end}
+#fleet-tbody tr.data-row td:nth-child(2){grid-area:train}
+#fleet-tbody tr.data-row td:nth-child(3){grid-area:type}
+#fleet-tbody tr.data-row td:nth-child(4){grid-area:score;padding:10px 11px!important;background:var(--surface)!important;border:1px solid var(--border)!important;border-radius:11px}
+#fleet-tbody tr.data-row td:nth-child(5){grid-area:status;justify-self:end;align-self:start}
+#fleet-tbody tr.data-row td:nth-child(6){grid-area:service}
+#fleet-tbody tr.data-row td:nth-child(7){grid-area:faults}
+#fleet-tbody tr.data-row td:nth-child(8){grid-area:actions;justify-self:end;align-self:end}
+#fleet-tbody tr.data-row td:nth-child(2)::before,#fleet-tbody tr.data-row td:nth-child(3)::before,#fleet-tbody tr.data-row td:nth-child(4)::before,#fleet-tbody tr.data-row td:nth-child(6)::before,#fleet-tbody tr.data-row td:nth-child(7)::before{display:block;margin-bottom:3px;font-size:.59rem;font-weight:800;letter-spacing:.65px;color:var(--text-light);text-transform:uppercase}
+#fleet-tbody tr.data-row td:nth-child(2)::before{content:'Assigned train'}#fleet-tbody tr.data-row td:nth-child(3)::before{content:'Component'}#fleet-tbody tr.data-row td:nth-child(4)::before{content:'Health score'}#fleet-tbody tr.data-row td:nth-child(6)::before{content:'Last service'}#fleet-tbody tr.data-row td:nth-child(7)::before{content:'Faults · 30d'}
+#fleet-tbody .score-bar{gap:10px}.score-track{width:100%;height:7px;background:var(--surface-2)}.quick-btn{border-radius:9px;font-weight:700}.fleet-service-age{font-size:.83rem;font-weight:750;color:var(--text)}.fleet-service-date{display:block;margin-top:2px;font-size:.65rem;color:var(--text-light);font-weight:600}
+#fleet-tbody tr.detail-row{grid-column:1/-1;display:block;border:1px solid var(--border);border-radius:18px;overflow:hidden;box-shadow:var(--m4-panel-shadow);background:var(--surface)}
+#fleet-tbody tr.detail-row td{display:block!important;background:var(--surface)!important}
+#fleet-tbody tr:not(.data-row):not(.detail-row){grid-column:1/-1;display:block;background:var(--white);border:1px solid var(--border);border-radius:16px}
+#fleet-tbody tr:not(.data-row):not(.detail-row) td{display:block;border:0}
+body.dark #fleet-tbody tr.data-row{background:var(--white);border-color:var(--border)}body.dark #fleet-tbody tr.data-row.row-open{background:var(--blue-bg)}body.dark #fleet-tbody tr.data-row td:nth-child(4),body.dark #fleet-tbody tr.detail-row td{background:var(--surface)!important}
+
+/* Health prediction workspace */
+.cat-stat-grid{gap:14px;margin-bottom:20px}.cat-stat-card,.fleet-donut-card{position:relative;overflow:hidden;padding:16px 18px;transition:transform .18s ease,box-shadow .18s ease}.cat-stat-card:hover,.fleet-donut-card:hover{transform:translateY(-2px);box-shadow:var(--m4-panel-shadow-hover)}
+.cat-stat-card::after{content:'';position:absolute;right:-14px;bottom:-18px;width:74px;height:74px;border-radius:50%;background:radial-gradient(circle,rgba(59,130,246,.11),transparent 68%)}
+.pred-layout{grid-template-columns:minmax(330px,1.05fr) minmax(340px,.95fr);gap:24px}
+.pred-layout>div:first-child{display:flex;flex-direction:column;gap:14px}.pred-layout>div:first-child>.cat-browser-card{margin-bottom:0}
+.cat-browser-card{box-shadow:var(--m4-panel-shadow)}.cat-browser-hdr{padding:15px 18px 0}.cat-tab{padding:11px 7px}.cat-tab.active{background:linear-gradient(180deg,rgba(37,99,235,.07),transparent);border-bottom-width:3px}.cat-asset-list{max-height:286px;padding:7px}.cat-asset-row{margin:2px 0;padding:9px 10px;border:1px solid transparent;border-radius:10px}.cat-asset-row:hover{border-color:var(--border);box-shadow:0 4px 10px rgba(15,23,42,.045)}.cat-asset-row.sel{box-shadow:0 5px 14px rgba(37,99,235,.1)}
+#page-predict .form-row{gap:10px;padding:11px;border:1px solid var(--border);border-radius:14px;background:var(--surface);margin-bottom:10px!important}.form-group{gap:6px}.form-label{font-size:.68rem;font-weight:750;letter-spacing:.25px;text-transform:uppercase;color:var(--text-muted)}.form-input,.form-select{padding:10px 11px;border-radius:10px;background:var(--white)}.pred-section-lbl{margin:17px 0 9px!important}.pred-run-btn{margin-top:6px;padding:13px;border-radius:14px;box-shadow:0 8px 18px rgba(37,99,235,.22)}
+#pred-result-card{position:relative;overflow:hidden}#pred-result-card::before{content:'';position:absolute;inset:0 0 auto;height:3px;background:linear-gradient(90deg,var(--primary),var(--primary-light),var(--green));opacity:.9}#pred-result-card .pred-empty-state{min-height:330px;background:radial-gradient(circle at 50% 40%,var(--blue-bg),transparent 62%);border-radius:16px}.pred-gauge-wrap{position:relative;margin:2px 0 16px;padding:16px 0 10px;border-radius:18px;background:radial-gradient(circle,rgba(37,99,235,.09),transparent 65%)}.pred-gauge-wrap::before{content:'';position:absolute;left:50%;top:50%;width:134px;height:134px;border:1px dashed rgba(59,130,246,.24);border-radius:50%;transform:translate(-50%,-54%);animation:m4GaugeOrbit 18s linear infinite}.pred-gauge-svg{position:relative;filter:drop-shadow(0 10px 14px rgba(37,99,235,.12))}#pred-result .pred-gauge-svg circle:first-child{stroke:var(--surface-2)}#pred-gauge-arc{filter:drop-shadow(0 0 5px currentColor)}.pred-banner{border-radius:14px;padding:14px 16px}.conf-band-wrap,.dtf-row,.pred-rec-box{border-radius:14px}.pred-info-cell{padding:13px 14px;border-radius:12px}.pred-info-cell:hover{transform:translateY(-1px);box-shadow:var(--shadow-sm)}.pred-actions .quick-btn{padding:7px 12px}
+@keyframes m4GaugeOrbit{to{transform:translate(-50%,-54%) rotate(360deg)}}
+
+/* Loading feedback for the initial asynchronous dashboard states */
+.m4-loading{position:relative;overflow:hidden;color:transparent!important;background:var(--surface)!important;border-radius:12px;min-height:44px;border-color:transparent!important}.m4-loading>*{visibility:hidden}.m4-loading::after{content:'';position:absolute;inset:0;background:linear-gradient(100deg,transparent 20%,rgba(255,255,255,.72) 42%,transparent 65%);transform:translateX(-100%);animation:m4Shimmer 1.55s ease-in-out infinite}body.dark .m4-loading::after{background:linear-gradient(100deg,transparent 20%,rgba(148,163,184,.12) 42%,transparent 65%)}
+.btn:disabled,.cpf-btn:disabled{background-size:180% 100%;background-image:linear-gradient(100deg,var(--primary) 0%,var(--primary-light) 40%,var(--primary) 80%);animation:m4ButtonLoading 1.2s linear infinite}
+@keyframes m4Shimmer{to{transform:translateX(100%)}}@keyframes m4ButtonLoading{to{background-position:180% 0}}
+
+/* Dark-surface completions for components that previously used light literals. */
+body.dark .res-modal,body.dark .res-select,body.dark .res-textarea,body.dark .res-health-btn{background:var(--white);color:var(--text);border-color:var(--border)}
+body.dark .res-report-info,body.dark .res-btn-cancel{background:var(--surface);border-color:var(--border)}
+body.dark .res-health-btn.green.active,body.dark .res-health-btn.green:hover{background:var(--green-bg)}body.dark .res-health-btn.amber.active,body.dark .res-health-btn.amber:hover{background:var(--amber-bg)}body.dark .res-health-btn.red.active,body.dark .res-health-btn.red:hover{background:var(--red-bg)}
+body.dark .dist-track,body.dark .score-track,body.dark .ov-fleet-bar-track,body.dark .pred-urgency-track,body.dark .conf-band-track,body.dark .feat-imp-bar-track,body.dark .cat-asset-bar-wrap,body.dark .health-bar-track{background:rgba(148,163,184,.14)}
+body.dark .badge-gray,body.dark .cp-fleet-hdr{background:var(--surface);color:var(--text-muted)}
+
+/* Responsive dashboard layout and a working mobile sidebar drawer. */
+@media(max-width:1050px){
+  .ov-2col{grid-template-columns:1fr}.ov-right-stack{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.map-wrap{height:auto;min-height:0;flex-direction:column}.map-canvas-wrap{min-height:500px}.map-sidebar{width:100%;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));max-height:280px;overflow-y:auto}
+}
+@media(max-width:820px){
+  .fleet-stats-bar{grid-template-columns:repeat(2,minmax(0,1fr))}.cat-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.pred-layout{grid-template-columns:1fr}.fleet-donut-card{grid-column:span 2}.fleet-detail-grid{grid-template-columns:1fr 1fr}.topbar{padding:13px 20px}.page-content{padding:22px 20px 32px}
+}
+@media(max-width:768px){
+  .sidebar{width:var(--m4-mobile-sidebar)!important;transform:translateX(-105%)!important;box-shadow:var(--shadow-lg);transition:transform 280ms cubic-bezier(.16,1,.3,1)!important}
+  .sidebar.collapsed{width:var(--m4-mobile-sidebar)!important;transform:translateX(-105%)!important}
+  .sidebar.mobile-open{transform:translateX(0)!important}
+  .main,.sidebar.collapsed~.sb-toggle~.main{margin-left:0!important}.sb-toggle,.sidebar.collapsed~.sb-toggle{left:0!important;border-left:1px solid var(--border);border-radius:0 8px 8px 0}.sidebar.mobile-open~.sb-toggle{left:var(--m4-mobile-sidebar)!important}.sidebar.mobile-open~.sb-toggle svg{transform:rotate(180deg)}
+  .hero{margin:14px 16px 0}.page-content{padding:20px 16px 30px}.topbar{padding:12px 16px}.refresh-info{display:none}.grid-4{grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}.kpi{min-height:126px;padding:17px 15px;gap:10px}.kpi-icon{width:39px;height:39px}.kpi-value{font-size:1.8rem}.kpi-label{font-size:.59rem}.kpi-desc{font-size:.64rem}.ov-right-stack{grid-template-columns:1fr}.flag-row-2,.rpt-row{grid-template-columns:1fr}.flag-row-2 .flag-field{margin-bottom:13px}.rpt-modal-hdr,.rpt-body{padding-left:20px;padding-right:20px}.rpt-purpose{margin-left:20px;margin-right:20px}.rpt-footer{padding-left:20px;padding-right:20px}.flag-modal{padding:22px 20px}.chat-fab{right:18px;bottom:18px}.chat-popup{right:16px;bottom:84px;width:calc(100vw - 32px);height:min(555px,calc(100vh - 106px))}
+}
+@media(max-width:560px){
+  .hero{height:302px}.hero-top-right{display:none}.hero-content{padding:22px 20px 30px}.hero-name{font-size:1.55rem}.hero-extra-stats{max-width:210px}.hero-right{gap:7px}.hero-score-ring{width:66px;height:66px}.hero-score-num{font-size:1.25rem}.fleet-detail-grid{grid-template-columns:1fr}.fd-trend-hdr{align-items:flex-start;gap:8px;flex-direction:column}.fd-trend-legend{flex-wrap:wrap;gap:6px}.map-canvas-wrap{min-height:430px}.map-legend{display:none}.map-info-panel{left:10px;right:10px;top:auto;bottom:10px;max-width:none}.fleet-search,.fleet-search input,.fleet-train-sel{width:100%}.fleet-count{margin-left:0;width:100%;order:5}.fleet-export-btn{margin-left:auto}.cat-stat-grid{grid-template-columns:1fr}.fleet-donut-card{grid-column:auto}.pred-info-grid{grid-template-columns:1fr 1fr}
+  #fleet-tbody{grid-template-columns:1fr}#fleet-tbody tr.data-row{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"asset status" "train type" "score score" "service faults" "actions actions"}#fleet-tbody tr.data-row td:nth-child(8){justify-self:stretch}#fleet-tbody tr.data-row td:nth-child(8)>div{justify-content:flex-end}
+}
+@media(max-width:420px){.grid-4{grid-template-columns:1fr}.kpi{min-height:104px}.topbar-title{font-size:.9rem}.topbar-sub{font-size:.64rem}.pred-info-grid{grid-template-columns:1fr}.pred-actions .quick-btn{flex:1;justify-content:center}.flag-footer,.rpt-footer{flex-wrap:wrap}.flag-footer .btn,.flag-footer .btn-ghost,.rpt-footer .btn,.rpt-footer .btn-ghost{flex:1;justify-content:center}}
+@media(prefers-reduced-motion:reduce){.kpi-icon::after,.pred-gauge-wrap::before,.m4-loading::after,.btn:disabled,.cpf-btn:disabled{animation:none}.card,.kpi,.flag-row,#fleet-tbody tr.data-row,.cat-stat-card,.fleet-donut-card{transition:none!important}}
+
+/* ── M4 Motion Layer: additive, GPU-friendly interface feedback ── */
+@keyframes m4BotBreathe{0%,100%{transform:scale(1)}50%{transform:scale(1.035)}}
+@keyframes m4BotEye{0%,100%{opacity:.7;transform:scale(1)}50%{opacity:1;transform:scale(1.18)}}
+@keyframes m4BotLight{0%,100%{opacity:.45;transform:scale(.82)}50%{opacity:1;transform:scale(1.25)}}
+@keyframes m4BotScan{0%,100%{transform:translateX(-1.8px)}50%{transform:translateX(1.8px)}}
+@keyframes m4BotNod{0%{transform:translateY(-3px) rotate(-5deg)}55%{transform:translateY(1px) rotate(3deg)}100%{transform:translateY(0) rotate(0)}}
+@keyframes m4FabBob{0%,100%{transform:translateY(3px)}50%{transform:translateY(0)}}
+@keyframes m4FabRing{0%,100%{transform:scale(.92);opacity:.28}50%{transform:scale(1.22);opacity:0}}
+@keyframes m4FabOpen{0%{transform:scale(1)}55%{transform:scale(1.16)}100%{transform:scale(1)}}
+@keyframes m4Notice{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(251,191,36,.55)}55%{transform:scale(1.22);box-shadow:0 0 0 6px rgba(251,191,36,0)}}
+@keyframes m4PopupIn{0%{opacity:0;transform:translate3d(0,28px,0) scale(.9)}72%{opacity:1;transform:translate3d(0,-3px,0) scale(1.015)}100%{opacity:1;transform:translate3d(0,0,0) scale(1)}}
+@keyframes m4UserIn{0%{opacity:0;transform:translate3d(20px,5px,0) scale(.92)}72%{opacity:1;transform:translate3d(-2px,0,0) scale(1.02)}100%{opacity:1;transform:none}}
+@keyframes m4BotIn{0%{opacity:0;transform:translate3d(-20px,5px,0) scale(.92)}72%{opacity:1;transform:translate3d(2px,0,0) scale(1.02)}100%{opacity:1;transform:none}}
+@keyframes m4PageIn{from{opacity:0;transform:translate3d(0,9px,0)}to{opacity:1;transform:none}}
+@keyframes m4Rise{from{opacity:0;transform:translate3d(0,12px,0)}to{opacity:1;transform:none}}
+@keyframes m4StatusPulse{0%,100%{opacity:1;box-shadow:0 0 0 0 currentColor}50%{opacity:.72;box-shadow:0 0 0 5px color-mix(in srgb,currentColor 20%,transparent)}}
+@keyframes m4TypingWave{0%,100%{transform:translateY(1px) scale(.78);opacity:.38}45%{transform:translateY(-4px) scale(1.12);opacity:1}}
+@keyframes m4Unfold{0%{opacity:0;transform:perspective(700px) rotateX(-11deg) translateY(-8px)}100%{opacity:1;transform:none}}
+@keyframes m4Reveal{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
+@keyframes m4ScoreFill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes m4FocusGlow{0%{box-shadow:0 0 0 0 rgba(59,130,246,.24)}100%{box-shadow:0 0 0 4px rgba(59,130,246,.08)}}
+@keyframes m4TinySpin{to{transform:rotate(360deg)}}
+
+.rs-bot{width:100%;height:100%;display:block;overflow:visible}.rs-bot-body,.rs-bot-eyes,.rs-bot-light{transform-box:fill-box;transform-origin:center}.rs-bot-body{animation:m4BotBreathe 3.4s ease-in-out infinite}.rs-bot-eye{fill:#dbeafe;filter:drop-shadow(0 0 2px rgba(96,165,250,.9));animation:m4BotEye 1.8s ease-in-out infinite}.rs-bot-light{fill:#fbbf24;filter:drop-shadow(0 0 2px rgba(251,191,36,.88));animation:m4BotLight 1.5s ease-in-out infinite}.rs-bot-head{fill:var(--primary);stroke:rgba(255,255,255,.48);stroke-width:1.5}.rs-bot-face{fill:var(--primary-dark)}.rs-bot-body-panel{fill:var(--primary-light);stroke:rgba(255,255,255,.42);stroke-width:1.4}.rs-bot-antenna-line{stroke:var(--primary-light);stroke-width:2.5;stroke-linecap:round}
+
+/* Floating assistant: an idle bot peeks out until the window opens. */
+.chat-fab{overflow:visible;transition:transform .22s cubic-bezier(.16,1,.3,1),background .2s ease,box-shadow .2s ease}.chat-fab::after{content:'';position:absolute;inset:-6px;border:1px solid rgba(96,165,250,.64);border-radius:50%;pointer-events:none;animation:m4FabRing 2.35s ease-out infinite}.chat-fab .fab-pulse{display:none}#fab-chat{width:31px;height:35px;display:grid;place-items:center;transform:translateY(3px);animation:m4FabBob 2.6s ease-in-out infinite}#fab-chat .rs-bot{width:31px;height:35px}.chat-fab.open{animation:m4FabOpen .38s cubic-bezier(.34,1.56,.64,1);background:#475569}.chat-fab.open::after{display:none}.m4-fab-notice{position:absolute;right:1px;top:1px;width:10px;height:10px;border:2px solid var(--white);border-radius:50%;background:#fbbf24;opacity:0;pointer-events:none}.chat-fab.m4-has-notice .m4-fab-notice{opacity:1;animation:m4Notice 1.3s ease-in-out infinite}
+.chat-popup{transform:translate3d(0,24px,0) scale(.92);transition:transform .25s cubic-bezier(.16,1,.3,1),opacity .2s ease;will-change:transform,opacity}.chat-popup.open{transform:translate3d(0,0,0) scale(1);animation:m4PopupIn .42s cubic-bezier(.16,1,.3,1) both}.cp-av.b{overflow:visible}.cp-av.b .rs-bot{width:29px;height:29px}.cp-msg.user{animation:m4UserIn .34s cubic-bezier(.16,1,.3,1) both;will-change:transform,opacity}.cp-msg.bot:not(#cp-typing){animation:m4BotIn .38s .07s cubic-bezier(.16,1,.3,1) both;will-change:transform,opacity}.cp-msg.bot:not(#cp-typing) .rs-bot{animation:m4BotNod .42s .1s cubic-bezier(.34,1.56,.64,1) both}#cp-typing .rs-bot-eyes{animation:m4BotScan .55s linear infinite}#cp-typing .rs-bot-light{animation-duration:.36s}.cp-typing span{animation:m4TypingWave 1.05s ease-in-out infinite}.cp-input-wrap:focus-within{animation:m4FocusGlow .42s ease both}
+.cp-msg .cpf-card{transform-origin:top left;animation:m4Unfold .42s cubic-bezier(.16,1,.3,1) both}.cp-msg .cpf-result{animation:m4Reveal .38s cubic-bezier(.16,1,.3,1) both}.cpf-btn.m4-predict-loading{display:flex;align-items:center;justify-content:center;gap:7px}.m4-btn-spinner{width:12px;height:12px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:m4TinySpin .65s linear infinite}.cpf-score-track{height:4px;margin:9px 0 2px;background:var(--surface-2);border-radius:999px;overflow:hidden}.cpf-score-fill{display:block;height:100%;width:var(--m4-score);border-radius:inherit;background:currentColor;transform-origin:left;animation:m4ScoreFill .65s .1s cubic-bezier(.16,1,.3,1) both}.cpf-result .cpf-res-row{animation:m4Reveal .3s ease both}
+
+/* Dashboard hierarchy and feedback. */
+nav{position:relative}nav .nav-item{z-index:1}nav .nav-item.active{background:transparent}nav .nav-item.active::before{opacity:0}.m4-nav-indicator{position:absolute;left:10px;right:10px;top:0;height:42px;border-radius:12px;background:var(--blue-bg);border:1px solid color-mix(in srgb,var(--primary) 12%,transparent);opacity:0;pointer-events:none;transition:transform .34s cubic-bezier(.16,1,.3,1),height .34s cubic-bezier(.16,1,.3,1),opacity .18s ease;will-change:transform,height}.m4-nav-indicator.visible{opacity:1}.page.active.m4-page-enter,#pred-result.m4-result-reveal{animation:m4PageIn .2s ease both}.m4-animate-cards .kpi,#fleet-tbody.m4-fleet-animate tr.data-row{animation:m4Rise .42s cubic-bezier(.16,1,.3,1) both}.m4-animate-cards .kpi:nth-child(2){animation-delay:50ms}.m4-animate-cards .kpi:nth-child(3){animation-delay:100ms}.m4-animate-cards .kpi:nth-child(4){animation-delay:150ms}#fleet-tbody.m4-fleet-animate tr.data-row{animation-delay:var(--m4-stagger,0ms)}.score-fill,.ov-fleet-bar-fill,.health-bar-fill,.dist-fill{transition:width .72s cubic-bezier(.16,1,.3,1)}.badge-green .badge-dot,.sb-dot.on{animation:m4StatusPulse 2.4s ease-in-out infinite}.badge-amber .badge-dot{animation:m4StatusPulse 3.2s ease-in-out infinite}.badge-red .badge-dot{animation:m4StatusPulse 1.15s ease-in-out infinite}.form-input:focus,.form-select:focus,.flag-input:focus,.flag-select:focus,.flag-textarea:focus{animation:m4FocusGlow .42s ease both}.sidebar,.main,.sb-toggle{will-change:width,transform,margin-left,left}
+button:not(:disabled):active,.chat-btn:active,.cp-btn:active,.quick-btn:active{transform:scale(.97)}
+
+@media(prefers-reduced-motion:reduce){.rs-bot-body,.rs-bot-eye,.rs-bot-light,#fab-chat,.chat-fab::after,.chat-fab.open,.chat-popup.open,.cp-msg,.cp-msg .cpf-card,.cp-msg .cpf-result,.m4-nav-indicator,.page.active.m4-page-enter,.m4-animate-cards .kpi,#fleet-tbody.m4-fleet-animate tr.data-row,.badge-dot,.m4-fab-notice,.m4-btn-spinner,.cpf-score-fill,.cpf-result .cpf-res-row{animation:none!important;transition:none!important}.chat-popup{transition:none!important}}
 </style>
 </head>
 <body>
 
 <!-- ═══ Engineer Login Gate ═══ -->
-<div id="login-gate" style="position:fixed;inset:0;z-index:9999;background:rgba(15,23,42,0.82);backdrop-filter:blur(14px);display:flex;align-items:center;justify-content:center;padding:20px;font-family:'DM Sans',system-ui,sans-serif;">
-  <div style="background:#fff;border-radius:22px;padding:40px 36px;width:100%;max-width:400px;box-shadow:0 32px 80px rgba(0,0,0,0.40);position:relative;overflow:hidden;">
-    <div style="position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#1d4ed8,#2563eb,#3b82f6,#60a5fa);"></div>
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:28px;">
-      <div style="width:46px;height:46px;border-radius:13px;background:linear-gradient(135deg,#1d4ed8,#2563eb);display:grid;place-items:center;flex-shrink:0;box-shadow:0 4px 16px rgba(37,99,235,0.35);">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="2" y="7" width="20" height="13" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
-          <line x1="12" y1="12" x2="12" y2="16"/><line x1="8" y1="14" x2="16" y2="14"/>
-        </svg>
-      </div>
+<!-- Robot Login Gate — full-screen, matches frontend/app/page.tsx design -->
+<style>
+#login-gate{position:fixed;inset:0;z-index:9999;display:flex;font-family:'DM Sans',system-ui,sans-serif;overflow:hidden}
+#lg-left{flex:1;display:none;position:relative;flex-direction:column;justify-content:space-between;padding:40px;background:#050810;overflow:hidden}
+@media(min-width:768px){#lg-left{display:flex}}
+#lg-left .lg-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(59,130,246,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(59,130,246,0.04) 1px,transparent 1px);background-size:48px 48px;pointer-events:none}
+#lg-left .lg-orb1{position:absolute;top:-15%;left:-10%;width:400px;height:400px;background:rgba(37,99,235,0.15);border-radius:50%;filter:blur(80px);pointer-events:none}
+#lg-left .lg-orb2{position:absolute;bottom:-10%;right:-5%;width:300px;height:300px;background:rgba(79,70,229,0.15);border-radius:50%;filter:blur(80px);pointer-events:none}
+#lg-right{width:100%;background:#fff;display:flex;flex-direction:column;justify-content:center;padding:40px;position:relative;overflow-y:auto}
+@media(min-width:768px){#lg-right{width:420px;flex-shrink:0}}
+#lg-right .lg-accent{position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#1e40af,#06b6d4);display:block}
+@media(min-width:768px){#lg-right .lg-accent{display:none}}
+#lg-form-wrap{transition:opacity 0.3s,transform 0.3s}
+#lg-success{display:none;flex-direction:column;align-items:center;text-align:center;gap:20px}
+#lg-success-icon{width:64px;height:64px;border-radius:50%;background:#d1fae5;display:flex;align-items:center;justify-content:center;animation:lgPop 0.4s cubic-bezier(.34,1.56,.64,1) both}
+@keyframes lgPop{from{transform:scale(0)}to{transform:scale(1)}}
+.lg-demo-btn{text-align:left;padding:10px 12px;border-radius:12px;border:1.5px solid #e2e8f0;background:#f8fafc;cursor:pointer;transition:all 0.15s;font-family:inherit}
+.lg-demo-btn:hover{background:#eff6ff;border-color:#bfdbfe}
+#lg-input-user,#lg-input-pw{width:100%;padding:12px 12px 12px 40px;border:1.5px solid #e2e8f0;border-radius:12px;font-size:0.88rem;font-family:inherit;background:#f8fafc;color:#0f172a;outline:none;transition:border-color 0.15s,box-shadow 0.15s;box-sizing:border-box}
+#lg-input-user:focus,#lg-input-pw:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,0.12);background:#fff}
+#lg-error-box{display:none;padding:10px 14px;background:#fef2f2;border:1px solid #fecaca;border-radius:12px;font-size:0.78rem;color:#dc2626;font-weight:600;gap:8px;align-items:flex-start}
+#lg-submit-btn{width:100%;padding:13px;border-radius:12px;border:none;color:#fff;font-size:0.93rem;font-weight:700;cursor:pointer;font-family:inherit;background:linear-gradient(135deg,#1e40af 0%,#3b82f6 60%,#06b6d4 100%);box-shadow:0 4px 16px rgba(37,99,235,0.35);transition:opacity 0.15s,transform 0.1s;display:flex;align-items:center;justify-content:center;gap:8px}
+#lg-submit-btn:hover:not(:disabled){opacity:0.9}
+#lg-submit-btn:active:not(:disabled){transform:scale(0.98)}
+#lg-submit-btn:disabled{opacity:0.6;cursor:not-allowed}
+.lg-spin{width:16px;height:16px;border:2px solid rgba(255,255,255,0.4);border-top-color:#fff;border-radius:50%;animation:lgSpin 0.7s linear infinite}
+@keyframes lgSpin{to{transform:rotate(360deg)}}
+</style>
+
+<div id="login-gate" style="display:flex">
+  <!-- LEFT: dark panel with 3D robot scene -->
+  <div id="lg-left">
+    <div class="lg-grid"></div>
+    <div class="lg-orb1"></div>
+    <div class="lg-orb2"></div>
+    <!-- Logo top-left -->
+    <div style="position:relative;z-index:10;display:flex;align-items:center;gap:12px">
+      <img src="/static/logo.png" alt="RailSense" style="height:40px;width:auto;object-fit:contain;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.5))"/>
       <div>
-        <div style="font-size:1.1rem;font-weight:800;color:#0f172a;letter-spacing:-0.3px;">RailSense AI</div>
-        <div style="font-size:0.7rem;color:#2563eb;font-weight:700;text-transform:uppercase;letter-spacing:0.9px;margin-top:1px;">Maintenance Portal · M4</div>
+        <p style="color:#fff;font-weight:700;font-size:0.875rem;margin:0">RailSense AI</p>
+        <p style="color:rgba(147,197,253,0.6);font-size:0.625rem;letter-spacing:0.15em;text-transform:uppercase;margin:0">Maintenance Agent</p>
       </div>
     </div>
-    <h2 style="font-size:1.35rem;font-weight:800;color:#0f172a;margin-bottom:5px;letter-spacing:-0.4px;">Engineer Sign In</h2>
-    <p style="font-size:0.8rem;color:#64748b;margin-bottom:26px;line-height:1.55;">Access is restricted to authorised maintenance engineers. Enter your credentials to continue.</p>
-    <form id="login-form" onsubmit="doEngineerLogin(event)" style="display:flex;flex-direction:column;gap:14px;">
-      <div>
-        <label for="eng-id" style="display:block;font-size:0.77rem;font-weight:700;color:#374151;margin-bottom:5px;">Engineer ID</label>
-        <input id="eng-id" name="engineer_id" type="text" placeholder="e.g. engineer" autocomplete="username"
-          style="width:100%;padding:11px 14px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:0.88rem;font-family:inherit;background:#f8fafc;color:#0f172a;outline:none;transition:border-color 0.15s,box-shadow 0.15s;"
-          onfocus="this.style.borderColor='#3b82f6';this.style.boxShadow='0 0 0 3px rgba(59,130,246,0.12)'"
-          onblur="this.style.borderColor='#e2e8f0';this.style.boxShadow='none'"/>
+    <!-- Spline 3D robot -->
+    <div style="position:absolute;inset:0;z-index:1">
+      <script type="module" src="https://unpkg.com/@splinetool/viewer@1.9.82/build/spline-viewer.js"></script>
+      <spline-viewer url="https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode" style="width:100%;height:100%;display:block"></spline-viewer>
+    </div>
+    <!-- Bottom text -->
+    <div style="position:relative;z-index:10">
+      <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,0.1);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.1);border-radius:999px;padding:4px 12px;margin-bottom:16px">
+        <span style="width:6px;height:6px;border-radius:50%;background:#34d399;display:inline-block;animation:lgPulse 2s infinite"></span>
+        <span style="color:rgba(255,255,255,0.8);font-size:0.7rem;font-weight:500">System Online</span>
+      </div>
+      <h2 style="color:#fff;font-size:1.5rem;font-weight:800;line-height:1.35;margin:0 0 8px">Maintenance &amp;<br>Asset Intelligence</h2>
+      <p style="color:rgba(147,197,253,0.6);font-size:0.8rem;margin:0;max-width:260px">Real-time fleet health monitoring across all Sri Lanka Railways routes.</p>
+    </div>
+    <style>@keyframes lgPulse{0%,100%{opacity:1}50%{opacity:0.4}}</style>
+  </div>
+
+  <!-- RIGHT: white login form -->
+  <div id="lg-right">
+    <div class="lg-accent"></div>
+
+    <!-- Mobile logo -->
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:28px" class="lg-mobile-logo">
+      <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#1e40af,#06b6d4);display:flex;align-items:center;justify-content:center">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      </div>
+      <p style="font-weight:700;color:#0f172a;margin:0">RailSense AI</p>
+    </div>
+    <style>@media(min-width:768px){.lg-mobile-logo{display:none!important}}</style>
+
+    <!-- Login form wrapper -->
+    <div id="lg-form-wrap">
+      <div style="display:flex;justify-content:center;margin-bottom:24px">
+        <img src="/static/logo.png" alt="RailSense" style="height:100px;width:auto;object-fit:contain"/>
+      </div>
+      <h1 style="font-size:1.75rem;font-weight:800;color:#0f172a;margin:0 0 4px;letter-spacing:-0.5px">Welcome back</h1>
+      <p style="font-size:0.82rem;color:#94a3b8;margin:0 0 28px">Sign in to your engineer account</p>
+
+      <form id="login-form" onsubmit="doEngineerLogin(event)" style="display:flex;flex-direction:column;gap:18px">
+        <!-- Username -->
+        <div>
+          <label style="display:block;font-size:0.7rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">Username</label>
+          <div style="position:relative">
+            <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94a3b8;pointer-events:none">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </span>
+            <input id="eng-id" name="engineer_id" type="text" placeholder="Enter your username" autocomplete="username" required style="width:100%;padding:12px 12px 12px 40px;border:1.5px solid #e2e8f0;border-radius:12px;font-size:0.88rem;font-family:inherit;background:#f8fafc;color:#0f172a;outline:none;transition:border-color 0.15s,box-shadow 0.15s;box-sizing:border-box"
+              onfocus="this.style.borderColor='#3b82f6';this.style.boxShadow='0 0 0 3px rgba(59,130,246,0.12)';this.style.background='#fff'"
+              onblur="this.style.borderColor='#e2e8f0';this.style.boxShadow='none';this.style.background='#f8fafc'"/>
+          </div>
+        </div>
+        <!-- Password -->
+        <div>
+          <label style="display:block;font-size:0.7rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">Password</label>
+          <div style="position:relative">
+            <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94a3b8;pointer-events:none">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </span>
+            <input id="eng-pw" name="password" type="password" placeholder="••••••••" autocomplete="current-password" required style="width:100%;padding:12px 12px 12px 40px;border:1.5px solid #e2e8f0;border-radius:12px;font-size:0.88rem;font-family:inherit;background:#f8fafc;color:#0f172a;outline:none;transition:border-color 0.15s,box-shadow 0.15s;box-sizing:border-box"
+              onfocus="this.style.borderColor='#3b82f6';this.style.boxShadow='0 0 0 3px rgba(59,130,246,0.12)';this.style.background='#fff'"
+              onblur="this.style.borderColor='#e2e8f0';this.style.boxShadow='none';this.style.background='#f8fafc'"/>
+          </div>
+        </div>
+        <!-- Error -->
+        <div id="login-error" style="display:none;padding:10px 14px;background:#fef2f2;border:1px solid #fecaca;border-radius:12px;font-size:0.78rem;color:#dc2626;font-weight:600"></div>
+        <!-- Submit -->
+        <button type="submit" id="login-btn" style="width:100%;padding:13px;border-radius:12px;border:none;color:#fff;font-size:0.93rem;font-weight:700;cursor:pointer;font-family:inherit;background:linear-gradient(135deg,#1e40af 0%,#3b82f6 60%,#06b6d4 100%);box-shadow:0 4px 16px rgba(37,99,235,0.35);transition:opacity 0.15s,transform 0.1s;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:2px"
+          onmouseover="if(!this.disabled)this.style.opacity='0.9'"
+          onmouseout="this.style.opacity='1'">
+          Sign In
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </button>
+      </form>
+
+      <!-- Demo accounts -->
+      <div style="margin-top:24px;padding-top:20px;border-top:1px solid #f1f5f9">
+        <p style="font-size:0.72rem;color:#94a3b8;text-align:center;margin:0 0 12px">Demo accounts — click to autofill</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <button type="button" class="lg-demo-btn" onclick="lgFill('admin','admin123')">
+            <p style="font-size:0.72rem;font-weight:700;color:#334155;margin:0">Chief</p>
+            <p style="font-size:0.66rem;color:#94a3b8;font-family:monospace;margin:0">admin</p>
+          </button>
+          <button type="button" class="lg-demo-btn" onclick="lgFill('menike','menike2024')">
+            <p style="font-size:0.72rem;font-weight:700;color:#334155;margin:0">Asitha</p>
+            <p style="font-size:0.66rem;color:#94a3b8;font-family:monospace;margin:0">menike</p>
+          </button>
+          <button type="button" class="lg-demo-btn" onclick="lgFill('silva','silva2024')">
+            <p style="font-size:0.72rem;font-weight:700;color:#334155;margin:0">Rohan</p>
+            <p style="font-size:0.66rem;color:#94a3b8;font-family:monospace;margin:0">silva</p>
+          </button>
+          <button type="button" class="lg-demo-btn" onclick="lgFill('perera','perera2024')">
+            <p style="font-size:0.72rem;font-weight:700;color:#334155;margin:0">Nilantha</p>
+            <p style="font-size:0.66rem;color:#94a3b8;font-family:monospace;margin:0">perera</p>
+          </button>
+        </div>
+      </div>
+
+      <p style="text-align:center;color:#cbd5e1;font-size:0.68rem;margin-top:28px">RailSense AI · M4 Maintenance Intelligence · IT3041</p>
+    </div>
+
+    <!-- Success state (shown after login) -->
+    <div id="lg-success" style="display:none;flex-direction:column;align-items:center;text-align:center;gap:20px">
+      <div id="lg-success-icon" style="width:64px;height:64px;border-radius:50%;background:#d1fae5;display:flex;align-items:center;justify-content:center">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" width="32" height="32"><polyline points="20 6 9 17 4 12"/></svg>
       </div>
       <div>
-        <label for="eng-pw" style="display:block;font-size:0.77rem;font-weight:700;color:#374151;margin-bottom:5px;">Password</label>
-        <input id="eng-pw" name="password" type="password" placeholder="••••••••" autocomplete="current-password"
-          style="width:100%;padding:11px 14px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:0.88rem;font-family:inherit;background:#f8fafc;color:#0f172a;outline:none;transition:border-color 0.15s,box-shadow 0.15s;"
-          onfocus="this.style.borderColor='#3b82f6';this.style.boxShadow='0 0 0 3px rgba(59,130,246,0.12)'"
-          onblur="this.style.borderColor='#e2e8f0';this.style.boxShadow='none'"/>
+        <p id="lg-welcome-name" style="font-size:1.25rem;font-weight:800;color:#0f172a;margin:0">Welcome!</p>
+        <p id="lg-welcome-role" style="font-size:0.8rem;color:#64748b;margin:4px 0 0"></p>
+        <p id="lg-welcome-id" style="font-size:0.72rem;color:#3b82f6;background:#eff6ff;padding:2px 10px;border-radius:999px;display:inline-block;margin-top:6px;font-family:monospace"></p>
       </div>
-      <div id="login-error" style="display:none;padding:9px 13px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;font-size:0.78rem;color:#dc2626;font-weight:600;"></div>
-      <button type="submit" id="login-btn"
-        style="background:linear-gradient(135deg,#1d4ed8,#2563eb);color:#fff;border:none;border-radius:10px;padding:13px;font-size:0.92rem;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 4px 16px rgba(37,99,235,0.35);transition:all 0.15s;margin-top:2px;"
-        onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 6px 20px rgba(37,99,235,0.45)'"
-        onmouseout="this.style.transform='';this.style.boxShadow='0 4px 16px rgba(37,99,235,0.35)'">
-        Sign In
-      </button>
-    </form>
-    <div style="margin-top:20px;padding-top:16px;border-top:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;">
-      <div style="display:flex;align-items:center;gap:6px;">
-        <div style="width:7px;height:7px;border-radius:50%;background:#10b981;box-shadow:0 0 5px #10b981;flex-shrink:0;"></div>
-        <span style="font-size:0.7rem;color:#64748b;font-weight:500;">M4 Maintenance Agent · Port 8006</span>
+      <div style="display:flex;align-items:center;gap:8px;color:#94a3b8;font-size:0.83rem">
+        <div style="width:16px;height:16px;border:2px solid #93c5fd;border-top-color:transparent;border-radius:50%;animation:lgSpin 0.7s linear infinite"></div>
+        Loading dashboard…
       </div>
-      <span style="font-size:0.68rem;color:#94a3b8;">Sri Lanka Railways</span>
     </div>
   </div>
 </div>
@@ -765,6 +1218,7 @@ body.dark .rpt-tag{background:#1e3a5f;border-color:#1e40af;color:#93c5fd}
   </div>
 
   <nav>
+    <span class="m4-nav-indicator" aria-hidden="true"></span>
     <div class="nav-section">Main</div>
     <button class="nav-item active" data-page="overview" onclick="nav('overview',this)">
       <span class="nav-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span> Overview
@@ -1023,6 +1477,21 @@ body.dark .rpt-tag{background:#1e3a5f;border-color:#1e40af;color:#93c5fd}
         </div>
       </div>
 
+      <!-- Train Service Flags -->
+      <div class="card" id="flags-card" style="margin-bottom:18px">
+        <div class="card-hdr" style="margin-bottom:12px">
+          <div>
+            <div class="card-title">Train Service Flags</div>
+            <div class="card-sub">Active maintenance holds · affects passenger service info</div>
+          </div>
+          <button class="btn btn-primary" style="font-size:0.78rem;padding:6px 14px;display:flex;align-items:center;gap:6px" onclick="openFlagModal()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Flag Train
+          </button>
+        </div>
+        <div id="flags-list"><div class="empty-state" style="padding:16px 0;font-size:0.8rem">No active service flags</div></div>
+      </div>
+
       <!-- Main 2-col: Fleet at a Glance + right stack -->
       <div class="ov-2col">
 
@@ -1036,7 +1505,7 @@ body.dark .rpt-tag{background:#1e3a5f;border-color:#1e40af;color:#93c5fd}
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--text-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
           </div>
           <div id="ov-fleet-rows">
-            <div class="empty-state" style="padding:20px 0"><span style="font-size:1.4rem;display:block;margin-bottom:6px">🚂</span>Loading fleet…</div>
+            <div class="empty-state m4-loading" style="padding:20px 0"><span style="font-size:1.4rem;display:block;margin-bottom:6px">🚂</span>Loading fleet…</div>
           </div>
         </div>
 
@@ -1047,7 +1516,7 @@ body.dark .rpt-tag{background:#1e3a5f;border-color:#1e40af;color:#93c5fd}
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>
               Health Distribution
             </div>
-            <div id="status-dist"><div class="empty-state"><span style="font-size:1.1rem">📊</span> Loading…</div></div>
+            <div id="status-dist"><div class="empty-state m4-loading"><span style="font-size:1.1rem">📊</span> Loading…</div></div>
             <div style="display:none" id="type-dist"></div>
           </div>
           <div class="card">
@@ -1153,7 +1622,7 @@ body.dark .rpt-tag{background:#1e3a5f;border-color:#1e40af;color:#93c5fd}
                 <th>Actions</th>
               </tr>
             </thead>
-            <tbody id="fleet-tbody"><tr><td colspan="8" class="tbl-empty">Loading fleet data…</td></tr></tbody>
+            <tbody id="fleet-tbody"><tr><td colspan="8" class="tbl-empty m4-loading">Loading fleet data…</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -1163,24 +1632,128 @@ body.dark .rpt-tag{background:#1e3a5f;border-color:#1e40af;color:#93c5fd}
   <!-- ═══ PAGE: Prediction ═══ -->
   <div class="page" id="page-predict">
     <div class="page-content">
+
+      <!-- Fleet Health Summary — per-category stat cards -->
+      <div class="cat-stat-grid">
+
+        <!-- Diesel Engines -->
+        <div class="cat-stat-card">
+          <div class="cat-stat-head">
+            <div class="cat-stat-icon" style="background:#eff6ff">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-4 0v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
+            </div>
+            <div class="cat-stat-name">Diesel Engines</div>
+          </div>
+          <div class="cat-stat-avg" id="catavg-diesel_engine">—</div>
+          <div class="cat-stat-bar-row" id="catbar-diesel_engine"></div>
+          <div class="cat-stat-counts">
+            <span class="cat-ct-g" id="catg-diesel_engine">—G</span>
+            <span class="cat-ct-a" id="cata-diesel_engine">—A</span>
+            <span class="cat-ct-r" id="catr-diesel_engine">—R</span>
+          </div>
+        </div>
+
+        <!-- Bogies -->
+        <div class="cat-stat-card">
+          <div class="cat-stat-head">
+            <div class="cat-stat-icon" style="background:#f0fdf4">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="18" r="3"/><circle cx="19" cy="18" r="3"/><polyline points="5 15 5 9 12 5 19 9 19 15"/></svg>
+            </div>
+            <div class="cat-stat-name">Bogies</div>
+          </div>
+          <div class="cat-stat-avg" id="catavg-bogie">—</div>
+          <div class="cat-stat-bar-row" id="catbar-bogie"></div>
+          <div class="cat-stat-counts">
+            <span class="cat-ct-g" id="catg-bogie">—G</span>
+            <span class="cat-ct-a" id="cata-bogie">—A</span>
+            <span class="cat-ct-r" id="catr-bogie">—R</span>
+          </div>
+        </div>
+
+        <!-- Brake Systems -->
+        <div class="cat-stat-card">
+          <div class="cat-stat-head">
+            <div class="cat-stat-icon" style="background:#fff7ed">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ea580c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg>
+            </div>
+            <div class="cat-stat-name">Brake Systems</div>
+          </div>
+          <div class="cat-stat-avg" id="catavg-brake_system">—</div>
+          <div class="cat-stat-bar-row" id="catbar-brake_system"></div>
+          <div class="cat-stat-counts">
+            <span class="cat-ct-g" id="catg-brake_system">—G</span>
+            <span class="cat-ct-a" id="cata-brake_system">—A</span>
+            <span class="cat-ct-r" id="catr-brake_system">—R</span>
+          </div>
+        </div>
+
+        <!-- Overall fleet donut -->
+        <div class="fleet-donut-card">
+          <svg width="70" height="70" viewBox="0 0 70 70">
+            <circle cx="35" cy="35" r="27" fill="none" stroke="#e2e8f0" stroke-width="10"/>
+            <circle id="fd-green" cx="35" cy="35" r="27" fill="none" stroke="var(--green)" stroke-width="10" stroke-linecap="butt" stroke-dasharray="169.6" stroke-dashoffset="169.6" transform="rotate(-90 35 35)" style="transition:all 0.8s ease"/>
+            <circle id="fd-amber" cx="35" cy="35" r="27" fill="none" stroke="var(--amber)" stroke-width="10" stroke-linecap="butt" stroke-dasharray="169.6" stroke-dashoffset="169.6" transform="rotate(-90 35 35)" style="transition:all 0.8s ease"/>
+            <circle id="fd-red"   cx="35" cy="35" r="27" fill="none" stroke="var(--red)"   stroke-width="10" stroke-linecap="butt" stroke-dasharray="169.6" stroke-dashoffset="169.6" transform="rotate(-90 35 35)" style="transition:all 0.8s ease"/>
+          </svg>
+          <div class="fleet-donut-legend">
+            <div class="fleet-donut-leg-row"><span class="fleet-donut-dot" style="background:var(--green)"></span>Healthy</div>
+            <div class="fleet-donut-leg-row"><span class="fleet-donut-dot" style="background:var(--amber)"></span>Monitor</div>
+            <div class="fleet-donut-leg-row"><span class="fleet-donut-dot" style="background:var(--red)"></span>Critical</div>
+          </div>
+        </div>
+
+      </div>
+
       <div class="pred-layout">
 
-        <!-- ── LEFT: Input Form ── -->
+        <!-- ── LEFT: Watchlist + Input Form ── -->
+        <div>
+
+          <!-- Category Asset Browser (replaces flat chip grid + watchlist) -->
+          <div class="cat-browser-card">
+            <div class="cat-browser-hdr">
+              <div class="cat-browser-title">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                Asset Browser — click to auto-fill &amp; predict
+              </div>
+            </div>
+            <div class="cat-tab-row">
+              <button class="cat-tab active" id="ctab-diesel_engine" onclick="switchCatTab('diesel_engine')">
+                <span class="cat-tab-label">Diesel</span>
+                <div class="cat-tab-meta">
+                  <span class="cat-tab-count" id="ctabc-diesel_engine">8</span>
+                  <span class="cat-tab-avg" id="ctaba-diesel_engine">—</span>
+                </div>
+              </button>
+              <button class="cat-tab" id="ctab-bogie" onclick="switchCatTab('bogie')">
+                <span class="cat-tab-label">Bogie</span>
+                <div class="cat-tab-meta">
+                  <span class="cat-tab-count" id="ctabc-bogie">8</span>
+                  <span class="cat-tab-avg" id="ctaba-bogie">—</span>
+                </div>
+              </button>
+              <button class="cat-tab" id="ctab-brake_system" onclick="switchCatTab('brake_system')">
+                <span class="cat-tab-label">Brake</span>
+                <div class="cat-tab-meta">
+                  <span class="cat-tab-count" id="ctabc-brake_system">8</span>
+                  <span class="cat-tab-avg" id="ctaba-brake_system">—</span>
+                </div>
+              </button>
+            </div>
+            <div class="cat-asset-list" id="cat-asset-list">
+              <div class="m4-loading" style="padding:12px 16px;font-size:0.74rem;color:var(--text-light)">Loading…</div>
+            </div>
+          </div>
+
+        <!-- Input Form -->
         <div class="card" style="padding:22px 24px">
           <div class="card-hdr" style="margin-bottom:18px">
             <div>
-              <div class="card-title">Asset Health Prediction</div>
-              <div class="card-sub">GradientBoostingRegressor · live sensor inputs</div>
+              <div class="card-title">Health Prediction</div>
+              <div class="card-sub" id="pred-model-badge">HistGBR · per-type models · live sensor inputs</div>
             </div>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-light)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
           </div>
-
-          <!-- Quick-pick -->
-          <div class="pred-section-lbl">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            Quick Asset Pick — click to auto-fill
-          </div>
-          <div class="pred-qp-grid" id="pred-qp-grid"><!-- rendered by JS --></div>
 
           <!-- Asset ID + Type -->
           <div class="form-row" style="margin-bottom:12px">
@@ -1207,6 +1780,31 @@ body.dark .rpt-tag{background:#1e3a5f;border-color:#1e40af;color:#93c5fd}
             <div class="form-group">
               <label class="form-label">Fault Count (30d)</label>
               <input class="form-input" id="pred-faults" type="number" value="0" min="0"/>
+            </div>
+          </div>
+          <div class="form-row" style="margin-bottom:14px">
+            <div class="form-group" style="grid-column:1/-1">
+              <label class="form-label">Recent Fault Type</label>
+              <select class="form-select" id="pred-fault-type">
+                <option value="none">None (routine)</option>
+                <optgroup label="Diesel Engine">
+                  <option value="oil_leak">Oil Leak (severity 3)</option>
+                  <option value="overheating">Overheating (severity 3)</option>
+                  <option value="fuel_pump_fault">Fuel Pump Fault (severity 3)</option>
+                  <option value="starter_failure">Starter Failure (severity 2)</option>
+                </optgroup>
+                <optgroup label="Bogie">
+                  <option value="wheel_flat">Wheel Flat (severity 2)</option>
+                  <option value="bearing_noise">Bearing Noise (severity 2)</option>
+                  <option value="axle_crack">Axle Crack — Critical (severity 5)</option>
+                  <option value="suspension_worn">Suspension Worn (severity 1)</option>
+                </optgroup>
+                <optgroup label="Brake System">
+                  <option value="brake_fade">Brake Fade (severity 2)</option>
+                  <option value="pad_worn">Pad Worn (severity 1)</option>
+                  <option value="cylinder_leak">Cylinder Leak (severity 2)</option>
+                </optgroup>
+              </select>
             </div>
           </div>
 
@@ -1242,9 +1840,10 @@ body.dark .rpt-tag{background:#1e3a5f;border-color:#1e40af;color:#93c5fd}
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
             Run Health Prediction
           </button>
-        </div>
+        </div><!-- /form card -->
+        </div><!-- /left col -->
 
-        <!-- ── RIGHT: Result + History ── -->
+        <!-- ── RIGHT: Result + Trend + History ── -->
         <div>
           <!-- Result panel -->
           <div class="card" style="padding:22px 24px;margin-bottom:16px" id="pred-result-card">
@@ -1265,8 +1864,8 @@ body.dark .rpt-tag{background:#1e3a5f;border-color:#1e40af;color:#93c5fd}
                   <circle id="pred-gauge-arc" cx="50" cy="50" r="42" fill="none" stroke="var(--green)" stroke-width="9"
                     stroke-linecap="round" stroke-dasharray="263.9" stroke-dashoffset="263.9"
                     transform="rotate(-90 50 50)" style="transition:stroke-dashoffset 0.8s cubic-bezier(0.34,1.1,0.64,1),stroke 0.4s ease"/>
-                  <text id="pred-gauge-num" class="pred-gauge-score" x="50" y="46" fill="var(--text)">—</text>
-                  <text class="pred-gauge-lbl" x="50" y="58" fill="var(--text-light)">/ 100</text>
+                  <text id="pred-gauge-num" class="pred-gauge-score" x="50" y="44" fill="var(--text)">—</text>
+                  <text class="pred-gauge-lbl" x="50" y="60" fill="var(--text-light)">/ 100</text>
                 </svg>
               </div>
 
@@ -1281,12 +1880,49 @@ body.dark .rpt-tag{background:#1e3a5f;border-color:#1e40af;color:#93c5fd}
                 </div>
               </div>
 
+              <!-- Confidence band -->
+              <div class="conf-band-wrap">
+                <div class="conf-band-label">Confidence Interval (±1.5 × MAE)</div>
+                <div class="conf-band-track">
+                  <div class="conf-band-range" id="conf-band-range" style="left:30%;width:20%;background:var(--green)"></div>
+                  <div class="conf-band-point" id="conf-band-point" style="left:50%;background:var(--green)"></div>
+                </div>
+                <div class="conf-band-vals">
+                  <span id="conf-low-val">—</span>
+                  <span style="font-weight:700" id="conf-mid-val">—</span>
+                  <span id="conf-high-val">—</span>
+                </div>
+              </div>
+
+              <!-- Days to failure -->
+              <div class="dtf-row" id="dtf-row" style="display:none">
+                <div class="dtf-icon" id="dtf-icon" style="background:#fef2f2">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                </div>
+                <div>
+                  <div class="dtf-val" id="dtf-val">—</div>
+                  <div class="dtf-sub">Estimated days until maintenance threshold</div>
+                </div>
+              </div>
+
+              <!-- Risk factor chips -->
+              <div class="risk-factors-wrap" id="risk-factors-wrap" style="display:none">
+                <div class="risk-factors-lbl">Sensor Alerts</div>
+                <div id="risk-chips"></div>
+              </div>
+
               <!-- Info grid -->
               <div class="pred-info-grid">
                 <div class="pred-info-cell"><div class="pred-info-key">Asset ID</div><div class="pred-info-val" id="pi-id">—</div></div>
                 <div class="pred-info-cell"><div class="pred-info-key">Asset Type</div><div class="pred-info-val" id="pi-type">—</div></div>
                 <div class="pred-info-cell"><div class="pred-info-key">Days Since Service</div><div class="pred-info-val" id="pi-days">—</div></div>
                 <div class="pred-info-cell"><div class="pred-info-key">Faults (30d)</div><div class="pred-info-val" id="pi-faults">—</div></div>
+              </div>
+
+              <!-- Feature importance -->
+              <div class="feat-imp-wrap" id="feat-imp-wrap" style="display:none">
+                <div class="feat-imp-lbl">Feature Importance</div>
+                <div id="feat-imp-bars"></div>
               </div>
 
               <!-- Urgency bar -->
@@ -1320,6 +1956,22 @@ body.dark .rpt-tag{background:#1e3a5f;border-color:#1e40af;color:#93c5fd}
             <span id="result-asset-type" style="display:none"></span>
             <span id="result-badges" style="display:none"></span>
             <span id="health-rec" style="display:none"></span>
+          </div>
+
+          <!-- Asset Health Trend -->
+          <div class="trend-card">
+            <div class="trend-hdr">
+              <div class="trend-title">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:middle;margin-right:5px"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                Asset Health Trend
+              </div>
+              <select class="trend-asset-select" id="trend-asset-select" onchange="loadTrend(this.value)">
+                <option value="">Select asset…</option>
+              </select>
+            </div>
+            <div id="trend-svg-wrap" style="border-radius:8px;overflow:hidden;background:var(--bg)">
+              <div style="font-size:0.75rem;color:var(--text-light);padding:14px;text-align:center">Select an asset to view its health history</div>
+            </div>
           </div>
 
           <!-- Session History -->
@@ -1512,12 +2164,64 @@ body.dark .rpt-tag{background:#1e3a5f;border-color:#1e40af;color:#93c5fd}
   </div>
 </div>
 
+<!-- Flag Train Modal -->
+<div class="flag-backdrop" id="flag-backdrop" onclick="if(event.target===this)closeFlagModal()">
+  <div class="flag-modal" role="dialog" aria-modal="true" aria-labelledby="flag-modal-title">
+    <div class="flag-modal-hdr">
+      <div>
+        <div class="flag-modal-title" id="flag-modal-title">Flag Train for Maintenance</div>
+        <div class="flag-modal-sub">Passengers asking about this train will see the maintenance reason</div>
+      </div>
+      <button class="flag-modal-close" onclick="closeFlagModal()" aria-label="Close">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <form onsubmit="submitTrainFlag(event)">
+      <div class="flag-field">
+        <label class="flag-label" for="flag-train-sel">Train<span>*</span></label>
+        <select class="flag-select" id="flag-train-sel" required>
+          <option value="">— Select train —</option>
+        </select>
+      </div>
+      <div class="flag-field">
+        <label class="flag-label" for="flag-reason">Reason / Issue<span>*</span></label>
+        <textarea class="flag-textarea" id="flag-reason" maxlength="500" placeholder="e.g. Brake system fault detected — repair in progress at Colombo depot" required></textarea>
+      </div>
+      <div class="flag-row-2">
+        <div class="flag-field">
+          <label class="flag-label" for="flag-severity">Severity</label>
+          <select class="flag-select" id="flag-severity">
+            <option value="AMBER" selected>AMBER — Needs attention</option>
+            <option value="RED">RED — Out of service</option>
+          </select>
+        </div>
+        <div class="flag-field">
+          <label class="flag-label" for="flag-delay">Expected Delay (min)</label>
+          <input class="flag-input" id="flag-delay" type="number" min="0" max="1440" placeholder="e.g. 45">
+        </div>
+      </div>
+      <div class="flag-field">
+        <label class="flag-label" for="flag-clear">Estimated Clear Time</label>
+        <input class="flag-input" id="flag-clear" type="text" placeholder="e.g. 14:30 today or 2026-09-21 15:00" maxlength="80">
+      </div>
+      <div class="flag-error" id="flag-error"></div>
+      <div class="flag-footer">
+        <button type="button" class="btn-ghost" onclick="closeFlagModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="flag-submit-btn" style="display:flex;align-items:center;gap:6px">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+          Flag Train
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <!-- ═══ Chat FAB ═══ -->
 <button class="chat-fab" id="chat-fab" onclick="toggleChat()" title="Maintenance Assistant">
-  <span class="fab-pulse"></span>
-  <svg id="fab-chat" width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+  <span class="fab-pulse"></span><span class="m4-fab-notice" aria-hidden="true"></span>
+  <span id="fab-chat" aria-hidden="true"><svg class="rs-bot" viewBox="0 0 64 64"><g class="rs-bot-antenna"><path class="rs-bot-antenna-line" d="M32 14V7"/><circle class="rs-bot-light" cx="32" cy="5" r="3.5"/></g><g class="rs-bot-body"><rect class="rs-bot-body-panel" x="21" y="44" width="22" height="13" rx="6.5"/><rect class="rs-bot-head" x="12" y="16" width="40" height="31" rx="11"/><rect class="rs-bot-face" x="17" y="22" width="30" height="18" rx="7"/><g class="rs-bot-eyes"><circle class="rs-bot-eye" cx="25" cy="31" r="3.2"/><circle class="rs-bot-eye" cx="39" cy="31" r="3.2"/></g><path d="M27 39h10" stroke="rgba(255,255,255,.65)" stroke-width="1.6" stroke-linecap="round"/></g></svg></span>
   <svg id="fab-x" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
 </button>
 
@@ -1583,22 +2287,39 @@ const PAGE_META = {
   map:     { title:'Live Map',           sub:'Train tracking · mock positions · Sri Lanka Railways' },
 };
 
+function m4MoveNavIndicator(target){
+  const indicator=document.querySelector('.m4-nav-indicator');
+  if(!indicator||!target)return;
+  indicator.style.height=target.offsetHeight+'px';
+  indicator.style.transform='translateY('+target.offsetTop+'px)';
+  indicator.classList.add('visible');
+}
 function nav(page, btn) {
   document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
   const target = btn || document.querySelector(`.nav-item[data-page="${page}"]`);
   if(target) target.classList.add('active');
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.getElementById('page-'+page).classList.add('active');
+  const pageEl=document.getElementById('page-'+page);
+  pageEl.classList.add('active');
+  pageEl.classList.remove('m4-page-enter');
+  void pageEl.offsetWidth;
+  pageEl.classList.add('m4-page-enter');
+  m4MoveNavIndicator(target);
   const m=PAGE_META[page]||{};
   document.getElementById('page-title').textContent=m.title||'';
   document.getElementById('page-sub').textContent=m.sub||'';
   if(page==='trains') renderTrains();
   if(page==='overview' && fleetAll.length) renderFleetGlance();
   if(page==='fleet'){ initFleetTrainSel(); renderFleet(); }
-  if(page==='predict') initPredQuickPick();
+  if(page==='predict'){_renderCatStats();_renderCatBrowserList(_activeCatTab);}
   if(page==='map') initMap();
   if(page!=='map') stopMapAnimation();
+  if(window.innerWidth<=768){
+    const sidebar=document.getElementById('sidebar');
+    if(sidebar) sidebar.classList.remove('mobile-open');
+  }
 }
+requestAnimationFrame(()=>m4MoveNavIndicator(document.querySelector('.nav-item.active')));
 
 function toggleSbStatus(){
   const body=document.getElementById('sb-status-body');
@@ -1846,7 +2567,7 @@ function renderTrains() {
 /* ═══ UTILITIES ═══ */
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
 function toast(msg,ms=2600){const e=document.getElementById('toast');e.textContent=msg;e.style.display='block';setTimeout(()=>e.style.display='none',ms)}
-function handleLogout(){if(confirm('Sign out of the Maintenance Portal?')){localStorage.removeItem('m4_eng_auth');localStorage.removeItem('m4_eng_token');location.replace('http://localhost:3002');}}
+function handleLogout(){if(confirm('Sign out of the Maintenance Portal?')){localStorage.removeItem('m4_eng_auth');localStorage.removeItem('m4_eng_token');location.reload();}}
 
 /* ── Sidebar toggle ── */
 function _applySidebarState(collapsed){
@@ -1866,6 +2587,10 @@ function _applySidebarState(collapsed){
 })();
 function toggleSidebar(){
   const sb=document.getElementById('sidebar');
+  if(window.innerWidth<=768){
+    sb.classList.toggle('mobile-open');
+    return;
+  }
   const nowCollapsed=!sb.classList.contains('collapsed');
   _applySidebarState(nowCollapsed);
   localStorage.setItem('m4_sidebar',nowCollapsed?'false':'true');
@@ -1873,47 +2598,128 @@ function toggleSidebar(){
 
 /* ── Engineer Login Gate ── */
 (function(){
-  var g=document.getElementById('login-gate');
-  var params=new URLSearchParams(window.location.search);
-  if(params.get('m4auth')==='1'){
+  // Accept token from URL param (passed by admin iframe to survive cross-origin localStorage restrictions)
+  var urlToken=(new URLSearchParams(window.location.search)).get('token')||'';
+  if(urlToken){
+    localStorage.setItem('m4_eng_token',urlToken);
     localStorage.setItem('m4_eng_auth','1');
+    // Clean URL without reload
     history.replaceState(null,'',window.location.pathname);
-    g.style.display='none';
-    return;
   }
-  if(localStorage.getItem('m4_eng_auth')==='1'){g.style.display='none';return;}
-  // Not authenticated — redirect to robot login
-  window.location.replace('http://localhost:3002');
+  var hasToken=!!(localStorage.getItem('m4_eng_token')||'').trim();
+  if(hasToken){
+    var g=document.getElementById('login-gate');
+    if(g) g.style.display='none';
+  }
+  // Clear stale auth flag if no token
+  if(!hasToken) localStorage.removeItem('m4_eng_auth');
 })();
+
+function lgFill(u,p){
+  document.getElementById('eng-id').value=u;
+  document.getElementById('eng-pw').value=p;
+  document.getElementById('login-error').style.display='none';
+}
+function _lgResetAndShow(){
+  var g=document.getElementById('login-gate');
+  if(!g) return;
+  // Reset to form state in case success state is showing
+  var fw=document.getElementById('lg-form-wrap');
+  var suc=document.getElementById('lg-success');
+  if(fw) fw.style.display='';
+  if(suc) suc.style.display='none';
+  var btn=document.getElementById('login-btn');
+  if(btn){btn.disabled=false;btn.innerHTML='Sign In <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>';}
+  g.style.opacity='1';
+  g.style.display='flex';
+}
+
 async function doEngineerLogin(e){
   e.preventDefault();
   var id=document.getElementById('eng-id').value.trim();
   var pw=document.getElementById('eng-pw').value;
   var err=document.getElementById('login-error');
   var btn=document.getElementById('login-btn');
-  if(!id||!pw){err.textContent='Please enter both Engineer ID and password.';err.style.display='block';return;}
-  btn.disabled=true;btn.textContent='Signing in…';err.style.display='none';
+  if(!id||!pw){err.textContent='Please enter both username and password.';err.style.display='block';return;}
+  // Loading state
+  btn.disabled=true;
+  btn.innerHTML='<div style="width:16px;height:16px;border:2px solid rgba(255,255,255,0.4);border-top-color:#fff;border-radius:50%;animation:lgSpin 0.7s linear infinite"></div>Authenticating…';
+  err.style.display='none';
   try{
     var res=await fetch('/api/engineer-login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({engineer_id:id,password:pw})});
-    if(res.ok){
-      var d=await res.json().catch(function(){return{};});
+    var d=await res.json().catch(function(){return{};});
+    if(res.ok && d.token){
       localStorage.setItem('m4_eng_auth','1');
-      if(d.token) localStorage.setItem('m4_eng_token',d.token);
-      var g=document.getElementById('login-gate');
-      g.style.transition='opacity 0.35s ease';g.style.opacity='0';
-      setTimeout(function(){g.remove();},370);
+      localStorage.setItem('m4_eng_token',d.token);
+      localStorage.setItem('m4_eng_name',d.name||id);
+      // Notify parent admin frame so it can persist token for iframe reloads
+      if(window.parent && window.parent !== window){
+        window.parent.postMessage({type:'m4_login_success',token:d.token,name:d.name,role:d.role},'*');
+      }
+      // Show success state
+      document.getElementById('lg-form-wrap').style.display='none';
+      var suc=document.getElementById('lg-success');
+      suc.style.display='flex';
+      document.getElementById('lg-welcome-name').textContent='Welcome, '+(d.name||id).split(' ')[0]+'!';
+      document.getElementById('lg-welcome-role').textContent=d.role||'Maintenance Engineer';
+      document.getElementById('lg-welcome-id').textContent=d.eng_id||'';
+      // Fade gate out and remove
+      setTimeout(function(){
+        var g=document.getElementById('login-gate');
+        if(g){g.style.transition='opacity 0.4s ease';g.style.opacity='0';setTimeout(function(){g.remove();loadDashboard();},420);}
+      },1400);
     }else{
-      var d=await res.json().catch(function(){return{};});
-      err.textContent=d.detail||'Invalid credentials. Please try again.';err.style.display='block';
-      btn.disabled=false;btn.textContent='Sign In';
+      err.textContent=d.detail||'Invalid credentials. Please try again.';
+      err.style.display='block';
+      btn.disabled=false;
+      btn.innerHTML='Sign In <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>';
     }
   }catch(ex){
-    err.textContent='Connection error. Make sure the M4 agent is running.';err.style.display='block';
-    btn.disabled=false;btn.textContent='Sign In';
+    err.textContent='Connection error. Make sure the M4 agent is running.';
+    err.style.display='block';
+    btn.disabled=false;
+    btn.innerHTML='Sign In <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>';
   }
 }
 function setBadge(id,ok,okL,failL){const e=document.getElementById(id);e.className='badge '+(ok?'badge-green':'badge-gray');e.innerHTML=(ok?'<span class="badge-dot"></span>':'')+esc(ok?okL:failL)}
 function setSbDot(id,vid,on,lbl){document.getElementById(id).className='sb-dot '+(on?'on':'off');if(vid)document.getElementById(vid).textContent=lbl||''}
+
+function m4CountTo(id,value,suffix='',digits=0){
+  const el=document.getElementById(id),num=Number(value);
+  if(!el)return;
+  if(value==null||value==='—'||!Number.isFinite(num)){el.textContent='—';return;}
+  if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches){el.textContent=num.toFixed(digits)+suffix;return;}
+  const token=(el._m4CountToken||0)+1,start=performance.now(),duration=520;
+  el._m4CountToken=token;
+  const tick=now=>{
+    if(el._m4CountToken!==token)return;
+    const p=Math.min(1,(now-start)/duration),eased=1-Math.pow(1-p,3);
+    el.textContent=(num*eased).toFixed(digits)+suffix;
+    if(p<1)requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+function m4AnimateFill(fill){
+  const target=fill&&fill.style.width;
+  if(!target||target==='0%')return;
+  fill.style.width='0%';
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{fill.style.width=target;}));
+}
+function m4AnimateFleetRows(tbody){
+  if(!tbody)return;
+  const rows=[...tbody.querySelectorAll('tr.data-row')];
+  tbody.classList.remove('m4-fleet-animate');
+  rows.forEach((row,i)=>row.style.setProperty('--m4-stagger',Math.min(i,10)*50+'ms'));
+  void tbody.offsetWidth;
+  tbody.classList.add('m4-fleet-animate');
+  rows.forEach(row=>row.querySelectorAll('.score-fill').forEach(m4AnimateFill));
+  setTimeout(()=>tbody.classList.remove('m4-fleet-animate'),1050);
+}
+function m4ReplayDashboardMotion(){
+  const grid=document.querySelector('.grid-4');
+  if(grid){grid.classList.remove('m4-animate-cards');void grid.offsetWidth;grid.classList.add('m4-animate-cards');setTimeout(()=>grid.classList.remove('m4-animate-cards'),780);}
+  document.querySelectorAll('.ov-fleet-bar-fill,.health-bar-fill,.dist-fill').forEach(m4AnimateFill);
+}
 
 /* ═══ DATA LOADING ═══ */
 async function loadDashboard() {
@@ -1923,10 +2729,10 @@ async function loadDashboard() {
       fetch('/api/assets?limit=200').then(r=>r.json()),
     ]);
     const agg=dr.aggregates||{}, dist=agg.status_distribution||{};
-    document.getElementById('kpi-total').textContent=agg.total_assets??'—';
-    document.getElementById('kpi-avg').textContent=agg.avg_health_score!=null?agg.avg_health_score.toFixed(1):'—';
-    document.getElementById('kpi-healthy').textContent=agg.assets_healthy_pct!=null?agg.assets_healthy_pct+'%':'—';
-    document.getElementById('kpi-critical').textContent=((dist.RED||0)+(dist.AMBER||0))||'—';
+    m4CountTo('kpi-total',agg.total_assets);
+    m4CountTo('kpi-avg',agg.avg_health_score,'',1);
+    m4CountTo('kpi-healthy',agg.assets_healthy_pct,'%');
+    m4CountTo('kpi-critical',((dist.RED||0)+(dist.AMBER||0))||'—');
     const now=new Date().toLocaleTimeString();
     document.getElementById('refresh-time').textContent=now;
     document.getElementById('sb-sync').textContent=now;
@@ -1952,11 +2758,15 @@ async function loadDashboard() {
 
     fleetAll=ar.assets||[];
     initFleetTrainSel();
-    initPredQuickPick();
+    _renderCatStats();
+    _renderCatBrowserList(_activeCatTab);
+    populateTrendSelect();
     renderFleet();
     renderFleetGlance();
     if(document.getElementById('page-trains').classList.contains('active')) renderTrains();
     heroUpdateContent(heroIdx);
+    loadMaintenanceFlags();
+    m4ReplayDashboardMotion();
   } catch(e){console.error('Dashboard error:',e)}
 }
 
@@ -1995,20 +2805,34 @@ function _timeAgo(iso){
 function renderReports(reports){
   const el=document.getElementById('reports-list');
   if(!reports||!reports.length){
-    el.innerHTML='<div class="empty-state"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:5px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>No reports yet — submit one with Log Observation</div>';
+    el.innerHTML='<div class="empty-state"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:5px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2"/><polyline points="14 2 14 8 20 8"/></svg>No reports yet — submit one with Log Observation</div>';
     return;
   }
+  const open=reports.filter(r=>!r.resolved).length;
+  const total=reports.length;
   const cntEl=document.getElementById('rpt-feed-count');
-  if(cntEl) cntEl.textContent=reports.length+' total · showing latest 10';
+  if(cntEl) cntEl.textContent=`${total} total · ${open} open · showing latest 10`;
   const sorted=[...reports].reverse().slice(0,10);
   el.innerHTML=sorted.map(r=>{
-    const hasFault=r.detected_fault_type&&r.detected_fault_type!=='none';
-    const dotColor=hasFault?'var(--amber)':'var(--green)';
+    const resolved=!!r.resolved;
+    const hasFault=r.detected_fault_type&&r.detected_fault_type!=='none'&&!resolved;
+    const dotColor=resolved?'var(--green)':hasFault?'var(--amber)':'var(--green)';
     const typeLbl=(r.asset_type||'').replace(/_/g,' ');
     const parts=(r.parts_mentioned||[]).length;
     const actions=(r.actions_taken||[]).length;
     const timeStr=_timeAgo(r.received_at);
-    return `<div class="ov-report-card">
+    const resolvedAt=r.resolved_at?_timeAgo(r.resolved_at):'';
+    const sourceTag=r.source==='passenger'
+      ?'<span class="ov-report-pill" style="border-color:#6366f1;color:#6366f1">passenger</span>'
+      :'';
+    const resArgs=`'${r.report_id}','${esc(r.asset_id||'')}','${esc(r.asset_type||'')}','${esc(r.station||'')}','${esc(r.detected_fault_type||'')}','${esc((r.summary||'').slice(0,120).replace(/'/g,"\\'"))}'`;
+    const resolveBtn=resolved
+      ?`<span class="resolve-badge">✓ Resolved ${resolvedAt?resolvedAt:''}</span>`
+      :`<button class="btn-resolve" onclick="openResolveModal(${resArgs})" title="Mark as resolved">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Resolve
+        </button>`;
+    return `<div class="ov-report-card${resolved?' resolved':''}" id="rcard-${r.report_id}">
       <div class="ov-report-left"><div class="ov-report-dot" style="background:${dotColor}"></div></div>
       <div class="ov-report-body">
         <div class="ov-report-hdr">
@@ -2017,14 +2841,17 @@ function renderReports(reports){
         </div>
         <div class="ov-report-sum">${esc(r.summary||'')}</div>
         <div class="ov-report-meta">
-          <span class="badge ${hasFault?'badge-amber':'badge-green'}">${esc(r.detected_fault_type||'none')}</span>
+          <span class="badge ${resolved?'badge-green':hasFault?'badge-amber':'badge-green'}">${esc(r.detected_fault_type||'none')}</span>
+          ${sourceTag}
           ${parts>0?`<span class="ov-report-pill">${parts} part${parts>1?'s':''}</span>`:''}
           ${actions>0?`<span class="ov-report-pill">${actions} action${actions>1?'s':''}</span>`:''}
+          ${resolveBtn}
         </div>
       </div>
     </div>`;
   }).join('');
 }
+
 
 /* ═══ REPORT MODAL ═══ */
 const ASSET_TYPE_LABELS={'DE':'diesel_engine','BG':'bogie','BR':'brake_system'};
@@ -2162,6 +2989,16 @@ async function submitReport(){
   try{
     const res=await fetch('/maintenance-report',{method:'POST',headers:{'Content-Type':'application/json','X-Engineer-Token':localStorage.getItem('m4_eng_token')||''},
       body:JSON.stringify({asset_id,asset_type,station,text})});
+    if(res.status===401){
+      btn.disabled=false;
+      btn.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg> Analyse &amp; Log';
+      closeReportModal();
+      localStorage.removeItem('m4_eng_token');
+      localStorage.removeItem('m4_eng_auth');
+      _lgResetAndShow();
+      showToast('Session expired — please sign in again.','error');
+      return;
+    }
     const data=await res.json();
     if(!res.ok) throw new Error(data.detail||'Server error');
     showRptResult(data, asset_id, asset_type);
@@ -2174,7 +3011,7 @@ async function submitReport(){
     errEl.className='rpt-error show';
   }
 }
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closeReportModal()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeReportModal();closeFlagModal();}});
 
 /* ═══ FLEET ═══ */
 let fleetFilter='ALL', fleetTypeFilter='ALL', fleetSort={col:null,dir:1}, fleetOpenRow=null;
@@ -2277,7 +3114,7 @@ function renderFleet(){
       <td style="color:var(--text-muted);text-transform:capitalize">${esc(typeLabel)}</td>
       <td><div class="score-bar"><div class="score-track"><div class="score-fill" style="width:${score}%;background:${c}"></div></div><span style="font-weight:700;color:${c};min-width:22px">${score}</span></div></td>
       <td><span class="badge ${bc}"><span class="badge-dot"></span>${status}</span></td>
-      <td>${r.days_since_service!=null?r.days_since_service+' d':'—'}</td>
+      <td><span class="fleet-service-age">${r.days_since_service!=null?r.days_since_service+' d':'—'}</span><span class="fleet-service-date">${esc(r.last_service_date||'Service date not recorded')}</span></td>
       <td>${r.fault_count_30d!=null?`<span style="font-weight:600;color:${r.fault_count_30d>3?'var(--red)':r.fault_count_30d>1?'var(--amber)':'var(--text)'}">${r.fault_count_30d}</span>`:'—'}</td>
       <td onclick="event.stopPropagation()">
         <div style="display:flex;gap:5px;flex-wrap:wrap">
@@ -2290,6 +3127,7 @@ function renderFleet(){
       <td colspan="8">${buildDetailPanel(r,trainName)}</td>
     </tr>`;
   }).join('');
+  m4AnimateFleetRows(tbody);
 }
 
 function buildDetailPanel(r,trainName){
@@ -2540,28 +3378,82 @@ const PRED_SENSORS={
 // map bogie vibration alias → real key
 const SENSOR_KEY_MAP={'bg-vibration_level':'vibration_level'};
 
-function initPredQuickPick(){
-  const el=document.getElementById('pred-qp-grid');
-  if(!el)return;
-  el.innerHTML=TRAINS.flatMap(t=>(t.assets||[]).map(aid=>{
-    const rec=fleetAll.find(a=>a.asset_id===aid);
-    const st=rec?(rec.health_status||'UNKNOWN'):'UNKNOWN';
-    const dotColor=st==='GREEN'?'var(--green)':st==='AMBER'?'var(--amber)':st==='RED'?'var(--red)':'#cbd5e1';
-    const trainShort=t.name.split(' ')[0];
-    return`<button class="pred-qp-chip" id="qpc-${esc(aid)}" onclick="predPickAsset('${esc(aid)}')" title="${esc(t.name)} — ${esc(st)}">
-      <span class="pred-qp-id">${esc(aid)}</span>
-      <span class="pred-qp-dot" style="background:${dotColor}"></span>
-      <span class="pred-qp-train">${esc(trainShort)}</span>
-    </button>`;
-  })).join('');
+/* ── Category Browser State ── */
+let _activeCatTab='diesel_engine';
+
+function initPredQuickPick(){} // replaced by category browser
+
+function switchCatTab(type){
+  _activeCatTab=type;
+  document.querySelectorAll('.cat-tab').forEach(t=>t.classList.remove('active'));
+  const tab=document.getElementById('ctab-'+type);
+  if(tab) tab.classList.add('active');
+  _renderCatBrowserList(type);
+}
+
+function _renderCatStats(){
+  const types=['diesel_engine','bogie','brake_system'];
+  types.forEach(tp=>{
+    const rows=fleetAll.filter(a=>a.asset_type===tp);
+    if(!rows.length) return;
+    const scores=rows.map(a=>parseFloat(a.health_score||0));
+    const avg=scores.reduce((s,v)=>s+v,0)/scores.length;
+    const g=rows.filter(a=>a.health_status==='GREEN').length;
+    const am=rows.filter(a=>a.health_status==='AMBER').length;
+    const rd=rows.filter(a=>a.health_status==='RED').length;
+    const tot=rows.length;
+    const col=avg>=70?'var(--green)':avg>=40?'var(--amber)':'var(--red)';
+    const avgEl=document.getElementById('catavg-'+tp);
+    if(avgEl){avgEl.textContent=avg.toFixed(1);avgEl.style.color=col;}
+    const barEl=document.getElementById('catbar-'+tp);
+    if(barEl){
+      barEl.innerHTML=
+        (g?`<div style="flex:${g};background:var(--green);height:100%;border-radius:2px 0 0 2px"></div>`:'') +
+        (am?`<div style="flex:${am};background:var(--amber);height:100%"></div>`:'') +
+        (rd?`<div style="flex:${rd};background:var(--red);height:100%;border-radius:0 2px 2px 0"></div>`:'');
+    }
+    const gEl=document.getElementById('catg-'+tp);if(gEl) gEl.textContent=g+'G';
+    const aEl=document.getElementById('cata-'+tp);if(aEl) aEl.textContent=am+'A';
+    const rEl=document.getElementById('catr-'+tp);if(rEl) rEl.textContent=rd+'R';
+    const tabAvg=document.getElementById('ctaba-'+tp);
+    if(tabAvg){tabAvg.textContent=avg.toFixed(0);tabAvg.style.color=col;}
+    const tabCnt=document.getElementById('ctabc-'+tp);
+    if(tabCnt) tabCnt.textContent=tot;
+  });
+}
+
+function _renderCatBrowserList(type){
+  const list=document.getElementById('cat-asset-list');
+  if(!list) return;
+  const rows=fleetAll.filter(a=>a.asset_type===type)
+    .sort((a,b)=>parseFloat(a.health_score||0)-parseFloat(b.health_score||0));
+  if(!rows.length){
+    list.innerHTML='<div style="padding:14px 16px;font-size:0.74rem;color:var(--text-light)">Loading fleet data…</div>';
+    return;
+  }
+  const selId=(document.getElementById('pred-asset-id')||{}).value||'';
+  list.innerHTML=rows.map(a=>{
+    const sc=parseFloat(a.health_score||0);
+    const st=a.health_status||'UNKNOWN';
+    const dotCol=st==='GREEN'?'var(--green)':st==='AMBER'?'var(--amber)':st==='RED'?'var(--red)':'#cbd5e1';
+    const scoreCol=st==='GREEN'?'var(--green)':st==='AMBER'?'var(--amber)':st==='RED'?'var(--red)':'var(--text)';
+    const fault=a.fault_type&&a.fault_type!=='none'?a.fault_type:'';
+    const faultSev=parseInt(a.fault_severity||0);
+    const trainName=fleetTrainName(a.asset_id);
+    const stClass=st==='RED'?' status-red':st==='AMBER'?' status-amber':'';
+    const selClass=a.asset_id===selId?' sel':'';
+    const faultChip=fault?`<span class="cat-fault-chip${faultSev>=3?' sev-hi':''}">${esc(fault.replace(/_/g,' '))}</span>`:'';
+    return `<div class="cat-asset-row${stClass}${selClass}" id="car-${esc(a.asset_id)}" onclick="watchlistPredict('${esc(a.asset_id)}')">
+      <span class="cat-asset-dot" style="background:${dotCol}"></span>
+      <span class="cat-asset-id">${esc(a.asset_id)}</span>
+      <span class="cat-asset-score" style="color:${scoreCol}">${sc.toFixed(1)}</span>
+      <div class="cat-asset-bar-wrap"><div class="cat-asset-bar-fill" style="width:${sc.toFixed(1)}%;background:${scoreCol}"></div></div>
+      <div class="cat-asset-info"><span class="cat-asset-train">${esc(trainName)}</span>${faultChip}</div>
+    </div>`;
+  }).join('');
 }
 
 function predPickAsset(assetId){
-  // Highlight chip
-  document.querySelectorAll('.pred-qp-chip').forEach(c=>c.classList.remove('selected'));
-  const chip=document.getElementById('qpc-'+assetId);
-  if(chip){chip.classList.add('selected');chip.scrollIntoView({behavior:'smooth',block:'nearest',inline:'nearest'})}
-
   document.getElementById('pred-asset-id').value=assetId;
 
   // Determine type from asset ID prefix
@@ -2576,7 +3468,6 @@ function predPickAsset(assetId){
   if(rec){
     document.getElementById('pred-days').value=rec.days_since_service||0;
     document.getElementById('pred-faults').value=rec.fault_count_30d||0;
-    // Fill sensor fields
     const fields=PRED_SENSORS[type]||[];
     fields.forEach(fid=>{
       const realKey=SENSOR_KEY_MAP[fid]||fid;
@@ -2584,6 +3475,20 @@ function predPickAsset(assetId){
       if(el&&rec[realKey]!=null) el.value=parseFloat(rec[realKey]).toFixed(1);
     });
   }
+
+  // Switch category tab and highlight row in browser
+  if(_activeCatTab!==type) switchCatTab(type);
+  setTimeout(()=>{
+    document.querySelectorAll('.cat-asset-row').forEach(r=>r.classList.remove('sel'));
+    const row=document.getElementById('car-'+assetId);
+    if(row){row.classList.add('sel');row.scrollIntoView({behavior:'smooth',block:'nearest'});}
+  },40);
+}
+
+function watchlistPredict(assetId){
+  nav('predict');
+  predPickAsset(assetId);
+  setTimeout(runPrediction, 200);
 }
 
 function onPredTypeChange(){
@@ -2594,11 +3499,15 @@ function onPredTypeChange(){
 }
 
 function onPredAssetIdChange(){
-  // Deselect chips if ID typed manually
-  document.querySelectorAll('.pred-qp-chip').forEach(c=>c.classList.remove('selected'));
   const id=document.getElementById('pred-asset-id').value.trim();
-  const chip=document.getElementById('qpc-'+id);
-  if(chip) chip.classList.add('selected');
+  document.querySelectorAll('.cat-asset-row').forEach(r=>r.classList.remove('sel'));
+  const row=document.getElementById('car-'+id);
+  if(row){row.classList.add('sel');row.scrollIntoView({behavior:'smooth',block:'nearest'});}
+  // Switch to the matching category tab if ID is recognised
+  const prefix=id.split('-')[0];
+  const typeMap={DE:'diesel_engine',BG:'bogie',BR:'brake_system'};
+  const type=typeMap[prefix];
+  if(type&&type!==_activeCatTab) switchCatTab(type);
 }
 
 function buildSensorsPayload(){
@@ -2625,7 +3534,7 @@ function setPredGauge(score,status){
   arc.setAttribute('stroke',color);
   arc.setAttribute('stroke-dashoffset',circ); // reset then animate
   setTimeout(()=>arc.setAttribute('stroke-dashoffset',offset),30);
-  num.textContent=score;
+  m4CountTo('pred-gauge-num',score);
   num.setAttribute('fill',color);
 }
 
@@ -2703,19 +3612,22 @@ async function runPrediction(){
   const assetType=document.getElementById('pred-asset-type').value;
   const days=parseInt(document.getElementById('pred-days').value)||0;
   const faults=parseInt(document.getElementById('pred-faults').value)||0;
+  const faultType=(document.getElementById('pred-fault-type')||{}).value||'none';
   const sensors=buildSensorsPayload();
   try{
     const res=await fetch('/asset-health',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({asset_id:assetId,asset_type:assetType,days_since_service:days,fault_count_30d:faults,sensors})});
+      body:JSON.stringify({asset_id:assetId,asset_type:assetType,days_since_service:days,fault_count_30d:faults,sensors,fault_type:faultType})});
     const d=await res.json();
     const score=Math.round(d.health_score??0), status=d.health_status||'GREEN';
     predLastResult={assetId:d.asset_id||assetId,assetType:d.asset_type||assetType,score,status};
 
-    // Show result panel
     document.getElementById('pred-empty').style.display='none';
-    document.getElementById('pred-result').style.display='block';
+    const predResult=document.getElementById('pred-result');
+    predResult.style.display='block';
+    predResult.classList.remove('m4-result-reveal');
+    void predResult.offsetWidth;
+    predResult.classList.add('m4-result-reveal');
 
-    // Populate all result sections
     setPredGauge(score,status);
     setPredBanner(score,status,d.asset_id||assetId,d.asset_type||assetType);
     document.getElementById('pi-id').textContent=d.asset_id||assetId;
@@ -2724,11 +3636,64 @@ async function runPrediction(){
     document.getElementById('pi-faults').textContent=faults;
     setPredUrgency(score,status);
     document.getElementById('pred-rec-text').textContent=d.recommendation||'—';
-
-    // Legacy hidden fields (for dashboard compatibility)
-    document.getElementById('score-num').textContent=score;
+    m4CountTo('score-num',score);
     document.getElementById('result-asset-id').textContent=d.asset_id||assetId;
     document.getElementById('result-asset-type').textContent=(d.asset_type||assetType).replace(/_/g,' ');
+
+    // ── Confidence band ──
+    const bColor=status==='GREEN'?'var(--green)':status==='AMBER'?'var(--amber)':'var(--red)';
+    const cLow=d.confidence_low??Math.max(0,score-8);
+    const cHigh=d.confidence_high??Math.min(100,score+8);
+    const rng=document.getElementById('conf-band-range');
+    const pt=document.getElementById('conf-band-point');
+    if(rng){rng.style.left=cLow+'%';rng.style.width=(cHigh-cLow)+'%';rng.style.background=bColor;}
+    if(pt){pt.style.left=score+'%';pt.style.background=bColor;}
+    const clEl=document.getElementById('conf-low-val');const chEl=document.getElementById('conf-high-val');const cmEl=document.getElementById('conf-mid-val');
+    if(clEl)clEl.textContent=cLow.toFixed(1);if(chEl)chEl.textContent=cHigh.toFixed(1);
+    if(cmEl){cmEl.textContent=score;cmEl.style.color=bColor;}
+
+    // ── Days to failure ──
+    const dtfRow=document.getElementById('dtf-row');
+    if(dtfRow&&d.days_to_failure!=null){
+      dtfRow.style.display='flex';
+      const dv=document.getElementById('dtf-val');
+      if(d.days_to_failure===0){dv.textContent='Critical now';dv.style.color='var(--red)';}
+      else{dv.textContent='~'+d.days_to_failure+' days';dv.style.color=status==='GREEN'?'var(--green)':'var(--amber)';}
+    }else if(dtfRow){dtfRow.style.display='none';}
+
+    // ── Risk factor chips ──
+    const rfWrap=document.getElementById('risk-factors-wrap');
+    const rfChips=document.getElementById('risk-chips');
+    if(rfWrap&&rfChips&&d.risk_factors&&d.risk_factors.length){
+      rfWrap.style.display='block';
+      rfChips.innerHTML=d.risk_factors.map(rf=>{
+        const cls=rf.direction==='high'?'risk-chip-high':'risk-chip-low';
+        const arrow=rf.direction==='high'?'↑':'↓';
+        return `<span class="risk-chip ${cls}">${arrow} ${esc(rf.label)}: ${rf.value} <span style="opacity:0.65">(ok: ${esc(rf.range)})</span></span>`;
+      }).join('');
+    }else if(rfWrap){rfWrap.style.display='none';}
+
+    // ── Feature importance bars ──
+    const fiWrap=document.getElementById('feat-imp-wrap');
+    const fiBars=document.getElementById('feat-imp-bars');
+    if(fiWrap&&fiBars&&d.top_contributing_features&&d.top_contributing_features.length){
+      fiWrap.style.display='block';
+      const maxI=Math.max(...d.top_contributing_features.map(f=>f.importance||0))||1;
+      fiBars.innerHTML=d.top_contributing_features.slice(0,5).map(f=>{
+        const pct=((f.importance||0)/maxI*100).toFixed(0);
+        const name=(f.feature||'').replace(/_/g,' ');
+        return `<div class="feat-imp-row">
+          <div class="feat-imp-name" title="${esc(name)}">${esc(name)}</div>
+          <div class="feat-imp-bar-track"><div class="feat-imp-bar-fill" style="width:0%" data-w="${pct}"></div></div>
+          <div class="feat-imp-pct">${((f.importance||0)*100).toFixed(0)}%</div>
+        </div>`;
+      }).join('');
+      setTimeout(()=>document.querySelectorAll('.feat-imp-bar-fill[data-w]').forEach(b=>{b.style.width=b.dataset.w+'%'}),30);
+    }else if(fiWrap){fiWrap.style.display='none';}
+
+    // ── Auto-load trend ──
+    const tSel=document.getElementById('trend-asset-select');
+    if(tSel&&assetId&&tSel.querySelector(`option[value="${assetId}"]`)){tSel.value=assetId;loadTrend(assetId);}
 
     addPredHistory(d.asset_id||assetId,score,status);
     toast(`Health: ${status} · Score ${score}`);
@@ -2740,13 +3705,95 @@ async function runPrediction(){
   }
 }
 
+/* ── Fleet Health Summary ── */
+async function loadFleetSummary(){
+  try{
+    const d=await fetch('/api/fleet-health-summary').then(r=>r.json());
+    // Update overall fleet donut (circumference=169.6 for r=27)
+    const circ=169.6,t=d.total||1;
+    const gLen=(d.green_count||0)/t*circ,aLen=(d.amber_count||0)/t*circ,rLen=(d.red_count||0)/t*circ;
+    const gEl=document.getElementById('fd-green'),aEl=document.getElementById('fd-amber'),rEl=document.getElementById('fd-red');
+    if(gEl){gEl.setAttribute('stroke-dasharray',gLen+' '+(circ-gLen));gEl.setAttribute('stroke-dashoffset','0');}
+    if(aEl){aEl.setAttribute('stroke-dasharray',aLen+' '+(circ-aLen));aEl.setAttribute('transform',`rotate(${-90+(d.green_count||0)/t*360} 35 35)`);}
+    if(rEl){rEl.setAttribute('stroke-dasharray',rLen+' '+(circ-rLen));rEl.setAttribute('transform',`rotate(${-90+((d.green_count||0)+(d.amber_count||0))/t*360} 35 35)`);}
+    // Per-category stats computed from fleetAll (populated by loadDashboard)
+    if(fleetAll.length) _renderCatStats();
+  }catch(e){console.warn('Fleet summary error',e);}
+}
+
+/* ── Asset Health Trend Sparkline ── */
+async function loadTrend(assetId){
+  const wrap=document.getElementById('trend-svg-wrap');
+  if(!assetId){wrap.innerHTML='<div style="font-size:0.74rem;color:var(--text-light);padding:14px;text-align:center">Select an asset to view its health history</div>';return;}
+  wrap.innerHTML='<div style="font-size:0.74rem;color:var(--text-light);padding:14px;text-align:center">Loading…</div>';
+  try{
+    const d=await fetch('/api/asset-trend/'+encodeURIComponent(assetId)).then(r=>r.json());
+    const records=d.records||[];
+    if(!records.length){wrap.innerHTML='<div style="font-size:0.74rem;color:var(--text-light);padding:14px;text-align:center">No history found</div>';return;}
+    wrap.innerHTML=_renderSparkline(records);
+  }catch(e){wrap.innerHTML='<div style="font-size:0.74rem;color:var(--red);padding:14px;text-align:center">Failed to load trend</div>';}
+}
+
+function _renderSparkline(records){
+  const W=380,H=90,P=14;
+  const scores=records.map(r=>parseFloat(r.health_score||0));
+  const minS=Math.min(0,...scores),maxS=Math.max(100,...scores);
+  const rng=maxS-minS||1;
+  const xs=(W-P*2)/(records.length-1||1);
+  const pts=scores.map((s,i)=>`${(P+i*xs).toFixed(1)},${(H-P-((s-minS)/rng)*(H-P*2)).toFixed(1)}`);
+  const last=scores[scores.length-1]||0;
+  const lc=last>=70?'var(--green)':last>=40?'var(--amber)':'var(--red)';
+  const y70=(H-P-((70-minS)/rng)*(H-P*2)).toFixed(1);
+  const y40=(H-P-((40-minS)/rng)*(H-P*2)).toFixed(1);
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" preserveAspectRatio="none" style="display:block">
+    <defs><linearGradient id="spkG" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${lc}" stop-opacity="0.16"/><stop offset="100%" stop-color="${lc}" stop-opacity="0.01"/></linearGradient></defs>
+    ${minS<70&&maxS>=70?`<line x1="${P}" y1="${y70}" x2="${W-P}" y2="${y70}" stroke="var(--green)" stroke-width="0.8" stroke-dasharray="3 3" opacity="0.5"/>`:''}
+    ${minS<40&&maxS>=40?`<line x1="${P}" y1="${y40}" x2="${W-P}" y2="${y40}" stroke="var(--red)" stroke-width="0.8" stroke-dasharray="3 3" opacity="0.5"/>`:''}
+    <polygon points="${P},${H-P} ${pts.join(' ')} ${W-P},${H-P}" fill="url(#spkG)"/>
+    <polyline points="${pts.join(' ')}" fill="none" stroke="${lc}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    ${scores.map((s,i)=>{const[x,y]=pts[i].split(',');const c=s>=70?'var(--green)':s>=40?'var(--amber)':'var(--red)';return `<circle cx="${x}" cy="${y}" r="2.5" fill="${c}" stroke="#fff" stroke-width="1.2"/>`;}).join('')}
+    <text x="${P}" y="${H-3}" font-size="8" fill="var(--text-light)">${esc(records[0]?.last_service_date?.slice(0,7)||'')}</text>
+    <text x="${W-P}" y="${H-3}" font-size="8" fill="var(--text-light)" text-anchor="end">${esc(records[records.length-1]?.last_service_date?.slice(0,7)||'')}</text>
+  </svg>`;
+}
+
+function populateTrendSelect(){
+  const sel=document.getElementById('trend-asset-select');
+  if(!sel||!window.fleetAll)return;
+  const existing=new Set([...sel.options].map(o=>o.value).filter(Boolean));
+  (window.fleetAll||[]).forEach(a=>{
+    if(a.asset_id&&!existing.has(a.asset_id)){
+      const o=document.createElement('option');
+      o.value=a.asset_id;
+      o.textContent=`${a.asset_id} — ${(a.asset_type||'').replace(/_/g,' ')}`;
+      sel.appendChild(o);
+    }
+  });
+}
+
 /* ═══ CHATBOT POPUP ═══ */
-let cpOpen=false,cpHist=[],cpBusy=false;
-function toggleChat(){cpOpen=!cpOpen;document.getElementById('chat-popup').classList.toggle('open',cpOpen);document.getElementById('chat-fab').classList.toggle('open',cpOpen);document.getElementById('fab-chat').style.display=cpOpen?'none':'';document.getElementById('fab-x').style.display=cpOpen?'':'none';if(cpOpen)setTimeout(()=>document.getElementById('cp-input').focus(),270)}
+const CP_BOT_SVG=`<svg class="rs-bot" viewBox="0 0 64 64" aria-hidden="true"><g class="rs-bot-antenna"><path class="rs-bot-antenna-line" d="M32 14V7"/><circle class="rs-bot-light" cx="32" cy="5" r="3.5"/></g><g class="rs-bot-body"><rect class="rs-bot-body-panel" x="21" y="44" width="22" height="13" rx="6.5"/><rect class="rs-bot-head" x="12" y="16" width="40" height="31" rx="11"/><rect class="rs-bot-face" x="17" y="22" width="30" height="18" rx="7"/><g class="rs-bot-eyes"><circle class="rs-bot-eye" cx="25" cy="31" r="3.2"/><circle class="rs-bot-eye" cx="39" cy="31" r="3.2"/></g><path d="M27 39h10" stroke="rgba(255,255,255,.65)" stroke-width="1.6" stroke-linecap="round"/></g></svg>`;
+let cpOpen=false,cpHist=[],cpBusy=false,cpNoticeTimer=null;
+function m4ScheduleFabNotice(){clearTimeout(cpNoticeTimer);cpNoticeTimer=setTimeout(()=>{if(!cpOpen)document.getElementById('chat-fab')?.classList.add('m4-has-notice')},8500)}
+function m4CountPopupScore(el,value){
+  if(!el)return;const target=Math.round(Number(value)||0);
+  if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches){el.textContent=target;return;}
+  const start=performance.now(),duration=480;
+  const tick=now=>{const p=Math.min(1,(now-start)/duration);el.textContent=Math.round(target*(1-Math.pow(1-p,3)));if(p<1)requestAnimationFrame(tick)};
+  requestAnimationFrame(tick);
+}
+function toggleChat(){
+  cpOpen=!cpOpen;
+  const popup=document.getElementById('chat-popup'),fab=document.getElementById('chat-fab');
+  popup.classList.toggle('open',cpOpen);fab.classList.toggle('open',cpOpen);
+  document.getElementById('fab-chat').style.display=cpOpen?'none':'';document.getElementById('fab-x').style.display=cpOpen?'':'none';
+  if(cpOpen){clearTimeout(cpNoticeTimer);fab.classList.remove('m4-has-notice');setTimeout(()=>document.getElementById('cp-input').focus(),270)}else m4ScheduleFabNotice();
+}
+m4ScheduleFabNotice();
 function cpClear(){cpHist=[];const m=document.getElementById('cp-msgs');[...m.children].forEach(c=>{if(c.id!=='cp-welcome')c.remove()});const w=document.getElementById('cp-welcome');if(w)w.style.display='flex';document.getElementById('cp-mlbl').textContent='Ready'}
 function cpUser(t){const m=document.getElementById('cp-msgs'),d=document.createElement('div');d.className='cp-msg user';d.innerHTML=`<div class="cp-av u">👷</div><div class="cp-bubble">${esc(t)}</div>`;m.appendChild(d);m.scrollTop=m.scrollHeight;const w=document.getElementById('cp-welcome');if(w)w.style.display='none'}
-function cpTypingOn(){const m=document.getElementById('cp-msgs'),d=document.createElement('div');d.className='cp-msg bot';d.id='cp-typing';d.innerHTML=`<div class="cp-av b">🔧</div><div class="cp-bubble"><div class="cp-typing"><span></span><span></span><span></span></div></div>`;m.appendChild(d);m.scrollTop=m.scrollHeight}
-function cpTypingOff(){const e=document.getElementById('cp-typing');if(e)e.remove()}
+function cpTypingOn(){const m=document.getElementById('cp-msgs'),d=document.createElement('div');d.className='cp-msg bot';d.id='cp-typing';d.innerHTML=`<div class="cp-av b m4-thinking">${CP_BOT_SVG}</div><div class="cp-bubble"><div class="cp-typing"><span></span><span></span><span></span></div></div>`;m.appendChild(d);document.getElementById('chat-popup').classList.add('m4-thinking');m.scrollTop=m.scrollHeight}
+function cpTypingOff(){const e=document.getElementById('cp-typing');if(e)e.remove();document.getElementById('chat-popup').classList.remove('m4-thinking')}
 function cpRender(t){
   // Helper — build action card HTML and fire modal
   let actionHtml='';
@@ -2828,8 +3875,118 @@ function cpRender(t){
   }
   return assetHtml+html+actionHtml;
 }
-function cpBot(data){const m=document.getElementById('cp-msgs'),d=document.createElement('div');d.className='cp-msg bot';const cites=(data.citations||[]).map(c=>`<span class="cp-cite-chip">${esc(c.section_title||c.manual||'Manual')}</span>`).join('');const ch=cites?`<div class="cp-citations"><div class="cp-cite-label">Sources</div>${cites}</div>`:'';d.innerHTML=`<div class="cp-av b">🔧</div><div class="cp-bubble">${cpRender(data.answer)}${ch}</div>`;m.appendChild(d);m.scrollTop=m.scrollHeight;const l=data.answer_method==='llm_grounded';document.getElementById('cp-mdot').style.background=l?'var(--primary-light)':'var(--green)';document.getElementById('cp-mlbl').textContent=`${l?'LLM':'Template'} · ${data.retrieval_method==='supabase_pgvector'?'pgvector':'TF-IDF'}`}
-async function cpSendMsg(){const inp=document.getElementById('cp-input'),text=inp.value.trim();if(!text||cpBusy)return;inp.value='';inp.style.height='auto';document.getElementById('cp-send').disabled=true;cpBusy=true;cpUser(text);cpTypingOn();try{const res=await fetch('/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,asset_type:'',history:cpHist.slice(-10)})});if(!res.ok)throw new Error(`HTTP ${res.status}`);const data=await res.json();cpTypingOff();cpBot(data);cpHist.push({role:'user',content:text},{role:'assistant',content:data.answer})}catch(err){cpTypingOff();const m=document.getElementById('cp-msgs'),d=document.createElement('div');d.className='cp-msg bot';d.innerHTML=`<div class="cp-av b">🔧</div><div class="cp-bubble" style="color:var(--red)">Error: ${esc(err.message)}</div>`;m.appendChild(d);m.scrollTop=m.scrollHeight}finally{cpBusy=false;document.getElementById('cp-send').disabled=false}}
+const _CP_SENSOR_META = {
+  diesel_engine:[
+    {key:'temperature_celsius',  label:'Temperature',    unit:'°C',  min:0,   max:200, step:0.1},
+    {key:'vibration_level',      label:'Vibration',      unit:'g',   min:0,   max:20,  step:0.1},
+    {key:'oil_pressure_bar',     label:'Oil Pressure',   unit:'bar', min:0,   max:10,  step:0.1},
+    {key:'fuel_efficiency_pct',  label:'Fuel Efficiency',unit:'%',   min:0,   max:100, step:0.1},
+  ],
+  bogie:[
+    {key:'vibration_level',      label:'Vibration',      unit:'g',   min:0,   max:20,  step:0.1},
+    {key:'axle_temp_celsius',    label:'Axle Temp',      unit:'°C',  min:0,   max:200, step:0.1},
+    {key:'wheel_profile_mm',     label:'Wheel Profile',  unit:'mm',  min:50,  max:200, step:0.1},
+  ],
+  brake_system:[
+    {key:'pad_thickness_mm',           label:'Pad Thickness',  unit:'mm',  min:0,  max:30,  step:0.1},
+    {key:'brake_cylinder_pressure_bar',label:'Cyl. Pressure',  unit:'bar', min:0,  max:15,  step:0.1},
+    {key:'stopping_distance_m',        label:'Stopping Dist.', unit:'m',   min:0,  max:600, step:1},
+  ],
+};
+const _CP_FAULT_TYPES = ['none','pad_worn','suspension_worn','brake_fade','bearing_noise','wheel_flat','cylinder_leak','starter_failure','oil_leak','overheating','fuel_pump_fault','axle_crack'];
+
+function cpBot(data){
+  const m=document.getElementById('cp-msgs'),d=document.createElement('div');
+  d.className='cp-msg bot m4-arrive';
+
+  if(data.answer_method==='prediction_form' && data.prediction_form){
+    const f=data.prediction_form;
+    const sensors=_CP_SENSOR_META[f.asset_type]||[];
+    const uid='cpf'+Date.now();
+    const sensorFields=sensors.map(s=>{
+      const val=f.sensors[s.key]!=null?f.sensors[s.key]:'';
+      return `<div class="cpf-row"><label class="cpf-lbl">${esc(s.label)} <span class="cpf-unit">(${s.unit})</span></label><input class="cpf-inp" id="${uid}-${s.key}" type="number" step="${s.step}" min="${s.min}" max="${s.max}" value="${val}" placeholder="optional"></div>`;
+    }).join('');
+    const faultOpts=_CP_FAULT_TYPES.map(ft=>`<option value="${ft}"${ft===f.fault_type?' selected':''}>${ft.replace(/_/g,' ')}</option>`).join('');
+    d.innerHTML=`<div class="cp-av b">${CP_BOT_SVG}</div><div class="cp-bubble cpf-card">
+      <div class="cpf-hdr"><span class="cpf-asset-id">${esc(f.asset_id)}</span><span class="cpf-type-badge">${esc(f.asset_type.replace(/_/g,' '))}</span></div>
+      <div class="cpf-section">Service Info</div>
+      <div class="cpf-row"><label class="cpf-lbl">Days Since Service</label><input class="cpf-inp" id="${uid}-days" type="number" min="0" max="999" value="${f.days_since_service}"></div>
+      <div class="cpf-row"><label class="cpf-lbl">Fault Count (30d)</label><input class="cpf-inp" id="${uid}-faults" type="number" min="0" max="99" value="${f.fault_count_30d}"></div>
+      <div class="cpf-row"><label class="cpf-lbl">Recent Fault Type</label><select class="cpf-inp" id="${uid}-ftype">${faultOpts}</select></div>
+      <div class="cpf-section">Sensor Readings <span style="font-weight:400;opacity:.6">(optional — uses fleet averages if blank)</span></div>
+      ${sensorFields}
+      <button class="cpf-btn" onclick="cpRunPredict('${uid}','${f.asset_id}','${f.asset_type}')">Run Prediction</button>
+    </div>`;
+    m.appendChild(d);m.scrollTop=m.scrollHeight;
+    document.getElementById('cp-mdot').style.background='var(--primary-light)';
+    document.getElementById('cp-mlbl').textContent='Fill in values · ML ready';
+    return;
+  }
+
+  const cites=(data.citations||[]).map(c=>`<span class="cp-cite-chip">${esc(c.section_title||c.manual||'Manual')}</span>`).join('');
+  const ch=cites?`<div class="cp-citations"><div class="cp-cite-label">Sources</div>${cites}</div>`:'';
+  d.innerHTML=`<div class="cp-av b">${CP_BOT_SVG}</div><div class="cp-bubble">${cpRender(data.answer)}${ch}</div>`;
+  m.appendChild(d);m.scrollTop=m.scrollHeight;
+  const isPred=data.answer_method==='health_prediction';const l=data.answer_method==='llm_grounded';
+  document.getElementById('cp-mdot').style.background=isPred?'var(--amber)':l?'var(--primary-light)':'var(--green)';
+  document.getElementById('cp-mlbl').textContent=isPred?'ML Prediction · HGBR':`${l?'LLM':'Template'} · ${data.retrieval_method==='supabase_pgvector'?'pgvector':'TF-IDF'}`;
+}
+
+async function cpRunPredict(uid, assetId, assetType){
+  const btn=document.querySelector(`button[onclick*="${uid}"]`);
+  if(btn){btn.disabled=true;btn.classList.add('m4-predict-loading');btn.innerHTML='<span class="m4-btn-spinner" aria-hidden="true"></span>Running…';}
+  const days=parseInt(document.getElementById(`${uid}-days`)?.value)||30;
+  const faults=parseInt(document.getElementById(`${uid}-faults`)?.value)||0;
+  const ftype=document.getElementById(`${uid}-ftype`)?.value||'none';
+  const sensors={};
+  (_CP_SENSOR_META[assetType]||[]).forEach(s=>{
+    const v=document.getElementById(`${uid}-${s.key}`)?.value;
+    if(v!==''&&v!=null&&!isNaN(parseFloat(v))) sensors[s.key]=parseFloat(v);
+  });
+  try{
+    const res=await fetch('/asset-health',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({asset_id:assetId,asset_type:assetType,days_since_service:days,fault_count_30d:faults,fault_type:ftype,sensors})});
+    if(!res.ok)throw new Error(`HTTP ${res.status}`);
+    const p=await res.json();
+    const score=p.health_score,status=p.health_status,conf=p.confidence;
+    const cl=p.confidence_low??round(score-8,1),ch=p.confidence_high??round(score+8,1);
+    const dtf=p.days_to_failure;
+    const risks=p.risk_factors||[];
+    const emoji={'GREEN':'🟢','AMBER':'🟡','RED':'🔴'}[status]||'⚪';
+    const UNITS={temperature_celsius:'°C',vibration_level:'g',oil_pressure_bar:'bar',fuel_efficiency_pct:'%',axle_temp_celsius:'°C',wheel_profile_mm:'mm',pad_thickness_mm:'mm',brake_cylinder_pressure_bar:'bar',stopping_distance_m:'m'};
+    const LABELS={temperature_celsius:'Engine Temp',vibration_level:'Vibration',oil_pressure_bar:'Oil Pressure',fuel_efficiency_pct:'Fuel Efficiency',axle_temp_celsius:'Axle Temp',wheel_profile_mm:'Wheel Profile',pad_thickness_mm:'Pad Thickness',brake_cylinder_pressure_bar:'Cyl. Pressure',stopping_distance_m:'Stopping Dist.'};
+    const outOfRange=new Set(risks.map(r=>r.sensor));
+    const sensorRows=Object.entries(sensors).map(([k,v])=>{
+      const label=LABELS[k]||k,unit=UNITS[k]||'',oor=outOfRange.has(k);
+      const r=risks.find(r=>r.sensor===k);
+      const arrow=r?(r.direction==='high'?'▲':'▼'):'';
+      return `<div class="cpf-res-row${oor?' oor':''}"><span class="cpf-res-lbl">${esc(label)}</span><span class="cpf-res-val">${v} ${unit}${oor?` <b>${arrow}</b> <span class="cpf-res-range">(${r.range})</span>`:''}</span></div>`;
+    }).join('');
+    const dtfLine=dtf!=null?(dtf>0?`<div class="cpf-res-dtf">⏱ Days to critical: <b>${dtf}</b></div>`:`<div class="cpf-res-dtf warn">⚠️ At or past critical threshold</div>`):'';
+    const m=document.getElementById('cp-msgs'),nd=document.createElement('div');
+    nd.className='cp-msg bot m4-arrive';
+    const scoreValue=Math.max(0,Math.min(100,Number(score)||0));
+    const scoreColor=status==='GREEN'?'var(--green)':status==='AMBER'?'var(--amber)':'var(--red)';
+    nd.innerHTML=`<div class="cp-av b">${CP_BOT_SVG}</div><div class="cp-bubble cpf-result">
+      <div class="cpf-res-hdr"><span class="cpf-asset-id">${esc(assetId)}</span><span class="cpf-score-badge ${status.toLowerCase()}">${emoji} <b class="m4-score-count">0</b>/100 ${status}</span></div>
+      <div class="cpf-score-track"><span class="cpf-score-fill" style="--m4-score:${scoreValue}%;background:${scoreColor}"></span></div>
+      <div class="cpf-res-conf">Confidence: ${conf} (${cl}–${ch})</div>
+      ${sensorRows?`<div class="cpf-section" style="margin-top:8px">Sensor Readings</div>${sensorRows}`:''}
+      ${dtfLine}
+    </div>`;
+    m.appendChild(nd);nd.querySelectorAll('.cpf-res-row').forEach((row,i)=>row.style.animationDelay=(.1+i*.06)+'s');m4CountPopupScore(nd.querySelector('.m4-score-count'),scoreValue);if(btn){btn.classList.remove('m4-predict-loading');btn.textContent='Prediction complete';}m.scrollTop=m.scrollHeight;
+    document.getElementById('cp-mdot').style.background='var(--amber)';
+    document.getElementById('cp-mlbl').textContent='ML Prediction · HGBR';
+  }catch(ex){
+    if(btn){btn.disabled=false;btn.classList.remove('m4-predict-loading');btn.textContent='Run Prediction';}
+    const m=document.getElementById('cp-msgs'),nd=document.createElement('div');
+    nd.className='cp-msg bot m4-arrive';nd.innerHTML=`<div class="cp-av b">${CP_BOT_SVG}</div><div class="cp-bubble" style="color:var(--red)">Prediction failed: ${esc(ex.message)}</div>`;
+    m.appendChild(nd);m.scrollTop=m.scrollHeight;
+  }
+}
+function round(v,d){return Math.round(v*Math.pow(10,d))/Math.pow(10,d);}
+async function cpSendMsg(){const inp=document.getElementById('cp-input'),text=inp.value.trim();if(!text||cpBusy)return;inp.value='';inp.style.height='auto';document.getElementById('cp-send').disabled=true;cpBusy=true;cpUser(text);cpTypingOn();try{const res=await fetch('/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,asset_type:'',history:cpHist.slice(-10)})});if(!res.ok)throw new Error(`HTTP ${res.status}`);const data=await res.json();cpTypingOff();cpBot(data);cpHist.push({role:'user',content:text},{role:'assistant',content:data.answer})}catch(err){cpTypingOff();const m=document.getElementById('cp-msgs'),d=document.createElement('div');d.className='cp-msg bot m4-arrive';d.innerHTML=`<div class="cp-av b">${CP_BOT_SVG}</div><div class="cp-bubble" style="color:var(--red)">Error: ${esc(err.message)}</div>`;m.appendChild(d);m.scrollTop=m.scrollHeight}finally{cpBusy=false;document.getElementById('cp-send').disabled=false}}
 function cpSend(t){document.getElementById('cp-input').value=t;cpSendMsg()}
 
 /* ═══ DARK MODE ═══ */
@@ -3024,10 +4181,246 @@ function mapCloseInfo(){
   document.querySelectorAll('[id^="map-dot-"]').forEach(d=>{d.setAttribute('fill','#2563eb');d.setAttribute('r','6');});
 }
 
+/* ═══ TRAIN SERVICE FLAGS ═══ */
+async function loadMaintenanceFlags(){
+  try{
+    const r=await fetch('/api/trains-under-maintenance',{headers:{'X-Engineer-Token':localStorage.getItem('m4_eng_token')||''}});
+    const d=await r.json();
+    const flags=d.trains||[];
+    const el=document.getElementById('flags-list');
+    if(!el)return;
+    if(!flags.length){
+      el.innerHTML='<div class="empty-state" style="padding:16px 0;font-size:0.8rem">No active service flags</div>';
+      return;
+    }
+    el.innerHTML=flags.map(f=>{
+      const tr=TRAINS.find(t=>t.id===f.train_id)||{};
+      const sev=f.severity||'medium';
+      const sevColor={AMBER:'var(--amber)',RED:'var(--red)'}[sev]||'var(--amber)';
+      const delay=f.delay_minutes!=null?`${f.delay_minutes} min delay`:'';
+      const eta=f.estimated_clear?`· Clears ~${esc(f.estimated_clear)}`:'';
+      const by=f.flagged_by?`by ${esc(f.flagged_by)}`:'';
+      const meta=[delay,eta,by].filter(Boolean).join(' ');
+      return `<div class="flag-row"><div class="flag-dot" style="background:${sevColor}"></div><div class="flag-body"><div class="flag-train">${esc(tr.name||f.train_id)}<span class="flag-id">${esc(f.train_id)}</span></div><div class="flag-reason">${esc(f.reason||'')}</div>${meta?`<div class="flag-meta">${meta}</div>`:''}</div><button class="btn-ghost flag-clear-btn" onclick="clearFlag('${esc(f.train_id)}')">Clear</button></div>`;
+    }).join('');
+  }catch(e){console.warn('loadMaintenanceFlags:',e);}
+}
+
+function openFlagModal(){
+  const sel=document.getElementById('flag-train-sel');
+  sel.innerHTML='<option value="">— Select train —</option>'+TRAINS.map(t=>`<option value="${t.id}">${esc(t.name)} (${t.id})</option>`).join('');
+  document.getElementById('flag-reason').value='';
+  document.getElementById('flag-severity').value='AMBER';
+  document.getElementById('flag-delay').value='';
+  document.getElementById('flag-clear').value='';
+  document.getElementById('flag-error').textContent='';
+  document.getElementById('flag-backdrop').classList.add('open');
+}
+
+function closeFlagModal(){document.getElementById('flag-backdrop').classList.remove('open');}
+
+async function submitTrainFlag(e){
+  e.preventDefault();
+  const trainId=document.getElementById('flag-train-sel').value;
+  const reason=document.getElementById('flag-reason').value.trim();
+  const severity=document.getElementById('flag-severity').value;
+  const delayVal=document.getElementById('flag-delay').value;
+  const estClear=document.getElementById('flag-clear').value.trim();
+  const errEl=document.getElementById('flag-error');
+  const btn=document.getElementById('flag-submit-btn');
+  if(!trainId||!reason){errEl.textContent='Train and reason are required.';return;}
+  const engName=localStorage.getItem('m4_eng_name')||'Engineer';
+  btn.disabled=true;btn.textContent='Flagging…';errEl.textContent='';
+  try{
+    const payload={train_id:trainId,reason,severity,flagged_by:engName};
+    if(delayVal)payload.delay_minutes=parseInt(delayVal,10);
+    if(estClear)payload.estimated_clear=estClear;
+    const res=await fetch('/api/flag-train',{method:'POST',headers:{'Content-Type':'application/json','X-Engineer-Token':localStorage.getItem('m4_eng_token')||''},body:JSON.stringify(payload)});
+    if(res.status===401){closeFlagModal();localStorage.removeItem('m4_eng_token');localStorage.removeItem('m4_eng_auth');_lgResetAndShow();toast('Session expired — please sign in again.');return;}
+    if(!res.ok){const d2=await res.json().catch(()=>({}));const det=d2.detail;errEl.textContent=Array.isArray(det)?det.map(e=>e.msg||JSON.stringify(e)).join('; '):(typeof det==='string'?det:'Failed to flag train.');return;}
+    closeFlagModal();toast('Train flagged for maintenance.');loadMaintenanceFlags();
+  }catch(ex){errEl.textContent='Connection error.';}
+  finally{btn.disabled=false;btn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Flag Train';}
+}
+
+async function clearFlag(trainId){
+  if(!confirm(`Clear maintenance flag for ${trainId}?`))return;
+  try{
+    const res=await fetch(`/api/flag-train/${encodeURIComponent(trainId)}`,{method:'DELETE',headers:{'X-Engineer-Token':localStorage.getItem('m4_eng_token')||''}});
+    if(res.status===401){localStorage.removeItem('m4_eng_token');localStorage.removeItem('m4_eng_auth');_lgResetAndShow();toast('Session expired — please sign in again.');return;}
+    if(!res.ok){const d2=await res.json().catch(()=>({}));const det=d2.detail;toast(Array.isArray(det)?det.map(e=>e.msg||JSON.stringify(e)).join('; '):(typeof det==='string'?det:'Failed to clear flag.'));return;}
+    toast('Maintenance flag cleared.');loadMaintenanceFlags();
+  }catch(ex){toast('Connection error.');}
+}
+
 /* ═══ INIT ═══ */
 heroInit();
 loadDashboard();
+loadFleetSummary();
 setInterval(loadDashboard,30000);
+setInterval(loadFleetSummary,60000);
+</script>
+
+<!-- ═══ RESOLUTION MODAL ═══ -->
+<div class="res-backdrop" id="res-backdrop" onclick="closeResolveModal(event)">
+  <div class="res-modal" role="dialog" aria-modal="true">
+    <div class="res-header">
+      <div class="res-header-top">
+        <div class="res-title">Resolve Report</div>
+        <button class="res-close" onclick="closeResolveModal()">&times;</button>
+      </div>
+      <div id="res-report-info" class="res-report-info"></div>
+    </div>
+    <div class="res-body">
+      <!-- Action taken -->
+      <div class="res-field">
+        <label class="res-label">Action taken</label>
+        <select class="res-select" id="res-action">
+          <option value="">— Select —</option>
+          <option value="Inspected — no further action required">Inspected — no further action required</option>
+          <option value="Part replaced">Part replaced</option>
+          <option value="Part repaired">Part repaired</option>
+          <option value="Cleaned and serviced">Cleaned and serviced</option>
+          <option value="Adjusted and calibrated">Adjusted and calibrated</option>
+          <option value="Fluid topped up / replaced">Fluid topped up / replaced</option>
+          <option value="Escalated to depot workshop">Escalated to depot workshop</option>
+          <option value="Monitoring — no immediate fix">Monitoring — no immediate fix</option>
+          <option value="Passenger complaint acknowledged">Passenger complaint acknowledged</option>
+          <option value="False alarm — no fault found">False alarm — no fault found</option>
+        </select>
+      </div>
+      <!-- Health after fix -->
+      <div class="res-field">
+        <label class="res-label">Asset health after fix</label>
+        <div class="res-health-row">
+          <button class="res-health-btn green active" id="rh-green" onclick="selectHealth('GREEN')">GREEN</button>
+          <button class="res-health-btn amber" id="rh-amber" onclick="selectHealth('AMBER')">AMBER</button>
+          <button class="res-health-btn red" id="rh-red" onclick="selectHealth('RED')">RED — still critical</button>
+        </div>
+      </div>
+      <!-- Priority -->
+      <div class="res-field">
+        <label class="res-label">Priority</label>
+        <select class="res-select" id="res-priority">
+          <option value="routine">Routine</option>
+          <option value="urgent">Urgent</option>
+          <option value="critical">Critical — out of service</option>
+        </select>
+      </div>
+      <!-- Notes (optional short) -->
+      <div class="res-field">
+        <label class="res-label">Notes <span style="font-weight:400;color:var(--text-light)">(optional)</span></label>
+        <textarea class="res-textarea" id="res-notes" placeholder="e.g. replaced brake pad set 3, torqued to spec…" maxlength="300"></textarea>
+      </div>
+    </div>
+    <div class="res-footer">
+      <button class="res-btn-cancel" onclick="closeResolveModal()">Cancel</button>
+      <button class="res-btn-submit" id="res-submit-btn" onclick="submitResolve()">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:4px"><polyline points="20 6 9 17 4 12"/></svg>
+        Mark Resolved
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══ RESOLUTION MODAL LOGIC ═══ */
+let _resReportId=null;
+let _resHealthAfter='GREEN';
+
+function openResolveModal(reportId, assetId, assetType, station, fault, summary){
+  _resReportId=reportId;
+  _resHealthAfter='GREEN';
+  // Reset form
+  document.getElementById('res-action').value='';
+  document.getElementById('res-priority').value='routine';
+  document.getElementById('res-notes').value='';
+  selectHealth('GREEN');
+  // Populate report info panel
+  const typeLbl=(assetType||'').replace(/_/g,' ');
+  document.getElementById('res-report-info').innerHTML=`
+    <div class="res-report-row"><span class="res-report-label">Report</span><span class="res-report-val">${esc(reportId)}</span></div>
+    <div class="res-report-row"><span class="res-report-label">Asset</span><span class="res-report-val">${esc(assetId)} · ${esc(typeLbl)}</span></div>
+    <div class="res-report-row"><span class="res-report-label">Station</span><span class="res-report-val">${esc(station||'—')}</span></div>
+    <div class="res-report-row"><span class="res-report-label">Fault</span><span class="res-report-val">${esc(fault||'none')}</span></div>
+    <div class="res-report-row"><span class="res-report-label">Summary</span><span class="res-report-val" style="max-width:240px;word-break:break-word;font-weight:500">${esc((summary||'').slice(0,120))}</span></div>
+  `;
+  document.getElementById('res-submit-btn').disabled=false;
+  document.getElementById('res-submit-btn').textContent='';
+  document.getElementById('res-submit-btn').innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:4px"><polyline points="20 6 9 17 4 12"/></svg>Mark Resolved';
+  document.getElementById('res-backdrop').classList.add('open');
+}
+
+function closeResolveModal(e){
+  if(e&&e.target!==document.getElementById('res-backdrop'))return;
+  document.getElementById('res-backdrop').classList.remove('open');
+  _resReportId=null;
+}
+
+function selectHealth(val){
+  _resHealthAfter=val;
+  ['GREEN','AMBER','RED'].forEach(h=>{
+    const el=document.getElementById('rh-'+h.toLowerCase());
+    if(el) el.classList.toggle('active',h===val);
+  });
+}
+
+async function submitResolve(){
+  if(!_resReportId) return;
+  const token=localStorage.getItem('m4_eng_token')||'';
+  if(!token){
+    closeResolveModal();
+    localStorage.removeItem('m4_eng_auth');
+    _lgResetAndShow();
+    toast('Session expired — please sign in again to resolve reports.',4000);
+    return;
+  }
+  const action=document.getElementById('res-action').value;
+  if(!action){document.getElementById('res-action').focus();return;}
+  const notes=document.getElementById('res-notes').value.trim();
+  const priority=document.getElementById('res-priority').value;
+  const btn=document.getElementById('res-submit-btn');
+  btn.disabled=true;
+  btn.textContent='Saving…';
+  try{
+    const res=await fetch(`/api/reports/${encodeURIComponent(_resReportId)}/resolve`,{
+      method:'PATCH',
+      headers:{'Content-Type':'application/json','X-Engineer-Token':token},
+      body:JSON.stringify({action_taken:action,health_after:_resHealthAfter,priority,notes})
+    });
+    if(res.status===401){
+      closeResolveModal();
+      localStorage.removeItem('m4_eng_token');
+      localStorage.removeItem('m4_eng_auth');
+      _lgResetAndShow();
+      toast('Session expired — please sign in again.',4000);
+      btn.disabled=false;
+      btn.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:4px"><polyline points="20 6 9 17 4 12"/></svg>Mark Resolved';
+      return;
+    }
+    if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.detail||'Failed');}
+    // Update card in place
+    const card=document.getElementById('rcard-'+_resReportId);
+    if(card){
+      card.classList.add('resolved');
+      const dot=card.querySelector('.ov-report-dot');
+      if(dot) dot.style.background='var(--green)';
+      const resolveBtn=card.querySelector('.btn-resolve');
+      if(resolveBtn) resolveBtn.replaceWith(Object.assign(document.createElement('span'),{className:'resolve-badge',textContent:'✓ Resolved just now'}));
+    }
+    // Update counter
+    const allCards=Array.from(document.querySelectorAll('.ov-report-card'));
+    const openCnt=allCards.filter(c=>!c.classList.contains('resolved')).length;
+    const cntEl=document.getElementById('rpt-feed-count');
+    if(cntEl) cntEl.textContent=`${allCards.length} total · ${openCnt} open · showing latest 10`;
+    document.getElementById('res-backdrop').classList.remove('open');
+  }catch(e){
+    btn.disabled=false;
+    btn.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:4px"><polyline points="20 6 9 17 4 12"/></svg>Mark Resolved';
+    alert('Could not resolve: '+e.message);
+  }
+}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeResolveModal();});
 </script>
 </body>
 </html>

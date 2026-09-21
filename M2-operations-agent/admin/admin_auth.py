@@ -65,12 +65,18 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
         "m2.audit.view",
         "m2.model.manage",
         "m2.data.manage",
+        # Approve / reject incidents; only verified incidents reach the
+        # public incident map, so this stays with administrators.
+        "m2.incidents.review",
+        "m2.assistant.use",
     },
     ROLE_OPERATIONS_ENGINEER: {
         "m2.control_room.view",
         "m2.control_room.action",
         "m2.prediction.view",
         "m2.prediction.run",
+        # Operations Assistant: dashboard, routes, predictions, incident queue.
+        "m2.assistant.use",
     },
     ROLE_OPERATIONS_MANAGER: {
         "m2.control_room.view",
@@ -246,8 +252,10 @@ def require_role(*allowed_roles: str) -> Callable:
 
 def require_permission(permission: str) -> Callable:
     """Dependency factory: Restricts route to officers possessing a specific capability."""
-    def _dependency(officer: dict = Header(default="")) -> dict:
-        current = get_current_officer(officer)
+    # Reads the standard Authorization header (a parameter named `officer`
+    # would make FastAPI look for an "officer" header, which no client sends).
+    def _dependency(authorization: str = Header(default="")) -> dict:
+        current = get_current_officer(authorization)
         role = current.get("role", "")
         if not has_permission(role, permission):
             raise HTTPException(

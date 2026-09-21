@@ -271,7 +271,6 @@ def get_index():
 
 @app.get("/user", include_in_schema=False)
 @app.get("/user/dashboard", include_in_schema=False)
-@app.get("/user/chat", include_in_schema=False)
 @app.get("/user/booking", include_in_schema=False)
 @app.get("/user/confirmation", include_in_schema=False)
 def get_user_portal():
@@ -280,6 +279,11 @@ def get_user_portal():
     if HTML_FILE.is_file():
         return FileResponse(HTML_FILE)
     raise HTTPException(status_code=404, detail="user.html not found")
+
+
+@app.get("/user/chat", include_in_schema=False)
+def redirect_user_chat():
+    return RedirectResponse(url="/user", status_code=status.HTTP_302_FOUND)
 
 
 _TRAIN_BOARD_CACHE: dict[str, tuple[float, dict[str, Any]]] = {}
@@ -1917,17 +1921,21 @@ async def hub_dashboard_proxy() -> JSONResponse:
         )
 
 
-def humanize_hub_error(raw_err: str | None, intent: str = "", receiver: str = "") -> dict[str, Any]:
+def humanize_hub_error(raw_err: str | None, intent: str = "", receiver: str = "") -> dict[str, Any] | None:
     """Translate raw technical error logs into clear, human/LLM-understandable explanations."""
     if not raw_err:
-        return {
-            "summary": "Unknown Error",
-            "details": "No specific failure reason was returned by the receiving agent.",
-            "missing_fields": [],
-        }
+        return None
 
     err = str(raw_err).strip()
     lowered = err.lower()
+
+    # Administrative review decisions are successful human adjudications, not system failures
+    if (
+        intent in ("cancellation_review_rejection", "cancellation_review_approval", "cancellation_review", "fraud_review")
+        or "admin decision" in lowered
+        or "admin rejection" in lowered
+    ):
+        return None
 
     # Case 1: Incomplete booking parameters (Pydantic validation errors on BookingRequest)
     if "validation error" in lowered and ("bookingrequest" in lowered or intent == "booking_request"):
@@ -2036,15 +2044,23 @@ async def hub_timeline_proxy(limit: int = Query(default=20, ge=1, le=100)) -> JS
                         raw_err = i.get("error_message")
                         intent = i.get("intent", "")
                         receiver = i.get("receiver_agent") or i.get("receiver", "")
-                        h = humanize_hub_error(raw_err, intent=intent, receiver=receiver) if raw_err else None
+                        sender = i.get("sender_agent") or i.get("sender", "")
+                        raw_status = i.get("status", "ROUTED")
+                        is_admin_decision = (
+                            sender == "admin-adjudicator"
+                            or "cancellation_review" in intent
+                            or "fraud_review" in intent
+                        )
+                        status = "ROUTED" if is_admin_decision else raw_status
+                        h = None if is_admin_decision else (humanize_hub_error(raw_err, intent=intent, receiver=receiver) if raw_err else None)
                         result_items.append({
                             "message_id": i.get("message_id"),
                             "correlation_id": i.get("correlation_id"),
-                            "sender": i.get("sender_agent") or i.get("sender", ""),
+                            "sender": sender,
                             "receiver": receiver,
                             "intent": intent,
-                            "status": i.get("status", "ROUTED"),
-                            "error_message": raw_err,
+                            "status": status,
+                            "error_message": None if is_admin_decision else raw_err,
                             "error_summary": h["summary"] if h else None,
                             "error_details": h["details"] if h else None,
                             "missing_fields": h["missing_fields"] if h else [],
@@ -2065,15 +2081,23 @@ async def hub_timeline_proxy(limit: int = Query(default=20, ge=1, le=100)) -> JS
                 raw_err = getattr(l, "error_message", None)
                 intent = l.intent or ""
                 receiver = l.receiver_agent or ""
-                h = humanize_hub_error(raw_err, intent=intent, receiver=receiver) if raw_err else None
+                sender = l.sender_agent or ""
+                raw_status = l.status.value if hasattr(l.status, "value") else str(l.status)
+                is_admin_decision = (
+                    sender == "admin-adjudicator"
+                    or "cancellation_review" in intent
+                    or "fraud_review" in intent
+                )
+                status = "ROUTED" if is_admin_decision else raw_status
+                h = None if is_admin_decision else (humanize_hub_error(raw_err, intent=intent, receiver=receiver) if raw_err else None)
                 result_items.append({
                     "message_id": l.message_id,
                     "correlation_id": getattr(l, "correlation_id", None),
-                    "sender": l.sender_agent,
+                    "sender": sender,
                     "receiver": receiver,
                     "intent": intent,
-                    "status": l.status.value if hasattr(l.status, "value") else str(l.status),
-                    "error_message": raw_err,
+                    "status": status,
+                    "error_message": None if is_admin_decision else raw_err,
                     "error_summary": h["summary"] if h else None,
                     "error_details": h["details"] if h else None,
                     "missing_fields": h["missing_fields"] if h else [],
@@ -2250,6 +2274,48 @@ async def join_waiting_list_endpoint(req: WaitingListInput) -> JSONResponse:
 
 
 # ---------------------------------------------------------------------------
+# Admin Booking Intelligence Chatbot Proxy
+# ---------------------------------------------------------------------------
+
+@app.post("/api/admin/booking-chat", tags=["admin"])
+async def proxy_admin_booking_chat(request: Request) -> JSONResponse:
+    """
+    Proxy endpoint for the Admin Booking Intelligence Assistant.
+    Forwards natural-language queries to Booking Agent (/api/admin/booking-chat).
+    Falls back to direct in-memory AdminChatService if backend is offline.
+    """
+    body = await request.json()
+    try:
+        async with httpx.AsyncClient(timeout=25.0) as client:
+            resp = await client.post(
+                f"{BOOKING_AGENT_URL}/api/admin/booking-chat",
+                json=body,
+            )
+            if resp.status_code == 200:
+                return JSONResponse(status_code=200, content=resp.json())
+    except Exception:
+        pass
+
+    # Direct database fallback
+    try:
+        sys.path.insert(0, str(_M3_ROOT / "booking-agent"))
+        from database.database import SessionLocal
+        from admin_chat.query_router import AdminChatService
+        from admin_chat.schemas import AdminChatRequest
+
+        chat_req = AdminChatRequest(**body)
+        with SessionLocal() as db:
+            service = AdminChatService(db)
+            result = service.process_chat_message(chat_req)
+            return JSONResponse(status_code=200, content=result.model_dump())
+    except Exception as exc:
+        return JSONResponse(
+            status_code=500,
+            content={"error": f"Booking Intelligence Chatbot unavailable: {exc}"},
+        )
+
+
+# ---------------------------------------------------------------------------
 # CLI Runner
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
@@ -2257,3 +2323,4 @@ if __name__ == "__main__":
     port = int(os.getenv("PORT", 3000))
     print(f"Starting RailSense Unified Frontend on http://localhost:{port}")
     uvicorn.run("serve:app", host="0.0.0.0", port=port, reload=True)
+

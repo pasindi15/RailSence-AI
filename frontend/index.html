@@ -3165,15 +3165,19 @@ async function loadHubDashboard() {
         tbody.innerHTML = logs.map(l => {
           const sAgent = l.sender || l.sender_agent || 'unknown';
           const rAgent = l.receiver || l.receiver_agent || 'unknown';
-          const st = (l.status || 'ROUTED').toLowerCase();
-          const isFailed = st === 'failed' || st === 'rejected';
+          const intent = (l.intent || '').toLowerCase();
+          const isAdminDecision = sAgent === 'admin-adjudicator' || intent.includes('cancellation_review') || intent.includes('review_decision') || intent.includes('fraud_review');
+
+          const rawStatus = (l.status || 'ROUTED').toUpperCase();
+          const displayStatus = isAdminDecision ? 'ROUTED' : rawStatus;
+          const isFailed = !isAdminDecision && (displayStatus === 'FAILED' || displayStatus === 'REJECTED');
           const bgCol = isFailed ? 'rgba(176,64,48,0.2)' : 'rgba(58,138,74,0.2)';
           const textCol = isFailed ? '#F87171' : '#4ADE80';
           const timeStr = l.timestamp ? new Date(l.timestamp).toLocaleTimeString() : 'N/A';
           const durStr = l.duration_ms ? l.duration_ms.toFixed(1) + ' ms' : '< 1 ms';
 
           let errorHtml = '<span style="color:var(--muted);font-size:11px;">—</span>';
-          if (isFailed || l.error_message || l.error_summary) {
+          if (isFailed && (l.error_message || l.error_summary)) {
             const summary = l.error_summary || 'Request Failed';
             const details = l.error_details || l.error_message || '';
             const missing = Array.isArray(l.missing_fields) ? l.missing_fields : [];
@@ -3213,7 +3217,7 @@ async function loadHubDashboard() {
               <td style="padding:8px;color:var(--brand);font-weight:600;font-size:11px;">${escapeHtml(l.message_id || 'N/A')}</td>
               <td style="padding:8px;white-space:nowrap;"><span style="color:#93C5FD;">${escapeHtml(sAgent)}</span> ➔ <span style="color:#A7F3D0;">${escapeHtml(rAgent)}</span></td>
               <td style="padding:8px;color:var(--ink-bright);">${escapeHtml(l.intent || '')}</td>
-              <td style="padding:8px;"><span style="padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;background:${bgCol};color:${textCol}">${escapeHtml(l.status || 'ROUTED')}</span></td>
+              <td style="padding:8px;"><span style="padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;background:${bgCol};color:${textCol}">${escapeHtml(displayStatus)}</span></td>
               <td style="padding:8px;">${errorHtml}</td>
               <td style="padding:8px;color:var(--muted-hi);white-space:nowrap;">${durStr}</td>
             </tr>
