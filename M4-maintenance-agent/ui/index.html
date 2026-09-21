@@ -755,6 +755,30 @@ body.dark .rpt-tag{background:#1e3a5f;border-color:#1e40af;color:#93c5fd}
 .cp-msg.user .cp-bubble{background:var(--primary);color:white;border-bottom-right-radius:4px}
 .cp-msg.bot .cp-bubble{background:var(--white);color:var(--text);border:1px solid var(--border);border-bottom-left-radius:4px;box-shadow:var(--shadow-sm)}
 .cp-bubble p{margin:0 0 6px 0}.cp-bubble p:last-child{margin-bottom:0}.cp-bubble strong{font-weight:700}.cp-bubble ul{padding-left:14px;margin:2px 0 6px 0}.cp-bubble li{margin-bottom:4px;line-height:1.45}.cp-bubble p.cp-label{margin-bottom:2px}.cp-bubble p.cp-label+ul{margin-top:0}
+/* ── Chat prediction form card ── */
+.cpf-card,.cpf-result{max-width:290px!important;padding:10px 12px!important}
+.cpf-hdr,.cpf-res-hdr{display:flex;align-items:center;gap:7px;margin-bottom:10px}
+.cpf-asset-id{font-size:0.85rem;font-weight:700;color:var(--text)}
+.cpf-type-badge{font-size:0.65rem;background:var(--blue-bg);color:var(--primary);padding:2px 7px;border-radius:8px;text-transform:capitalize}
+.cpf-section{font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-light);margin:8px 0 5px 0}
+.cpf-row{display:flex;flex-direction:column;gap:2px;margin-bottom:6px}
+.cpf-lbl{font-size:0.7rem;color:var(--text-muted);font-weight:500}
+.cpf-unit{font-weight:400;opacity:.7}
+.cpf-inp{width:100%;padding:4px 8px;border:1.5px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:0.78rem;box-sizing:border-box}
+.cpf-inp:focus{outline:none;border-color:var(--primary)}
+.cpf-btn{width:100%;margin-top:10px;padding:7px;background:var(--primary);color:white;border:none;border-radius:8px;font-size:0.78rem;font-weight:600;cursor:pointer}
+.cpf-btn:hover{opacity:.9}.cpf-btn:disabled{opacity:.5;cursor:default}
+.cpf-res-conf{font-size:0.7rem;color:var(--text-light);margin-bottom:4px}
+.cpf-res-row{display:flex;justify-content:space-between;font-size:0.75rem;padding:3px 0;border-bottom:1px solid var(--border)}
+.cpf-res-row:last-child{border-bottom:none}
+.cpf-res-row.oor{background:var(--red-bg);margin:0 -4px;padding:3px 4px;border-radius:4px;border-bottom:none;margin-bottom:2px}
+.cpf-res-lbl{color:var(--text-muted)}
+.cpf-res-val{font-weight:500;color:var(--text)}
+.cpf-res-range{font-size:0.65rem;color:var(--text-light)}
+.cpf-res-dtf{font-size:0.75rem;margin-top:8px;color:var(--text)}
+.cpf-res-dtf.warn{color:var(--red);font-weight:600}
+.cpf-score-badge{font-size:0.75rem;font-weight:700;padding:2px 8px;border-radius:8px;background:var(--bg)}
+.cpf-score-badge.green{color:var(--green)}.cpf-score-badge.amber{color:var(--amber)}.cpf-score-badge.red{color:var(--red)}
 .cp-fleet{background:var(--bg);border:1px solid var(--border);border-radius:9px;overflow:hidden;margin:6px 0}
 .cp-fleet-hdr{font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-light);padding:6px 10px 5px;border-bottom:1px solid var(--border);background:#f8fafc}
 .cp-fleet-row{display:flex;align-items:center;gap:9px;padding:7px 10px;border-bottom:1px solid var(--border)}
@@ -3592,7 +3616,114 @@ function cpRender(t){
   }
   return assetHtml+html+actionHtml;
 }
-function cpBot(data){const m=document.getElementById('cp-msgs'),d=document.createElement('div');d.className='cp-msg bot';const cites=(data.citations||[]).map(c=>`<span class="cp-cite-chip">${esc(c.section_title||c.manual||'Manual')}</span>`).join('');const ch=cites?`<div class="cp-citations"><div class="cp-cite-label">Sources</div>${cites}</div>`:'';d.innerHTML=`<div class="cp-av b">🔧</div><div class="cp-bubble">${cpRender(data.answer)}${ch}</div>`;m.appendChild(d);m.scrollTop=m.scrollHeight;const l=data.answer_method==='llm_grounded';document.getElementById('cp-mdot').style.background=l?'var(--primary-light)':'var(--green)';document.getElementById('cp-mlbl').textContent=`${l?'LLM':'Template'} · ${data.retrieval_method==='supabase_pgvector'?'pgvector':'TF-IDF'}`}
+const _CP_SENSOR_META = {
+  diesel_engine:[
+    {key:'temperature_celsius',  label:'Temperature',    unit:'°C',  min:0,   max:200, step:0.1},
+    {key:'vibration_level',      label:'Vibration',      unit:'g',   min:0,   max:20,  step:0.1},
+    {key:'oil_pressure_bar',     label:'Oil Pressure',   unit:'bar', min:0,   max:10,  step:0.1},
+    {key:'fuel_efficiency_pct',  label:'Fuel Efficiency',unit:'%',   min:0,   max:100, step:0.1},
+  ],
+  bogie:[
+    {key:'vibration_level',      label:'Vibration',      unit:'g',   min:0,   max:20,  step:0.1},
+    {key:'axle_temp_celsius',    label:'Axle Temp',      unit:'°C',  min:0,   max:200, step:0.1},
+    {key:'wheel_profile_mm',     label:'Wheel Profile',  unit:'mm',  min:50,  max:200, step:0.1},
+  ],
+  brake_system:[
+    {key:'pad_thickness_mm',           label:'Pad Thickness',  unit:'mm',  min:0,  max:30,  step:0.1},
+    {key:'brake_cylinder_pressure_bar',label:'Cyl. Pressure',  unit:'bar', min:0,  max:15,  step:0.1},
+    {key:'stopping_distance_m',        label:'Stopping Dist.', unit:'m',   min:0,  max:600, step:1},
+  ],
+};
+const _CP_FAULT_TYPES = ['none','pad_worn','suspension_worn','brake_fade','bearing_noise','wheel_flat','cylinder_leak','starter_failure','oil_leak','overheating','fuel_pump_fault','axle_crack'];
+
+function cpBot(data){
+  const m=document.getElementById('cp-msgs'),d=document.createElement('div');
+  d.className='cp-msg bot';
+
+  if(data.answer_method==='prediction_form' && data.prediction_form){
+    const f=data.prediction_form;
+    const sensors=_CP_SENSOR_META[f.asset_type]||[];
+    const uid='cpf'+Date.now();
+    const sensorFields=sensors.map(s=>{
+      const val=f.sensors[s.key]!=null?f.sensors[s.key]:'';
+      return `<div class="cpf-row"><label class="cpf-lbl">${esc(s.label)} <span class="cpf-unit">(${s.unit})</span></label><input class="cpf-inp" id="${uid}-${s.key}" type="number" step="${s.step}" min="${s.min}" max="${s.max}" value="${val}" placeholder="optional"></div>`;
+    }).join('');
+    const faultOpts=_CP_FAULT_TYPES.map(ft=>`<option value="${ft}"${ft===f.fault_type?' selected':''}>${ft.replace(/_/g,' ')}</option>`).join('');
+    d.innerHTML=`<div class="cp-av b">🔧</div><div class="cp-bubble cpf-card">
+      <div class="cpf-hdr"><span class="cpf-asset-id">${esc(f.asset_id)}</span><span class="cpf-type-badge">${esc(f.asset_type.replace(/_/g,' '))}</span></div>
+      <div class="cpf-section">Service Info</div>
+      <div class="cpf-row"><label class="cpf-lbl">Days Since Service</label><input class="cpf-inp" id="${uid}-days" type="number" min="0" max="999" value="${f.days_since_service}"></div>
+      <div class="cpf-row"><label class="cpf-lbl">Fault Count (30d)</label><input class="cpf-inp" id="${uid}-faults" type="number" min="0" max="99" value="${f.fault_count_30d}"></div>
+      <div class="cpf-row"><label class="cpf-lbl">Recent Fault Type</label><select class="cpf-inp" id="${uid}-ftype">${faultOpts}</select></div>
+      <div class="cpf-section">Sensor Readings <span style="font-weight:400;opacity:.6">(optional — uses fleet averages if blank)</span></div>
+      ${sensorFields}
+      <button class="cpf-btn" onclick="cpRunPredict('${uid}','${f.asset_id}','${f.asset_type}')">Run Prediction</button>
+    </div>`;
+    m.appendChild(d);m.scrollTop=m.scrollHeight;
+    document.getElementById('cp-mdot').style.background='var(--primary-light)';
+    document.getElementById('cp-mlbl').textContent='Fill in values · ML ready';
+    return;
+  }
+
+  const cites=(data.citations||[]).map(c=>`<span class="cp-cite-chip">${esc(c.section_title||c.manual||'Manual')}</span>`).join('');
+  const ch=cites?`<div class="cp-citations"><div class="cp-cite-label">Sources</div>${cites}</div>`:'';
+  d.innerHTML=`<div class="cp-av b">🔧</div><div class="cp-bubble">${cpRender(data.answer)}${ch}</div>`;
+  m.appendChild(d);m.scrollTop=m.scrollHeight;
+  const isPred=data.answer_method==='health_prediction';const l=data.answer_method==='llm_grounded';
+  document.getElementById('cp-mdot').style.background=isPred?'var(--amber)':l?'var(--primary-light)':'var(--green)';
+  document.getElementById('cp-mlbl').textContent=isPred?'ML Prediction · HGBR':`${l?'LLM':'Template'} · ${data.retrieval_method==='supabase_pgvector'?'pgvector':'TF-IDF'}`;
+}
+
+async function cpRunPredict(uid, assetId, assetType){
+  const btn=document.querySelector(`button[onclick*="${uid}"]`);
+  if(btn){btn.disabled=true;btn.textContent='Running…';}
+  const days=parseInt(document.getElementById(`${uid}-days`)?.value)||30;
+  const faults=parseInt(document.getElementById(`${uid}-faults`)?.value)||0;
+  const ftype=document.getElementById(`${uid}-ftype`)?.value||'none';
+  const sensors={};
+  (_CP_SENSOR_META[assetType]||[]).forEach(s=>{
+    const v=document.getElementById(`${uid}-${s.key}`)?.value;
+    if(v!==''&&v!=null&&!isNaN(parseFloat(v))) sensors[s.key]=parseFloat(v);
+  });
+  try{
+    const res=await fetch('/asset-health',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({asset_id:assetId,asset_type:assetType,days_since_service:days,fault_count_30d:faults,fault_type:ftype,sensors})});
+    if(!res.ok)throw new Error(`HTTP ${res.status}`);
+    const p=await res.json();
+    const score=p.health_score,status=p.health_status,conf=p.confidence;
+    const cl=p.confidence_low??round(score-8,1),ch=p.confidence_high??round(score+8,1);
+    const dtf=p.days_to_failure;
+    const risks=p.risk_factors||[];
+    const emoji={'GREEN':'🟢','AMBER':'🟡','RED':'🔴'}[status]||'⚪';
+    const UNITS={temperature_celsius:'°C',vibration_level:'g',oil_pressure_bar:'bar',fuel_efficiency_pct:'%',axle_temp_celsius:'°C',wheel_profile_mm:'mm',pad_thickness_mm:'mm',brake_cylinder_pressure_bar:'bar',stopping_distance_m:'m'};
+    const LABELS={temperature_celsius:'Engine Temp',vibration_level:'Vibration',oil_pressure_bar:'Oil Pressure',fuel_efficiency_pct:'Fuel Efficiency',axle_temp_celsius:'Axle Temp',wheel_profile_mm:'Wheel Profile',pad_thickness_mm:'Pad Thickness',brake_cylinder_pressure_bar:'Cyl. Pressure',stopping_distance_m:'Stopping Dist.'};
+    const outOfRange=new Set(risks.map(r=>r.sensor));
+    const sensorRows=Object.entries(sensors).map(([k,v])=>{
+      const label=LABELS[k]||k,unit=UNITS[k]||'',oor=outOfRange.has(k);
+      const r=risks.find(r=>r.sensor===k);
+      const arrow=r?(r.direction==='high'?'▲':'▼'):'';
+      return `<div class="cpf-res-row${oor?' oor':''}"><span class="cpf-res-lbl">${esc(label)}</span><span class="cpf-res-val">${v} ${unit}${oor?` <b>${arrow}</b> <span class="cpf-res-range">(${r.range})</span>`:''}</span></div>`;
+    }).join('');
+    const dtfLine=dtf!=null?(dtf>0?`<div class="cpf-res-dtf">⏱ Days to critical: <b>${dtf}</b></div>`:`<div class="cpf-res-dtf warn">⚠️ At or past critical threshold</div>`):'';
+    const m=document.getElementById('cp-msgs'),nd=document.createElement('div');
+    nd.className='cp-msg bot';
+    nd.innerHTML=`<div class="cp-av b">🔧</div><div class="cp-bubble cpf-result">
+      <div class="cpf-res-hdr"><span class="cpf-asset-id">${esc(assetId)}</span><span class="cpf-score-badge ${status.toLowerCase()}">${emoji} ${score}/100 ${status}</span></div>
+      <div class="cpf-res-conf">Confidence: ${conf} (${cl}–${ch})</div>
+      ${sensorRows?`<div class="cpf-section" style="margin-top:8px">Sensor Readings</div>${sensorRows}`:''}
+      ${dtfLine}
+    </div>`;
+    m.appendChild(nd);m.scrollTop=m.scrollHeight;
+    document.getElementById('cp-mdot').style.background='var(--amber)';
+    document.getElementById('cp-mlbl').textContent='ML Prediction · HGBR';
+  }catch(ex){
+    if(btn){btn.disabled=false;btn.textContent='Run Prediction';}
+    const m=document.getElementById('cp-msgs'),nd=document.createElement('div');
+    nd.className='cp-msg bot';nd.innerHTML=`<div class="cp-av b">🔧</div><div class="cp-bubble" style="color:var(--red)">Prediction failed: ${esc(ex.message)}</div>`;
+    m.appendChild(nd);m.scrollTop=m.scrollHeight;
+  }
+}
+function round(v,d){return Math.round(v*Math.pow(10,d))/Math.pow(10,d);}
 async function cpSendMsg(){const inp=document.getElementById('cp-input'),text=inp.value.trim();if(!text||cpBusy)return;inp.value='';inp.style.height='auto';document.getElementById('cp-send').disabled=true;cpBusy=true;cpUser(text);cpTypingOn();try{const res=await fetch('/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,asset_type:'',history:cpHist.slice(-10)})});if(!res.ok)throw new Error(`HTTP ${res.status}`);const data=await res.json();cpTypingOff();cpBot(data);cpHist.push({role:'user',content:text},{role:'assistant',content:data.answer})}catch(err){cpTypingOff();const m=document.getElementById('cp-msgs'),d=document.createElement('div');d.className='cp-msg bot';d.innerHTML=`<div class="cp-av b">🔧</div><div class="cp-bubble" style="color:var(--red)">Error: ${esc(err.message)}</div>`;m.appendChild(d);m.scrollTop=m.scrollHeight}finally{cpBusy=false;document.getElementById('cp-send').disabled=false}}
 function cpSend(t){document.getElementById('cp-input').value=t;cpSendMsg()}
 

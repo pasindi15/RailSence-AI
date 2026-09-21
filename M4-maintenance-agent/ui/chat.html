@@ -814,6 +814,32 @@
     flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0;
   }
 
+  /* ── Health prediction form card ── */
+  .cpf-card,.cpf-result{background:var(--white);border:1px solid var(--border);border-radius:16px;padding:14px 16px;box-shadow:var(--shadow-sm);max-width:420px;width:100%}
+  .cpf-hdr,.cpf-res-hdr{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+  .cpf-asset-id{font-size:0.88rem;font-weight:800;color:var(--text);letter-spacing:-0.3px}
+  .cpf-type-badge{font-size:0.65rem;background:rgba(37,99,235,0.07);color:var(--primary);padding:2px 8px;border-radius:8px;text-transform:capitalize;font-weight:600}
+  .cpf-section{font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-light);margin:10px 0 6px 0}
+  .cpf-row{display:flex;flex-direction:column;gap:3px;margin-bottom:7px}
+  .cpf-lbl{font-size:0.75rem;color:var(--text-muted);font-weight:500}
+  .cpf-unit{font-weight:400;opacity:.7}
+  .cpf-inp{width:100%;padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--text);font-size:0.82rem;box-sizing:border-box;font-family:inherit;transition:border-color 0.15s}
+  .cpf-inp:focus{outline:none;border-color:var(--border-focus)}
+  .cpf-btn{width:100%;margin-top:12px;padding:9px;background:var(--primary);color:white;border:none;border-radius:10px;font-size:0.82rem;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 2px 8px rgba(37,99,235,0.25);transition:opacity 0.15s}
+  .cpf-btn:hover{opacity:.9}.cpf-btn:disabled{opacity:.5;cursor:default}
+  .cpf-res-conf{font-size:0.72rem;color:var(--text-light);margin-bottom:6px}
+  .cpf-res-row{display:flex;justify-content:space-between;font-size:0.8rem;padding:4px 0;border-bottom:1px solid var(--border)}
+  .cpf-res-row:last-child{border-bottom:none}
+  .cpf-res-row.oor{background:rgba(239,68,68,0.06);margin:0 -6px;padding:4px 6px;border-radius:4px;border-bottom:none;margin-bottom:2px}
+  .cpf-res-lbl{color:var(--text-muted)}
+  .cpf-res-val{font-weight:500;color:var(--text)}
+  .cpf-res-range{font-size:0.68rem;color:var(--text-light)}
+  .cpf-res-dtf{font-size:0.8rem;margin-top:10px;color:var(--text)}
+  .cpf-res-dtf.warn{color:var(--red);font-weight:700}
+  .cpf-score-badge{font-size:0.78rem;font-weight:700;padding:3px 10px;border-radius:8px;background:var(--surface-2)}
+  .cpf-score-badge.green{color:var(--green)}.cpf-score-badge.amber{color:var(--amber)}.cpf-score-badge.red{color:var(--red)}
+  .bubble.cpf-card,.bubble.cpf-result{padding:14px 16px !important;border-radius:16px !important}
+
   /* ── Responsive ── */
   @media (max-width: 768px) {
     .sidebar { position: fixed; left: 0; top: 62px; bottom: 0; z-index: 40; box-shadow: var(--shadow-lg); }
@@ -1111,6 +1137,28 @@ let history = [];
 let isTyping = false;
 let activeCategory = null;
 
+/* ── Health prediction constants ── */
+const _CPF_SENSOR_META = {
+  diesel_engine:[
+    {key:'temperature_celsius',  label:'Temperature',    unit:'°C',  min:0,   max:200, step:0.1},
+    {key:'vibration_level',      label:'Vibration',      unit:'g',   min:0,   max:20,  step:0.1},
+    {key:'oil_pressure_bar',     label:'Oil Pressure',   unit:'bar', min:0,   max:10,  step:0.1},
+    {key:'fuel_efficiency_pct',  label:'Fuel Efficiency',unit:'%',   min:0,   max:100, step:0.1},
+  ],
+  bogie:[
+    {key:'vibration_level',      label:'Vibration',      unit:'g',   min:0,   max:20,  step:0.1},
+    {key:'axle_temp_celsius',    label:'Axle Temp',      unit:'°C',  min:0,   max:200, step:0.1},
+    {key:'wheel_profile_mm',     label:'Wheel Profile',  unit:'mm',  min:50,  max:200, step:0.1},
+  ],
+  brake_system:[
+    {key:'pad_thickness_mm',            label:'Pad Thickness',  unit:'mm',  min:0,  max:30,  step:0.1},
+    {key:'brake_cylinder_pressure_bar', label:'Cyl. Pressure',  unit:'bar', min:0,  max:15,  step:0.1},
+    {key:'stopping_distance_m',         label:'Stopping Dist.', unit:'m',   min:0,  max:600, step:1},
+  ],
+};
+const _CPF_FAULT_TYPES = ['none','pad_worn','suspension_worn','brake_fade','bearing_noise','wheel_flat','cylinder_leak','starter_failure','oil_leak','overheating','fuel_pump_fault','axle_crack'];
+function _round(v,d){return Math.round(v*Math.pow(10,d))/Math.pow(10,d);}
+
 /* ── Session management ── */
 const SESSION_STORE = 'm4_chat_sessions';
 const MAX_SESSIONS  = 20;
@@ -1268,11 +1316,11 @@ const SUGGESTIONS = {
   engine: {
     label: 'Engine & Diesel',
     items: [
+      { icon: '🔮', text: 'predict DE-1001' },
       { icon: '🔩', text: 'How many km until a major engine overhaul?' },
       { icon: '🛢️', text: 'How do I diagnose an engine oil leak?' },
       { icon: '🌡️', text: 'Engine overheating — emergency procedure?' },
       { icon: '⚙️', text: 'What is the correct fuel injection pressure?' },
-      { icon: '🔄', text: 'How often should engine oil be changed?' },
     ],
   },
   brakes: {
@@ -1396,6 +1444,41 @@ function appendBotBubble(data, storedTime) {
   const w = document.getElementById('chat-window');
   const div = document.createElement('div');
   div.className = 'msg bot';
+
+  if (data.answer_method === 'prediction_form' && data.prediction_form) {
+    const f = data.prediction_form;
+    const uid = 'cpf' + Date.now();
+    const sensors = _CPF_SENSOR_META[f.asset_type] || [];
+    const sensorFields = sensors.map(s => {
+      const val = f.sensors[s.key] != null ? f.sensors[s.key] : '';
+      return `<div class="cpf-row"><label class="cpf-lbl">${escHtml(s.label)} <span class="cpf-unit">(${s.unit})</span></label><input class="cpf-inp" id="${uid}-${s.key}" type="number" step="${s.step}" min="${s.min}" max="${s.max}" value="${val}" placeholder="optional"></div>`;
+    }).join('');
+    const faultOpts = _CPF_FAULT_TYPES.map(ft => `<option value="${ft}"${ft === f.fault_type ? ' selected' : ''}>${ft.replace(/_/g,' ')}</option>`).join('');
+    div.innerHTML = `
+      <div class="avatar bot-av">${BOT_SVG}</div>
+      <div class="msg-wrap">
+        <div class="bubble cpf-card">
+          <div class="cpf-hdr">
+            <span class="cpf-asset-id">${escHtml(f.asset_id)}</span>
+            <span class="cpf-type-badge">${escHtml(f.asset_type.replace(/_/g,' '))}</span>
+          </div>
+          <div class="cpf-section">Service Info</div>
+          <div class="cpf-row"><label class="cpf-lbl">Days Since Service</label><input class="cpf-inp" id="${uid}-days" type="number" min="0" max="999" value="${f.days_since_service}"></div>
+          <div class="cpf-row"><label class="cpf-lbl">Fault Count (30d)</label><input class="cpf-inp" id="${uid}-faults" type="number" min="0" max="99" value="${f.fault_count_30d}"></div>
+          <div class="cpf-row"><label class="cpf-lbl">Recent Fault Type</label><select class="cpf-inp" id="${uid}-ftype">${faultOpts}</select></div>
+          <div class="cpf-section">Sensor Readings <span style="font-weight:400;opacity:.6">(optional — uses fleet averages if blank)</span></div>
+          ${sensorFields}
+          <button class="cpf-btn" onclick="chatRunPredict('${uid}','${escHtml(f.asset_id)}','${escHtml(f.asset_type)}')">Run Prediction</button>
+        </div>
+        <span class="msg-time">${storedTime || _msgTime()}</span>
+      </div>`;
+    w.appendChild(div);
+    scrollBottom();
+    document.getElementById('method-dot').style.background = 'var(--primary-light)';
+    document.getElementById('method-label').textContent = 'Fill in values · ML ready';
+    return;
+  }
+
   const cards = renderAnswerCards(data.answer);
   const bodyHtml = cards || renderMarkdown(data.answer);
   const bubbleClass = cards ? 'bubble card-bubble' : 'bubble';
@@ -1418,6 +1501,78 @@ function appendBotBubble(data, storedTime) {
         detail.style.display = detail.style.display === 'none' ? 'block' : 'none';
     });
   });
+}
+
+async function chatRunPredict(uid, assetId, assetType) {
+  const btn = document.querySelector(`button[onclick*="${uid}"]`);
+  if (btn) { btn.disabled = true; btn.textContent = 'Running…'; }
+  const days   = parseInt(document.getElementById(`${uid}-days`)?.value)   || 30;
+  const faults = parseInt(document.getElementById(`${uid}-faults`)?.value) || 0;
+  const ftype  = document.getElementById(`${uid}-ftype`)?.value            || 'none';
+  const sensors = {};
+  (_CPF_SENSOR_META[assetType] || []).forEach(s => {
+    const v = document.getElementById(`${uid}-${s.key}`)?.value;
+    if (v !== '' && v != null && !isNaN(parseFloat(v))) sensors[s.key] = parseFloat(v);
+  });
+  try {
+    const res = await fetch('/asset-health', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({asset_id:assetId, asset_type:assetType, days_since_service:days, fault_count_30d:faults, fault_type:ftype, sensors}),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const p = await res.json();
+    const score = p.health_score, status = p.health_status, conf = p.confidence;
+    const cl = p.confidence_low  ?? _round(score - 8, 1);
+    const ch = p.confidence_high ?? _round(score + 8, 1);
+    const dtf = p.days_to_failure;
+    const risks = p.risk_factors || [];
+    const emoji = {'GREEN':'🟢','AMBER':'🟡','RED':'🔴'}[status] || '⚪';
+    const UNITS  = {temperature_celsius:'°C',vibration_level:'g',oil_pressure_bar:'bar',fuel_efficiency_pct:'%',axle_temp_celsius:'°C',wheel_profile_mm:'mm',pad_thickness_mm:'mm',brake_cylinder_pressure_bar:'bar',stopping_distance_m:'m'};
+    const LABELS = {temperature_celsius:'Engine Temp',vibration_level:'Vibration',oil_pressure_bar:'Oil Pressure',fuel_efficiency_pct:'Fuel Efficiency',axle_temp_celsius:'Axle Temp',wheel_profile_mm:'Wheel Profile',pad_thickness_mm:'Pad Thickness',brake_cylinder_pressure_bar:'Cyl. Pressure',stopping_distance_m:'Stopping Dist.'};
+    const oorSet = new Set(risks.map(r => r.sensor));
+    const sensorRows = Object.entries(sensors).map(([k, v]) => {
+      const lbl = LABELS[k] || k, unit = UNITS[k] || '', oor = oorSet.has(k);
+      const r = risks.find(r => r.sensor === k);
+      const arrow = r ? (r.direction === 'high' ? '▲' : '▼') : '';
+      return `<div class="cpf-res-row${oor?' oor':''}"><span class="cpf-res-lbl">${escHtml(lbl)}</span><span class="cpf-res-val">${v} ${unit}${oor?` <b>${arrow}</b> <span class="cpf-res-range">(${r.range})</span>`:''}</span></div>`;
+    }).join('');
+    const dtfLine = dtf != null
+      ? (dtf > 0 ? `<div class="cpf-res-dtf">⏱ Days to critical: <b>${dtf}</b></div>`
+                 : `<div class="cpf-res-dtf warn">⚠️ At or past critical threshold</div>`)
+      : '';
+    const nd = document.createElement('div');
+    nd.className = 'msg bot';
+    nd.innerHTML = `
+      <div class="avatar bot-av">${BOT_SVG}</div>
+      <div class="msg-wrap">
+        <div class="bubble cpf-result">
+          <div class="cpf-res-hdr">
+            <span class="cpf-asset-id">${escHtml(assetId)}</span>
+            <span class="cpf-score-badge ${status.toLowerCase()}">${emoji} ${score}/100 ${status}</span>
+          </div>
+          <div class="cpf-res-conf">Confidence: ${conf} (${cl}–${ch})</div>
+          ${sensorRows ? `<div class="cpf-section" style="margin-top:8px">Sensor Readings</div>${sensorRows}` : ''}
+          ${dtfLine}
+        </div>
+        <span class="msg-time">${_msgTime()}</span>
+      </div>`;
+    document.getElementById('chat-window').appendChild(nd);
+    scrollBottom();
+    document.getElementById('method-dot').style.background  = 'var(--amber)';
+    document.getElementById('method-label').textContent = 'ML Prediction · HGBR';
+  } catch (ex) {
+    if (btn) { btn.disabled = false; btn.textContent = 'Run Prediction'; }
+    const nd = document.createElement('div');
+    nd.className = 'msg bot';
+    nd.innerHTML = `
+      <div class="avatar bot-av">${BOT_SVG}</div>
+      <div class="msg-wrap">
+        <div class="bubble" style="color:var(--red)">Prediction failed: ${escHtml(ex.message)}</div>
+        <span class="msg-time">${_msgTime()}</span>
+      </div>`;
+    document.getElementById('chat-window').appendChild(nd);
+    scrollBottom();
+  }
 }
 
 // ── Markdown renderer (lightweight) ──
@@ -1638,9 +1793,17 @@ function buildCitations(citations) {
 function updateMethodBadge(method, retrieval) {
   const dot   = document.getElementById('method-dot');
   const label = document.getElementById('method-label');
-  const isLLM = method === 'llm_grounded';
-  dot.style.background = isLLM ? 'var(--primary-light)' : 'var(--green)';
-  label.textContent = `${isLLM ? 'LLM · ' : 'Template · '}${retrieval === 'supabase_pgvector' ? 'pgvector' : 'TF-IDF'}`;
+  if (method === 'health_prediction') {
+    dot.style.background = 'var(--amber)';
+    label.textContent = 'ML Prediction · HGBR';
+  } else if (method === 'prediction_form') {
+    dot.style.background = 'var(--primary-light)';
+    label.textContent = 'Fill in values · ML ready';
+  } else {
+    const isLLM = method === 'llm_grounded';
+    dot.style.background = isLLM ? 'var(--primary-light)' : 'var(--green)';
+    label.textContent = `${isLLM ? 'LLM · ' : 'Template · '}${retrieval === 'supabase_pgvector' ? 'pgvector' : 'TF-IDF'}`;
+  }
 }
 
 // ── Send ──

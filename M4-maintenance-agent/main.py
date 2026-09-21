@@ -891,11 +891,63 @@ def _inject_report_context(message: str) -> str:
     return "\n".join(lines) + "\n\n" + message
 
 
+_PREDICT_KEYWORDS = re.compile(
+    r"\b(predict|health\s*score|health\s*check|check\s*health|run\s*prediction|"
+    r"how\s*healthy|condition|status\s*of|diagnos)\b",
+    re.IGNORECASE,
+)
+_ASSET_ID_RE = re.compile(r"\b(DE|BG|BR|BK)-\d{4}\b", re.IGNORECASE)
+
+
+_ASSET_TYPE_BY_PREFIX = {"DE": "diesel_engine", "BG": "bogie", "BR": "brake_system", "BK": "brake_system"}
+
+
+def _chat_predict_form(asset_id: str) -> dict:
+    """Return pre-filled form data for the chat prediction card.
+    Falls back to defaults when the asset has no history row."""
+    rows = _get_history()
+    aid = asset_id.upper()
+    prefix = aid.split("-")[0] if "-" in aid else aid[:2]
+    row = next((r for r in rows if r.get("asset_id", "").upper() == aid), None)
+    asset_type = (row or {}).get("asset_type") or _ASSET_TYPE_BY_PREFIX.get(prefix, "diesel_engine")
+    sensor_keys = list(health_model.SENSOR_RANGES.get(asset_type, {}).keys())
+    sensors: dict = {}
+    if row:
+        sensors = {k: round(float(v), 2) for k in sensor_keys if (v := row.get(k)) is not None}
+    return {
+        "answer": "",
+        "citations": [],
+        "retrieval_method": "fleet_data",
+        "answer_method": "prediction_form",
+        "detected_asset_type": asset_type,
+        "detected_train": None,
+        "prediction_form": {
+            "asset_id": aid,
+            "asset_type": asset_type,
+            "days_since_service": int((row or {}).get("days_since_service") or 30),
+            "fault_count_30d": int((row or {}).get("fault_count_30d") or 0),
+            "fault_type": (row or {}).get("last_fault_type") or (row or {}).get("fault_type") or "none",
+            "sensors": sensors,
+        },
+    }
+
+
 @app.post("/chat")
 @limiter.limit("30/minute")
 async def chat(request: Request, payload: ChatRequest):
     history = [{"role": t.role, "content": t.content} for t in payload.history]
     enriched_message = _inject_report_context(payload.message)
+
+    # Health prediction fast-path: show pre-filled form card in chat.
+    asset_match = _ASSET_ID_RE.search(payload.message)
+    if asset_match and _PREDICT_KEYWORDS.search(payload.message):
+        form_result = _chat_predict_form(asset_match.group(0))
+        _write_audit("engineer_chat_predict", request.client.host if request.client else "unknown", {
+            "asset_id": asset_match.group(0).upper(),
+            "answer_method": "prediction_form",
+        })
+        return form_result
+
     result = engineer_chatbot.answer_engineer_question(
         message=enriched_message,
         asset_type=payload.asset_type or "",
