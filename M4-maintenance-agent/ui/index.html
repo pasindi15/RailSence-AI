@@ -879,6 +879,172 @@ body.dark .rpt-tag{background:#1e3a5f;border-color:#1e40af;color:#93c5fd}
 @keyframes mapPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(0.75)}}
 @keyframes svgPulse{0%{r:7;opacity:0.65}100%{r:15;opacity:0}}
 .train-pulse-ring{animation:svgPulse 1.8s ease-out infinite}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   M4 Premium Interface Layer — presentation only; existing dashboard hooks
+   and dynamic renderers intentionally remain unchanged.
+   ══════════════════════════════════════════════════════════════════════════ */
+:root{
+  --bg-card:var(--white);
+  --bg-card2:var(--surface);
+  --m4-panel-shadow:0 14px 34px rgba(15,23,42,.075),0 2px 8px rgba(15,23,42,.035);
+  --m4-panel-shadow-hover:0 20px 44px rgba(15,23,42,.12),0 5px 14px rgba(15,23,42,.055);
+  --m4-mobile-sidebar:min(84vw,280px);
+}
+body.dark{
+  --m4-panel-shadow:0 14px 34px rgba(0,0,0,.26),0 2px 8px rgba(0,0,0,.16);
+  --m4-panel-shadow-hover:0 20px 46px rgba(0,0,0,.36),0 5px 14px rgba(0,0,0,.2);
+}
+body{
+  background-image:radial-gradient(circle at 100% 0,rgba(59,130,246,.075),transparent 29%),radial-gradient(circle at 0 62%,rgba(16,185,129,.045),transparent 31%);
+  background-attachment:fixed;
+}
+body.dark{background-image:radial-gradient(circle at 100% 0,rgba(59,130,246,.12),transparent 30%),radial-gradient(circle at 0 62%,rgba(16,185,129,.055),transparent 31%)}
+
+.topbar{background:rgba(255,255,255,.88);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);box-shadow:0 1px 0 var(--border),0 8px 22px rgba(15,23,42,.025)}
+body.dark .topbar{background:rgba(30,41,59,.88);box-shadow:0 1px 0 var(--border),0 8px 22px rgba(0,0,0,.12)}
+.topbar-title{font-size:1.02rem;letter-spacing:-.35px}.topbar-sub{font-size:.72rem}
+
+.card,.fleet-stat,.cat-stat-card,.fleet-donut-card,.cat-browser-card,.trend-card,.watchlist-card{
+  border-radius:20px;
+  box-shadow:var(--m4-panel-shadow);
+  border-color:var(--border);
+}
+.card{padding:25px 27px;transition:transform .22s cubic-bezier(.16,1,.3,1),box-shadow .22s cubic-bezier(.16,1,.3,1),border-color .22s ease}
+.card:hover{box-shadow:var(--m4-panel-shadow-hover);transform:translateY(-2px);border-color:color-mix(in srgb,var(--border) 72%,var(--primary) 28%)}
+.card-hdr{margin-bottom:20px}.card-title{font-size:.95rem;letter-spacing:-.2px}.card-sub{font-size:.73rem;line-height:1.5}
+
+/* KPI health signals */
+.grid-4{gap:16px;margin-bottom:24px}
+.kpi{min-height:138px;padding:22px 22px 20px;border-radius:20px;box-shadow:var(--m4-panel-shadow);isolation:isolate;transition:transform .22s cubic-bezier(.16,1,.3,1),box-shadow .22s ease,border-color .22s ease}
+.kpi:hover{box-shadow:var(--m4-panel-shadow-hover);transform:translateY(-4px)}
+.kpi::after{width:112px;height:112px;right:-42px;top:-46px;opacity:1;background:radial-gradient(circle,rgba(255,255,255,.58) 0 26%,transparent 27%),conic-gradient(from 210deg,rgba(59,130,246,.16),transparent 43%,rgba(59,130,246,.04) 0)};z-index:-1}
+body.dark .kpi::after{background:radial-gradient(circle,rgba(30,41,59,.35) 0 26%,transparent 27%),conic-gradient(from 210deg,rgba(96,165,250,.19),transparent 43%,rgba(96,165,250,.05) 0)}
+.kpi-icon{position:relative;isolation:isolate;border:1px solid rgba(255,255,255,.72);box-shadow:inset 0 1px 0 rgba(255,255,255,.8),0 7px 16px rgba(15,23,42,.06)}
+.kpi-icon::after{content:'';position:absolute;inset:4px;border:1.5px solid rgba(37,99,235,.28);border-top-color:transparent;border-radius:50%;z-index:-1;animation:m4KpiOrbit 7s linear infinite}
+.kpi.green .kpi-icon::after{border-color:rgba(16,185,129,.34);border-top-color:transparent}.kpi.amber .kpi-icon::after{border-color:rgba(245,158,11,.42);border-top-color:transparent}.kpi.red .kpi-icon::after{border-color:rgba(239,68,68,.38);border-top-color:transparent}
+.kpi-value{font-size:2.25rem}.kpi-desc{display:flex;align-items:center;gap:6px;font-weight:600}.kpi-desc::before{content:'';width:20px;height:5px;border-radius:999px;background:linear-gradient(90deg,var(--primary-light),rgba(59,130,246,.22));box-shadow:0 0 10px rgba(59,130,246,.18)}
+.kpi.green .kpi-desc::before{background:linear-gradient(90deg,var(--green),rgba(16,185,129,.22));box-shadow:0 0 10px rgba(16,185,129,.15)}.kpi.amber .kpi-desc::before{background:linear-gradient(90deg,var(--amber),rgba(245,158,11,.2));box-shadow:0 0 10px rgba(245,158,11,.15)}
+@keyframes m4KpiOrbit{to{transform:rotate(360deg)}}
+
+/* Overview balance and service-flag callout */
+.ov-2col{grid-template-columns:minmax(0,1.25fr) minmax(320px,.9fr);gap:20px}
+.ov-right-stack{gap:20px}
+#flags-card{position:relative;overflow:hidden;background:linear-gradient(135deg,var(--white),var(--surface));border-color:color-mix(in srgb,var(--border) 75%,var(--amber) 25%)}
+#flags-card::before{content:'';position:absolute;inset:0 0 auto;height:3px;background:linear-gradient(90deg,var(--amber),var(--red),transparent 78%)}
+#flags-card .card-hdr{position:relative;padding-bottom:13px;margin-bottom:8px;border-bottom:1px solid var(--border)}
+#flags-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
+.flag-row{height:100%;padding:13px 14px;border:1px solid var(--border);border-radius:14px;background:var(--white);box-shadow:0 2px 7px rgba(15,23,42,.025);transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
+.flag-row:hover{transform:translateY(-2px);box-shadow:0 10px 20px rgba(15,23,42,.08);border-color:color-mix(in srgb,var(--border) 60%,var(--amber) 40%)}
+.flag-dot{width:9px;height:9px;margin-top:5px;box-shadow:0 0 0 4px color-mix(in srgb,currentColor 10%,transparent)}
+.flag-train{font-weight:750}.flag-id{background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:2px 7px}.flag-reason{white-space:normal;line-height:1.45}.flag-meta{font-weight:600}.flag-clear-btn{border-radius:999px;align-self:flex-start}
+body.dark #flags-card{background:linear-gradient(135deg,var(--white),var(--surface))}body.dark .flag-row{background:var(--surface)}
+
+/* Fleet: retain sortable table IDs and row events while rendering rich asset cards. */
+#page-fleet .tbl-wrap{overflow:visible;border:0;border-radius:0;box-shadow:none;background:transparent}
+#page-fleet .tbl-wrap table,#page-fleet .tbl-wrap tbody{display:block;width:100%}
+#page-fleet .tbl-wrap thead{display:none}
+#fleet-tbody{display:grid!important;grid-template-columns:repeat(auto-fill,minmax(294px,1fr));gap:14px}
+#fleet-tbody tr.data-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;grid-template-areas:"asset asset status" "train type status" "score score score" "service faults actions";gap:8px 12px;padding:17px 17px 15px;background:var(--white);border:1px solid var(--border);border-left:4px solid var(--primary-light);border-radius:18px;box-shadow:var(--m4-panel-shadow);overflow:hidden;position:relative;transition:transform .2s cubic-bezier(.16,1,.3,1),box-shadow .2s ease,border-color .2s ease}
+#fleet-tbody tr.data-row::after{content:'';position:absolute;right:-34px;top:-42px;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,rgba(59,130,246,.11),transparent 67%);pointer-events:none}
+#fleet-tbody tr.data-row:hover,#fleet-tbody tr.data-row.row-open{transform:translateY(-3px);box-shadow:var(--m4-panel-shadow-hover);border-color:color-mix(in srgb,var(--border) 60%,var(--primary) 40%)}
+#fleet-tbody tr.data-row.row-open{background:var(--blue-bg)}
+#fleet-tbody tr.data-row td{display:block!important;background:transparent!important;border:0!important;padding:0!important;min-width:0;position:relative;z-index:1}
+#fleet-tbody tr.data-row td:nth-child(1){grid-area:asset;font-size:1rem;letter-spacing:-.2px;align-self:end}
+#fleet-tbody tr.data-row td:nth-child(2){grid-area:train}
+#fleet-tbody tr.data-row td:nth-child(3){grid-area:type}
+#fleet-tbody tr.data-row td:nth-child(4){grid-area:score;padding:10px 11px!important;background:var(--surface)!important;border:1px solid var(--border)!important;border-radius:11px}
+#fleet-tbody tr.data-row td:nth-child(5){grid-area:status;justify-self:end;align-self:start}
+#fleet-tbody tr.data-row td:nth-child(6){grid-area:service}
+#fleet-tbody tr.data-row td:nth-child(7){grid-area:faults}
+#fleet-tbody tr.data-row td:nth-child(8){grid-area:actions;justify-self:end;align-self:end}
+#fleet-tbody tr.data-row td:nth-child(2)::before,#fleet-tbody tr.data-row td:nth-child(3)::before,#fleet-tbody tr.data-row td:nth-child(4)::before,#fleet-tbody tr.data-row td:nth-child(6)::before,#fleet-tbody tr.data-row td:nth-child(7)::before{display:block;margin-bottom:3px;font-size:.59rem;font-weight:800;letter-spacing:.65px;color:var(--text-light);text-transform:uppercase}
+#fleet-tbody tr.data-row td:nth-child(2)::before{content:'Assigned train'}#fleet-tbody tr.data-row td:nth-child(3)::before{content:'Component'}#fleet-tbody tr.data-row td:nth-child(4)::before{content:'Health score'}#fleet-tbody tr.data-row td:nth-child(6)::before{content:'Last service'}#fleet-tbody tr.data-row td:nth-child(7)::before{content:'Faults · 30d'}
+#fleet-tbody .score-bar{gap:10px}.score-track{width:100%;height:7px;background:var(--surface-2)}.quick-btn{border-radius:9px;font-weight:700}.fleet-service-age{font-size:.83rem;font-weight:750;color:var(--text)}.fleet-service-date{display:block;margin-top:2px;font-size:.65rem;color:var(--text-light);font-weight:600}
+#fleet-tbody tr.detail-row{grid-column:1/-1;display:block;border:1px solid var(--border);border-radius:18px;overflow:hidden;box-shadow:var(--m4-panel-shadow);background:var(--surface)}
+#fleet-tbody tr.detail-row td{display:block!important;background:var(--surface)!important}
+#fleet-tbody tr:not(.data-row):not(.detail-row){grid-column:1/-1;display:block;background:var(--white);border:1px solid var(--border);border-radius:16px}
+#fleet-tbody tr:not(.data-row):not(.detail-row) td{display:block;border:0}
+body.dark #fleet-tbody tr.data-row{background:var(--white);border-color:var(--border)}body.dark #fleet-tbody tr.data-row.row-open{background:var(--blue-bg)}body.dark #fleet-tbody tr.data-row td:nth-child(4),body.dark #fleet-tbody tr.detail-row td{background:var(--surface)!important}
+
+/* Health prediction workspace */
+.cat-stat-grid{gap:14px;margin-bottom:20px}.cat-stat-card,.fleet-donut-card{position:relative;overflow:hidden;padding:16px 18px;transition:transform .18s ease,box-shadow .18s ease}.cat-stat-card:hover,.fleet-donut-card:hover{transform:translateY(-2px);box-shadow:var(--m4-panel-shadow-hover)}
+.cat-stat-card::after{content:'';position:absolute;right:-14px;bottom:-18px;width:74px;height:74px;border-radius:50%;background:radial-gradient(circle,rgba(59,130,246,.11),transparent 68%)}
+.pred-layout{grid-template-columns:minmax(330px,1.05fr) minmax(340px,.95fr);gap:24px}
+.pred-layout>div:first-child{display:flex;flex-direction:column;gap:14px}.pred-layout>div:first-child>.cat-browser-card{margin-bottom:0}
+.cat-browser-card{box-shadow:var(--m4-panel-shadow)}.cat-browser-hdr{padding:15px 18px 0}.cat-tab{padding:11px 7px}.cat-tab.active{background:linear-gradient(180deg,rgba(37,99,235,.07),transparent);border-bottom-width:3px}.cat-asset-list{max-height:286px;padding:7px}.cat-asset-row{margin:2px 0;padding:9px 10px;border:1px solid transparent;border-radius:10px}.cat-asset-row:hover{border-color:var(--border);box-shadow:0 4px 10px rgba(15,23,42,.045)}.cat-asset-row.sel{box-shadow:0 5px 14px rgba(37,99,235,.1)}
+#page-predict .form-row{gap:10px;padding:11px;border:1px solid var(--border);border-radius:14px;background:var(--surface);margin-bottom:10px!important}.form-group{gap:6px}.form-label{font-size:.68rem;font-weight:750;letter-spacing:.25px;text-transform:uppercase;color:var(--text-muted)}.form-input,.form-select{padding:10px 11px;border-radius:10px;background:var(--white)}.pred-section-lbl{margin:17px 0 9px!important}.pred-run-btn{margin-top:6px;padding:13px;border-radius:14px;box-shadow:0 8px 18px rgba(37,99,235,.22)}
+#pred-result-card{position:relative;overflow:hidden}#pred-result-card::before{content:'';position:absolute;inset:0 0 auto;height:3px;background:linear-gradient(90deg,var(--primary),var(--primary-light),var(--green));opacity:.9}#pred-result-card .pred-empty-state{min-height:330px;background:radial-gradient(circle at 50% 40%,var(--blue-bg),transparent 62%);border-radius:16px}.pred-gauge-wrap{position:relative;margin:2px 0 16px;padding:16px 0 10px;border-radius:18px;background:radial-gradient(circle,rgba(37,99,235,.09),transparent 65%)}.pred-gauge-wrap::before{content:'';position:absolute;left:50%;top:50%;width:134px;height:134px;border:1px dashed rgba(59,130,246,.24);border-radius:50%;transform:translate(-50%,-54%);animation:m4GaugeOrbit 18s linear infinite}.pred-gauge-svg{position:relative;filter:drop-shadow(0 10px 14px rgba(37,99,235,.12))}#pred-result .pred-gauge-svg circle:first-child{stroke:var(--surface-2)}#pred-gauge-arc{filter:drop-shadow(0 0 5px currentColor)}.pred-banner{border-radius:14px;padding:14px 16px}.conf-band-wrap,.dtf-row,.pred-rec-box{border-radius:14px}.pred-info-cell{padding:13px 14px;border-radius:12px}.pred-info-cell:hover{transform:translateY(-1px);box-shadow:var(--shadow-sm)}.pred-actions .quick-btn{padding:7px 12px}
+@keyframes m4GaugeOrbit{to{transform:translate(-50%,-54%) rotate(360deg)}}
+
+/* Loading feedback for the initial asynchronous dashboard states */
+.m4-loading{position:relative;overflow:hidden;color:transparent!important;background:var(--surface)!important;border-radius:12px;min-height:44px;border-color:transparent!important}.m4-loading>*{visibility:hidden}.m4-loading::after{content:'';position:absolute;inset:0;background:linear-gradient(100deg,transparent 20%,rgba(255,255,255,.72) 42%,transparent 65%);transform:translateX(-100%);animation:m4Shimmer 1.55s ease-in-out infinite}body.dark .m4-loading::after{background:linear-gradient(100deg,transparent 20%,rgba(148,163,184,.12) 42%,transparent 65%)}
+.btn:disabled,.cpf-btn:disabled{background-size:180% 100%;background-image:linear-gradient(100deg,var(--primary) 0%,var(--primary-light) 40%,var(--primary) 80%);animation:m4ButtonLoading 1.2s linear infinite}
+@keyframes m4Shimmer{to{transform:translateX(100%)}}@keyframes m4ButtonLoading{to{background-position:180% 0}}
+
+/* Dark-surface completions for components that previously used light literals. */
+body.dark .res-modal,body.dark .res-select,body.dark .res-textarea,body.dark .res-health-btn{background:var(--white);color:var(--text);border-color:var(--border)}
+body.dark .res-report-info,body.dark .res-btn-cancel{background:var(--surface);border-color:var(--border)}
+body.dark .res-health-btn.green.active,body.dark .res-health-btn.green:hover{background:var(--green-bg)}body.dark .res-health-btn.amber.active,body.dark .res-health-btn.amber:hover{background:var(--amber-bg)}body.dark .res-health-btn.red.active,body.dark .res-health-btn.red:hover{background:var(--red-bg)}
+body.dark .dist-track,body.dark .score-track,body.dark .ov-fleet-bar-track,body.dark .pred-urgency-track,body.dark .conf-band-track,body.dark .feat-imp-bar-track,body.dark .cat-asset-bar-wrap,body.dark .health-bar-track{background:rgba(148,163,184,.14)}
+body.dark .badge-gray,body.dark .cp-fleet-hdr{background:var(--surface);color:var(--text-muted)}
+
+/* Responsive dashboard layout and a working mobile sidebar drawer. */
+@media(max-width:1050px){
+  .ov-2col{grid-template-columns:1fr}.ov-right-stack{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.map-wrap{height:auto;min-height:0;flex-direction:column}.map-canvas-wrap{min-height:500px}.map-sidebar{width:100%;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));max-height:280px;overflow-y:auto}
+}
+@media(max-width:820px){
+  .fleet-stats-bar{grid-template-columns:repeat(2,minmax(0,1fr))}.cat-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.pred-layout{grid-template-columns:1fr}.fleet-donut-card{grid-column:span 2}.fleet-detail-grid{grid-template-columns:1fr 1fr}.topbar{padding:13px 20px}.page-content{padding:22px 20px 32px}
+}
+@media(max-width:768px){
+  .sidebar{width:var(--m4-mobile-sidebar)!important;transform:translateX(-105%)!important;box-shadow:var(--shadow-lg);transition:transform 280ms cubic-bezier(.16,1,.3,1)!important}
+  .sidebar.collapsed{width:var(--m4-mobile-sidebar)!important;transform:translateX(-105%)!important}
+  .sidebar.mobile-open{transform:translateX(0)!important}
+  .main,.sidebar.collapsed~.sb-toggle~.main{margin-left:0!important}.sb-toggle,.sidebar.collapsed~.sb-toggle{left:0!important;border-left:1px solid var(--border);border-radius:0 8px 8px 0}.sidebar.mobile-open~.sb-toggle{left:var(--m4-mobile-sidebar)!important}.sidebar.mobile-open~.sb-toggle svg{transform:rotate(180deg)}
+  .hero{margin:14px 16px 0}.page-content{padding:20px 16px 30px}.topbar{padding:12px 16px}.refresh-info{display:none}.grid-4{grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}.kpi{min-height:126px;padding:17px 15px;gap:10px}.kpi-icon{width:39px;height:39px}.kpi-value{font-size:1.8rem}.kpi-label{font-size:.59rem}.kpi-desc{font-size:.64rem}.ov-right-stack{grid-template-columns:1fr}.flag-row-2,.rpt-row{grid-template-columns:1fr}.flag-row-2 .flag-field{margin-bottom:13px}.rpt-modal-hdr,.rpt-body{padding-left:20px;padding-right:20px}.rpt-purpose{margin-left:20px;margin-right:20px}.rpt-footer{padding-left:20px;padding-right:20px}.flag-modal{padding:22px 20px}.chat-fab{right:18px;bottom:18px}.chat-popup{right:16px;bottom:84px;width:calc(100vw - 32px);height:min(555px,calc(100vh - 106px))}
+}
+@media(max-width:560px){
+  .hero{height:302px}.hero-top-right{display:none}.hero-content{padding:22px 20px 30px}.hero-name{font-size:1.55rem}.hero-extra-stats{max-width:210px}.hero-right{gap:7px}.hero-score-ring{width:66px;height:66px}.hero-score-num{font-size:1.25rem}.fleet-detail-grid{grid-template-columns:1fr}.fd-trend-hdr{align-items:flex-start;gap:8px;flex-direction:column}.fd-trend-legend{flex-wrap:wrap;gap:6px}.map-canvas-wrap{min-height:430px}.map-legend{display:none}.map-info-panel{left:10px;right:10px;top:auto;bottom:10px;max-width:none}.fleet-search,.fleet-search input,.fleet-train-sel{width:100%}.fleet-count{margin-left:0;width:100%;order:5}.fleet-export-btn{margin-left:auto}.cat-stat-grid{grid-template-columns:1fr}.fleet-donut-card{grid-column:auto}.pred-info-grid{grid-template-columns:1fr 1fr}
+  #fleet-tbody{grid-template-columns:1fr}#fleet-tbody tr.data-row{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"asset status" "train type" "score score" "service faults" "actions actions"}#fleet-tbody tr.data-row td:nth-child(8){justify-self:stretch}#fleet-tbody tr.data-row td:nth-child(8)>div{justify-content:flex-end}
+}
+@media(max-width:420px){.grid-4{grid-template-columns:1fr}.kpi{min-height:104px}.topbar-title{font-size:.9rem}.topbar-sub{font-size:.64rem}.pred-info-grid{grid-template-columns:1fr}.pred-actions .quick-btn{flex:1;justify-content:center}.flag-footer,.rpt-footer{flex-wrap:wrap}.flag-footer .btn,.flag-footer .btn-ghost,.rpt-footer .btn,.rpt-footer .btn-ghost{flex:1;justify-content:center}}
+@media(prefers-reduced-motion:reduce){.kpi-icon::after,.pred-gauge-wrap::before,.m4-loading::after,.btn:disabled,.cpf-btn:disabled{animation:none}.card,.kpi,.flag-row,#fleet-tbody tr.data-row,.cat-stat-card,.fleet-donut-card{transition:none!important}}
+
+/* ── M4 Motion Layer: additive, GPU-friendly interface feedback ── */
+@keyframes m4BotBreathe{0%,100%{transform:scale(1)}50%{transform:scale(1.035)}}
+@keyframes m4BotEye{0%,100%{opacity:.7;transform:scale(1)}50%{opacity:1;transform:scale(1.18)}}
+@keyframes m4BotLight{0%,100%{opacity:.45;transform:scale(.82)}50%{opacity:1;transform:scale(1.25)}}
+@keyframes m4BotScan{0%,100%{transform:translateX(-1.8px)}50%{transform:translateX(1.8px)}}
+@keyframes m4BotNod{0%{transform:translateY(-3px) rotate(-5deg)}55%{transform:translateY(1px) rotate(3deg)}100%{transform:translateY(0) rotate(0)}}
+@keyframes m4FabBob{0%,100%{transform:translateY(3px)}50%{transform:translateY(0)}}
+@keyframes m4FabRing{0%,100%{transform:scale(.92);opacity:.28}50%{transform:scale(1.22);opacity:0}}
+@keyframes m4FabOpen{0%{transform:scale(1)}55%{transform:scale(1.16)}100%{transform:scale(1)}}
+@keyframes m4Notice{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(251,191,36,.55)}55%{transform:scale(1.22);box-shadow:0 0 0 6px rgba(251,191,36,0)}}
+@keyframes m4PopupIn{0%{opacity:0;transform:translate3d(0,28px,0) scale(.9)}72%{opacity:1;transform:translate3d(0,-3px,0) scale(1.015)}100%{opacity:1;transform:translate3d(0,0,0) scale(1)}}
+@keyframes m4UserIn{0%{opacity:0;transform:translate3d(20px,5px,0) scale(.92)}72%{opacity:1;transform:translate3d(-2px,0,0) scale(1.02)}100%{opacity:1;transform:none}}
+@keyframes m4BotIn{0%{opacity:0;transform:translate3d(-20px,5px,0) scale(.92)}72%{opacity:1;transform:translate3d(2px,0,0) scale(1.02)}100%{opacity:1;transform:none}}
+@keyframes m4PageIn{from{opacity:0;transform:translate3d(0,9px,0)}to{opacity:1;transform:none}}
+@keyframes m4Rise{from{opacity:0;transform:translate3d(0,12px,0)}to{opacity:1;transform:none}}
+@keyframes m4StatusPulse{0%,100%{opacity:1;box-shadow:0 0 0 0 currentColor}50%{opacity:.72;box-shadow:0 0 0 5px color-mix(in srgb,currentColor 20%,transparent)}}
+@keyframes m4TypingWave{0%,100%{transform:translateY(1px) scale(.78);opacity:.38}45%{transform:translateY(-4px) scale(1.12);opacity:1}}
+@keyframes m4Unfold{0%{opacity:0;transform:perspective(700px) rotateX(-11deg) translateY(-8px)}100%{opacity:1;transform:none}}
+@keyframes m4Reveal{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
+@keyframes m4ScoreFill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes m4FocusGlow{0%{box-shadow:0 0 0 0 rgba(59,130,246,.24)}100%{box-shadow:0 0 0 4px rgba(59,130,246,.08)}}
+@keyframes m4TinySpin{to{transform:rotate(360deg)}}
+
+.rs-bot{width:100%;height:100%;display:block;overflow:visible}.rs-bot-body,.rs-bot-eyes,.rs-bot-light{transform-box:fill-box;transform-origin:center}.rs-bot-body{animation:m4BotBreathe 3.4s ease-in-out infinite}.rs-bot-eye{fill:#dbeafe;filter:drop-shadow(0 0 2px rgba(96,165,250,.9));animation:m4BotEye 1.8s ease-in-out infinite}.rs-bot-light{fill:#fbbf24;filter:drop-shadow(0 0 2px rgba(251,191,36,.88));animation:m4BotLight 1.5s ease-in-out infinite}.rs-bot-head{fill:var(--primary);stroke:rgba(255,255,255,.48);stroke-width:1.5}.rs-bot-face{fill:var(--primary-dark)}.rs-bot-body-panel{fill:var(--primary-light);stroke:rgba(255,255,255,.42);stroke-width:1.4}.rs-bot-antenna-line{stroke:var(--primary-light);stroke-width:2.5;stroke-linecap:round}
+
+/* Floating assistant: an idle bot peeks out until the window opens. */
+.chat-fab{overflow:visible;transition:transform .22s cubic-bezier(.16,1,.3,1),background .2s ease,box-shadow .2s ease}.chat-fab::after{content:'';position:absolute;inset:-6px;border:1px solid rgba(96,165,250,.64);border-radius:50%;pointer-events:none;animation:m4FabRing 2.35s ease-out infinite}.chat-fab .fab-pulse{display:none}#fab-chat{width:31px;height:35px;display:grid;place-items:center;transform:translateY(3px);animation:m4FabBob 2.6s ease-in-out infinite}#fab-chat .rs-bot{width:31px;height:35px}.chat-fab.open{animation:m4FabOpen .38s cubic-bezier(.34,1.56,.64,1);background:#475569}.chat-fab.open::after{display:none}.m4-fab-notice{position:absolute;right:1px;top:1px;width:10px;height:10px;border:2px solid var(--white);border-radius:50%;background:#fbbf24;opacity:0;pointer-events:none}.chat-fab.m4-has-notice .m4-fab-notice{opacity:1;animation:m4Notice 1.3s ease-in-out infinite}
+.chat-popup{transform:translate3d(0,24px,0) scale(.92);transition:transform .25s cubic-bezier(.16,1,.3,1),opacity .2s ease;will-change:transform,opacity}.chat-popup.open{transform:translate3d(0,0,0) scale(1);animation:m4PopupIn .42s cubic-bezier(.16,1,.3,1) both}.cp-av.b{overflow:visible}.cp-av.b .rs-bot{width:29px;height:29px}.cp-msg.user{animation:m4UserIn .34s cubic-bezier(.16,1,.3,1) both;will-change:transform,opacity}.cp-msg.bot:not(#cp-typing){animation:m4BotIn .38s .07s cubic-bezier(.16,1,.3,1) both;will-change:transform,opacity}.cp-msg.bot:not(#cp-typing) .rs-bot{animation:m4BotNod .42s .1s cubic-bezier(.34,1.56,.64,1) both}#cp-typing .rs-bot-eyes{animation:m4BotScan .55s linear infinite}#cp-typing .rs-bot-light{animation-duration:.36s}.cp-typing span{animation:m4TypingWave 1.05s ease-in-out infinite}.cp-input-wrap:focus-within{animation:m4FocusGlow .42s ease both}
+.cp-msg .cpf-card{transform-origin:top left;animation:m4Unfold .42s cubic-bezier(.16,1,.3,1) both}.cp-msg .cpf-result{animation:m4Reveal .38s cubic-bezier(.16,1,.3,1) both}.cpf-btn.m4-predict-loading{display:flex;align-items:center;justify-content:center;gap:7px}.m4-btn-spinner{width:12px;height:12px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:m4TinySpin .65s linear infinite}.cpf-score-track{height:4px;margin:9px 0 2px;background:var(--surface-2);border-radius:999px;overflow:hidden}.cpf-score-fill{display:block;height:100%;width:var(--m4-score);border-radius:inherit;background:currentColor;transform-origin:left;animation:m4ScoreFill .65s .1s cubic-bezier(.16,1,.3,1) both}.cpf-result .cpf-res-row{animation:m4Reveal .3s ease both}
+
+/* Dashboard hierarchy and feedback. */
+nav{position:relative}nav .nav-item{z-index:1}nav .nav-item.active{background:transparent}nav .nav-item.active::before{opacity:0}.m4-nav-indicator{position:absolute;left:10px;right:10px;top:0;height:42px;border-radius:12px;background:var(--blue-bg);border:1px solid color-mix(in srgb,var(--primary) 12%,transparent);opacity:0;pointer-events:none;transition:transform .34s cubic-bezier(.16,1,.3,1),height .34s cubic-bezier(.16,1,.3,1),opacity .18s ease;will-change:transform,height}.m4-nav-indicator.visible{opacity:1}.page.active.m4-page-enter,#pred-result.m4-result-reveal{animation:m4PageIn .2s ease both}.m4-animate-cards .kpi,#fleet-tbody.m4-fleet-animate tr.data-row{animation:m4Rise .42s cubic-bezier(.16,1,.3,1) both}.m4-animate-cards .kpi:nth-child(2){animation-delay:50ms}.m4-animate-cards .kpi:nth-child(3){animation-delay:100ms}.m4-animate-cards .kpi:nth-child(4){animation-delay:150ms}#fleet-tbody.m4-fleet-animate tr.data-row{animation-delay:var(--m4-stagger,0ms)}.score-fill,.ov-fleet-bar-fill,.health-bar-fill,.dist-fill{transition:width .72s cubic-bezier(.16,1,.3,1)}.badge-green .badge-dot,.sb-dot.on{animation:m4StatusPulse 2.4s ease-in-out infinite}.badge-amber .badge-dot{animation:m4StatusPulse 3.2s ease-in-out infinite}.badge-red .badge-dot{animation:m4StatusPulse 1.15s ease-in-out infinite}.form-input:focus,.form-select:focus,.flag-input:focus,.flag-select:focus,.flag-textarea:focus{animation:m4FocusGlow .42s ease both}.sidebar,.main,.sb-toggle{will-change:width,transform,margin-left,left}
+button:not(:disabled):active,.chat-btn:active,.cp-btn:active,.quick-btn:active{transform:scale(.97)}
+
+@media(prefers-reduced-motion:reduce){.rs-bot-body,.rs-bot-eye,.rs-bot-light,#fab-chat,.chat-fab::after,.chat-fab.open,.chat-popup.open,.cp-msg,.cp-msg .cpf-card,.cp-msg .cpf-result,.m4-nav-indicator,.page.active.m4-page-enter,.m4-animate-cards .kpi,#fleet-tbody.m4-fleet-animate tr.data-row,.badge-dot,.m4-fab-notice,.m4-btn-spinner,.cpf-score-fill,.cpf-result .cpf-res-row{animation:none!important;transition:none!important}.chat-popup{transition:none!important}}
 </style>
 </head>
 <body>
@@ -1052,6 +1218,7 @@ body.dark .rpt-tag{background:#1e3a5f;border-color:#1e40af;color:#93c5fd}
   </div>
 
   <nav>
+    <span class="m4-nav-indicator" aria-hidden="true"></span>
     <div class="nav-section">Main</div>
     <button class="nav-item active" data-page="overview" onclick="nav('overview',this)">
       <span class="nav-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span> Overview
@@ -1338,7 +1505,7 @@ body.dark .rpt-tag{background:#1e3a5f;border-color:#1e40af;color:#93c5fd}
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--text-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
           </div>
           <div id="ov-fleet-rows">
-            <div class="empty-state" style="padding:20px 0"><span style="font-size:1.4rem;display:block;margin-bottom:6px">🚂</span>Loading fleet…</div>
+            <div class="empty-state m4-loading" style="padding:20px 0"><span style="font-size:1.4rem;display:block;margin-bottom:6px">🚂</span>Loading fleet…</div>
           </div>
         </div>
 
@@ -1349,7 +1516,7 @@ body.dark .rpt-tag{background:#1e3a5f;border-color:#1e40af;color:#93c5fd}
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>
               Health Distribution
             </div>
-            <div id="status-dist"><div class="empty-state"><span style="font-size:1.1rem">📊</span> Loading…</div></div>
+            <div id="status-dist"><div class="empty-state m4-loading"><span style="font-size:1.1rem">📊</span> Loading…</div></div>
             <div style="display:none" id="type-dist"></div>
           </div>
           <div class="card">
@@ -1455,7 +1622,7 @@ body.dark .rpt-tag{background:#1e3a5f;border-color:#1e40af;color:#93c5fd}
                 <th>Actions</th>
               </tr>
             </thead>
-            <tbody id="fleet-tbody"><tr><td colspan="8" class="tbl-empty">Loading fleet data…</td></tr></tbody>
+            <tbody id="fleet-tbody"><tr><td colspan="8" class="tbl-empty m4-loading">Loading fleet data…</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -1574,7 +1741,7 @@ body.dark .rpt-tag{background:#1e3a5f;border-color:#1e40af;color:#93c5fd}
               </button>
             </div>
             <div class="cat-asset-list" id="cat-asset-list">
-              <div style="padding:12px 16px;font-size:0.74rem;color:var(--text-light)">Loading…</div>
+              <div class="m4-loading" style="padding:12px 16px;font-size:0.74rem;color:var(--text-light)">Loading…</div>
             </div>
           </div>
 
@@ -2053,8 +2220,8 @@ body.dark .rpt-tag{background:#1e3a5f;border-color:#1e40af;color:#93c5fd}
 
 <!-- ═══ Chat FAB ═══ -->
 <button class="chat-fab" id="chat-fab" onclick="toggleChat()" title="Maintenance Assistant">
-  <span class="fab-pulse"></span>
-  <svg id="fab-chat" width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+  <span class="fab-pulse"></span><span class="m4-fab-notice" aria-hidden="true"></span>
+  <span id="fab-chat" aria-hidden="true"><svg class="rs-bot" viewBox="0 0 64 64"><g class="rs-bot-antenna"><path class="rs-bot-antenna-line" d="M32 14V7"/><circle class="rs-bot-light" cx="32" cy="5" r="3.5"/></g><g class="rs-bot-body"><rect class="rs-bot-body-panel" x="21" y="44" width="22" height="13" rx="6.5"/><rect class="rs-bot-head" x="12" y="16" width="40" height="31" rx="11"/><rect class="rs-bot-face" x="17" y="22" width="30" height="18" rx="7"/><g class="rs-bot-eyes"><circle class="rs-bot-eye" cx="25" cy="31" r="3.2"/><circle class="rs-bot-eye" cx="39" cy="31" r="3.2"/></g><path d="M27 39h10" stroke="rgba(255,255,255,.65)" stroke-width="1.6" stroke-linecap="round"/></g></svg></span>
   <svg id="fab-x" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
 </button>
 
@@ -2120,12 +2287,24 @@ const PAGE_META = {
   map:     { title:'Live Map',           sub:'Train tracking · mock positions · Sri Lanka Railways' },
 };
 
+function m4MoveNavIndicator(target){
+  const indicator=document.querySelector('.m4-nav-indicator');
+  if(!indicator||!target)return;
+  indicator.style.height=target.offsetHeight+'px';
+  indicator.style.transform='translateY('+target.offsetTop+'px)';
+  indicator.classList.add('visible');
+}
 function nav(page, btn) {
   document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
   const target = btn || document.querySelector(`.nav-item[data-page="${page}"]`);
   if(target) target.classList.add('active');
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.getElementById('page-'+page).classList.add('active');
+  const pageEl=document.getElementById('page-'+page);
+  pageEl.classList.add('active');
+  pageEl.classList.remove('m4-page-enter');
+  void pageEl.offsetWidth;
+  pageEl.classList.add('m4-page-enter');
+  m4MoveNavIndicator(target);
   const m=PAGE_META[page]||{};
   document.getElementById('page-title').textContent=m.title||'';
   document.getElementById('page-sub').textContent=m.sub||'';
@@ -2135,7 +2314,12 @@ function nav(page, btn) {
   if(page==='predict'){_renderCatStats();_renderCatBrowserList(_activeCatTab);}
   if(page==='map') initMap();
   if(page!=='map') stopMapAnimation();
+  if(window.innerWidth<=768){
+    const sidebar=document.getElementById('sidebar');
+    if(sidebar) sidebar.classList.remove('mobile-open');
+  }
 }
+requestAnimationFrame(()=>m4MoveNavIndicator(document.querySelector('.nav-item.active')));
 
 function toggleSbStatus(){
   const body=document.getElementById('sb-status-body');
@@ -2403,6 +2587,10 @@ function _applySidebarState(collapsed){
 })();
 function toggleSidebar(){
   const sb=document.getElementById('sidebar');
+  if(window.innerWidth<=768){
+    sb.classList.toggle('mobile-open');
+    return;
+  }
   const nowCollapsed=!sb.classList.contains('collapsed');
   _applySidebarState(nowCollapsed);
   localStorage.setItem('m4_sidebar',nowCollapsed?'false':'true');
@@ -2484,6 +2672,43 @@ async function doEngineerLogin(e){
 function setBadge(id,ok,okL,failL){const e=document.getElementById(id);e.className='badge '+(ok?'badge-green':'badge-gray');e.innerHTML=(ok?'<span class="badge-dot"></span>':'')+esc(ok?okL:failL)}
 function setSbDot(id,vid,on,lbl){document.getElementById(id).className='sb-dot '+(on?'on':'off');if(vid)document.getElementById(vid).textContent=lbl||''}
 
+function m4CountTo(id,value,suffix='',digits=0){
+  const el=document.getElementById(id),num=Number(value);
+  if(!el)return;
+  if(value==null||value==='—'||!Number.isFinite(num)){el.textContent='—';return;}
+  if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches){el.textContent=num.toFixed(digits)+suffix;return;}
+  const token=(el._m4CountToken||0)+1,start=performance.now(),duration=520;
+  el._m4CountToken=token;
+  const tick=now=>{
+    if(el._m4CountToken!==token)return;
+    const p=Math.min(1,(now-start)/duration),eased=1-Math.pow(1-p,3);
+    el.textContent=(num*eased).toFixed(digits)+suffix;
+    if(p<1)requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+function m4AnimateFill(fill){
+  const target=fill&&fill.style.width;
+  if(!target||target==='0%')return;
+  fill.style.width='0%';
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{fill.style.width=target;}));
+}
+function m4AnimateFleetRows(tbody){
+  if(!tbody)return;
+  const rows=[...tbody.querySelectorAll('tr.data-row')];
+  tbody.classList.remove('m4-fleet-animate');
+  rows.forEach((row,i)=>row.style.setProperty('--m4-stagger',Math.min(i,10)*50+'ms'));
+  void tbody.offsetWidth;
+  tbody.classList.add('m4-fleet-animate');
+  rows.forEach(row=>row.querySelectorAll('.score-fill').forEach(m4AnimateFill));
+  setTimeout(()=>tbody.classList.remove('m4-fleet-animate'),1050);
+}
+function m4ReplayDashboardMotion(){
+  const grid=document.querySelector('.grid-4');
+  if(grid){grid.classList.remove('m4-animate-cards');void grid.offsetWidth;grid.classList.add('m4-animate-cards');setTimeout(()=>grid.classList.remove('m4-animate-cards'),780);}
+  document.querySelectorAll('.ov-fleet-bar-fill,.health-bar-fill,.dist-fill').forEach(m4AnimateFill);
+}
+
 /* ═══ DATA LOADING ═══ */
 async function loadDashboard() {
   try {
@@ -2492,10 +2717,10 @@ async function loadDashboard() {
       fetch('/api/assets?limit=200').then(r=>r.json()),
     ]);
     const agg=dr.aggregates||{}, dist=agg.status_distribution||{};
-    document.getElementById('kpi-total').textContent=agg.total_assets??'—';
-    document.getElementById('kpi-avg').textContent=agg.avg_health_score!=null?agg.avg_health_score.toFixed(1):'—';
-    document.getElementById('kpi-healthy').textContent=agg.assets_healthy_pct!=null?agg.assets_healthy_pct+'%':'—';
-    document.getElementById('kpi-critical').textContent=((dist.RED||0)+(dist.AMBER||0))||'—';
+    m4CountTo('kpi-total',agg.total_assets);
+    m4CountTo('kpi-avg',agg.avg_health_score,'',1);
+    m4CountTo('kpi-healthy',agg.assets_healthy_pct,'%');
+    m4CountTo('kpi-critical',((dist.RED||0)+(dist.AMBER||0))||'—');
     const now=new Date().toLocaleTimeString();
     document.getElementById('refresh-time').textContent=now;
     document.getElementById('sb-sync').textContent=now;
@@ -2529,6 +2754,7 @@ async function loadDashboard() {
     if(document.getElementById('page-trains').classList.contains('active')) renderTrains();
     heroUpdateContent(heroIdx);
     loadMaintenanceFlags();
+    m4ReplayDashboardMotion();
   } catch(e){console.error('Dashboard error:',e)}
 }
 
@@ -2876,7 +3102,7 @@ function renderFleet(){
       <td style="color:var(--text-muted);text-transform:capitalize">${esc(typeLabel)}</td>
       <td><div class="score-bar"><div class="score-track"><div class="score-fill" style="width:${score}%;background:${c}"></div></div><span style="font-weight:700;color:${c};min-width:22px">${score}</span></div></td>
       <td><span class="badge ${bc}"><span class="badge-dot"></span>${status}</span></td>
-      <td>${r.days_since_service!=null?r.days_since_service+' d':'—'}</td>
+      <td><span class="fleet-service-age">${r.days_since_service!=null?r.days_since_service+' d':'—'}</span><span class="fleet-service-date">${esc(r.last_service_date||'Service date not recorded')}</span></td>
       <td>${r.fault_count_30d!=null?`<span style="font-weight:600;color:${r.fault_count_30d>3?'var(--red)':r.fault_count_30d>1?'var(--amber)':'var(--text)'}">${r.fault_count_30d}</span>`:'—'}</td>
       <td onclick="event.stopPropagation()">
         <div style="display:flex;gap:5px;flex-wrap:wrap">
@@ -2889,6 +3115,7 @@ function renderFleet(){
       <td colspan="8">${buildDetailPanel(r,trainName)}</td>
     </tr>`;
   }).join('');
+  m4AnimateFleetRows(tbody);
 }
 
 function buildDetailPanel(r,trainName){
@@ -3295,7 +3522,7 @@ function setPredGauge(score,status){
   arc.setAttribute('stroke',color);
   arc.setAttribute('stroke-dashoffset',circ); // reset then animate
   setTimeout(()=>arc.setAttribute('stroke-dashoffset',offset),30);
-  num.textContent=score;
+  m4CountTo('pred-gauge-num',score);
   num.setAttribute('fill',color);
 }
 
@@ -3383,7 +3610,11 @@ async function runPrediction(){
     predLastResult={assetId:d.asset_id||assetId,assetType:d.asset_type||assetType,score,status};
 
     document.getElementById('pred-empty').style.display='none';
-    document.getElementById('pred-result').style.display='block';
+    const predResult=document.getElementById('pred-result');
+    predResult.style.display='block';
+    predResult.classList.remove('m4-result-reveal');
+    void predResult.offsetWidth;
+    predResult.classList.add('m4-result-reveal');
 
     setPredGauge(score,status);
     setPredBanner(score,status,d.asset_id||assetId,d.asset_type||assetType);
@@ -3393,7 +3624,7 @@ async function runPrediction(){
     document.getElementById('pi-faults').textContent=faults;
     setPredUrgency(score,status);
     document.getElementById('pred-rec-text').textContent=d.recommendation||'—';
-    document.getElementById('score-num').textContent=score;
+    m4CountTo('score-num',score);
     document.getElementById('result-asset-id').textContent=d.asset_id||assetId;
     document.getElementById('result-asset-type').textContent=(d.asset_type||assetType).replace(/_/g,' ');
 
@@ -3529,12 +3760,28 @@ function populateTrendSelect(){
 }
 
 /* ═══ CHATBOT POPUP ═══ */
-let cpOpen=false,cpHist=[],cpBusy=false;
-function toggleChat(){cpOpen=!cpOpen;document.getElementById('chat-popup').classList.toggle('open',cpOpen);document.getElementById('chat-fab').classList.toggle('open',cpOpen);document.getElementById('fab-chat').style.display=cpOpen?'none':'';document.getElementById('fab-x').style.display=cpOpen?'':'none';if(cpOpen)setTimeout(()=>document.getElementById('cp-input').focus(),270)}
+const CP_BOT_SVG=`<svg class="rs-bot" viewBox="0 0 64 64" aria-hidden="true"><g class="rs-bot-antenna"><path class="rs-bot-antenna-line" d="M32 14V7"/><circle class="rs-bot-light" cx="32" cy="5" r="3.5"/></g><g class="rs-bot-body"><rect class="rs-bot-body-panel" x="21" y="44" width="22" height="13" rx="6.5"/><rect class="rs-bot-head" x="12" y="16" width="40" height="31" rx="11"/><rect class="rs-bot-face" x="17" y="22" width="30" height="18" rx="7"/><g class="rs-bot-eyes"><circle class="rs-bot-eye" cx="25" cy="31" r="3.2"/><circle class="rs-bot-eye" cx="39" cy="31" r="3.2"/></g><path d="M27 39h10" stroke="rgba(255,255,255,.65)" stroke-width="1.6" stroke-linecap="round"/></g></svg>`;
+let cpOpen=false,cpHist=[],cpBusy=false,cpNoticeTimer=null;
+function m4ScheduleFabNotice(){clearTimeout(cpNoticeTimer);cpNoticeTimer=setTimeout(()=>{if(!cpOpen)document.getElementById('chat-fab')?.classList.add('m4-has-notice')},8500)}
+function m4CountPopupScore(el,value){
+  if(!el)return;const target=Math.round(Number(value)||0);
+  if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches){el.textContent=target;return;}
+  const start=performance.now(),duration=480;
+  const tick=now=>{const p=Math.min(1,(now-start)/duration);el.textContent=Math.round(target*(1-Math.pow(1-p,3)));if(p<1)requestAnimationFrame(tick)};
+  requestAnimationFrame(tick);
+}
+function toggleChat(){
+  cpOpen=!cpOpen;
+  const popup=document.getElementById('chat-popup'),fab=document.getElementById('chat-fab');
+  popup.classList.toggle('open',cpOpen);fab.classList.toggle('open',cpOpen);
+  document.getElementById('fab-chat').style.display=cpOpen?'none':'';document.getElementById('fab-x').style.display=cpOpen?'':'none';
+  if(cpOpen){clearTimeout(cpNoticeTimer);fab.classList.remove('m4-has-notice');setTimeout(()=>document.getElementById('cp-input').focus(),270)}else m4ScheduleFabNotice();
+}
+m4ScheduleFabNotice();
 function cpClear(){cpHist=[];const m=document.getElementById('cp-msgs');[...m.children].forEach(c=>{if(c.id!=='cp-welcome')c.remove()});const w=document.getElementById('cp-welcome');if(w)w.style.display='flex';document.getElementById('cp-mlbl').textContent='Ready'}
 function cpUser(t){const m=document.getElementById('cp-msgs'),d=document.createElement('div');d.className='cp-msg user';d.innerHTML=`<div class="cp-av u">👷</div><div class="cp-bubble">${esc(t)}</div>`;m.appendChild(d);m.scrollTop=m.scrollHeight;const w=document.getElementById('cp-welcome');if(w)w.style.display='none'}
-function cpTypingOn(){const m=document.getElementById('cp-msgs'),d=document.createElement('div');d.className='cp-msg bot';d.id='cp-typing';d.innerHTML=`<div class="cp-av b">🔧</div><div class="cp-bubble"><div class="cp-typing"><span></span><span></span><span></span></div></div>`;m.appendChild(d);m.scrollTop=m.scrollHeight}
-function cpTypingOff(){const e=document.getElementById('cp-typing');if(e)e.remove()}
+function cpTypingOn(){const m=document.getElementById('cp-msgs'),d=document.createElement('div');d.className='cp-msg bot';d.id='cp-typing';d.innerHTML=`<div class="cp-av b m4-thinking">${CP_BOT_SVG}</div><div class="cp-bubble"><div class="cp-typing"><span></span><span></span><span></span></div></div>`;m.appendChild(d);document.getElementById('chat-popup').classList.add('m4-thinking');m.scrollTop=m.scrollHeight}
+function cpTypingOff(){const e=document.getElementById('cp-typing');if(e)e.remove();document.getElementById('chat-popup').classList.remove('m4-thinking')}
 function cpRender(t){
   // Helper — build action card HTML and fire modal
   let actionHtml='';
@@ -3638,7 +3885,7 @@ const _CP_FAULT_TYPES = ['none','pad_worn','suspension_worn','brake_fade','beari
 
 function cpBot(data){
   const m=document.getElementById('cp-msgs'),d=document.createElement('div');
-  d.className='cp-msg bot';
+  d.className='cp-msg bot m4-arrive';
 
   if(data.answer_method==='prediction_form' && data.prediction_form){
     const f=data.prediction_form;
@@ -3649,7 +3896,7 @@ function cpBot(data){
       return `<div class="cpf-row"><label class="cpf-lbl">${esc(s.label)} <span class="cpf-unit">(${s.unit})</span></label><input class="cpf-inp" id="${uid}-${s.key}" type="number" step="${s.step}" min="${s.min}" max="${s.max}" value="${val}" placeholder="optional"></div>`;
     }).join('');
     const faultOpts=_CP_FAULT_TYPES.map(ft=>`<option value="${ft}"${ft===f.fault_type?' selected':''}>${ft.replace(/_/g,' ')}</option>`).join('');
-    d.innerHTML=`<div class="cp-av b">🔧</div><div class="cp-bubble cpf-card">
+    d.innerHTML=`<div class="cp-av b">${CP_BOT_SVG}</div><div class="cp-bubble cpf-card">
       <div class="cpf-hdr"><span class="cpf-asset-id">${esc(f.asset_id)}</span><span class="cpf-type-badge">${esc(f.asset_type.replace(/_/g,' '))}</span></div>
       <div class="cpf-section">Service Info</div>
       <div class="cpf-row"><label class="cpf-lbl">Days Since Service</label><input class="cpf-inp" id="${uid}-days" type="number" min="0" max="999" value="${f.days_since_service}"></div>
@@ -3667,7 +3914,7 @@ function cpBot(data){
 
   const cites=(data.citations||[]).map(c=>`<span class="cp-cite-chip">${esc(c.section_title||c.manual||'Manual')}</span>`).join('');
   const ch=cites?`<div class="cp-citations"><div class="cp-cite-label">Sources</div>${cites}</div>`:'';
-  d.innerHTML=`<div class="cp-av b">🔧</div><div class="cp-bubble">${cpRender(data.answer)}${ch}</div>`;
+  d.innerHTML=`<div class="cp-av b">${CP_BOT_SVG}</div><div class="cp-bubble">${cpRender(data.answer)}${ch}</div>`;
   m.appendChild(d);m.scrollTop=m.scrollHeight;
   const isPred=data.answer_method==='health_prediction';const l=data.answer_method==='llm_grounded';
   document.getElementById('cp-mdot').style.background=isPred?'var(--amber)':l?'var(--primary-light)':'var(--green)';
@@ -3676,7 +3923,7 @@ function cpBot(data){
 
 async function cpRunPredict(uid, assetId, assetType){
   const btn=document.querySelector(`button[onclick*="${uid}"]`);
-  if(btn){btn.disabled=true;btn.textContent='Running…';}
+  if(btn){btn.disabled=true;btn.classList.add('m4-predict-loading');btn.innerHTML='<span class="m4-btn-spinner" aria-hidden="true"></span>Running…';}
   const days=parseInt(document.getElementById(`${uid}-days`)?.value)||30;
   const faults=parseInt(document.getElementById(`${uid}-faults`)?.value)||0;
   const ftype=document.getElementById(`${uid}-ftype`)?.value||'none';
@@ -3706,25 +3953,28 @@ async function cpRunPredict(uid, assetId, assetType){
     }).join('');
     const dtfLine=dtf!=null?(dtf>0?`<div class="cpf-res-dtf">⏱ Days to critical: <b>${dtf}</b></div>`:`<div class="cpf-res-dtf warn">⚠️ At or past critical threshold</div>`):'';
     const m=document.getElementById('cp-msgs'),nd=document.createElement('div');
-    nd.className='cp-msg bot';
-    nd.innerHTML=`<div class="cp-av b">🔧</div><div class="cp-bubble cpf-result">
-      <div class="cpf-res-hdr"><span class="cpf-asset-id">${esc(assetId)}</span><span class="cpf-score-badge ${status.toLowerCase()}">${emoji} ${score}/100 ${status}</span></div>
+    nd.className='cp-msg bot m4-arrive';
+    const scoreValue=Math.max(0,Math.min(100,Number(score)||0));
+    const scoreColor=status==='GREEN'?'var(--green)':status==='AMBER'?'var(--amber)':'var(--red)';
+    nd.innerHTML=`<div class="cp-av b">${CP_BOT_SVG}</div><div class="cp-bubble cpf-result">
+      <div class="cpf-res-hdr"><span class="cpf-asset-id">${esc(assetId)}</span><span class="cpf-score-badge ${status.toLowerCase()}">${emoji} <b class="m4-score-count">0</b>/100 ${status}</span></div>
+      <div class="cpf-score-track"><span class="cpf-score-fill" style="--m4-score:${scoreValue}%;background:${scoreColor}"></span></div>
       <div class="cpf-res-conf">Confidence: ${conf} (${cl}–${ch})</div>
       ${sensorRows?`<div class="cpf-section" style="margin-top:8px">Sensor Readings</div>${sensorRows}`:''}
       ${dtfLine}
     </div>`;
-    m.appendChild(nd);m.scrollTop=m.scrollHeight;
+    m.appendChild(nd);nd.querySelectorAll('.cpf-res-row').forEach((row,i)=>row.style.animationDelay=(.1+i*.06)+'s');m4CountPopupScore(nd.querySelector('.m4-score-count'),scoreValue);if(btn){btn.classList.remove('m4-predict-loading');btn.textContent='Prediction complete';}m.scrollTop=m.scrollHeight;
     document.getElementById('cp-mdot').style.background='var(--amber)';
     document.getElementById('cp-mlbl').textContent='ML Prediction · HGBR';
   }catch(ex){
-    if(btn){btn.disabled=false;btn.textContent='Run Prediction';}
+    if(btn){btn.disabled=false;btn.classList.remove('m4-predict-loading');btn.textContent='Run Prediction';}
     const m=document.getElementById('cp-msgs'),nd=document.createElement('div');
-    nd.className='cp-msg bot';nd.innerHTML=`<div class="cp-av b">🔧</div><div class="cp-bubble" style="color:var(--red)">Prediction failed: ${esc(ex.message)}</div>`;
+    nd.className='cp-msg bot m4-arrive';nd.innerHTML=`<div class="cp-av b">${CP_BOT_SVG}</div><div class="cp-bubble" style="color:var(--red)">Prediction failed: ${esc(ex.message)}</div>`;
     m.appendChild(nd);m.scrollTop=m.scrollHeight;
   }
 }
 function round(v,d){return Math.round(v*Math.pow(10,d))/Math.pow(10,d);}
-async function cpSendMsg(){const inp=document.getElementById('cp-input'),text=inp.value.trim();if(!text||cpBusy)return;inp.value='';inp.style.height='auto';document.getElementById('cp-send').disabled=true;cpBusy=true;cpUser(text);cpTypingOn();try{const res=await fetch('/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,asset_type:'',history:cpHist.slice(-10)})});if(!res.ok)throw new Error(`HTTP ${res.status}`);const data=await res.json();cpTypingOff();cpBot(data);cpHist.push({role:'user',content:text},{role:'assistant',content:data.answer})}catch(err){cpTypingOff();const m=document.getElementById('cp-msgs'),d=document.createElement('div');d.className='cp-msg bot';d.innerHTML=`<div class="cp-av b">🔧</div><div class="cp-bubble" style="color:var(--red)">Error: ${esc(err.message)}</div>`;m.appendChild(d);m.scrollTop=m.scrollHeight}finally{cpBusy=false;document.getElementById('cp-send').disabled=false}}
+async function cpSendMsg(){const inp=document.getElementById('cp-input'),text=inp.value.trim();if(!text||cpBusy)return;inp.value='';inp.style.height='auto';document.getElementById('cp-send').disabled=true;cpBusy=true;cpUser(text);cpTypingOn();try{const res=await fetch('/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,asset_type:'',history:cpHist.slice(-10)})});if(!res.ok)throw new Error(`HTTP ${res.status}`);const data=await res.json();cpTypingOff();cpBot(data);cpHist.push({role:'user',content:text},{role:'assistant',content:data.answer})}catch(err){cpTypingOff();const m=document.getElementById('cp-msgs'),d=document.createElement('div');d.className='cp-msg bot m4-arrive';d.innerHTML=`<div class="cp-av b">${CP_BOT_SVG}</div><div class="cp-bubble" style="color:var(--red)">Error: ${esc(err.message)}</div>`;m.appendChild(d);m.scrollTop=m.scrollHeight}finally{cpBusy=false;document.getElementById('cp-send').disabled=false}}
 function cpSend(t){document.getElementById('cp-input').value=t;cpSendMsg()}
 
 /* ═══ DARK MODE ═══ */
