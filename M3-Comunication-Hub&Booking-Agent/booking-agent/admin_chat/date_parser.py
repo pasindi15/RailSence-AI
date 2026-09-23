@@ -69,6 +69,27 @@ def parse_query_date(text: str) -> tuple[date | None, str | None]:
         d = today + timedelta(days=7)
         return d, d.isoformat()
 
+    if re.search(r"\bday after tomorrow\b", normalized):
+        d = today + timedelta(days=2)
+        return d, d.isoformat()
+
+    if re.search(r"\bthis weekend\b", normalized):
+        d = today + timedelta(days=(5 - today.weekday()) % 7)
+        return d, d.isoformat()
+
+    weekday_match = re.search(
+        r"\b(?:next|this)\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b",
+        normalized,
+    )
+    if weekday_match:
+        weekdays = {name: index for index, name in enumerate(("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"))}
+        target = weekdays[weekday_match.group(1)]
+        delta = (target - today.weekday()) % 7
+        if delta == 0 or normalized.startswith("next"):
+            delta = delta or 7
+        d = today + timedelta(days=delta)
+        return d, d.isoformat()
+
     # 2. ISO format YYYY-MM-DD
     iso_match = re.search(r"\b(\d{4})-(\d{1,2})-(\d{1,2})\b", text)
     if iso_match:

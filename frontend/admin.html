@@ -1227,6 +1227,83 @@ body::after {
   background: linear-gradient(135deg, #2563EB 0%, #3B82F6 100%);
   box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
 }
+
+/* Floating RailSense AI assistant. The existing chat IDs and API controller
+   remain unchanged; these styles only change its presentation. */
+.admin-chat-launcher {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 950;
+  display: grid;
+  place-items: center;
+  width: 62px;
+  height: 62px;
+  border: 1px solid rgba(147, 197, 253, 0.72);
+  border-radius: 50%;
+  background: var(--brand-grad);
+  color: #fff;
+  cursor: pointer;
+  font-size: 25px;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.48), 0 0 0 5px rgba(96, 165, 250, 0.12);
+  transition: transform 0.2s var(--ease), box-shadow 0.2s var(--ease);
+}
+.admin-chat-launcher:hover { transform: translateY(-3px) scale(1.04); box-shadow: 0 16px 34px rgba(15, 23, 42, 0.55), 0 0 0 7px rgba(96, 165, 250, 0.16); }
+.admin-chat-launcher:focus-visible, .admin-chat-window button:focus-visible, .admin-chat-window textarea:focus-visible { outline: 3px solid rgba(147, 197, 253, 0.72); outline-offset: 3px; }
+.admin-chat-launcher.is-open { transform: rotate(8deg); }
+.admin-chat-window {
+  position: fixed;
+  right: 24px;
+  bottom: 98px;
+  z-index: 950;
+  display: flex;
+  flex-direction: column;
+  width: min(430px, calc(100vw - 32px));
+  height: min(680px, calc(100vh - 122px));
+  overflow: hidden;
+  border: 1px solid rgba(96, 165, 250, 0.36);
+  border-radius: 20px;
+  background: var(--card-hi);
+  box-shadow: 0 24px 70px rgba(2, 6, 23, 0.62), 0 0 0 1px rgba(59, 130, 246, 0.08);
+  backdrop-filter: blur(22px);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(14px) scale(0.97);
+  transition: opacity 0.2s var(--ease), transform 0.2s var(--ease);
+}
+.admin-chat-window.is-open { opacity: 1; pointer-events: auto; transform: translateY(0) scale(1); }
+.admin-chat-window.is-minimized { height: auto; }
+.admin-chat-window.is-minimized .admin-chat-body { display: none !important; }
+.admin-chat-window .admin-chat-header { flex-shrink: 0; margin: 0; padding: 15px 17px; border: 0; background: linear-gradient(135deg, rgba(29, 78, 216, 0.96), rgba(37, 99, 235, 0.92)); }
+.admin-chat-window .admin-chat-title-group { color: #fff; }
+.admin-chat-window .admin-chat-title-group > span:first-child { display: grid; place-items: center; width: 34px; height: 34px; border: 1px solid rgba(255,255,255,0.65); border-radius: 50%; background: rgba(7, 20, 38, 0.7); }
+.admin-chat-window .admin-chat-title-group [style*="font-size: 15px"] { color: #fff !important; }
+.admin-chat-window .admin-chat-title-group [style*="font-size: 11.5px"] { color: #DBEAFE !important; }
+.admin-chat-window .admin-chat-badge { color: #DBEAFE; border-color: rgba(219,234,254,0.38); background: rgba(255,255,255,0.12); }
+.admin-chat-window .admin-chat-controls { gap: 4px; }
+.admin-chat-window .admin-chat-controls .btn-refresh { min-width: 32px; padding: 5px 7px; border-color: rgba(255,255,255,0.25); background: rgba(255,255,255,0.10); color: #fff; font-size: 0; }
+.admin-chat-window .admin-chat-controls .btn-refresh:first-child { display: none; }
+.admin-chat-window .admin-chat-controls .btn-refresh:nth-child(2) { font-size: 0; }
+.admin-chat-window .admin-chat-controls .btn-refresh:nth-child(2)::before { content: '−'; font-size: 18px; line-height: 1; }
+.admin-chat-window .admin-chat-body { display: flex; flex: 1; min-height: 0; flex-direction: column; padding: 14px; }
+.admin-chat-window .admin-chat-suggestions { flex-shrink: 0; flex-wrap: nowrap; overflow-x: auto; margin-bottom: 8px; padding: 2px 1px 6px; scrollbar-width: thin; }
+.admin-chat-window .chat-suggest-chip { flex: 0 0 auto; padding: 7px 10px; border-radius: 999px; font-size: 10.5px; white-space: nowrap; }
+.admin-chat-window .admin-chat-log { flex: 1; min-height: 0; max-height: none; margin-bottom: 10px; padding: 8px 3px 12px; }
+.admin-chat-window .admin-chat-bubble { max-width: 90%; padding: 10px 12px; border-radius: 14px; font-size: 12px; }
+.admin-chat-window .admin-chat-bubble.admin { border-bottom-right-radius: 4px; }
+.admin-chat-window .admin-chat-bubble.assistant { border-bottom-left-radius: 4px; }
+.admin-chat-window .admin-chat-form { flex-shrink: 0; align-items: flex-end; gap: 8px; padding-top: 10px; border-top: 1px solid rgba(96, 165, 250, 0.14); }
+.admin-chat-window .admin-chat-input { min-height: 42px; max-height: 112px; resize: none; padding: 10px 12px; border-radius: 12px; line-height: 1.4; overflow-y: auto; }
+.admin-chat-window .admin-chat-send { width: 42px; height: 42px; justify-content: center; padding: 0; border-radius: 12px; font-size: 0; }
+.admin-chat-window .admin-chat-send::after { content: '↑'; font-size: 21px; line-height: 1; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+.admin-chat-empty-title { margin-top: 8px; color: var(--ink-bright); font-size: 17px; font-weight: 800; }
+.admin-chat-empty-subtitle { margin-top: 3px; color: var(--muted-hi); font-size: 11.5px; line-height: 1.5; }
+.admin-chat-window.is-minimized .admin-chat-header { border-radius: 20px; }
+@media (max-width: 600px) {
+  .admin-chat-launcher { right: 16px; bottom: 16px; width: 56px; height: 56px; }
+  .admin-chat-window { inset: 12px 12px 84px; width: auto; height: auto; max-height: none; border-radius: 18px; }
+}
 /* Light theme overrides */
 [data-theme="light"] .admin-chat-card {
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(246, 250, 255, 0.96) 100%);
@@ -1252,6 +1329,624 @@ body::after {
   color: #0F172A !important;
 }
 
+/* =========================================================
+   RAILSENSE AI — PREMIUM ADMIN BOOKING COPILOT OVERRIDES
+========================================================= */
+.rs-ai-window{position:fixed!important;right:24px!important;bottom:96px!important;width:430px!important;height:min(720px,calc(100vh - 120px))!important;display:flex!important;flex-direction:column!important;overflow:hidden!important;background:radial-gradient(circle at 90% 0%,rgba(37,99,235,.16),transparent 32%),linear-gradient(145deg,#0b1425,#07101f)!important;border:1px solid rgba(96,165,250,.24)!important;border-radius:22px!important;box-shadow:0 30px 90px rgba(0,0,0,.58),0 0 0 1px rgba(59,130,246,.05),inset 0 1px 0 rgba(255,255,255,.04)!important;backdrop-filter:blur(28px)!important;opacity:0!important;pointer-events:none!important;transform:translateY(18px) scale(.97)!important;transition:opacity .22s ease,transform .28s cubic-bezier(.22,1,.36,1)!important;z-index:950!important}
+.rs-ai-window.is-open{opacity:1!important;pointer-events:auto!important;transform:translateY(0) scale(1)!important}.rs-ai-window.is-minimized{height:auto!important}.rs-ai-window.is-minimized .rs-ai-body{display:none!important}
+.rs-ai-header{position:relative;display:flex;align-items:center;justify-content:space-between;padding:17px;background:linear-gradient(135deg,rgba(30,64,175,.96),rgba(15,50,110,.96));border-bottom:1px solid rgba(147,197,253,.16)}
+.rs-ai-header:after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:linear-gradient(90deg,transparent,rgba(96,165,250,.65),transparent)}
+.rs-ai-brand{display:flex;align-items:center;gap:12px;min-width:0}.rs-ai-avatar{position:relative;display:grid;place-items:center;width:42px;height:42px;flex-shrink:0;border-radius:13px;background:linear-gradient(145deg,rgba(255,255,255,.16),rgba(255,255,255,.05));border:1px solid rgba(255,255,255,.22);box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 8px 20px rgba(0,0,0,.16)}
+.rs-ai-spark{font-size:22px;color:#dbeafe;text-shadow:0 0 18px rgba(147,197,253,.8)}.rs-ai-online-dot{position:absolute;right:-2px;bottom:-2px;width:10px;height:10px;border-radius:50%;background:#34d399;border:2px solid #0f2d63;box-shadow:0 0 10px rgba(52,211,153,.8)}
+.rs-ai-title-row{display:flex;align-items:center;gap:8px}.rs-ai-title{font-size:15px;font-weight:750;color:#fff}.rs-ai-badge{padding:3px 7px;border-radius:5px;font-family:"Share Tech Mono",monospace;font-size:8px;letter-spacing:.8px;color:#bfdbfe;background:rgba(255,255,255,.09);border:1px solid rgba(191,219,254,.22)}.rs-ai-subtitle{margin-top:3px;color:#b9cff0;font-size:10.5px;white-space:nowrap}.rs-ai-divider{margin:0 4px;opacity:.5}.rs-ai-online-text{color:#86efac}
+.rs-ai-controls{display:flex;gap:5px}.rs-ai-icon-btn{width:31px;height:31px;display:grid;place-items:center;padding:0;color:#dbeafe;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.13);border-radius:8px;cursor:pointer;font-size:15px;transition:.15s}.rs-ai-icon-btn:hover{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.28);transform:translateY(-1px)}.rs-ai-icon-btn.close:hover{background:rgba(239,68,68,.18);border-color:rgba(248,113,113,.3)}
+.rs-ai-statusbar{display:flex;justify-content:space-between;align-items:center;padding:8px 16px;background:rgba(4,11,23,.55);border-bottom:1px solid rgba(148,163,184,.08);font-family:"Share Tech Mono",monospace;font-size:8px;letter-spacing:.65px;color:#64748b}.rs-ai-status-left,.rs-ai-status-right{display:flex;align-items:center;gap:6px}.rs-ai-live-dot{width:6px;height:6px;border-radius:50%;background:#34d399;box-shadow:0 0 9px rgba(52,211,153,.85);animation:rsLivePulse 2s infinite}.rs-ai-status-chip{padding:3px 6px;color:#7dd3fc;background:rgba(14,116,144,.08);border:1px solid rgba(56,189,248,.13);border-radius:4px}@keyframes rsLivePulse{0%,100%{opacity:1}50%{opacity:.4}}
+.rs-ai-body{display:flex;flex-direction:column;flex:1;min-height:0;padding:14px 15px 10px}.rs-ai-section-label,.rs-ai-chat-label{display:flex;align-items:center;gap:9px;margin-bottom:9px;color:#64748b;font-family:"Share Tech Mono",monospace;font-size:8px;letter-spacing:1px}.rs-ai-section-line{height:1px;flex:1;background:linear-gradient(90deg,rgba(96,165,250,.14),transparent)}
+.rs-ai-quick-actions{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin-bottom:13px}.rs-ai-action{display:flex;align-items:center;gap:8px;min-width:0;padding:9px;text-align:left;background:linear-gradient(145deg,rgba(15,29,51,.86),rgba(9,19,34,.86));border:1px solid rgba(96,165,250,.11);border-radius:11px;color:#e2e8f0;cursor:pointer;transition:.16s}.rs-ai-action:hover{transform:translateY(-2px);background:rgba(30,64,175,.2);border-color:rgba(96,165,250,.3)}.rs-ai-action-icon{display:grid;place-items:center;width:28px;height:28px;flex-shrink:0;border-radius:8px;font-size:14px;color:#93c5fd;background:rgba(59,130,246,.1)}.rs-ai-action-icon.fraud{color:#fbbf24;background:rgba(245,158,11,.09)}.rs-ai-action-icon.cancel{color:#fb7185;background:rgba(244,63,94,.08)}.rs-ai-action-icon.seats{color:#22d3ee;background:rgba(34,211,238,.08)}.rs-ai-action-icon.booking{color:#a78bfa;background:rgba(139,92,246,.08)}.rs-ai-action strong{display:block;font-size:10.5px;font-weight:650;color:#dbeafe}.rs-ai-action small{display:block;margin-top:2px;color:#64748b;font-size:8px}.rs-ai-action-arrow{margin-left:auto;color:#475569;font-size:16px}.rs-ai-action:hover .rs-ai-action-arrow{color:#60a5fa;transform:translateX(2px)}
+.rs-ai-chat-wrapper{display:flex;flex-direction:column;flex:1;min-height:0}.rs-ai-chat-label{margin-bottom:5px}.rs-ai-chat-log{flex:1!important;min-height:0!important;max-height:none!important;overflow-y:auto!important;display:flex!important;flex-direction:column;gap:9px;padding:5px 3px 10px!important;scroll-behavior:smooth}.rs-ai-chat-log::-webkit-scrollbar{width:4px}.rs-ai-chat-log::-webkit-scrollbar-thumb{background:rgba(96,165,250,.18);border-radius:10px}
+.rs-ai-welcome{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:210px;padding:20px;text-align:center;background:radial-gradient(circle at center,rgba(37,99,235,.08),transparent 62%);border:1px dashed rgba(96,165,250,.12);border-radius:15px}.rs-ai-welcome-orbit{position:relative;display:grid;place-items:center;width:62px;height:62px;margin-bottom:12px}.rs-ai-welcome-ring{position:absolute;inset:0;border:1px solid rgba(96,165,250,.2);border-radius:50%;animation:rsOrbit 4s linear infinite}.rs-ai-welcome-ring:after{content:"";position:absolute;width:6px;height:6px;top:3px;left:50%;border-radius:50%;background:#60a5fa;box-shadow:0 0 12px #60a5fa}@keyframes rsOrbit{to{transform:rotate(360deg)}}.rs-ai-welcome-icon{display:grid;place-items:center;width:43px;height:43px;border-radius:13px;background:linear-gradient(145deg,rgba(59,130,246,.28),rgba(37,99,235,.08));border:1px solid rgba(96,165,250,.25);color:#bfdbfe;font-size:22px;box-shadow:0 0 25px rgba(59,130,246,.13)}.rs-ai-welcome h3{margin:0;color:#f8fafc;font-size:17px}.rs-ai-welcome p{max-width:285px;margin:6px 0 12px;color:#71839c;font-size:10.5px;line-height:1.55}.rs-ai-example{display:flex;align-items:center;gap:5px;color:#475569;font-size:9px}.rs-ai-example button{padding:4px 7px;color:#93c5fd;background:rgba(59,130,246,.07);border:1px solid rgba(96,165,250,.12);border-radius:5px;cursor:pointer;font-size:9px}
+.rs-ai-window .admin-chat-bubble{max-width:88%;padding:10px 12px;border-radius:13px;font-size:11px;line-height:1.55;animation:rsMessageIn .2s ease}.rs-ai-window .admin-chat-bubble.admin{align-self:flex-end;background:linear-gradient(145deg,#1d4ed8,#2563eb);border:1px solid rgba(147,197,253,.25);border-bottom-right-radius:4px;color:#eff6ff}.rs-ai-window .admin-chat-bubble.assistant{align-self:flex-start;color:#dbeafe;background:linear-gradient(145deg,rgba(15,29,50,.94),rgba(9,19,34,.94));border:1px solid rgba(96,165,250,.13);border-bottom-left-radius:4px}@keyframes rsMessageIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.rs-ai-window .admin-chat-card-widget{margin-top:9px;padding:10px;background:rgba(3,10,21,.52);border:1px solid rgba(96,165,250,.13);border-radius:10px}.rs-ai-window .admin-chat-sources{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px;padding-top:8px;border-top:1px solid rgba(148,163,184,.07)}.rs-ai-window .admin-source-tag{padding:3px 6px;border-radius:5px;color:#7dd3fc;background:rgba(14,116,144,.08);border:1px solid rgba(56,189,248,.12);font-family:"Share Tech Mono",monospace;font-size:8px}
+.rs-ai-composer{flex-shrink:0;padding-top:7px;border-top:1px solid rgba(96,165,250,.08)}.rs-ai-input-shell{padding:9px;background:linear-gradient(145deg,rgba(15,29,50,.95),rgba(8,17,30,.95));border:1px solid rgba(96,165,250,.16);border-radius:14px;transition:.2s}.rs-ai-input-shell:focus-within{border-color:rgba(96,165,250,.38);box-shadow:0 0 0 3px rgba(59,130,246,.06),0 8px 30px rgba(0,0,0,.18)}.rs-ai-input{width:100%;min-height:22px;max-height:90px;padding:3px 3px 7px;resize:none;border:0!important;outline:0!important;background:transparent!important;color:#f8fafc!important;box-shadow:none!important;font-size:11.5px;line-height:1.5}.rs-ai-input::placeholder{color:#52647c}.rs-ai-input-bottom{display:flex;align-items:center;justify-content:space-between}.rs-ai-input-hint{display:flex;align-items:center;gap:4px;color:#52647c;font-size:8px}.rs-ai-key{padding:2px 4px;color:#64748b;background:rgba(148,163,184,.06);border:1px solid rgba(148,163,184,.1);border-radius:4px;font-family:monospace}.rs-ai-send{display:flex!important;align-items:center;gap:6px;width:auto!important;height:32px!important;padding:0 11px!important;border-radius:8px!important;color:#fff!important;background:linear-gradient(135deg,#2563eb,#3b82f6)!important;border:1px solid rgba(147,197,253,.25)!important;box-shadow:0 5px 15px rgba(37,99,235,.18)}.rs-ai-send span{font-size:9px;font-weight:700}.rs-ai-send strong{font-size:15px}.rs-ai-send:hover{transform:translateY(-1px);box-shadow:0 7px 20px rgba(37,99,235,.3)}.rs-ai-send:disabled{opacity:.55;cursor:wait;transform:none}.rs-ai-footer{display:flex;align-items:center;justify-content:center;gap:5px;padding-top:7px;color:#3f5067;font-family:"Share Tech Mono",monospace;font-size:7px;letter-spacing:.25px}
+.rs-ai-launcher{position:fixed!important;right:25px!important;bottom:24px!important;width:58px!important;height:58px!important;display:grid!important;place-items:center!important;padding:0!important;border-radius:18px!important;border:1px solid rgba(147,197,253,.42)!important;background:linear-gradient(145deg,#2563eb,#1d4ed8)!important;color:#fff!important;cursor:pointer;box-shadow:0 14px 35px rgba(15,23,42,.48),0 0 0 5px rgba(59,130,246,.07)!important;transition:.2s!important;z-index:951}.rs-ai-launcher:hover{transform:translateY(-4px) scale(1.04)!important;box-shadow:0 18px 42px rgba(15,23,42,.56),0 0 0 8px rgba(59,130,246,.09)!important}.rs-launcher-icon{font-size:25px;color:#eff6ff;text-shadow:0 0 15px rgba(255,255,255,.45)}.rs-launcher-online{position:absolute;right:7px;bottom:7px;width:8px;height:8px;border-radius:50%;background:#34d399;border:2px solid #1d4ed8;box-shadow:0 0 9px rgba(52,211,153,.8)}.rs-launcher-pulse{position:absolute;inset:-1px;border-radius:18px;border:1px solid rgba(96,165,250,.5);animation:rsLauncherPulse 2.5s infinite;pointer-events:none}@keyframes rsLauncherPulse{0%{opacity:.7;transform:scale(1)}70%,100%{opacity:0;transform:scale(1.18)}}
+@media(max-width:600px){.rs-ai-window{left:10px!important;right:10px!important;bottom:78px!important;width:auto!important;height:calc(100vh - 94px)!important;border-radius:20px!important}.rs-ai-launcher{right:16px!important;bottom:15px!important;width:54px!important;height:54px!important;border-radius:16px!important}.rs-ai-quick-actions{grid-template-columns:repeat(2,1fr)}.rs-ai-action{padding:8px}.rs-ai-action small,.rs-ai-input-hint{display:none}}
+[data-theme="light"] .rs-ai-window{background:linear-gradient(145deg,#f8fbff,#eef5ff)!important;border-color:rgba(37,99,235,.18)!important;box-shadow:0 25px 70px rgba(15,23,42,.18)!important}.rs-ai-window[data-theme="light"]{}
+[data-theme="light"] .rs-ai-statusbar{background:rgba(239,246,255,.75);border-color:rgba(59,130,246,.1)}[data-theme="light"] .rs-ai-action{background:rgba(255,255,255,.78);border-color:rgba(59,130,246,.1)}[data-theme="light"] .rs-ai-action strong{color:#1e293b}[data-theme="light"] .rs-ai-welcome h3{color:#0f172a}[data-theme="light"] .rs-ai-welcome p{color:#64748b}[data-theme="light"] .rs-ai-window .admin-chat-bubble.assistant{color:#1e293b;background:rgba(255,255,255,.82);border-color:rgba(59,130,246,.12)}[data-theme="light"] .rs-ai-input-shell{background:rgba(255,255,255,.82);border-color:rgba(59,130,246,.15)}[data-theme="light"] .rs-ai-input{color:#0f172a!important}[data-theme="light"] .rs-ai-footer{color:#94a3b8}
+
+
+/* =========================================================
+   RAILSENSE AI — CHAT-FIRST LAYOUT
+   Conversation is the main area; quick actions sit at the bottom.
+========================================================= */
+.rs-ai-window{
+  width:560px!important;
+  height:min(760px,calc(100vh - 100px))!important;
+  right:24px!important;
+  bottom:92px!important;
+}
+.rs-ai-body{
+  display:flex!important;
+  flex-direction:column!important;
+  flex:1 1 auto!important;
+  min-height:0!important;
+  padding:12px 14px 9px!important;
+  gap:0!important;
+}
+.rs-ai-chat-wrapper{
+  order:1!important;
+  flex:1 1 auto!important;
+  min-height:0!important;
+  display:flex!important;
+  flex-direction:column!important;
+  overflow:hidden!important;
+}
+.rs-ai-chat-log{
+  flex:1 1 auto!important;
+  min-height:0!important;
+  height:auto!important;
+  max-height:none!important;
+  padding:4px 4px 14px!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  scroll-behavior:smooth!important;
+}
+.rs-ai-chat-label{display:none!important}
+.rs-ai-welcome{
+  min-height:260px!important;
+  height:100%!important;
+  box-sizing:border-box!important;
+  margin:0!important;
+  border-color:rgba(96,165,250,.10)!important;
+  background:radial-gradient(circle at 50% 38%,rgba(37,99,235,.09),transparent 58%)!important;
+}
+.rs-ai-welcome h3{font-size:21px!important;letter-spacing:-.3px!important}
+.rs-ai-welcome p{font-size:12px!important;max-width:390px!important;line-height:1.65!important}
+.rs-ai-bottom-actions{
+  order:2!important;
+  flex:0 0 auto!important;
+  margin-top:7px!important;
+  padding:9px 0 7px!important;
+  border-top:1px solid rgba(96,165,250,.13)!important;
+}
+.rs-ai-bottom-actions-title{
+  display:flex!important;
+  align-items:center!important;
+  gap:7px!important;
+  margin:0 2px 7px!important;
+  color:#93c5fd!important;
+  font-size:10px!important;
+  font-weight:650!important;
+}
+.rs-ai-bottom-bolt{font-size:14px!important;color:#60a5fa!important;text-shadow:0 0 10px rgba(96,165,250,.5)!important}
+.rs-ai-bottom-actions-title .rs-ai-section-line{opacity:.7!important}
+.rs-ai-quick-actions{
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  gap:8px!important;
+  margin:0!important;
+}
+.rs-ai-action{
+  min-width:0!important;
+  min-height:58px!important;
+  padding:9px 10px!important;
+  border-radius:11px!important;
+}
+.rs-ai-action strong{font-size:10px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+.rs-ai-action small{font-size:8px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+.rs-ai-action-arrow{display:none!important}
+.rs-ai-composer{
+  order:3!important;
+  flex:0 0 auto!important;
+  width:100%!important;
+  margin-top:0!important;
+  padding:7px 0 0!important;
+}
+.rs-ai-footer{order:4!important;padding-top:6px!important}
+
+@media(max-width:700px){
+  .rs-ai-window{left:10px!important;right:10px!important;bottom:78px!important;width:auto!important;height:calc(100vh - 94px)!important}
+  .rs-ai-quick-actions{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+@media(max-width:430px){
+  .rs-ai-action{min-height:52px!important;padding:8px!important}
+  .rs-ai-action-icon{width:25px!important;height:25px!important}
+  .rs-ai-action strong{font-size:9px!important}
+  .rs-ai-action small{font-size:7px!important}
+}
+
+/* =========================================================
+   RAILSENSE AI — COMPOSER FIX
+   Keeps the message field and Send button in a clean, stable layout.
+========================================================= */
+.rs-ai-composer{
+  width:100%!important;
+  box-sizing:border-box!important;
+  flex:0 0 auto!important;
+  display:block!important;
+  padding:10px 0 0!important;
+  border-top:1px solid rgba(96,165,250,.10)!important;
+}
+.rs-ai-input-shell{
+  width:100%!important;
+  box-sizing:border-box!important;
+  display:flex!important;
+  flex-direction:column!important;
+  gap:6px!important;
+  min-height:92px!important;
+  padding:9px!important;
+  overflow:hidden!important;
+}
+.rs-ai-input{
+  display:block!important;
+  box-sizing:border-box!important;
+  width:100%!important;
+  flex:0 0 auto!important;
+  height:44px!important;
+  min-height:44px!important;
+  max-height:96px!important;
+  margin:0!important;
+  padding:8px 9px!important;
+  resize:none!important;
+  overflow-y:auto!important;
+  border:0!important;
+  border-radius:8px!important;
+  outline:0!important;
+  background:transparent!important;
+  font-size:12px!important;
+  line-height:1.45!important;
+}
+.rs-ai-input-bottom{
+  width:100%!important;
+  min-height:32px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:8px!important;
+  box-sizing:border-box!important;
+}
+.rs-ai-input-hint{
+  min-width:0!important;
+  flex:1 1 auto!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+}
+.rs-ai-send,
+.rs-ai-window .admin-chat-send{
+  position:static!important;
+  float:none!important;
+  flex:0 0 auto!important;
+  width:auto!important;
+  min-width:72px!important;
+  height:34px!important;
+  min-height:34px!important;
+  margin:0!important;
+  padding:0 13px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:6px!important;
+  box-sizing:border-box!important;
+  border-radius:9px!important;
+}
+.rs-ai-window .admin-chat-send::after{content:none!important;display:none!important}
+.rs-ai-send span{font-size:10px!important}
+.rs-ai-send strong{font-size:16px!important;line-height:1!important}
+
+
+/* =========================================================
+   RAILSENSE AI — CLEAR / LARGE CHAT VIEW
+   Give the conversation priority and keep quick actions at bottom.
+========================================================= */
+.rs-ai-window{
+  width:min(820px, calc(100vw - 48px))!important;
+  height:min(860px, calc(100vh - 72px))!important;
+  right:24px!important;
+  bottom:24px!important;
+  border-radius:24px!important;
+}
+.rs-ai-header{
+  min-height:82px!important;
+  padding:14px 18px!important;
+}
+.rs-ai-brand-text .rs-ai-title{font-size:20px!important}
+.rs-ai-brand-text .rs-ai-subtitle{font-size:13px!important}
+.rs-ai-statusbar{
+  min-height:42px!important;
+  padding:0 18px!important;
+}
+.rs-ai-body{
+  padding:0!important;
+  min-height:0!important;
+}
+.rs-ai-chat-wrapper{
+  padding:0 18px!important;
+  min-height:0!important;
+}
+.rs-ai-chat-log{
+  padding:20px 8px 28px!important;
+  scrollbar-width:thin!important;
+}
+.rs-ai-chat-log::-webkit-scrollbar{width:7px!important}
+.rs-ai-chat-log::-webkit-scrollbar-thumb{background:rgba(96,165,250,.28)!important;border-radius:10px!important}
+.rs-ai-chat-log::-webkit-scrollbar-track{background:transparent!important}
+.rs-ai-welcome{
+  min-height:330px!important;
+  margin:0 0 18px!important;
+  border-radius:18px!important;
+}
+.rs-ai-welcome h3{font-size:29px!important;letter-spacing:-.6px!important;margin-top:16px!important}
+.rs-ai-welcome p{font-size:15px!important;max-width:560px!important;line-height:1.7!important}
+.rs-ai-welcome-orbit{transform:scale(1.12)!important;margin-bottom:10px!important}
+.rs-ai-example{font-size:12px!important}
+.rs-ai-window .admin-chat-bubble{
+  max-width:78%!important;
+  padding:15px 17px!important;
+  border-radius:15px!important;
+  font-size:14px!important;
+  line-height:1.65!important;
+}
+.rs-ai-window .admin-chat-card-widget{
+  margin-top:12px!important;
+  padding:15px!important;
+  border-radius:13px!important;
+}
+.rs-ai-window .admin-chat-sources{gap:7px!important;margin-top:12px!important;padding-top:10px!important}
+.rs-ai-window .admin-source-tag{padding:5px 8px!important;font-size:9px!important}
+.rs-ai-bottom-actions{
+  padding:13px 18px 10px!important;
+  margin-top:0!important;
+  border-top:1px solid rgba(96,165,250,.14)!important;
+  background:rgba(4,12,25,.72)!important;
+}
+.rs-ai-bottom-actions-title{
+  font-size:11px!important;
+  margin:0 0 9px!important;
+}
+.rs-ai-quick-actions{gap:10px!important}
+.rs-ai-action{
+  min-height:66px!important;
+  padding:11px 13px!important;
+  border-radius:13px!important;
+}
+.rs-ai-action strong{font-size:11px!important}
+.rs-ai-action small{font-size:9px!important;margin-top:2px!important}
+.rs-ai-action-icon{width:32px!important;height:32px!important;flex:0 0 32px!important}
+.rs-ai-composer{
+  padding:10px 18px 0!important;
+  border-top:0!important;
+}
+.rs-ai-input-shell{
+  min-height:104px!important;
+  padding:12px!important;
+  border-radius:16px!important;
+}
+.rs-ai-input{
+  height:52px!important;
+  min-height:52px!important;
+  max-height:120px!important;
+  padding:8px 10px!important;
+  font-size:14px!important;
+  line-height:1.5!important;
+}
+.rs-ai-input-bottom{min-height:34px!important}
+.rs-ai-input-hint{font-size:9px!important}
+.rs-ai-send,.rs-ai-window .admin-chat-send{
+  min-width:88px!important;
+  height:38px!important;
+  min-height:38px!important;
+  border-radius:10px!important;
+}
+.rs-ai-send span{font-size:11px!important}
+.rs-ai-send strong{font-size:18px!important}
+.rs-ai-footer{padding:7px 18px 10px!important;font-size:8px!important}
+
+@media(max-width:900px){
+  .rs-ai-window{
+    width:calc(100vw - 32px)!important;
+    right:16px!important;
+    bottom:16px!important;
+    height:calc(100vh - 32px)!important;
+  }
+}
+@media(max-width:700px){
+  .rs-ai-window{
+    left:8px!important;right:8px!important;bottom:8px!important;
+    width:auto!important;height:calc(100vh - 16px)!important;
+    border-radius:20px!important;
+  }
+  .rs-ai-header{min-height:72px!important;padding:12px!important}
+  .rs-ai-statusbar{min-height:36px!important;padding:0 12px!important}
+  .rs-ai-chat-wrapper{padding:0 10px!important}
+  .rs-ai-chat-log{padding:12px 3px 20px!important}
+  .rs-ai-window .admin-chat-bubble{max-width:88%!important;font-size:13px!important}
+  .rs-ai-welcome{min-height:260px!important}
+  .rs-ai-welcome h3{font-size:23px!important}
+  .rs-ai-welcome p{font-size:13px!important}
+  .rs-ai-bottom-actions{padding:10px!important}
+  .rs-ai-quick-actions{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .rs-ai-composer{padding:8px 10px 0!important}
+  .rs-ai-input-shell{min-height:96px!important}
+}
+
+
+/* Hide bottom quick actions while the admin is typing or after a message is sent. */
+.rs-ai-bottom-actions.is-hidden{
+  display:none!important;
+}
+
+/* =========================================================
+   RAILSENSE COPILOT — cx- DESIGN SYSTEM (full rebuild)
+   ========================================================= */
+.cx-panel{
+  position:fixed;right:24px;bottom:24px;z-index:950;
+  width:min(560px,calc(100vw - 40px));height:min(700px,calc(100vh - 56px));
+  display:flex;flex-direction:column;overflow:hidden;
+  background:linear-gradient(165deg,#0c1626 0%,#0a1120 55%,#080e1a 100%);
+  border:1px solid rgba(96,165,250,.22);
+  border-radius:20px;
+  box-shadow:0 24px 70px rgba(2,6,17,.6),0 0 0 1px rgba(59,130,246,.06),inset 0 1px 0 rgba(148,197,253,.06);
+  opacity:0;pointer-events:none;transform:translateY(14px) scale(.98);
+  transition:opacity .18s ease,transform .22s cubic-bezier(.22,1,.36,1);
+}
+.cx-panel.is-open{opacity:1;pointer-events:auto;transform:translateY(0) scale(1)}
+.cx-panel.is-minimized{height:auto}
+.cx-panel.is-minimized .cx-body{display:none}
+/* Copilot is scoped to the Bookings & Revenue section only — hidden elsewhere */
+.cx-scope-hidden.cx-panel,.cx-scope-hidden.cx-launcher{display:none !important}
+
+/* ── Header ── */
+.cx-head{
+  flex-shrink:0;display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:13px 16px;
+  background:linear-gradient(135deg,rgba(30,64,175,.55),rgba(15,40,90,.35));
+  border-bottom:1px solid rgba(96,165,250,.18);
+}
+.cx-head-brand{display:flex;align-items:center;gap:11px;min-width:0}
+.cx-avatar{
+  position:relative;display:grid;place-items:center;width:40px;height:40px;flex-shrink:0;
+  border-radius:12px;
+  background:linear-gradient(145deg,rgba(59,130,246,.35),rgba(29,78,216,.12));
+  border:1px solid rgba(147,197,253,.3);
+  box-shadow:0 0 18px rgba(59,130,246,.18);
+}
+.cx-avatar-glyph{font-size:20px;color:#dbeafe;text-shadow:0 0 14px rgba(147,197,253,.7)}
+.cx-avatar-dot{position:absolute;right:-3px;bottom:-3px;width:10px;height:10px;border-radius:50%;background:#34d399;border:2px solid #0d1730;box-shadow:0 0 8px rgba(52,211,153,.8)}
+.cx-head-text{min-width:0}
+.cx-head-title-row{display:flex;align-items:center;gap:8px}
+.cx-head-title{font-size:14.5px;font-weight:750;color:#f1f5fd;letter-spacing:.2px}
+.cx-head-badge{
+  padding:2px 7px;border-radius:6px;font-family:'Share Tech Mono',monospace;
+  font-size:8px;letter-spacing:1px;text-transform:uppercase;color:#bfdbfe;
+  background:rgba(59,130,246,.14);border:1px solid rgba(147,197,253,.25);
+}
+.cx-head-sub{display:flex;align-items:center;gap:6px;margin-top:2px;font-size:10.5px;color:#8fa8cc}
+.cx-live-dot{width:6px;height:6px;border-radius:50%;background:#34d399;box-shadow:0 0 8px rgba(52,211,153,.85);animation:cxPulse 2.2s infinite}
+@keyframes cxPulse{0%,100%{opacity:1}50%{opacity:.35}}
+.cx-head-actions{display:flex;gap:5px}
+.cx-icon-btn{
+  width:30px;height:30px;display:grid;place-items:center;padding:0;
+  color:#c7dbfa;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
+  border-radius:8px;cursor:pointer;font-size:14px;line-height:1;transition:.15s;
+}
+.cx-icon-btn:hover{background:rgba(255,255,255,.13);border-color:rgba(255,255,255,.26);transform:translateY(-1px)}
+.cx-icon-btn.cx-danger:hover{background:rgba(239,68,68,.18);border-color:rgba(248,113,113,.35);color:#fecaca}
+
+/* ── Body layout ── */
+.cx-body{display:flex;flex:1;min-height:0;flex-direction:column;padding:10px 14px 8px}
+.cx-log-wrap{flex:1;min-height:0;display:flex;flex-direction:column}
+.cx-log{
+  flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;
+  display:flex;flex-direction:column;gap:4px;padding:6px 4px 10px;scroll-behavior:smooth;
+}
+.cx-log::-webkit-scrollbar{width:5px}
+.cx-log::-webkit-scrollbar-thumb{background:rgba(96,165,250,.2);border-radius:10px}
+.cx-log::-webkit-scrollbar-track{background:transparent}
+
+/* ── Welcome state ── */
+.cx-welcome{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  flex:1;min-height:220px;padding:24px;text-align:center;
+  border:1px dashed rgba(96,165,250,.14);border-radius:16px;
+  background:radial-gradient(circle at 50% 35%,rgba(37,99,235,.09),transparent 60%);
+}
+.cx-welcome-glow{margin-bottom:12px}
+.cx-welcome-orbit{position:relative;display:grid;place-items:center;width:60px;height:60px}
+.cx-welcome-ring{position:absolute;inset:0;border:1px solid rgba(96,165,250,.25);border-radius:50%;animation:cxOrbit 4s linear infinite}
+.cx-welcome-ring::after{content:"";position:absolute;width:6px;height:6px;top:2px;left:50%;border-radius:50%;background:#60a5fa;box-shadow:0 0 10px #60a5fa}
+@keyframes cxOrbit{to{transform:rotate(360deg)}}
+.cx-welcome-icon{
+  display:grid;place-items:center;width:42px;height:42px;border-radius:13px;
+  background:linear-gradient(145deg,rgba(59,130,246,.3),rgba(37,99,235,.08));
+  border:1px solid rgba(147,197,253,.28);color:#bfdbfe;font-size:20px;
+  box-shadow:0 0 22px rgba(59,130,246,.15);
+}
+.cx-welcome h3{margin:0;font-size:18px;font-weight:750;color:#f1f5fd;letter-spacing:-.2px}
+.cx-welcome p{max-width:340px;margin:7px 0 14px;font-size:11.5px;line-height:1.6;color:#7f95b5}
+.cx-welcome-try{display:flex;align-items:center;gap:7px;font-size:10.5px;color:#5d7191}
+.cx-welcome-try button{
+  padding:5px 10px;color:#93c5fd;background:rgba(59,130,246,.08);
+  border:1px solid rgba(96,165,250,.18);border-radius:999px;cursor:pointer;font-size:10.5px;transition:.15s;
+}
+.cx-welcome-try button:hover{background:rgba(59,130,246,.18);border-color:rgba(96,165,250,.4);transform:translateY(-1px)}
+
+/* ── Quick actions ── */
+.cx-quick{flex-shrink:0;padding:8px 0 6px;border-top:1px solid rgba(96,165,250,.1)}
+.cx-quick-label{
+  display:flex;align-items:center;gap:8px;margin-bottom:7px;
+  font-family:'Share Tech Mono',monospace;font-size:8.5px;letter-spacing:1.2px;
+  text-transform:uppercase;color:#5d7191;
+}
+.cx-quick-label::after{content:"";height:1px;flex:1;background:linear-gradient(90deg,rgba(96,165,250,.16),transparent)}
+.cx-quick-row{display:flex;gap:7px;overflow-x:auto;padding-bottom:2px;scrollbar-width:thin}
+.cx-quick-row::-webkit-scrollbar{height:3px}
+.cx-quick-row::-webkit-scrollbar-thumb{background:rgba(96,165,250,.18);border-radius:8px}
+.cx-chip{
+  display:inline-flex;align-items:center;gap:6px;flex:0 0 auto;
+  padding:7px 12px;border-radius:999px;cursor:pointer;white-space:nowrap;
+  color:#c9dcf9;font-size:11px;font-weight:600;
+  background:rgba(59,130,246,.07);border:1px solid rgba(96,165,250,.18);transition:.15s;
+}
+.cx-chip:hover{background:rgba(59,130,246,.16);border-color:rgba(96,165,250,.42);transform:translateY(-1px);color:#eff6ff}
+.cx-chip-ico{display:inline-grid;place-items:center;font-size:12px}
+.cx-ico-fraud{color:#fbbf24}.cx-ico-cancel{color:#fb7185}.cx-ico-seats{color:#22d3ee}.cx-ico-booking{color:#a78bfa}
+.cx-quick.is-hidden{display:none}
+
+/* ── Messages ── */
+.cx-msg{display:flex;gap:8px;max-width:92%;animation:cxIn .18s ease}
+.cx-msg.user{align-self:flex-end;flex-direction:row-reverse}
+.cx-msg.bot{align-self:flex-start}
+@keyframes cxIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.cx-msg-avatar{
+  width:26px;height:26px;flex-shrink:0;display:grid;place-items:center;margin-top:2px;
+  border-radius:9px;font-size:12px;
+  background:linear-gradient(145deg,rgba(59,130,246,.32),rgba(29,78,216,.1));
+  border:1px solid rgba(147,197,253,.26);color:#dbeafe;
+}
+.cx-msg.user .cx-msg-avatar{background:rgba(148,163,184,.14);border-color:rgba(203,213,225,.2);color:#cbd5e1}
+.cx-msg-col{display:flex;flex-direction:column;min-width:0;gap:3px}
+.cx-msg.user .cx-msg-col{align-items:flex-end}
+.cx-bubble{
+  padding:10px 13px;border-radius:14px;font-size:12.5px;line-height:1.6;
+  word-wrap:break-word;overflow-wrap:break-word;
+}
+.cx-msg.user .cx-bubble{
+  background:linear-gradient(145deg,#1d4ed8,#2563eb);
+  border:1px solid rgba(147,197,253,.28);color:#eff6ff;
+  border-bottom-right-radius:4px;
+}
+.cx-msg.bot .cx-bubble{
+  background:linear-gradient(165deg,rgba(17,30,52,.95),rgba(11,21,38,.95));
+  border:1px solid rgba(96,165,250,.15);color:#dbeafe;
+  border-bottom-left-radius:4px;
+}
+.cx-meta{font-size:9px;color:#55688a;padding:0 3px;font-family:'Share Tech Mono',monospace;letter-spacing:.4px}
+
+/* typing indicator */
+.cx-typing{display:inline-flex;align-items:center;gap:5px;padding:4px 2px}
+.cx-typing b{width:6px;height:6px;border-radius:50%;background:#60a5fa;animation:cxTyping 1.2s infinite}
+.cx-typing b:nth-child(2){animation-delay:.18s}
+.cx-typing b:nth-child(3){animation-delay:.36s}
+@keyframes cxTyping{0%,60%,100%{opacity:.25;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
+
+/* result card inside bot message */
+.cx-card{margin-top:10px;padding:11px 12px;background:rgba(4,11,22,.55);border:1px solid rgba(96,165,250,.14);border-radius:11px}
+.cx-card-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:7px}
+.cx-card-title{font-size:11.5px;font-weight:700;color:#93c5fd}
+.cx-card-sub{font-size:10px;color:#6c81a3}
+.cx-card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:6px}
+.cx-card-item{padding:6px 9px;background:rgba(148,197,253,.04);border:1px solid rgba(148,197,253,.08);border-radius:7px}
+.cx-card-item-label{font-size:9px;text-transform:uppercase;letter-spacing:.6px;color:#6c81a3}
+.cx-card-item-value{margin-top:2px;font-size:12.5px;font-weight:700;color:#e8f0fd;word-break:break-word}
+
+/* sources row */
+.cx-sources{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin-top:9px;padding-top:8px;border-top:1px solid rgba(148,163,184,.08)}
+.cx-sources-label{font-size:9px;text-transform:uppercase;letter-spacing:.8px;color:#55688a}
+.cx-source-tag{
+  display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:6px;
+  color:#7dd3fc;background:rgba(14,116,144,.1);border:1px solid rgba(56,189,248,.16);
+  font-family:'Share Tech Mono',monospace;font-size:8.5px;
+}
+
+/* error bubble accent */
+.cx-msg.bot.cx-error .cx-bubble{border-color:rgba(239,68,68,.4);background:linear-gradient(165deg,rgba(52,18,22,.5),rgba(30,10,14,.6))}
+
+/* ── Composer ── */
+.cx-composer{flex-shrink:0;padding-top:8px}
+.cx-input-shell{
+  padding:9px 11px;background:linear-gradient(165deg,rgba(15,29,50,.95),rgba(9,18,32,.95));
+  border:1px solid rgba(96,165,250,.18);border-radius:14px;transition:border-color .2s,box-shadow .2s;
+}
+.cx-input-shell:focus-within{border-color:rgba(96,165,250,.42);box-shadow:0 0 0 3px rgba(59,130,246,.08)}
+.cx-input{
+  display:block;width:100%;box-sizing:border-box;min-height:24px;max-height:110px;
+  padding:2px 2px 6px;resize:none;border:0;outline:0;background:transparent;
+  color:#f1f5fd;font-size:12.5px;line-height:1.5;box-shadow:none;
+}
+.cx-input::placeholder{color:#52647c}
+.cx-input-row{display:flex;align-items:center;gap:8px;min-height:30px}
+.cx-hint{display:flex;align-items:center;gap:4px;flex:1;min-width:0;font-size:9px;color:#52647c;white-space:nowrap;overflow:hidden}
+.cx-kbd{padding:1px 5px;color:#748aa9;background:rgba(148,163,184,.07);border:1px solid rgba(148,163,184,.14);border-radius:4px;font-family:monospace;font-size:9px}
+.cx-counter{font-family:'Share Tech Mono',monospace;font-size:8.5px;color:#52647c}
+.cx-send{
+  display:inline-flex;align-items:center;justify-content:center;gap:5px;flex-shrink:0;
+  height:32px;padding:0 13px;border-radius:9px;cursor:pointer;
+  color:#fff;background:linear-gradient(135deg,#2563eb,#3b82f6);
+  border:1px solid rgba(147,197,253,.3);box-shadow:0 4px 14px rgba(37,99,235,.22);
+  font-family:inherit;transition:.15s;
+}
+.cx-send:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(37,99,235,.32)}
+.cx-send:disabled{opacity:.55;cursor:wait;transform:none}
+.cx-send-label{font-size:10.5px;font-weight:700}
+.cx-send-arrow{font-size:14px;line-height:1}
+.cx-foot{
+  flex-shrink:0;display:flex;justify-content:center;align-items:center;gap:5px;
+  padding-top:6px;color:#445571;font-family:'Share Tech Mono',monospace;font-size:7.5px;letter-spacing:.4px;
+}
+
+/* ── Launcher ── */
+.cx-launcher{
+  position:fixed;right:24px;bottom:24px;z-index:951;
+  width:56px;height:56px;display:grid;place-items:center;padding:0;
+  border-radius:17px;cursor:pointer;
+  color:#fff;background:linear-gradient(145deg,#2563eb,#1d4ed8);
+  border:1px solid rgba(147,197,253,.45);
+  box-shadow:0 12px 32px rgba(15,23,42,.5),0 0 0 5px rgba(59,130,246,.08);
+  transition:.2s;
+}
+.cx-launcher:hover{transform:translateY(-3px) scale(1.04);box-shadow:0 16px 40px rgba(15,23,42,.58),0 0 0 8px rgba(59,130,246,.1)}
+.cx-launcher.is-open{opacity:0;pointer-events:none;transform:scale(.8)}
+.cx-launcher-icon{font-size:24px;color:#eff6ff;text-shadow:0 0 14px rgba(255,255,255,.45)}
+.cx-launcher-dot{position:absolute;right:8px;bottom:8px;width:8px;height:8px;border-radius:50%;background:#34d399;border:2px solid #1d4ed8;box-shadow:0 0 8px rgba(52,211,153,.8)}
+.cx-launcher-pulse{position:absolute;inset:-1px;border-radius:17px;border:1px solid rgba(96,165,250,.5);animation:cxLauncherPulse 2.5s infinite;pointer-events:none}
+@keyframes cxLauncherPulse{0%{opacity:.7;transform:scale(1)}70%,100%{opacity:0;transform:scale(1.16)}}
+
+/* ── Light theme ── */
+[data-theme="light"] .cx-panel{background:linear-gradient(165deg,#f8fbff,#eef4fd);border-color:rgba(37,99,235,.2);box-shadow:0 24px 60px rgba(15,23,42,.16)}
+[data-theme="light"] .cx-head{background:linear-gradient(135deg,rgba(37,99,235,.1),rgba(37,99,235,.04));border-bottom-color:rgba(37,99,235,.14)}
+[data-theme="light"] .cx-head-title{color:#0f172a}
+[data-theme="light"] .cx-head-badge{color:#1d4ed8;background:rgba(37,99,235,.08);border-color:rgba(37,99,235,.22)}
+[data-theme="light"] .cx-head-sub{color:#64748b}
+[data-theme="light"] .cx-icon-btn{color:#475569;background:rgba(15,23,42,.04);border-color:rgba(15,23,42,.1)}
+[data-theme="light"] .cx-icon-btn:hover{background:rgba(15,23,42,.08)}
+[data-theme="light"] .cx-log::-webkit-scrollbar-thumb{background:rgba(37,99,235,.2)}
+[data-theme="light"] .cx-welcome{border-color:rgba(37,99,235,.16);background:radial-gradient(circle at 50% 35%,rgba(37,99,235,.06),transparent 60%)}
+[data-theme="light"] .cx-welcome h3{color:#0f172a}
+[data-theme="light"] .cx-welcome p{color:#64748b}
+[data-theme="light"] .cx-welcome-try{color:#94a3b8}
+[data-theme="light"] .cx-welcome-try button{color:#1d4ed8;background:rgba(37,99,235,.06);border-color:rgba(37,99,235,.2)}
+[data-theme="light"] .cx-quick{border-top-color:rgba(37,99,235,.12)}
+[data-theme="light"] .cx-quick-label{color:#94a3b8}
+[data-theme="light"] .cx-chip{color:#1e3a8a;background:rgba(37,99,235,.05);border-color:rgba(37,99,235,.18)}
+[data-theme="light"] .cx-chip:hover{background:rgba(37,99,235,.12);color:#0f172a}
+[data-theme="light"] .cx-msg.user .cx-bubble{background:linear-gradient(145deg,#1d4ed8,#2563eb);color:#fff}
+[data-theme="light"] .cx-msg.bot .cx-bubble{background:#fff;border-color:rgba(37,99,235,.14);color:#1e293b;box-shadow:0 2px 8px rgba(15,23,42,.05)}
+[data-theme="light"] .cx-meta{color:#94a3b8}
+[data-theme="light"] .cx-card{background:rgba(37,99,235,.03);border-color:rgba(37,99,235,.12)}
+[data-theme="light"] .cx-card-title{color:#1d4ed8}
+[data-theme="light"] .cx-card-sub{color:#64748b}
+[data-theme="light"] .cx-card-item{background:rgba(15,23,42,.03);border-color:rgba(15,23,42,.07)}
+[data-theme="light"] .cx-card-item-label{color:#64748b}
+[data-theme="light"] .cx-card-item-value{color:#0f172a}
+[data-theme="light"] .cx-sources{border-top-color:rgba(15,23,42,.08)}
+[data-theme="light"] .cx-sources-label{color:#94a3b8}
+[data-theme="light"] .cx-source-tag{color:#0369a1;background:rgba(14,165,233,.07);border-color:rgba(14,165,233,.18)}
+[data-theme="light"] .cx-msg.bot.cx-error .cx-bubble{background:#fff5f5;border-color:rgba(239,68,68,.3)}
+[data-theme="light"] .cx-input-shell{background:#fff;border-color:rgba(37,99,235,.18)}
+[data-theme="light"] .cx-input{color:#0f172a}
+[data-theme="light"] .cx-input::placeholder{color:#94a3b8}
+[data-theme="light"] .cx-hint{color:#94a3b8}
+[data-theme="light"] .cx-kbd{color:#64748b;background:rgba(15,23,42,.04);border-color:rgba(15,23,42,.1)}
+[data-theme="light"] .cx-counter{color:#94a3b8}
+[data-theme="light"] .cx-foot{color:#94a3b8}
+
+/* ── Responsive ── */
+@media(max-width:640px){
+  .cx-panel{left:10px;right:10px;bottom:84px;width:auto;height:calc(100vh - 96px);border-radius:18px}
+  .cx-launcher{right:14px;bottom:14px;width:52px;height:52px;border-radius:15px}
+  .cx-msg{max-width:96%}
+  .cx-quick-row{flex-wrap:nowrap}
+  .cx-hint,.cx-counter{display:none}
+}
 /* ══════════ ADMIN COMMAND DECK HERO ══════════ */
 #admin-hero {
   position: relative;
@@ -1388,6 +2083,208 @@ body::after {
   .ah-line, .ah-kicker, .ah-sub, .ah-ctas, .ah-stats { animation: none !important; opacity: 1; transform: none; }
 }
 [data-theme="light"] #admin-hero { border-color: rgba(37, 99, 235, 0.35); box-shadow: 0 24px 60px -30px rgba(15, 23, 42, 0.55); }
+
+/* =========================================================
+   BOOKINGS & REVENUE — Redesign (bk-* design system)
+   ========================================================= */
+.bk-page-header{
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding:16px 20px;margin-bottom:14px;
+  background:linear-gradient(135deg,rgba(23,37,66,0.85) 0%,rgba(13,20,40,0.92) 100%);
+  border:1px solid rgba(59,130,246,0.22);border-radius:14px;
+  box-shadow:0 10px 34px rgba(2,6,17,0.45);
+}
+.bk-header-left{display:flex;align-items:center;gap:14px;min-width:0}
+.bk-header-icon{
+  width:48px;height:48px;border-radius:13px;flex-shrink:0;display:grid;place-items:center;font-size:24px;
+  background:linear-gradient(135deg,#1D4ED8,#2563EB);
+  border:1px solid rgba(147,197,253,0.45);
+  box-shadow:0 6px 18px rgba(37,99,235,0.4),inset 0 1px 0 rgba(255,255,255,0.15);
+}
+.bk-header-title{font-size:19px;font-weight:800;color:var(--ink-bright);letter-spacing:-0.2px;line-height:1.2}
+.bk-header-sub{font-size:12px;color:var(--muted-hi);margin-top:3px}
+.bk-date-pill{
+  display:flex;align-items:center;gap:9px;flex-shrink:0;
+  padding:9px 16px;border-radius:11px;
+  background:rgba(10,15,30,0.65);border:1px solid rgba(59,130,246,0.22);
+}
+.bk-date-pill-ico{font-size:16px}
+.bk-date-text{font-size:12px;font-weight:700;color:var(--ink-bright);line-height:1.35;white-space:nowrap}
+.bk-date-time{font-size:11px;color:var(--muted-hi);font-family:'Share Tech Mono',monospace}
+
+.bk-kpi-row{
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:16px;
+}
+@media (max-width:1000px){.bk-kpi-row{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:560px){.bk-kpi-row{grid-template-columns:1fr}}
+.bk-kpi-card{
+  display:flex;align-items:center;gap:14px;
+  padding:16px 18px;border-radius:14px;
+  background:linear-gradient(135deg,var(--bk-accent,rgba(37,99,235,0.16)) 0%,rgba(10,14,26,0.92) 65%);
+  border:1px solid var(--bk-border,rgba(59,130,246,0.28));
+  box-shadow:0 8px 26px rgba(2,6,17,0.4);
+  transition:transform .18s ease,box-shadow .18s ease;
+}
+.bk-kpi-card:hover{transform:translateY(-2px);box-shadow:0 14px 34px rgba(2,6,17,0.55)}
+.bk-kpi-ico{
+  width:46px;height:46px;border-radius:12px;flex-shrink:0;display:grid;place-items:center;font-size:21px;
+  background:var(--bk-ico-bg,rgba(37,99,235,0.15));
+  border:1px solid var(--bk-ico-border,rgba(59,130,246,0.35));
+}
+.bk-kpi-num{font-size:28px;font-weight:800;color:var(--bk-value,#93C5FD);font-family:'Share Tech Mono',monospace;line-height:1}
+.bk-kpi-label{font-size:12px;color:var(--muted-hi);font-weight:600;margin-top:4px}
+.bk-kpi-dot{width:8px;height:8px;border-radius:50%;margin-left:auto;flex-shrink:0;background:var(--bk-dot,transparent);box-shadow:0 0 8px var(--bk-dot,transparent)}
+.bk-kpi-total{--bk-value:#93C5FD;--bk-accent:rgba(37,99,235,0.18);--bk-border:rgba(59,130,246,0.30);--bk-ico-bg:rgba(37,99,235,0.16);--bk-ico-border:rgba(59,130,246,0.4)}
+.bk-kpi-pending{--bk-value:#FBBF24;--bk-accent:rgba(245,158,11,0.14);--bk-border:rgba(245,158,11,0.32);--bk-ico-bg:rgba(245,158,11,0.13);--bk-ico-border:rgba(245,158,11,0.38);--bk-dot:#FBBF24}
+.bk-kpi-approved{--bk-value:#34D399;--bk-accent:rgba(16,185,129,0.13);--bk-border:rgba(16,185,129,0.30);--bk-ico-bg:rgba(16,185,129,0.12);--bk-ico-border:rgba(16,185,129,0.36);--bk-dot:#34D399}
+.bk-kpi-rejected{--bk-value:#F87171;--bk-accent:rgba(239,68,68,0.13);--bk-border:rgba(239,68,68,0.30);--bk-ico-bg:rgba(239,68,68,0.12);--bk-ico-border:rgba(239,68,68,0.36);--bk-dot:#EF4444}
+
+.bk-tab-row{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:18px}
+.bk-tab{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:9px 16px;border-radius:10px;cursor:pointer;
+  background:rgba(13,19,36,0.9);border:1px solid rgba(59,130,246,0.18);
+  color:var(--muted-hi);font-size:12.5px;font-weight:600;font-family:inherit;
+  transition:all .15s ease;
+}
+.bk-tab:hover{color:var(--ink-bright);border-color:rgba(96,165,250,0.45);background:rgba(37,99,235,0.1)}
+.bk-tab.active{
+  background:linear-gradient(135deg,#1D4ED8,#2563EB);border-color:#60A5FA;color:#fff;
+  box-shadow:0 5px 16px rgba(37,99,235,0.4);
+}
+.bk-tab-ico{font-size:14px;line-height:1}
+
+.bk-panel{
+  background:linear-gradient(135deg,rgba(14,20,38,0.94) 0%,rgba(18,26,48,0.92) 100%);
+  border:1px solid rgba(59,130,246,0.18);border-radius:14px;
+  box-shadow:0 12px 40px rgba(2,6,17,0.45);overflow:hidden;
+}
+.bk-panel-head{
+  display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;
+  padding:15px 20px;border-bottom:1px solid rgba(59,130,246,0.14);
+  background:rgba(10,15,30,0.45);
+}
+.bk-panel-head-left{display:flex;align-items:center;gap:11px;min-width:0}
+.bk-panel-ico{
+  width:34px;height:34px;border-radius:9px;flex-shrink:0;display:grid;place-items:center;font-size:16px;
+  background:rgba(37,99,235,0.14);border:1px solid rgba(59,130,246,0.3);
+}
+.bk-panel-title{font-size:14.5px;font-weight:700;color:var(--ink-bright)}
+.bk-panel-sub{font-size:11.5px;color:var(--muted);margin-top:2px}
+.bk-panel-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.bk-seg{display:flex;gap:2px;padding:3px;border-radius:9px;background:rgba(8,12,24,0.8);border:1px solid rgba(59,130,246,0.15)}
+.bk-seg-btn{
+  padding:5px 12px;border-radius:7px;border:none;background:transparent;cursor:pointer;
+  color:var(--muted-hi);font-size:11.5px;font-weight:600;font-family:inherit;transition:all .13s ease;
+}
+.bk-seg-btn:hover{color:var(--ink-bright)}
+.bk-seg-btn.active{background:linear-gradient(135deg,#1D4ED8,#2563EB);color:#fff;box-shadow:0 2px 8px rgba(37,99,235,0.35)}
+.bk-body{padding:18px 20px}
+
+.bk-case-card{
+  position:relative;display:flex;flex-direction:column;gap:11px;
+  background:rgba(12,18,34,0.85);border:1px solid rgba(59,130,246,0.16);
+  border-left:3px solid var(--bk-left,rgba(59,130,246,0.55));
+  border-radius:12px;padding:15px 18px;
+  transition:border-color .18s ease,box-shadow .18s ease,transform .18s ease;
+}
+.bk-case-card:hover{border-color:rgba(96,165,250,0.38);border-left-color:var(--bk-left,#3B82F6);box-shadow:0 8px 26px rgba(2,6,17,0.5);transform:translateY(-1px)}
+.bk-case-card.bk-left-pending{--bk-left:#F59E0B}
+.bk-case-card.bk-left-approved{--bk-left:#10B981}
+.bk-case-card.bk-left-rejected{--bk-left:#EF4444}
+.bk-case-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.bk-case-id-row{display:flex;align-items:center;gap:11px;min-width:0}
+.bk-case-ico{
+  width:36px;height:36px;border-radius:10px;flex-shrink:0;display:grid;place-items:center;font-size:16px;
+  background:rgba(37,99,235,0.14);border:1px solid rgba(59,130,246,0.3);
+}
+.bk-case-card.bk-left-pending .bk-case-ico{background:rgba(245,158,11,0.13);border-color:rgba(245,158,11,0.35)}
+.bk-case-card.bk-left-approved .bk-case-ico{background:rgba(16,185,129,0.12);border-color:rgba(16,185,129,0.32)}
+.bk-case-card.bk-left-rejected .bk-case-ico{background:rgba(239,68,68,0.12);border-color:rgba(239,68,68,0.32)}
+.bk-case-ref{font-family:'Share Tech Mono',monospace;font-size:14.5px;font-weight:700;color:#93C5FD;letter-spacing:0.4px}
+.bk-case-nic{font-size:11.5px;color:var(--muted);margin-top:2px}
+.bk-case-nic strong{color:#FDE68A}
+.bk-case-badges{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.bk-risk{
+  padding:4px 11px;border-radius:8px;font-size:11px;font-weight:800;letter-spacing:0.3px;
+  font-family:'Share Tech Mono',monospace;white-space:nowrap;
+}
+.bk-risk-HIGH{background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.45);color:#FCA5A5}
+.bk-risk-MEDIUM{background:rgba(245,158,11,0.13);border:1px solid rgba(245,158,11,0.45);color:#FDE68A}
+.bk-risk-LOW{background:rgba(16,185,129,0.13);border:1px solid rgba(16,185,129,0.4);color:#6EE7B7}
+.bk-status{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:4px 11px;border-radius:8px;font-size:11px;font-weight:700;letter-spacing:0.4px;white-space:nowrap;
+}
+.bk-status::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor}
+.bk-status-PENDING_REVIEW,.bk-status-PENDING_ADMIN_REVIEW{background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.4);color:#FBBF24}
+.bk-status-APPROVED{background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.38);color:#34D399}
+.bk-status-REJECTED{background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.38);color:#F87171}
+.bk-case-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px 16px;
+  padding:11px 14px;border-radius:9px;
+  background:rgba(8,12,24,0.7);border:1px solid rgba(59,130,246,0.09);
+}
+.bk-cell{min-width:0}
+.bk-cell-label{display:flex;align-items:center;gap:6px;font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;font-weight:600;margin-bottom:3px;white-space:nowrap}
+.bk-cell-label .bk-cell-ico{font-size:12px}
+.bk-cell-val{font-size:12.5px;font-weight:700;color:var(--ink-bright);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bk-cell-val.bk-muted-val{color:var(--muted-hi);font-weight:600}
+.bk-flag{
+  display:flex;align-items:flex-start;gap:8px;
+  font-size:12px;padding:9px 12px;border-radius:8px;
+  background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.18);
+}
+.bk-flag-label{color:#FCA5A5;font-weight:700;font-size:11px;white-space:nowrap;padding-top:1px}
+.bk-flag-text{color:var(--muted-hi);font-style:italic;word-break:break-word}
+.bk-note{
+  display:flex;align-items:flex-start;gap:8px;
+  font-size:12px;padding:9px 12px;border-radius:8px;
+  background:rgba(8,12,24,0.6);border:1px solid rgba(59,130,246,0.12);
+}
+.bk-note-label{color:var(--muted-hi);font-weight:700;font-size:11px;white-space:nowrap;padding-top:1px}
+.bk-note-text{color:var(--muted-hi);font-style:italic;word-break:break-word}
+.bk-ai{
+  font-size:12px;padding:10px 12px;border-radius:8px;line-height:1.55;
+  background:rgba(37,99,235,0.07);border:1px solid rgba(59,130,246,0.22);
+}
+.bk-ai-label{display:block;color:#60A5FA;font-weight:700;font-size:10.5px;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:4px}
+.bk-ai-text{color:var(--ink)}
+.bk-decision{
+  display:flex;justify-content:flex-end;gap:6px;align-items:baseline;flex-wrap:wrap;
+  padding-top:10px;border-top:1px solid rgba(59,130,246,0.1);
+  font-size:12px;color:var(--muted-hi);
+}
+.bk-decision strong{color:var(--ink-bright)}
+.bk-decision em{color:var(--muted-hi)}
+.bk-decision .bk-ticket-ref{color:#60A5FA;font-weight:700}
+.bk-case-actions{display:flex;justify-content:flex-end;gap:10px;padding-top:10px;border-top:1px solid rgba(59,130,246,0.12)}
+
+.bk-empty{
+  text-align:center;padding:46px 20px;color:var(--muted);
+}
+.bk-empty-ico{font-size:36px;margin-bottom:10px}
+.bk-empty-title{font-size:15px;font-weight:700;color:var(--ink);margin-bottom:5px}
+.bk-empty-sub{font-size:12.5px}
+
+[data-theme="light"] .bk-page-header{background:linear-gradient(135deg,#eff6ff,#e0ecff);border-color:rgba(37,99,235,0.25)}
+[data-theme="light"] .bk-header-title{color:#0F172A}
+[data-theme="light"] .bk-date-pill{background:#fff;border-color:rgba(37,99,235,0.25)}
+[data-theme="light"] .bk-date-text{color:#0F172A}
+[data-theme="light"] .bk-tab{background:#fff;border-color:rgba(37,99,235,0.2);color:#334155}
+[data-theme="light"] .bk-tab.active{background:linear-gradient(135deg,#1D4ED8,#2563EB);color:#fff}
+[data-theme="light"] .bk-panel{background:#fff;border-color:rgba(37,99,235,0.18)}
+[data-theme="light"] .bk-panel-head{background:rgba(239,246,255,0.7);border-bottom-color:rgba(37,99,235,0.12)}
+[data-theme="light"] .bk-panel-title{color:#0F172A}
+[data-theme="light"] .bk-seg{background:#eef4fd;border-color:rgba(37,99,235,0.15)}
+[data-theme="light"] .bk-case-card{background:#f8fafc;border-color:rgba(37,99,235,0.14)}
+[data-theme="light"] .bk-case-ref{color:#1D4ED8}
+[data-theme="light"] .bk-case-grid{background:#eef4fd;border-color:rgba(37,99,235,0.1)}
+[data-theme="light"] .bk-cell-val{color:#0F172A}
+[data-theme="light"] .bk-cell-label{color:#64748B}
+[data-theme="light"] .bk-kpi-card{box-shadow:0 6px 20px rgba(15,23,42,0.08)}
+[data-theme="light"] .bk-empty{color:#64748B}
+[data-theme="light"] .bk-empty-title{color:#0F172A}
 </style>
 </head>
 <body>
@@ -1682,153 +2579,161 @@ body::after {
 
   <!-- ==================== SECTION 3: BOOKINGS ==================== -->
   <main id="view-bookings" class="view-panel">
-    <div class="sub-nav">
-      <button class="sub-chip active" id="chip-book-fraud" onclick="switchSubSection('bookings', 'fraud')">🛡️ Fraud Review Queue (ML Flagged)</button>
-      <button class="sub-chip" id="chip-book-canc" onclick="switchSubSection('bookings', 'canc')">🔄 Cancellation Queue (Human-in-the-Loop)</button>
-      <button class="sub-chip" id="chip-book-schedules" onclick="switchSubSection('bookings', 'schedules')">📋 Schedules &amp; Seat Inventory</button>
-      <button class="sub-chip" id="chip-book-tickets" onclick="switchSubSection('bookings', 'tickets'); loadTicketManifestTrains();">🎫 Booked Tickets (Manifest)</button>
-    </div>
-
-    <!-- 🤖 Admin Booking Intelligence Assistant (NLP + IR/RAG + LLM) -->
-    <div class="admin-chat-card" id="admin-booking-chat-panel">
-      <div class="admin-chat-header">
-        <div class="admin-chat-title-group">
-          <span style="font-size: 20px;">🤖</span>
-          <div>
-            <div style="font-size: 15px; font-weight: 700; color: var(--ink-bright); display: flex; align-items: center; gap: 8px;">
-              Booking Intelligence Assistant
-              <span class="admin-chat-badge">NLP · RAG · LLM</span>
-            </div>
-            <div style="font-size: 11.5px; color: var(--muted); margin-top: 1px;">
-              Ask about fraud reviews, cancellations, seat availability, schedules, or passenger manifests.
-            </div>
-          </div>
-        </div>
-        <div class="admin-chat-controls">
-          <button class="btn-refresh" type="button" onclick="clearAdminChat()" title="Clear conversation history">✕ Clear</button>
-          <button class="btn-refresh" type="button" id="btn-toggle-chat" onclick="toggleAdminChatCollapse()" title="Collapse / Expand Assistant">− Minimize</button>
+    <!-- Redesigned page header with live date/time -->
+    <div class="bk-page-header">
+      <div class="bk-header-left">
+        <div class="bk-header-icon">🛡️</div>
+        <div>
+          <div class="bk-header-title" id="bk-page-title">Security &amp; Fraud Review Queue</div>
+          <div class="bk-header-sub" id="bk-page-sub">IsolationForest anomaly-detected booking cases awaiting human administrator adjudication</div>
         </div>
       </div>
-
-      <div id="admin-chat-body">
-        <!-- Quick Suggested Query Chips -->
-        <div class="admin-chat-suggestions">
-          <button class="chat-suggest-chip" type="button" onclick="sendSuggestedQuestion('🛡️ Show pending fraud reviews')">🛡️ Show pending fraud reviews</button>
-          <button class="chat-suggest-chip" type="button" onclick="sendSuggestedQuestion('🔄 Show pending cancellations')">🔄 Show pending cancellations</button>
-          <button class="chat-suggest-chip" type="button" onclick="sendSuggestedQuestion('📋 Check today\'s seat availability')">📋 Check today's seat availability</button>
-          <button class="chat-suggest-chip" type="button" onclick="sendSuggestedQuestion('🎫 Show today\'s booking count')">🎫 Show today's booking count</button>
-          <button class="chat-suggest-chip" type="button" onclick="sendSuggestedQuestion('How many seats are available on Udarata Menike tomorrow?')">How many seats on Udarata Menike tomorrow?</button>
+      <div class="bk-date-pill">
+        <span class="bk-date-pill-ico">📅</span>
+        <div>
+          <div class="bk-date-text" id="bk-date-line">—</div>
+          <div class="bk-date-time" id="bk-time-line">—</div>
         </div>
-
-        <!-- Scrollable Conversation Log -->
-        <div class="admin-chat-log" id="admin-chat-log">
-          <div class="admin-chat-bubble assistant">
-            <div>👋 Welcome, Railway Administrator. I am your <strong>Booking Intelligence Assistant</strong>.</div>
-            <div style="margin-top: 5px; font-size: 12px; color: var(--muted-hi);">
-              You can query live database records across the <strong>Fraud Queue</strong>, <strong>Cancellation Queue</strong>, <strong>Seat Inventory</strong>, and <strong>Booked Manifests</strong>.
-            </div>
-          </div>
-        </div>
-
-        <!-- Chat Input Form -->
-        <form class="admin-chat-form" id="admin-chat-form" onsubmit="handleAdminChatSubmit(event)">
-          <input
-            type="text"
-            id="admin-chat-input"
-            class="admin-chat-input"
-            placeholder="Ask about bookings, cancellations, schedules, seats, or fraud reviews..."
-            autocomplete="off"
-            maxlength="500"
-          />
-          <button type="submit" id="admin-chat-send-btn" class="admin-chat-send">
-            <span>Send</span>
-            <span>➔</span>
-          </button>
-        </form>
       </div>
     </div>
 
+    <!-- KPI stat cards -->
+    <div class="bk-kpi-row">
+      <div class="bk-kpi-card bk-kpi-total">
+        <div class="bk-kpi-ico">🗂</div>
+        <div><div class="bk-kpi-num" id="bk-kpi-total">0</div><div class="bk-kpi-label">Total Cases</div></div>
+        <span class="bk-kpi-dot"></span>
+      </div>
+      <div class="bk-kpi-card bk-kpi-pending">
+        <div class="bk-kpi-ico">🕐</div>
+        <div><div class="bk-kpi-num" id="bk-kpi-pending">0</div><div class="bk-kpi-label">Pending Review</div></div>
+        <span class="bk-kpi-dot"></span>
+      </div>
+      <div class="bk-kpi-card bk-kpi-approved">
+        <div class="bk-kpi-ico">✅</div>
+        <div><div class="bk-kpi-num" id="bk-kpi-approved">0</div><div class="bk-kpi-label">Approved</div></div>
+        <span class="bk-kpi-dot"></span>
+      </div>
+      <div class="bk-kpi-card bk-kpi-rejected">
+        <div class="bk-kpi-ico">✖</div>
+        <div><div class="bk-kpi-num" id="bk-kpi-rejected">0</div><div class="bk-kpi-label">Rejected</div></div>
+        <span class="bk-kpi-dot"></span>
+      </div>
+    </div>
+
+    <!-- Pill tab navigation -->
+    <div class="bk-tab-row">
+      <button class="bk-tab active" id="chip-book-fraud" onclick="switchSubSection('bookings', 'fraud')"><span class="bk-tab-ico">🛡️</span> Fraud Review Queue (ML Flagged)</button>
+      <button class="bk-tab" id="chip-book-canc" onclick="switchSubSection('bookings', 'canc')"><span class="bk-tab-ico">🔄</span> Cancellation Queue (Human-in-the-Loop)</button>
+      <button class="bk-tab" id="chip-book-schedules" onclick="switchSubSection('bookings', 'schedules')"><span class="bk-tab-ico">📋</span> Schedules &amp; Seat Inventory</button>
+      <button class="bk-tab" id="chip-book-tickets" onclick="switchSubSection('bookings', 'tickets'); loadTicketManifestTrains();"><span class="bk-tab-ico">🎫</span> Booked Tickets (Manifest)</button>
+    </div>
 
     <!-- View A: Fraud Review Queue -->
     <div id="subview-book-fraud">
-      <div class="card-section">
-        <div class="card-header">
-          <div>
-            <div class="card-title">Security &amp; Fraud Review Queue</div>
-            <div style="font-size:12px;color:var(--muted);margin-top:2px;">IsolationForest anomaly-detected booking cases awaiting human administrator adjudication</div>
+      <div class="bk-panel">
+        <div class="bk-panel-head">
+          <div class="bk-panel-head-left">
+            <div class="bk-panel-ico">🗂</div>
+            <div>
+              <div class="bk-panel-title">Flagged Booking Cases</div>
+              <div class="bk-panel-sub">Review ML-flagged bookings and make a decision</div>
+            </div>
           </div>
-          <div style="display:flex;gap:6px;">
-            <button class="chip-btn" id="filter-fraud-all" onclick="filterFraudCases('ALL')">All</button>
-            <button class="chip-btn" id="filter-fraud-pending" onclick="filterFraudCases('PENDING_REVIEW')">Pending Review</button>
-            <button class="chip-btn" id="filter-fraud-approved" onclick="filterFraudCases('APPROVED')">Approved</button>
-            <button class="chip-btn" id="filter-fraud-rejected" onclick="filterFraudCases('REJECTED')">Rejected</button>
+          <div class="bk-panel-tools">
+            <div class="bk-seg">
+              <button class="bk-seg-btn active" id="filter-fraud-all" onclick="filterFraudCases('ALL')">All</button>
+              <button class="bk-seg-btn" id="filter-fraud-pending" onclick="filterFraudCases('PENDING_REVIEW')">Pending Review</button>
+              <button class="bk-seg-btn" id="filter-fraud-approved" onclick="filterFraudCases('APPROVED')">Approved</button>
+              <button class="bk-seg-btn" id="filter-fraud-rejected" onclick="filterFraudCases('REJECTED')">Rejected</button>
+            </div>
             <button class="btn-refresh" onclick="loadAdminFraudReviews()">⟳ Refresh</button>
           </div>
         </div>
-
-        <div id="admin-fraud-cases-container" class="admin-cases-grid">
-          <div style="padding:20px;text-align:center;color:var(--muted)">Loading fraud review cases...</div>
+        <div class="bk-body">
+          <div id="admin-fraud-cases-container" class="admin-cases-grid">
+            <div style="padding:20px;text-align:center;color:var(--muted)">Loading fraud review cases...</div>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- View B: Cancellation Review Queue -->
     <div id="subview-book-canc" style="display:none;">
-      <div class="card-section">
-        <div class="card-header">
-          <div>
-            <div class="card-title">Passenger Cancellation Adjudication Queue</div>
-            <div style="font-size:12px;color:var(--muted);margin-top:2px;">Human-in-the-Loop review for ticket refund and cancellation requests</div>
+      <div class="bk-panel">
+        <div class="bk-panel-head">
+          <div class="bk-panel-head-left">
+            <div class="bk-panel-ico">🔄</div>
+            <div>
+              <div class="bk-panel-title">Cancellation Requests</div>
+              <div class="bk-panel-sub">Human-in-the-Loop review for ticket refund and cancellation requests</div>
+            </div>
           </div>
-          <div style="display:flex;gap:6px;">
-            <button class="chip-btn" id="filter-canc-all" onclick="filterAdminCases('all')">All</button>
-            <button class="chip-btn" id="filter-canc-pending" onclick="filterAdminCases('PENDING_ADMIN_REVIEW')">Pending Review</button>
-            <button class="chip-btn" id="filter-canc-approved" onclick="filterAdminCases('APPROVED')">Approved</button>
-            <button class="chip-btn" id="filter-canc-rejected" onclick="filterAdminCases('REJECTED')">Rejected</button>
+          <div class="bk-panel-tools">
+            <div class="bk-seg">
+              <button class="bk-seg-btn active" id="filter-canc-all" onclick="filterAdminCases('all')">All</button>
+              <button class="bk-seg-btn" id="filter-canc-pending" onclick="filterAdminCases('PENDING_ADMIN_REVIEW')">Pending Review</button>
+              <button class="bk-seg-btn" id="filter-canc-approved" onclick="filterAdminCases('APPROVED')">Approved</button>
+              <button class="bk-seg-btn" id="filter-canc-rejected" onclick="filterAdminCases('REJECTED')">Rejected</button>
+            </div>
             <button class="btn-refresh" onclick="loadAdminCancellations()">⟳ Refresh</button>
           </div>
         </div>
-
-        <div id="admin-cases-container" class="admin-cases-grid">
-          <div style="padding:20px;text-align:center;color:var(--muted)">Loading cancellation cases...</div>
+        <div class="bk-body">
+          <div id="admin-cases-container" class="admin-cases-grid">
+            <div style="padding:20px;text-align:center;color:var(--muted)">Loading cancellation cases...</div>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- View C: Schedules & Seats Inspector -->
     <div id="subview-book-schedules" style="display:none;">
-      <div class="card-section">
-        <div class="card-title">Live Schedule &amp; Dynamic Seat Inventory</div>
-        <div style="font-size:12px;color:var(--muted);margin-bottom:14px;">Direct query through M3 Booking Agent (Port 8003)</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:flex-end;">
-          <div>
-            <label style="font-size:11.5px;color:var(--muted-hi);display:block;margin-bottom:4px;">From</label>
-            <input type="text" id="insp-from" value="Colombo" style="width:100%;padding:8px 12px;background:rgba(10,15,26,0.8);border:1px solid var(--border);border-radius:6px;color:#fff;outline:none;" />
+      <div class="bk-panel">
+        <div class="bk-panel-head">
+          <div class="bk-panel-head-left">
+            <div class="bk-panel-ico">📋</div>
+            <div>
+              <div class="bk-panel-title">Live Schedule &amp; Dynamic Seat Inventory</div>
+              <div class="bk-panel-sub">Direct query through M3 Booking Agent (Port 8003)</div>
+            </div>
           </div>
-          <div>
-            <label style="font-size:11.5px;color:var(--muted-hi);display:block;margin-bottom:4px;">To</label>
-            <input type="text" id="insp-to" value="Kandy" style="width:100%;padding:8px 12px;background:rgba(10,15,26,0.8);border:1px solid var(--border);border-radius:6px;color:#fff;outline:none;" />
-          </div>
-          <div>
-            <label style="font-size:11.5px;color:var(--muted-hi);display:block;margin-bottom:4px;">Date</label>
-            <input type="date" id="insp-date" style="width:100%;padding:8px 12px;background:rgba(10,15,26,0.8);border:1px solid var(--border);border-radius:6px;color:#fff;outline:none;" />
-          </div>
-          <button class="btn-approve" onclick="inspectSchedules()">Query Trains</button>
         </div>
-        <div id="insp-results" style="margin-top:14px;"></div>
+        <div class="bk-body">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:flex-end;">
+            <div>
+              <label style="font-size:11.5px;color:var(--muted-hi);display:block;margin-bottom:4px;">From</label>
+              <input type="text" id="insp-from" value="Colombo" style="width:100%;padding:8px 12px;background:rgba(10,15,26,0.8);border:1px solid var(--border);border-radius:6px;color:#fff;outline:none;" />
+            </div>
+            <div>
+              <label style="font-size:11.5px;color:var(--muted-hi);display:block;margin-bottom:4px;">To</label>
+              <input type="text" id="insp-to" value="Kandy" style="width:100%;padding:8px 12px;background:rgba(10,15,26,0.8);border:1px solid var(--border);border-radius:6px;color:#fff;outline:none;" />
+            </div>
+            <div>
+              <label style="font-size:11.5px;color:var(--muted-hi);display:block;margin-bottom:4px;">Date</label>
+              <input type="date" id="insp-date" style="width:100%;padding:8px 12px;background:rgba(10,15,26,0.8);border:1px solid var(--border);border-radius:6px;color:#fff;outline:none;" />
+            </div>
+            <button class="btn-approve" onclick="inspectSchedules()">Query Trains</button>
+          </div>
+          <div id="insp-results" style="margin-top:14px;"></div>
+        </div>
       </div>
     </div>
 
     <!-- View D: Ticket Manifest -->
     <div id="subview-book-tickets" style="display:none;">
-      <div class="card-section">
-        <div class="card-header">
-          <div>
-            <div class="card-title">🎫 Booked Ticket Manifest</div>
-            <div style="font-size:12px;color:var(--muted);margin-top:2px;">Filter bookings by train and travel date — queries Booking.travel_date (journey date, not booking date)</div>
+      <div class="bk-panel">
+        <div class="bk-panel-head">
+          <div class="bk-panel-head-left">
+            <div class="bk-panel-ico">🎫</div>
+            <div>
+              <div class="bk-panel-title">Booked Ticket Manifest</div>
+              <div class="bk-panel-sub">Filter bookings by train and travel date — queries Booking.travel_date (journey date, not booking date)</div>
+            </div>
           </div>
           <button class="btn-refresh" onclick="searchTicketManifest()">🔍 Refresh</button>
         </div>
+        <div class="bk-body">
 
         <!-- Filter toolbar -->
         <div style="display:grid;grid-template-columns:2fr 1fr 1fr auto auto;gap:10px;align-items:flex-end;margin:16px 0 18px;">
@@ -1923,8 +2828,9 @@ body::after {
               </tbody>
             </table>
           </div>
-        </div>
-      </div>
+        </div><!-- /ticket-manifest-container -->
+        </div><!-- /bk-body -->
+      </div><!-- /bk-panel -->
     </div>
   </main>
 
@@ -2119,6 +3025,63 @@ body::after {
   </main>
 </div>
 
+<!-- Global floating Admin Booking Intelligence Assistant. -->
+<div class="cx-panel" id="admin-booking-chat-panel" role="dialog" aria-label="RailSense AI Admin Booking Assistant" aria-hidden="true">
+  <header class="cx-head">
+    <div class="cx-head-brand">
+      <div class="cx-avatar"><span class="cx-avatar-glyph">✦</span><span class="cx-avatar-dot"></span></div>
+      <div class="cx-head-text">
+        <div class="cx-head-title-row">
+          <span class="cx-head-title">RailSense AI</span>
+          <span class="cx-head-badge">Copilot</span>
+        </div>
+        <div class="cx-head-sub"><span class="cx-live-dot"></span>Live operations · Online</div>
+      </div>
+    </div>
+    <div class="cx-head-actions">
+      <button class="cx-icon-btn" type="button" onclick="clearAdminChat()" title="Clear conversation" aria-label="Clear conversation">⌫</button>
+      <button class="cx-icon-btn" id="btn-toggle-chat" type="button" onclick="toggleAdminChatCollapse()" title="Minimize assistant" aria-label="Minimize assistant">−</button>
+      <button class="cx-icon-btn cx-danger" type="button" onclick="closeAdminChat()" title="Close assistant" aria-label="Close assistant">×</button>
+    </div>
+  </header>
+
+  <div id="admin-chat-body" class="cx-body">
+    <div class="cx-log-wrap">
+      <div class="cx-log" id="admin-chat-log">
+        <div class="cx-welcome" id="cx-welcome">
+          <div class="cx-welcome-glow"><div class="cx-welcome-orbit"><div class="cx-welcome-ring"></div><div class="cx-welcome-icon">✦</div></div></div>
+          <h3>How can I help you today?</h3>
+          <p>Ask about bookings, schedules, seats, cancellations, fraud reviews or passenger manifests — grounded in live operational data.</p>
+          <div class="cx-welcome-try"><span>Try</span><button type="button" onclick="sendSuggestedQuestion('Show today's booking count')">"Show today's booking count"</button></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cx-quick" id="cx-quick">
+      <div class="cx-quick-label">Quick actions</div>
+      <div class="cx-quick-row">
+        <button class="cx-chip" type="button" onclick="sendSuggestedQuestion('Show pending fraud reviews')"><span class="cx-chip-ico cx-ico-fraud">🛡</span>Fraud reviews</button>
+        <button class="cx-chip" type="button" onclick="sendSuggestedQuestion('Show pending cancellations')"><span class="cx-chip-ico cx-ico-cancel">↻</span>Cancellations</button>
+        <button class="cx-chip" type="button" onclick="sendSuggestedQuestion('Check today's seat availability')"><span class="cx-chip-ico cx-ico-seats">▦</span>Seat availability</button>
+        <button class="cx-chip" type="button" onclick="sendSuggestedQuestion('Show today's booking count')"><span class="cx-chip-ico cx-ico-booking">▣</span>Today's bookings</button>
+      </div>
+    </div>
+
+    <form class="cx-composer" id="admin-chat-form" onsubmit="handleAdminChatSubmit(event)">
+      <div class="cx-input-shell">
+        <textarea id="admin-chat-input" class="cx-input" placeholder="Ask RailSense about bookings…" autocomplete="off" maxlength="500" aria-label="Ask RailSense AI a question" rows="1"></textarea>
+        <div class="cx-input-row">
+          <span class="cx-hint"><span class="cx-kbd">↵</span> Send · <span class="cx-kbd">⇧↵</span> New line</span>
+          <span class="cx-counter" id="cx-char-counter">0/500</span>
+          <button type="submit" id="admin-chat-send-btn" class="cx-send" aria-label="Send message"><span class="cx-send-label">Send</span><span class="cx-send-arrow">↑</span></button>
+        </div>
+      </div>
+    </form>
+    <div class="cx-foot">RailSense Intelligence Engine · Grounded in live M3 data</div>
+  </div>
+</div>
+<button class="cx-launcher" id="admin-chat-launcher" type="button" onclick="toggleAdminChat()" aria-label="Open RailSense AI Assistant" aria-expanded="false" title="Open AI Assistant"><span class="cx-launcher-pulse"></span><span class="cx-launcher-icon">✦</span><span class="cx-launcher-dot"></span></button>
+
 <!-- Modal: Fraud Case Rejection -->
 <div id="modal-fraud-rejection" class="modal-backdrop" onclick="if(event.target===this) closeFraudRejectionModal()">
   <div class="modal-card">
@@ -2247,6 +3210,17 @@ window.addEventListener('DOMContentLoaded', () => {
   handleUrlRouting();
   pollSystemHealth();
   setInterval(pollSystemHealth, 30000);
+
+  const chatInput = $('admin-chat-input');
+  if (chatInput) {
+    chatInput.addEventListener('input', () => { resizeAdminChatInput(); _cxUpdateCounter(); });
+    chatInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        $('admin-chat-form')?.requestSubmit();
+      }
+    });
+  }
 });
 
 window.addEventListener('popstate', handleUrlRouting);
@@ -2405,6 +3379,7 @@ function closeSidebar() {
 
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') closeSidebar();
+  if (e.key === 'Escape' && $('admin-booking-chat-panel')?.classList.contains('is-open')) closeAdminChat();
 });
 
 function handleUrlRouting() {
@@ -2450,6 +3425,19 @@ function handleUrlRouting() {
 
 let adminHubInterval = null;
 
+/* The RailSense Copilot (admin booking chat) is only available inside the
+   Bookings & Revenue section. Hide panel + launcher on every other section. */
+const ADMIN_CHAT_SECTIONS = ['bookings'];
+
+function updateAdminChatVisibility(secName) {
+  const allowed = ADMIN_CHAT_SECTIONS.includes(secName);
+  const panel = $('admin-booking-chat-panel');
+  const launcher = $('admin-chat-launcher');
+  if (panel) panel.classList.toggle('cx-scope-hidden', !allowed);
+  if (launcher) launcher.classList.toggle('cx-scope-hidden', !allowed);
+  if (!allowed) closeAdminChat();
+}
+
 function switchSection(secName) {
   document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.admin-nav-tab').forEach(t => t.classList.remove('active'));
@@ -2458,6 +3446,8 @@ function switchSection(secName) {
   const navEl = $(`nav-${secName}`);
   if (viewEl) viewEl.classList.add('active');
   if (navEl) navEl.classList.add('active');
+
+  updateAdminChatVisibility(secName);
 
   const token = getOfficerToken();
   const opsParams = new URLSearchParams();
@@ -2484,6 +3474,16 @@ function switchSection(secName) {
     }
   }
 }
+
+/* Apply initial Copilot visibility based on the URL the officer landed on,
+   before the first switchSection runs. */
+updateAdminChatVisibility((() => {
+  const path = window.location.pathname;
+  const hash = window.location.hash;
+  const search = window.location.search;
+  if (path.includes('/bookings') || hash === '#bookings' || search.includes('tab=bookings')) return 'bookings';
+  return 'dashboard';
+})());
 
 function switchSubSection(parent, sub) {
   const token = getOfficerToken();
@@ -2528,8 +3528,11 @@ function switchSubSection(parent, sub) {
     $('chip-book-schedules').classList.toggle('active', sub === 'schedules');
     $('chip-book-tickets').classList.toggle('active', sub === 'tickets');
 
+    updateBkPageHeader(sub);
+
     if (sub === 'fraud') loadAdminFraudReviews();
     if (sub === 'canc') loadAdminCancellations();
+    if (sub === 'tickets') loadTicketManifestTrains();
   } else if (parent === 'maintenance') {
     // Maintenance now opens full page — nothing to switch inside admin
   }
@@ -2623,6 +3626,73 @@ let allFraudCases = [];
 let currentFraudFilter = 'ALL';
 let currentFraudRejectionCase = null;
 
+/* Shared helpers for the redesigned Bookings & Revenue page */
+const BK_PAGE_META = {
+  fraud:     { icon: '🛡️', title: 'Security & Fraud Review Queue', sub: 'IsolationForest anomaly-detected booking cases awaiting human administrator adjudication' },
+  canc:      { icon: '🔄', title: 'Passenger Cancellation Adjudication Queue', sub: 'Human-in-the-Loop review for ticket refund and cancellation requests' },
+  schedules: { icon: '📋', title: 'Live Schedule & Dynamic Seat Inventory', sub: 'Direct query through M3 Booking Agent (Port 8003)' },
+  tickets:   { icon: '🎫', title: 'Booked Ticket Manifest', sub: 'Filter bookings by train and travel date — queries Booking.travel_date (journey date, not booking date)' }
+};
+
+function updateBkClock() {
+  const d = new Date();
+  const dateLine = $('bk-date-line');
+  const timeLine = $('bk-time-line');
+  if (dateLine) dateLine.textContent = d.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' });
+  if (timeLine) timeLine.textContent = d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+setInterval(updateBkClock, 1000);
+updateBkClock();
+
+function updateBkKpis(cases, pendingStatus) {
+  // Only refresh the KPI row if the owning subview is the one on screen,
+  // since both queues load when the section opens.
+  const owningView = pendingStatus === 'PENDING_REVIEW' ? 'subview-book-fraud' : 'subview-book-canc';
+  const view = $(owningView);
+  if (view && view.style.display === 'none') return;
+  const total = $('bk-kpi-total');
+  const pending = $('bk-kpi-pending');
+  const approved = $('bk-kpi-approved');
+  const rejected = $('bk-kpi-rejected');
+  if (!total || !pending || !approved || !rejected) return;
+  total.textContent = cases.length;
+  pending.textContent = cases.filter(c => c.status === pendingStatus).length;
+  approved.textContent = cases.filter(c => c.status === 'APPROVED').length;
+  rejected.textContent = cases.filter(c => c.status === 'REJECTED').length;
+}
+
+function updateBkPageHeader(sub) {
+  const meta = BK_PAGE_META[sub];
+  if (!meta) return;
+  const icon = document.querySelector('#view-bookings .bk-header-icon');
+  const title = $('bk-page-title');
+  const subtitle = $('bk-page-sub');
+  if (icon) icon.textContent = meta.icon;
+  if (title) title.innerHTML = meta.title;
+  if (subtitle) subtitle.textContent = meta.sub;
+}
+
+function bkStatusClass(status) {
+  if (status === 'PENDING_REVIEW' || status === 'PENDING_ADMIN_REVIEW') return 'bk-left-pending';
+  if (status === 'APPROVED') return 'bk-left-approved';
+  if (status === 'REJECTED') return 'bk-left-rejected';
+  return '';
+}
+
+function bkStatusBadge(status) {
+  return `<span class="bk-status bk-status-${escapeHtml(String(status || '').replace(/\s+/g, '_'))}">${escapeHtml(String(status || '').replace(/_/g, ' '))}</span>`;
+}
+
+function bkDecisionBlock(c) {
+  return `
+    <div class="bk-decision">
+      <span>Decision: <strong>${escapeHtml(c.admin_decision || c.status)}</strong> | Reviewed: ${c.reviewed_at ? new Date(c.reviewed_at).toLocaleString() : 'N/A'}</span>
+      <span><em>Reason: "${escapeHtml(c.admin_reason || 'None specified')}"</em></span>
+      ${c.booking_reference ? `<span class="bk-ticket-ref">Issued Ticket: ${escapeHtml(c.booking_reference)}</span>` : ''}
+    </div>
+  `;
+}
+
 async function loadAdminFraudReviews() {
   const container = $('admin-fraud-cases-container');
   if (!container) return;
@@ -2634,6 +3704,7 @@ async function loadAdminFraudReviews() {
       allFraudCases = cases;
       const pendingCount = cases.filter(c => c.status === 'PENDING_REVIEW').length;
       $('kpi-fraud-pending').textContent = pendingCount;
+      updateBkKpis(cases, 'PENDING_REVIEW');
       renderFraudCases();
     }
   } catch (err) {
@@ -2643,6 +3714,8 @@ async function loadAdminFraudReviews() {
 
 function filterFraudCases(filter) {
   currentFraudFilter = filter;
+  const idMap = { ALL: 'filter-fraud-all', PENDING_REVIEW: 'filter-fraud-pending', APPROVED: 'filter-fraud-approved', REJECTED: 'filter-fraud-rejected' };
+  Object.entries(idMap).forEach(([val, id]) => { const el = $(id); if (el) el.classList.toggle('active', val === filter); });
   renderFraudCases();
 }
 
@@ -2656,59 +3729,62 @@ function renderFraudCases() {
   }
 
   if (filtered.length === 0) {
-    container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted)">No fraud review cases found matching filter.</div>';
+    container.innerHTML = `
+      <div class="bk-empty">
+        <div class="bk-empty-ico">🛡️</div>
+        <div class="bk-empty-title">No Fraud Cases Found</div>
+        <div class="bk-empty-sub">No fraud review cases match the current filter — the network looks clean.</div>
+      </div>
+    `;
     return;
   }
 
   container.innerHTML = '';
   filtered.forEach(c => {
     const card = document.createElement('div');
-    card.className = 'admin-case-card';
+    card.className = 'bk-case-card ' + bkStatusClass(c.status);
 
     const isPending = c.status === 'PENDING_REVIEW';
-    const riskBadge = c.risk_level === 'HIGH' ? 'badge-red' : (c.risk_level === 'MEDIUM' ? 'badge-yellow' : 'badge-green');
 
     let actionsHtml = '';
     if (isPending) {
       actionsHtml = `
-        <div class="case-actions-row">
+        <div class="bk-case-actions">
           <button class="btn-reject" onclick="openFraudRejectionModal('${c.case_reference}')">Reject (Block)</button>
           <button class="btn-approve" onclick="reviewFraudCase('${c.case_reference}', 'APPROVE')">Approve &amp; Issue Ticket</button>
         </div>
       `;
     } else {
-      actionsHtml = `
-        <div style="font-size:12px;color:var(--muted-hi);text-align:right;padding-top:6px;border-top:1px solid rgba(59,130,246,0.1)">
-          Decision: <strong>${c.admin_decision || c.status}</strong> | Reviewed: ${c.reviewed_at ? new Date(c.reviewed_at).toLocaleString() : 'N/A'}<br>
-          <em>Reason: "${escapeHtml(c.admin_reason || 'None specified')}"</em>
-          ${c.booking_reference ? `<br><strong style="color:#60A5FA">Issued Ticket: ${c.booking_reference}</strong>` : ''}
-        </div>
-      `;
+      actionsHtml = bkDecisionBlock(c);
     }
 
     const reasonsList = Array.isArray(c.reasons) ? c.reasons.join(', ') : (c.reasons || 'Behavioral risk threshold triggered');
 
     card.innerHTML = `
-      <div class="case-top-row">
-        <div>
-          <span class="case-ref">${escapeHtml(c.case_reference)}</span>
-          <span style="font-size:12px;color:var(--muted);margin-left:8px;">NIC: <strong style="color:#FDE68A">${escapeHtml(c.primary_nic_masked || 'N/A')}</strong></span>
+      <div class="bk-case-top">
+        <div class="bk-case-id-row">
+          <div class="bk-case-ico">⚠</div>
+          <div>
+            <div class="bk-case-ref">${escapeHtml(c.case_reference)}</div>
+            <div class="bk-case-nic">NIC: <strong>${escapeHtml(c.primary_nic_masked || 'N/A')}</strong></div>
+          </div>
         </div>
-        <div style="display:flex;gap:6px;align-items:center;">
-          <span class="badge-tag ${riskBadge}">${escapeHtml(c.risk_level)} (${(Number(c.risk_score || 0) * 100).toFixed(0)}%)</span>
-          <span class="badge-tag" style="background:rgba(255,255,255,0.06);">● ${escapeHtml(c.status)}</span>
+        <div class="bk-case-badges">
+          <span class="bk-risk bk-risk-${escapeHtml(c.risk_level)}">${escapeHtml(c.risk_level)} (${(Number(c.risk_score || 0) * 100).toFixed(0)}%)</span>
+          ${bkStatusBadge(c.status)}
         </div>
       </div>
 
-      <div class="case-grid-details">
-        <div><span style="color:var(--muted)">Route:</span> <strong>${escapeHtml(c.from_station)} → ${escapeHtml(c.to_station)}</strong></div>
-        <div><span style="color:var(--muted)">Date:</span> <strong>${escapeHtml(c.travel_date)}</strong></div>
-        <div><span style="color:var(--muted)">Train/Class:</span> <strong>${escapeHtml(c.train_id)} · ${escapeHtml(c.seat_class)}</strong></div>
-        <div><span style="color:var(--muted)">Passengers:</span> <strong>${escapeHtml(c.passenger_count)}</strong></div>
+      <div class="bk-case-grid">
+        <div class="bk-cell"><div class="bk-cell-label"><span class="bk-cell-ico">📍</span>Route</div><div class="bk-cell-val">${escapeHtml(c.from_station)} → ${escapeHtml(c.to_station)}</div></div>
+        <div class="bk-cell"><div class="bk-cell-label"><span class="bk-cell-ico">📅</span>Date</div><div class="bk-cell-val">${escapeHtml(c.travel_date)}</div></div>
+        <div class="bk-cell"><div class="bk-cell-label"><span class="bk-cell-ico">🚆</span>Train / Class</div><div class="bk-cell-val">${escapeHtml(c.train_id)} · ${escapeHtml(c.seat_class)}</div></div>
+        <div class="bk-cell"><div class="bk-cell-label"><span class="bk-cell-ico">👥</span>Passengers</div><div class="bk-cell-val">${escapeHtml(c.passenger_count)}</div></div>
       </div>
 
-      <div style="font-size:12px;padding:8px 10px;background:rgba(10,14,26,0.6);border-radius:6px;">
-        <span style="color:var(--muted);font-weight:600;">Flag Reasons:</span> <em>${escapeHtml(reasonsList)}</em>
+      <div class="bk-flag">
+        <span class="bk-flag-label">Flag Reasons</span>
+        <span class="bk-flag-text">${escapeHtml(reasonsList)}</span>
       </div>
 
       ${actionsHtml}
@@ -2795,6 +3871,7 @@ async function loadAdminCancellations() {
       allAdminCases = cases;
       const pending = cases.filter(c => c.status === 'PENDING_ADMIN_REVIEW').length;
       $('kpi-canc-pending').textContent = pending;
+      updateBkKpis(cases, 'PENDING_ADMIN_REVIEW');
       renderAdminCases();
     }
   } catch (err) {
@@ -2804,6 +3881,8 @@ async function loadAdminCancellations() {
 
 function filterAdminCases(filter) {
   currentAdminFilter = filter;
+  const idMap = { all: 'filter-canc-all', PENDING_ADMIN_REVIEW: 'filter-canc-pending', APPROVED: 'filter-canc-approved', REJECTED: 'filter-canc-rejected' };
+  Object.entries(idMap).forEach(([val, id]) => { const el = $(id); if (el) el.classList.toggle('active', val === filter); });
   renderAdminCases();
 }
 
@@ -2817,57 +3896,62 @@ function renderAdminCases() {
   }
 
   if (filtered.length === 0) {
-    container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted)">No cancellation cases found.</div>';
+    container.innerHTML = `
+      <div class="bk-empty">
+        <div class="bk-empty-ico">🔄</div>
+        <div class="bk-empty-title">No Cancellation Requests</div>
+        <div class="bk-empty-sub">No cancellation cases match the current filter — nothing awaiting adjudication.</div>
+      </div>
+    `;
     return;
   }
 
   container.innerHTML = '';
   filtered.forEach(c => {
     const card = document.createElement('div');
-    card.className = 'admin-case-card';
+    card.className = 'bk-case-card ' + bkStatusClass(c.status);
 
     const isPending = c.status === 'PENDING_ADMIN_REVIEW';
     let actionsHtml = '';
 
     if (isPending) {
       actionsHtml = `
-        <div class="case-actions-row">
+        <div class="bk-case-actions">
           <button class="btn-reject" onclick="openRejectionModal('${c.case_reference}')">Reject Request</button>
           <button class="btn-approve" onclick="reviewCancellationCase('${c.case_reference}', 'APPROVE')">Approve Cancellation</button>
         </div>
       `;
     } else {
-      actionsHtml = `
-        <div style="font-size:12px;color:var(--muted-hi);text-align:right;padding-top:6px;border-top:1px solid rgba(59,130,246,0.1)">
-          Decision: <strong>${c.admin_decision || c.status}</strong> | Reviewed: ${c.reviewed_at ? new Date(c.reviewed_at).toLocaleString() : 'N/A'}<br>
-          <em>Reason: "${escapeHtml(c.admin_reason || 'None specified')}"</em>
-        </div>
-      `;
+      actionsHtml = bkDecisionBlock(c);
     }
 
     card.innerHTML = `
-      <div class="case-top-row">
-        <div>
-          <span class="case-ref">${escapeHtml(c.case_reference)}</span>
-          <span style="font-size:12px;color:var(--muted);margin-left:8px;">Booking: <strong style="color:#fff;">${escapeHtml(c.booking_reference)}</strong></span>
+      <div class="bk-case-top">
+        <div class="bk-case-id-row">
+          <div class="bk-case-ico">↻</div>
+          <div>
+            <div class="bk-case-ref">${escapeHtml(c.case_reference)}</div>
+            <div class="bk-case-nic">Booking: <strong>${escapeHtml(c.booking_reference)}</strong></div>
+          </div>
         </div>
-        <span class="badge-tag" style="background:rgba(255,255,255,0.06);">● ${escapeHtml(c.status)}</span>
+        ${bkStatusBadge(c.status)}
       </div>
 
-      <div class="case-grid-details">
-        <div><span style="color:var(--muted)">Route:</span> <strong>${escapeHtml(c.route)}</strong></div>
-        <div><span style="color:var(--muted)">Date:</span> <strong>${escapeHtml(c.travel_date)}</strong></div>
-        <div><span style="color:var(--muted)">Gross Fare:</span> <strong>Rs. ${c.fare}</strong></div>
-        <div><span style="color:var(--muted)">NLP Category:</span> <strong>${escapeHtml(c.reason_category)}</strong></div>
-        <div><span style="color:var(--muted)">Eligibility:</span> <strong style="color:#34D399">${escapeHtml(c.eligibility)}</strong></div>
-        <div><span style="color:var(--muted)">Suggested Refund:</span> <strong style="color:#FDE68A">Rs. ${c.suggested_refund}</strong></div>
+      <div class="bk-case-grid">
+        <div class="bk-cell"><div class="bk-cell-label"><span class="bk-cell-ico">📍</span>Route</div><div class="bk-cell-val">${escapeHtml(c.route)}</div></div>
+        <div class="bk-cell"><div class="bk-cell-label"><span class="bk-cell-ico">📅</span>Date</div><div class="bk-cell-val">${escapeHtml(c.travel_date)}</div></div>
+        <div class="bk-cell"><div class="bk-cell-label"><span class="bk-cell-ico">💵</span>Gross Fare</div><div class="bk-cell-val">Rs. ${escapeHtml(String(c.fare))}</div></div>
+        <div class="bk-cell"><div class="bk-cell-label"><span class="bk-cell-ico">🧠</span>NLP Category</div><div class="bk-cell-val">${escapeHtml(c.reason_category)}</div></div>
+        <div class="bk-cell"><div class="bk-cell-label"><span class="bk-cell-ico">✅</span>Eligibility</div><div class="bk-cell-val" style="color:#34D399">${escapeHtml(c.eligibility)}</div></div>
+        <div class="bk-cell"><div class="bk-cell-label"><span class="bk-cell-ico">💰</span>Suggested Refund</div><div class="bk-cell-val" style="color:#FDE68A">Rs. ${escapeHtml(String(c.suggested_refund))}</div></div>
       </div>
 
-      <div style="font-size:12px;padding:8px 10px;background:rgba(10,14,26,0.6);border-radius:6px;">
-        <span style="color:var(--muted);font-weight:600;">Passenger Reason:</span> <em>"${escapeHtml(c.reason)}"</em>
+      <div class="bk-note">
+        <span class="bk-note-label">Passenger Reason</span>
+        <span class="bk-note-text">"${escapeHtml(c.reason)}"</span>
       </div>
 
-      ${c.ai_summary ? `<div style="font-size:12px;padding:8px 10px;background:rgba(37,99,235,0.08);border:1px solid rgba(59,130,246,0.25);border-radius:6px;"><strong style="color:#60A5FA;font-size:10.5px;text-transform:uppercase;">AI Grounded Advisory:</strong><br>${escapeHtml(c.ai_summary)}</div>` : ''}
+      ${c.ai_summary ? `<div class="bk-ai"><span class="bk-ai-label">AI Grounded Advisory</span><span class="bk-ai-text">${escapeHtml(c.ai_summary)}</span></div>` : ''}
 
       ${actionsHtml}
     `;
@@ -3321,28 +4405,79 @@ function clearTicketFilters() {
 let _adminChatHistory = [];
 let _adminChatCollapsed = false;
 
+function toggleAdminChat() {
+  const panel = $('admin-booking-chat-panel');
+  const launcher = $('admin-chat-launcher');
+  if (!panel || !launcher) return;
+  const open = panel.classList.toggle('is-open');
+  panel.setAttribute('aria-hidden', String(!open));
+  launcher.classList.toggle('is-open', open);
+  launcher.style.opacity = open ? '0' : '1';
+  launcher.style.pointerEvents = open ? 'none' : 'auto';
+  launcher.setAttribute('aria-expanded', String(open));
+  if (open) {
+    const input = $('admin-chat-input');
+    if (input) input.focus();
+  }
+}
+
+function closeAdminChat() {
+  const panel = $('admin-booking-chat-panel');
+  const launcher = $('admin-chat-launcher');
+  if (!panel || !launcher) return;
+  panel.classList.remove('is-open', 'is-minimized');
+  panel.setAttribute('aria-hidden', 'true');
+  launcher.classList.remove('is-open');
+  launcher.style.opacity = '1';
+  launcher.style.pointerEvents = 'auto';
+  launcher.setAttribute('aria-expanded', 'false');
+  _adminChatCollapsed = false;
+}
+
+function resizeAdminChatInput() {
+  const input = $('admin-chat-input');
+  if (!input) return;
+  input.style.height = 'auto';
+  input.style.height = `${Math.max(24, Math.min(input.scrollHeight, 110))}px`;
+}
+
+function setAdminQuickActionsVisible(visible) {
+  const actions = document.getElementById('cx-quick');
+  if (!actions) return;
+  actions.classList.toggle('is-hidden', !visible);
+}
+
+function updateAdminQuickActionsForInput() {
+  const input = $('admin-chat-input');
+  if (!input) return;
+  setAdminQuickActionsVisible(!input.value.trim() && _adminChatHistory.length === 0);
+}
+
 function toggleAdminChatCollapse() {
   _adminChatCollapsed = !_adminChatCollapsed;
-  const body = $('admin-chat-body');
+  const panel = $('admin-booking-chat-panel');
   const btn = $('btn-toggle-chat');
-  if (body) {
-    body.style.display = _adminChatCollapsed ? 'none' : 'block';
-  }
+  if (panel) panel.classList.toggle('is-minimized', _adminChatCollapsed);
   if (btn) {
-    btn.textContent = _adminChatCollapsed ? '+ Expand' : '− Minimize';
+    btn.setAttribute('aria-label', _adminChatCollapsed ? 'Expand assistant' : 'Minimize assistant');
+    btn.title = _adminChatCollapsed ? 'Expand assistant' : 'Minimize assistant';
+    btn.innerHTML = _adminChatCollapsed ? '<span class="sr-only">Expand assistant</span>' : '<span class="sr-only">Minimize assistant</span>';
   }
 }
 
 function clearAdminChat() {
   _adminChatHistory = [];
+  setAdminQuickActionsVisible(true);
+  const input = $('admin-chat-input');
+  if (input) { input.value = ''; resizeAdminChatInput(); }
   const log = $('admin-chat-log');
   if (log) {
     log.innerHTML = `
-      <div class="admin-chat-bubble assistant">
-        <div>👋 Welcome, Railway Administrator. I am your <strong>Booking Intelligence Assistant</strong>.</div>
-        <div style="margin-top: 5px; font-size: 12px; color: var(--muted-hi);">
-          You can query live database records across the <strong>Fraud Queue</strong>, <strong>Cancellation Queue</strong>, <strong>Seat Inventory</strong>, and <strong>Booked Manifests</strong>.
-        </div>
+      <div class="cx-welcome" id="cx-welcome">
+        <div class="cx-welcome-glow"><div class="cx-welcome-orbit"><div class="cx-welcome-ring"></div><div class="cx-welcome-icon">✦</div></div></div>
+        <h3>How can I help you today?</h3>
+        <p>Ask about bookings, schedules, seats, cancellations, fraud reviews or passenger manifests — grounded in live operational data.</p>
+        <div class="cx-welcome-try"><span>Try</span><button type="button" onclick="sendSuggestedQuestion('Show today’s booking count')">"Show today's booking count"</button></div>
       </div>
     `;
   }
@@ -3353,8 +4488,92 @@ function sendSuggestedQuestion(text) {
   if (input) {
     // Strip leading icon if present for cleaner search
     input.value = text.replace(/^[^\w\s]+\s*/, '');
+    setAdminQuickActionsVisible(false);
     handleAdminChatSubmit(new Event('submit'));
   }
+}
+
+const _adminChatInputEl = $('admin-chat-input');
+if (_adminChatInputEl) {
+  _adminChatInputEl.addEventListener('input', function () {
+    resizeAdminChatInput();
+    updateAdminQuickActionsForInput();
+    _cxUpdateCounter();
+  });
+}
+
+function _cxNow() {
+  const d = new Date();
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+
+function _cxBuildBotError(title, subtitle) {
+  const el = document.createElement('div');
+  el.className = 'cx-msg bot cx-error';
+  el.innerHTML = `
+    <div class="cx-msg-avatar">⚠️</div>
+    <div class="cx-msg-col">
+      <div class="cx-bubble"><span style="color:#F87171;font-weight:600;">${escapeHtml(title)}</span>${subtitle ? `<div style="margin-top:3px;font-size:11px;opacity:.75;">${escapeHtml(subtitle)}</div>` : ''}</div>
+      <span class="cx-meta">${_cxNow()}</span>
+    </div>`;
+  return el;
+}
+
+function _cxBuildBotMessage(data) {
+  const el = document.createElement('div');
+  el.className = 'cx-msg bot';
+
+  const formattedAnswer = escapeHtml(data.answer || '').replace(/\n/g, '<br>');
+  let html = `<div class="cx-msg-avatar">✦</div><div class="cx-msg-col"><div class="cx-bubble"><div>${formattedAnswer}</div>`;
+
+  // Optional structured result card
+  if (data.card && data.card.items && data.card.items.length) {
+    const c = data.card;
+    html += `
+      <div class="cx-card">
+        <div class="cx-card-head">
+          <span class="cx-card-title">${escapeHtml(c.title || '')}</span>
+          ${c.subtitle ? `<span class="cx-card-sub">${escapeHtml(c.subtitle)}</span>` : ''}
+        </div>
+        <div class="cx-card-grid">
+          ${c.items.map(it => {
+            const isStr = typeof it === 'string';
+            const label = isStr ? it.split(':')[0].trim() : (it.label || it.ref || it.case_reference || '');
+            const val = isStr ? (it.includes(':') ? it.split(':').slice(1).join(':').trim() : '') : (it.available ?? it.value ?? it.score ?? it.refund ?? '');
+            return `
+            <div class="cx-card-item">
+              <div class="cx-card-item-label">${escapeHtml(label)}</div>
+              <div class="cx-card-item-value">${escapeHtml(String(val))}</div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>`;
+  }
+
+  // Evidence sources
+  if ((data.sources && data.sources.length) || data.data_source) {
+    html += `
+      <div class="cx-sources">
+        <span class="cx-sources-label">Sources</span>
+        ${data.data_source ? `<span class="cx-source-tag" title="Database used for this answer">🗄️ ${data.data_source === 'supabase' ? 'Supabase' : data.data_source === 'sqlite_test' ? 'SQLite test database' : 'M3 database'}</span>` : ''}
+        ${(data.sources || []).map(s => `
+          <span class="cx-source-tag" title="Type: ${escapeHtml(s.type)}">
+            ${s.type === 'schedule' ? '📋' : s.type === 'seat_inventory' ? '🪑' : s.type === 'policy' ? '📜' : s.type === 'fraud_review' ? '🛡️' : s.type === 'cancellation' ? '🔄' : '🎫'}
+            ${escapeHtml(s.label || s.id)}
+          </span>
+        `).join('')}
+      </div>`;
+  }
+
+  html += `</div><span class="cx-meta">${_cxNow()}</span></div>`;
+  el.innerHTML = html;
+  return el;
+}
+
+function _cxUpdateCounter() {
+  const input = $('admin-chat-input');
+  const counter = $('cx-char-counter');
+  if (input && counter) counter.textContent = `${input.value.length}/500`;
 }
 
 async function handleAdminChatSubmit(e) {
@@ -3367,18 +4586,37 @@ async function handleAdminChatSubmit(e) {
   const msg = input.value.trim();
   if (!msg) return;
 
-  // Append Admin Message
-  const adminBubble = document.createElement('div');
-  adminBubble.className = 'admin-chat-bubble admin';
-  adminBubble.textContent = msg;
-  log.appendChild(adminBubble);
-  input.value = '';
+  // Once the admin starts a real conversation, give the chat full space.
+  setAdminQuickActionsVisible(false);
 
-  // Append Temporary Loading Indicator
+  // Remove the welcome panel once a conversation starts.
+  const welcome = document.getElementById('cx-welcome');
+  if (welcome) welcome.remove();
+
+  // Append Admin Message (avatar + bubble + timestamp)
+  const adminMsg = document.createElement('div');
+  adminMsg.className = 'cx-msg user';
+  adminMsg.innerHTML = `
+    <div class="cx-msg-avatar">🧑‍💼</div>
+    <div class="cx-msg-col">
+      <div class="cx-bubble"></div>
+      <span class="cx-meta">${_cxNow()}</span>
+    </div>`;
+  adminMsg.querySelector('.cx-bubble').textContent = msg;
+  log.appendChild(adminMsg);
+  input.value = '';
+  resizeAdminChatInput();
+  _cxUpdateCounter();
+
+  // Append animated typing indicator
   const loadingBubble = document.createElement('div');
-  loadingBubble.className = 'admin-chat-bubble assistant';
+  loadingBubble.className = 'cx-msg bot';
   loadingBubble.id = 'admin-chat-loading-indicator';
-  loadingBubble.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px;color:#93C5FD;"><span>⏳</span> <em>Querying live booking intelligence...</em></span>';
+  loadingBubble.innerHTML = `
+    <div class="cx-msg-avatar">✦</div>
+    <div class="cx-msg-col">
+      <div class="cx-bubble"><span class="cx-typing"><b></b><b></b><b></b></span></div>
+    </div>`;
   log.appendChild(loadingBubble);
   log.scrollTop = log.scrollHeight;
 
@@ -3404,74 +4642,19 @@ async function handleAdminChatSubmit(e) {
     loadingBubble.remove();
 
     if (!res.ok) {
-      const errBubble = document.createElement('div');
-      errBubble.className = 'admin-chat-bubble assistant';
-      errBubble.style.borderColor = 'rgba(239, 68, 68, 0.4)';
-      errBubble.innerHTML = `<span style="color:#F87171;">⚠️ Error:</span> ${escapeHtml(data.detail || data.error || 'Failed to process query.')}`;
-      log.appendChild(errBubble);
+      const errMsg = _cxBuildBotError('Something went wrong.', 'Please try again.');
+      log.appendChild(errMsg);
     } else {
       // Record history
       _adminChatHistory.push({ role: 'user', content: msg });
       _adminChatHistory.push({ role: 'assistant', content: data.answer || '' });
 
-      // Build Assistant Bubble
-      const asstBubble = document.createElement('div');
-      asstBubble.className = 'admin-chat-bubble assistant';
-
-      // Answer text with line breaks
-      const formattedAnswer = escapeHtml(data.answer || '').replace(/\n/g, '<br>');
-      let html = `<div>${formattedAnswer}</div>`;
-
-      // Optional structured result card
-      if (data.card && data.card.items && data.card.items.length) {
-        const c = data.card;
-        html += `
-          <div class="admin-chat-card-widget">
-            <div style="font-weight:700;color:#93C5FD;margin-bottom:4px;display:flex;justify-content:space-between;">
-              <span>${escapeHtml(c.title || '')}</span>
-              ${c.subtitle ? `<span style="font-size:11px;color:var(--muted-hi);">${escapeHtml(c.subtitle)}</span>` : ''}
-            </div>
-            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(130px, 1fr));gap:6px;margin-top:6px;">
-              ${c.items.map(it => {
-                const isStr = typeof it === 'string';
-                const label = isStr ? it.split(':')[0].trim() : (it.label || it.ref || it.case_reference || '');
-                const val = isStr ? (it.includes(':') ? it.split(':').slice(1).join(':').trim() : '') : (it.available ?? it.value ?? it.score ?? it.refund ?? '');
-                return `
-                <div style="background:rgba(255,255,255,0.04);padding:4px 8px;border-radius:4px;border:1px solid rgba(255,255,255,0.06);">
-                  <div style="font-size:10px;color:var(--muted-hi);text-transform:uppercase;">${escapeHtml(label)}</div>
-                  <div style="font-weight:700;color:var(--ink-bright);">${escapeHtml(String(val))}</div>
-                </div>
-              `;}).join('')}
-            </div>
-          </div>
-        `;
-      }
-
-      // Evidence Sources
-      if (data.sources && data.sources.length) {
-        html += `
-          <div class="admin-chat-sources">
-            <span style="font-size:10px;color:var(--muted);text-transform:uppercase;margin-right:2px;display:inline-flex;align-items:center;">Sources:</span>
-            ${data.sources.map(s => `
-              <span class="admin-source-tag" title="Type: ${escapeHtml(s.type)}">
-                ${s.type === 'schedule' ? '📋' : s.type === 'seat_inventory' ? '🪑' : s.type === 'policy' ? '📜' : s.type === 'fraud_review' ? '🛡️' : s.type === 'cancellation' ? '🔄' : '🎫'}
-                ${escapeHtml(s.label || s.id)}
-              </span>
-            `).join('')}
-          </div>
-        `;
-      }
-
-      asstBubble.innerHTML = html;
-      log.appendChild(asstBubble);
+      // Build Assistant Message (avatar + bubble + card + sources + timestamp)
+      log.appendChild(_cxBuildBotMessage(data));
     }
   } catch (err) {
     if (loadingBubble.parentNode) loadingBubble.remove();
-    const errBubble = document.createElement('div');
-    errBubble.className = 'admin-chat-bubble assistant';
-    errBubble.style.borderColor = 'rgba(239, 68, 68, 0.4)';
-    errBubble.innerHTML = `<span style="color:#F87171;">⚠️ Network Error:</span> ${escapeHtml(err.message || 'Could not connect to Booking Intelligence Assistant.')}`;
-    log.appendChild(errBubble);
+    log.appendChild(_cxBuildBotError('Assistant unavailable.', 'Please try again in a moment.'));
   } finally {
     if (sendBtn) sendBtn.disabled = false;
     log.scrollTop = log.scrollHeight;

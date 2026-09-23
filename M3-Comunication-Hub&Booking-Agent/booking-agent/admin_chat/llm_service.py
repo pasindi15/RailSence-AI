@@ -83,6 +83,23 @@ def verify_factual_consistency(
             if int(m) != tot_canc:
                 discrepancies.append(f"Answer mentions {m} cancellations, but DB has {tot_canc}.")
 
+    # 5. False 'not found' guard: if the evidence proves the record exists
+    # (found: true), the LLM must not claim it could not find it. This keeps
+    # LLM answers consistent with the deterministic fallback for the same data.
+    if db_ev.get("found"):
+        not_found_phrases = (
+            "could not find matching booking information",
+            "could not find a booking",
+            "no booking found",
+            "booking was not found",
+            "not found in the railsense database",
+        )
+        answer_lower = answer.lower()
+        if any(phrase in answer_lower for phrase in not_found_phrases):
+            discrepancies.append(
+                "LLM claimed the record was not found, but database evidence has found: true."
+            )
+
     return (len(discrepancies) == 0, discrepancies)
 
 
@@ -113,9 +130,10 @@ def _call_gemini_chat(
         "1. Never invent or hallucinate seat numbers, availability counts, refund figures, risk scores, or booking references.\n"
         "2. Ground every single claim in the provided EVIDENCE dictionary.\n"
         "3. If a specific booking reference, cancellation case, or fraud case was queried but found is False in evidence, clearly state that the reference (e.g. RS-12345 or CR-12345) was not found in the RailSense database.\n"
-        "4. If general information is missing from evidence, answer: 'I could not find matching booking information for that request.'\n"
-        "5. Never approve, cancel, or modify any database records. If asked to modify, refuse and direct the user to administrative review controls.\n"
-        "6. Output valid JSON matching this schema:\n"
+        "4. CRITICAL - found flag rule: If evidence contains found: true, the record EXISTS. Never say the record was not found, and never use the phrase 'I could not find matching booking information' for that record. Report the fields the evidence actually contains (including passenger_email when present).\n"
+        "5. If evidence contains found: true but a requested field is null/missing (e.g. passenger_email), state that the specific field is not recorded for that booking, and still report all other fields.\n"
+        "6. Never approve, cancel, or modify any database records. If asked to modify, refuse and direct the user to administrative review controls.\n"
+        "7. Output valid JSON matching this schema:\n"
         "   {\n"
         "     \"answer\": \"concise natural language explanation\",\n"
         "     \"sources\": [{\"type\": \"...\", \"id\": \"...\", \"label\": \"...\"}],\n"

@@ -16,7 +16,8 @@ from typing import Any
 _CURRENT_DIR = Path(__file__).resolve().parent
 _BOOKING_AGENT_DIR = _CURRENT_DIR.parent
 _M3_ROOT = _BOOKING_AGENT_DIR.parent
-for p in (str(_M3_ROOT), str(_BOOKING_AGENT_DIR)):
+_WORKSPACE_ROOT = _M3_ROOT.parent
+for p in (str(_WORKSPACE_ROOT), str(_M3_ROOT), str(_BOOKING_AGENT_DIR)):
     if p not in sys.path:
         sys.path.insert(0, p)
 

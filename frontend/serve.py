@@ -108,6 +108,7 @@ class ConfirmBookingInput(BaseModel):
     seat_class: str = Field(default="")
     passenger_count: int = Field(default=1, ge=1, le=10)
     passenger_email: EmailStr | None = Field(default=None)
+    contact_phone: str | None = Field(default=None, max_length=32)
     user_id: str | None = Field(default=None)
     passengers: list[dict[str, Any]] | None = Field(default=None)
     schedule_id: int | None = Field(default=None)
@@ -288,6 +289,23 @@ def redirect_user_chat():
 
 _TRAIN_BOARD_CACHE: dict[str, tuple[float, dict[str, Any]]] = {}
 _TRAIN_BOARD_CACHE_TTL = 30.0  # 30 seconds in-memory TTL
+
+# Static assets (video, images) served from frontend/ under /static/
+_STATIC_DIR = _CURRENT_DIR / "video"
+_STATIC_MOUNT_ENABLED = True
+if _STATIC_MOUNT_ENABLED:
+    app.mount("/static", StaticFiles(directory=_CURRENT_DIR), name="static")
+
+# Frontend-only booking demo page (UI showcase, no live booking dispatch)
+_BOOKING_DEMO_HTML_FILE = _CURRENT_DIR / "booking-demo.html"
+
+
+@app.get("/booking-demo", include_in_schema=False)
+@app.get("/user/booking-demo", include_in_schema=False)
+def get_booking_demo_page():
+    if _BOOKING_DEMO_HTML_FILE.is_file():
+        return FileResponse(_BOOKING_DEMO_HTML_FILE)
+    raise HTTPException(status_code=404, detail="booking-demo.html not found")
 
 # Canonical Sri Lanka Railways timetable data, cross-referenced against the
 # two other places this project states it independently (M1's schedules.md
@@ -1068,6 +1086,7 @@ async def confirm_booking_endpoint(req: ConfirmBookingInput) -> JSONResponse:
             "seat_class": req.seat_class.strip(),
             "passenger_count": req.passenger_count,
             "passenger_email": str(req.passenger_email).strip() if req.passenger_email else None,
+            "contact_phone": str(req.contact_phone).strip() if req.contact_phone else None,
             "user_id": req.user_id or "guest_passenger",
             "passengers": req.passengers,
             "schedule_id": req.schedule_id,
