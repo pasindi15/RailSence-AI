@@ -859,91 +859,8 @@ body {
   font-size: 12.5px;
 }
 
-.dashboard-ask {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 14px;
-  align-items: center;
-  padding: 20px 24px;
-  background: linear-gradient(135deg, #ECFDF5 0%, #F0FDF4 50%, #D1FAE5 100%);
-  border: 1px solid #6EE7B7;
-  border-radius: var(--r-card);
-  box-shadow: 0 4px 16px rgba(5,150,105,0.10);
-}
-
-.dashboard-ask-copy strong {
-  display: block;
-  color: #065F46;
-  font-size: 14px;
-  font-weight: 800;
-}
-
-.dashboard-ask-copy span {
-  display: block;
-  margin-top: 2px;
-  color: #047857;
-  font-size: 12px;
-}
-
-.dashboard-ask-form {
-  display: flex;
-  gap: 8px;
-  min-width: 360px;
-}
-
-.dashboard-ask-form input {
-  flex: 1;
-  min-width: 0;
-  padding: 10px 14px;
-  color: var(--text-dark);
-  background: #FFFFFF;
-  border: 1px solid #A7F3D0;
-  border-radius: var(--r-input);
-  font: 13px 'Inter', sans-serif;
-  outline: none;
-}
-
-.dashboard-ask-form input:focus {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 2px var(--primary-glow);
-}
-
-.dashboard-ask-form button {
-  padding: 10px 20px;
-  color: #FFFFFF;
-  background: var(--primary-grad);
-  border: 0;
-  border-radius: var(--r-input);
-  font-size: 12.5px;
-  font-weight: 800;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: opacity 0.15s, transform 0.1s;
-  box-shadow: 0 3px 8px var(--primary-glow);
-}
-
-.dashboard-ask-form button:hover {
-  opacity: 0.9;
-  transform: translateY(-1px);
-}
-
-.dashboard-ask-result {
-  grid-column: 1 / -1;
-  display: none;
-  padding: 12px 16px;
-  color: var(--text-dark);
-  background: #FFFFFF;
-  border: 1px solid #A7F3D0;
-  border-radius: var(--r-input);
-  font-size: 13px;
-  line-height: 1.5;
-  white-space: pre-wrap;
-  margin-top: 4px;
-}
-
-.dashboard-ask-result.visible {
-  display: block;
-}
+.incident-overview { margin-top: 18px; }
+.incident-overview-map { height: 340px; }
 
 .dashboard-note {
   padding: 12px 16px;
@@ -1711,12 +1628,396 @@ body {
     flex-direction: column;
     align-items: stretch;
   }
-  .dashboard-ask {
+}
+</style>
+
+<style>
+/* ─────────────────────────────────────────────────────────────────
+   HERO SECTION  (dark, full-height)
+───────────────────────────────────────────────────────────────── */
+#rs-hero {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  background: #0a0f1e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 100px 24px 100px;
+  box-sizing: border-box;
+}
+#rs-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(255,255,255,0.07) 1px, transparent 1px);
+  background-size: 44px 44px;
+  pointer-events: none;
+  z-index: 0;
+}
+#rs-hero::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 130px;
+  background: linear-gradient(to bottom, transparent, #F4F7F6);
+  pointer-events: none;
+  z-index: 2;
+}
+.hero-inner {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 1100px;
+  display: grid;
+  grid-template-columns: 1fr 400px;
+  gap: 56px;
+  align-items: center;
+}
+.hero-text { color: #fff; }
+.hero-kicker {
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #00c6ff;
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.hero-kicker::before {
+  content: '';
+  display: inline-block;
+  width: 24px;
+  height: 1px;
+  background: #00c6ff;
+  flex-shrink: 0;
+}
+.hero-headline {
+  font-size: clamp(2.2rem, 4.8vw, 3.8rem);
+  font-weight: 900;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  color: #fff;
+  margin-bottom: 20px;
+}
+.hero-headline span {
+  background: linear-gradient(135deg, #00c6ff 0%, #0072ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.hero-sub {
+  font-size: 1rem;
+  line-height: 1.7;
+  color: rgba(255,255,255,0.5);
+  max-width: 460px;
+  margin-bottom: 36px;
+}
+.hero-ctas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 44px;
+}
+.hero-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 13px 26px;
+  border-radius: 12px;
+  background: #00c6ff;
+  color: #0a0f1e;
+  font-weight: 700;
+  font-size: 0.9rem;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  box-shadow: 0 0 28px rgba(0,198,255,0.4);
+}
+.hero-btn-primary:hover {
+  background: #33d4ff;
+  transform: translateY(-2px);
+  box-shadow: 0 0 40px rgba(0,198,255,0.6);
+}
+.hero-btn-outline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 13px 22px;
+  border-radius: 12px;
+  background: transparent;
+  color: rgba(255,255,255,0.8);
+  font-weight: 600;
+  font-size: 0.9rem;
+  border: 1px solid rgba(255,255,255,0.2);
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+.hero-btn-outline:hover {
+  border-color: rgba(255,255,255,0.5);
+  background: rgba(255,255,255,0.07);
+  transform: translateY(-2px);
+}
+.hero-stats-row {
+  display: flex;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+.hero-stat { display: flex; flex-direction: column; }
+.hero-stat-value {
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: #00c6ff;
+  line-height: 1;
+}
+.hero-stat-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.35);
+  margin-top: 5px;
+}
+
+/* ── Robot side ── */
+/* ── Robot 3D canvas side ── */
+.hero-bot-side {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  min-height: 580px;
+}
+.hero-3d-wrap {
+  position: relative;
+  flex: 1;
+  min-height: 580px;
+}
+
+/* ── Speech bubble (tracks robot via Three.js projection) ── */
+.hero-bubble {
+  position: absolute;
+  z-index: 35;
+  pointer-events: none;
+  max-width: 270px;
+  transform: translate(14px, -115%);
+  background: rgba(10, 15, 30, 0.78);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(0,198,255,0.3);
+  border-radius: 16px 16px 16px 4px;
+  padding: 14px 18px;
+  box-shadow: 0 4px 24px rgba(0,198,255,0.12);
+  top: 20%; left: 60%; /* overwritten by JS */
+}
+.bubble-label {
+  display: block;
+  font-family: 'Courier New', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #00c6ff;
+  margin-bottom: 6px;
+}
+.bubble-text {
+  font-size: 14px;
+  line-height: 1.5;
+  color: rgba(255,255,255,0.9);
+  font-weight: 500;
+  min-height: 44px;
+  transition: opacity 0.35s ease;
+}
+.bubble-tail {
+  position: absolute;
+  left: -8px;
+  bottom: 12px;
+  width: 0; height: 0;
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+  border-right: 8px solid rgba(0,198,255,0.3);
+}
+.bubble-dots-row {
+  display: flex;
+  gap: 4px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.bubble-dot {
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255,255,255,0.2);
+  transition: all 0.3s;
+  flex-shrink: 0;
+  width: 4px;
+}
+.bubble-dot.active { background: #00c6ff; width: 14px; }
+
+/* ─────────────────────────────────────────────────────────────────
+   FLEET SECTION (inside dashboard, light theme)
+───────────────────────────────────────────────────────────────── */
+.fleet-section {
+  margin-top: 44px;
+  padding-top: 40px;
+  border-top: 1px solid #e2e8f0;
+}
+.fleet-section-head { margin-bottom: 26px; }
+.fleet-section-kicker {
+  font-family: 'Courier New', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #059669;
+  margin-bottom: 6px;
+}
+.fleet-section-title {
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: #111827;
+  letter-spacing: -0.02em;
+}
+.fleet-section-sub {
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin-top: 4px;
+}
+.fleet-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 18px;
+}
+.fleet-card {
+  border-radius: 16px;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
+  display: flex;
+  flex-direction: column;
+  cursor: default;
+}
+.fleet-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 14px 40px rgba(0,0,0,0.11);
+}
+.fleet-card-img-wrap {
+  position: relative;
+  height: 136px;
+  overflow: hidden;
+  background: #e5e7eb;
+  flex-shrink: 0;
+}
+.fleet-card-img-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.45s ease;
+}
+.fleet-card:hover .fleet-card-img-wrap img { transform: scale(1.07); }
+.fleet-card-type-badge {
+  position: absolute;
+  top: 9px;
+  right: 9px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 20px;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+.fleet-card-line-label {
+  position: absolute;
+  bottom: 7px;
+  left: 9px;
+  font-size: 9px;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.75);
+  text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+}
+.fleet-card-body {
+  padding: 13px 13px 10px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.fleet-card-name {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #111827;
+  margin-bottom: 2px;
+  letter-spacing: -0.01em;
+}
+.fleet-card-route {
+  font-size: 0.74rem;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+.fleet-card-stats {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.fleet-card-stat {
+  flex: 1;
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 5px 3px;
+  text-align: center;
+}
+.fleet-card-stat-val {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #111827;
+  display: block;
+  line-height: 1.2;
+}
+.fleet-card-stat-lbl {
+  font-size: 8.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #9ca3af;
+  display: block;
+  margin-top: 1px;
+}
+.fleet-card-desc {
+  font-size: 0.73rem;
+  line-height: 1.55;
+  color: #6b7280;
+  flex: 1;
+}
+.fleet-card-accent { height: 3px; width: 100%; flex-shrink: 0; }
+
+/* ── Hero responsive ── */
+@media (max-width: 920px) {
+  .hero-inner {
     grid-template-columns: 1fr;
+    text-align: center;
+    gap: 32px;
   }
-  .dashboard-ask-form {
-    min-width: auto;
-  }
+  .hero-sub { max-width: 100%; }
+  .hero-kicker { justify-content: center; }
+  .hero-ctas { justify-content: center; }
+  .hero-stats-row { justify-content: center; }
+  .hero-bot-side { order: -1; min-height: 380px; }
+  .hero-3d-wrap  { min-height: 380px; }
+}
+@media (max-width: 480px) {
+  #rs-hero { padding: 80px 16px 70px; }
+  .hero-bot-side { min-height: 300px; }
+  .hero-3d-wrap  { min-height: 300px; }
+  .hero-bubble { max-width: 200px; font-size: 12px; }
 }
 
 /* ── Date of Birth field: visible label before a date is picked ── */
@@ -1759,6 +2060,410 @@ body {
 </style>
 </head>
 <body>
+
+<!-- ══════════════════════════════════════════════════════════════
+     HERO SECTION
+══════════════════════════════════════════════════════════════ -->
+<section id="rs-hero">
+  <div class="hero-inner">
+
+    <!-- TEXT SIDE -->
+    <div class="hero-text">
+      <div class="hero-kicker">RailSense AI &middot; Intelligent Railway System</div>
+      <h1 class="hero-headline">
+        Your railway journey,<br>
+        <span>powered by AI.</span>
+      </h1>
+      <p class="hero-sub">
+        Book tickets, track trains in real-time, and get instant answers from
+        the RailSense AI network — four specialised agents working together
+        across Sri Lanka Railways.
+      </p>
+      <div class="hero-ctas">
+        <a href="#" class="hero-btn-primary"
+           onclick="event.preventDefault(); navigateTo('/user/booking'); setTimeout(function(){ document.querySelector('.app-shell').scrollIntoView({behavior:'smooth'}); },60);">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="3"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          Book a Ticket
+        </a>
+        <a href="#" class="hero-btn-outline"
+           onclick="event.preventDefault(); document.querySelector('.app-shell').scrollIntoView({behavior:'smooth'});">
+          View Schedule
+        </a>
+        <a href="http://localhost:5280" target="_blank" rel="noopener noreferrer" class="hero-btn-outline">
+          Ask AI &rarr;
+        </a>
+      </div>
+      <div class="hero-stats-row">
+        <div class="hero-stat"><span class="hero-stat-value">1,500+</span><span class="hero-stat-label">Route km</span></div>
+        <div class="hero-stat"><span class="hero-stat-value">8</span><span class="hero-stat-label">Main Lines</span></div>
+        <div class="hero-stat"><span class="hero-stat-value">182</span><span class="hero-stat-label">Stations</span></div>
+        <div class="hero-stat"><span class="hero-stat-value">4</span><span class="hero-stat-label">AI Agents</span></div>
+      </div>
+    </div>
+
+    <!-- ROBOT SIDE  (Three.js canvas inserted by script below) -->
+    <div class="hero-bot-side">
+      <div class="hero-3d-wrap" id="hero-3d-wrap"></div>
+    </div>
+
+  </div>
+
+  <!-- Speech bubble: tracked by Three.js projection (top/left set by JS) -->
+  <div class="hero-bubble" id="hero-bubble">
+    <span class="bubble-label">RailSense AI</span>
+    <p class="bubble-text" id="bubble-text">Hi! I&rsquo;m your RailSense agent. How can I help?</p>
+    <div class="bubble-dots-row" id="bubble-dots"></div>
+    <span class="bubble-tail"></span>
+  </div>
+
+</section>
+
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.167.1/build/three.module.js';
+
+/* ── Speech bubble quotes ─────────────────────────────── */
+const QUOTES = [
+  "Hi! I’m your RailSense agent. How can I help?",
+  "I can check live train schedules for any station.",
+  "Ask me about delays — I’ll know before the board does.",
+  "Need a seat? I’ll find the best available option.",
+  "I monitor engine health across the entire fleet.",
+  "Suspicious vibration on DE-1042? I caught it 3 hours ago.",
+  "Operations, maintenance, bookings — I handle it all.",
+  "Real-time tracking for every locomotive on the network.",
+  "I predict faults before they cause disruptions.",
+  "Your AI co-pilot for Sri Lanka Railways.",
+];
+
+(function initBubble() {
+  const textEl = document.getElementById('bubble-text');
+  const dotsWrap = document.getElementById('bubble-dots');
+  if (!textEl || !dotsWrap) return;
+  QUOTES.forEach((_, i) => {
+    const d = document.createElement('span');
+    d.className = 'bubble-dot' + (i === 0 ? ' active' : '');
+    dotsWrap.appendChild(d);
+  });
+  let cur = 0;
+  setInterval(() => {
+    textEl.style.opacity = '0';
+    setTimeout(() => {
+      cur = (cur + 1) % QUOTES.length;
+      textEl.textContent = QUOTES[cur];
+      textEl.style.opacity = '1';
+      dotsWrap.querySelectorAll('.bubble-dot').forEach((d, i) =>
+        d.classList.toggle('active', i === cur));
+    }, 360);
+  }, 3800);
+})();
+
+/* ── Three.js Robot ───────────────────────────────────── */
+(function initRobot() {
+  const wrap    = document.getElementById('hero-3d-wrap');
+  const heroEl  = document.getElementById('rs-hero');
+  const bubbleEl= document.getElementById('hero-bubble');
+  if (!wrap) return;
+
+  /* Renderer */
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.0;
+  renderer.domElement.style.cssText =
+    'position:absolute;inset:0;width:100%;height:100%;display:block;cursor:pointer;';
+  wrap.appendChild(renderer.domElement);
+
+  /* Scene / Camera */
+  const scene  = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
+  camera.position.set(0, 0.2, 5);
+  scene.add(new THREE.AmbientLight(0xffffff, 0.75));
+
+  /* Pointer (NDC relative to canvas) */
+  let px = 0, py = 0;
+  window.addEventListener('pointermove', e => {
+    const r = renderer.domElement.getBoundingClientRect();
+    px = ((e.clientX - r.left) / r.width)  * 2 - 1;
+    py = -((e.clientY - r.top)  / r.height) * 2 + 1;
+  });
+
+  /* HeartCurve */
+  class HeartCurve extends THREE.Curve {
+    getPoint(t, v = new THREE.Vector3()) {
+      t *= Math.PI * 2;
+      const x = 16 * Math.pow(Math.sin(t), 3);
+      const y = 13*Math.cos(t) - 5*Math.cos(2*t) - 2*Math.cos(3*t) - Math.cos(4*t);
+      return v.set(x * 0.002, (y + 6) * 0.002, 0);
+    }
+  }
+
+  /* Eye arc path (top or bottom half) */
+  function eyePath(top) {
+    const w=0.025, h=0.035, r=0.02, g=0.005;
+    const p = new THREE.CurvePath();
+    if (top) {
+      p.add(new THREE.LineCurve3(new THREE.Vector3(-w,g,0), new THREE.Vector3(-w,h-r,0)));
+      p.add(new THREE.QuadraticBezierCurve3(new THREE.Vector3(-w,h-r,0), new THREE.Vector3(-w,h,0), new THREE.Vector3(-w+r,h,0)));
+      p.add(new THREE.LineCurve3(new THREE.Vector3(-w+r,h,0), new THREE.Vector3(w-r,h,0)));
+      p.add(new THREE.QuadraticBezierCurve3(new THREE.Vector3(w-r,h,0), new THREE.Vector3(w,h,0), new THREE.Vector3(w,h-r,0)));
+      p.add(new THREE.LineCurve3(new THREE.Vector3(w,h-r,0), new THREE.Vector3(w,g,0)));
+    } else {
+      p.add(new THREE.LineCurve3(new THREE.Vector3(-w,-g,0), new THREE.Vector3(-w,-(h-r),0)));
+      p.add(new THREE.QuadraticBezierCurve3(new THREE.Vector3(-w,-(h-r),0), new THREE.Vector3(-w,-h,0), new THREE.Vector3(-w+r,-h,0)));
+      p.add(new THREE.LineCurve3(new THREE.Vector3(-w+r,-h,0), new THREE.Vector3(w-r,-h,0)));
+      p.add(new THREE.QuadraticBezierCurve3(new THREE.Vector3(w-r,-h,0), new THREE.Vector3(w,-h,0), new THREE.Vector3(w,-(h-r),0)));
+      p.add(new THREE.LineCurve3(new THREE.Vector3(w,-(h-r),0), new THREE.Vector3(w,-g,0)));
+    }
+    return p;
+  }
+
+  /* Canvas PBR noise texture */
+  function makePbrTextures() {
+    return new Promise(resolve => setTimeout(() => {
+      const sz = 512;
+      const cC = document.createElement('canvas'), cB = document.createElement('canvas');
+      cC.width = cB.width = cC.height = cB.height = sz;
+      const ctxC = cC.getContext('2d'), ctxB = cB.getContext('2d');
+      ctxC.fillStyle = '#dcdcdc'; ctxC.fillRect(0,0,sz,sz);
+      ctxB.fillStyle = '#808080'; ctxB.fillRect(0,0,sz,sz);
+      for (let i = 0; i < 10000; i++) {
+        const x = Math.random()*sz, y = Math.random()*sz, r = 0.5+Math.random()*1.5;
+        const dark = Math.random() > 0.15;
+        ctxC.beginPath(); ctxC.arc(x,y,r,0,Math.PI*2); ctxC.fillStyle = dark?'#222':'#ddd'; ctxC.fill();
+        ctxB.beginPath(); ctxB.arc(x,y,r,0,Math.PI*2); ctxB.fillStyle = dark?'#000':'#fff'; ctxB.fill();
+      }
+      const tC = new THREE.CanvasTexture(cC), tB = new THREE.CanvasTexture(cB);
+      tC.wrapS = tB.wrapS = tC.wrapT = tB.wrapT = THREE.RepeatWrapping;
+      tC.repeat.set(6,3); tB.repeat.set(6,3);
+      tC.needsUpdate = tB.needsUpdate = true;
+      resolve({ colorMap: tC, bumpMap: tB });
+    }, 0));
+  }
+
+  /* Build RobotEar */
+  function buildEar(isLeft) {
+    const dir = isLeft ? -1 : 1;
+    const g = new THREE.Group();
+    const bM = new THREE.MeshStandardMaterial({ color:'#f0f0f0', roughness:0.5 });
+    const rM = new THREE.MeshStandardMaterial({ color:'#ffffff',  roughness:0.3 });
+    const cM = new THREE.MeshStandardMaterial({ color:'#cccccc',  roughness:0.8 });
+
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.04,0.025,32), bM);
+    base.rotation.z = Math.PI/2; base.castShadow = true; g.add(base);
+
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.032,0.008,16,32), rM);
+    ring.position.x = dir*0.012; ring.rotation.z = Math.PI/2; ring.castShadow = true; g.add(ring);
+
+    const ctr = new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,0.005,32), cM);
+    ctr.position.x = dir*0.012; ctr.rotation.z = Math.PI/2; ctr.castShadow = true; g.add(ctr);
+
+    const ant = new THREE.Group();
+    ant.position.set(dir*0.015, 0.035, 0);
+    ant.rotation.x = -0.4;
+
+    const aBase = new THREE.Mesh(new THREE.CylinderGeometry(0.006,0.008,0.02,16),
+      new THREE.MeshStandardMaterial({ color:'#999', roughness:0.4, metalness:0.5 }));
+    aBase.position.y = 0.01; ant.add(aBase);
+
+    const aStick = new THREE.Mesh(new THREE.CylinderGeometry(0.003,0.003,0.1,8),
+      new THREE.MeshStandardMaterial({ color:'#d0d0d0', roughness:0.4, metalness:0.2 }));
+    aStick.position.y = 0.06; ant.add(aStick);
+
+    const aTip = new THREE.Mesh(new THREE.SphereGeometry(0.006,16,16),
+      new THREE.MeshStandardMaterial({ color:'#00c6ff', roughness:0.2,
+        emissive: new THREE.Color('#00c6ff'), emissiveIntensity: 0.5 }));
+    aTip.position.y = 0.11; ant.add(aTip);
+    g.add(ant);
+    return g;
+  }
+
+  /* Main build (async — waits for textures) */
+  makePbrTextures().then(({ colorMap, bumpMap }) => {
+
+    const chassisMat = new THREE.MeshStandardMaterial({
+      color:'#c4c4c4', map:colorMap, bumpMap, bumpScale:0.005, roughness:1.0, metalness:0.0
+    });
+
+    /* Groups */
+    const scaleGrp = new THREE.Group();
+    const bodyGrp  = new THREE.Group();
+    const headGrp  = new THREE.Group();
+
+    /* ── Body sphere (partial: skip top/bottom caps) */
+    const body = new THREE.Mesh(
+      new THREE.SphereGeometry(0.43,64,64,0,Math.PI*2,Math.PI*0.15,Math.PI*0.85), chassisMat);
+    body.castShadow = body.receiveShadow = true;
+    bodyGrp.add(body);
+
+    /* ── Bevel torus */
+    const bevel = new THREE.Mesh(new THREE.TorusGeometry(0.235,0.025,32,64), chassisMat);
+    bevel.position.y = 0.34; bevel.rotation.x = Math.PI/2; bevel.castShadow = true;
+    bodyGrp.add(bevel);
+
+    /* ── Neck (lathe) */
+    const nPts = [
+      new THREE.Vector2(0.1,-0.05),   new THREE.Vector2(0.215,-0.05),
+      new THREE.Vector2(0.28,0.02),   new THREE.Vector2(0.295,0.045),
+      new THREE.Vector2(0.27,0.055),  new THREE.Vector2(0.1,0.055),
+      new THREE.Vector2(0.1,0.055),
+    ];
+    const neck = new THREE.Mesh(new THREE.LatheGeometry(nPts,64), chassisMat);
+    neck.position.y = 0.38; neck.castShadow = neck.receiveShadow = true;
+    bodyGrp.add(neck);
+
+    /* ── Head sphere */
+    const headSphere = new THREE.Mesh(
+      new THREE.SphereGeometry(0.28,64,64,0,Math.PI*2,0,Math.PI),
+      new THREE.MeshStandardMaterial({ color:'#111', roughness:1.0, metalness:0.0 }));
+    headSphere.castShadow = headSphere.receiveShadow = true;
+    headGrp.add(headSphere);
+
+    /* ── Glass capsule (fresnel) */
+    const capsule = new THREE.Mesh(
+      new THREE.SphereGeometry(0.3,64,64,0,Math.PI*2,0,Math.PI),
+      new THREE.ShaderMaterial({
+        uniforms: { color:{value:new THREE.Color('#00c6ff')}, power:{value:3.8}, intensity:{value:1.4} },
+        vertexShader:`varying vec3 vN,vVP;void main(){vec4 mv=modelViewMatrix*vec4(position,1.);vVP=-mv.xyz;vN=normalize(normalMatrix*normal);gl_Position=projectionMatrix*mv;}`,
+        fragmentShader:`uniform vec3 color;uniform float power,intensity;varying vec3 vN,vVP;void main(){float f=pow(1.-max(dot(normalize(vVP),normalize(vN)),0.),power);gl_FragColor=vec4(color,f*intensity);}`,
+        transparent:true, blending:THREE.AdditiveBlending, depthWrite:false
+      })
+    );
+    headGrp.add(capsule);
+
+    /* ── Eyes */
+    const eyeMat   = new THREE.MeshBasicMaterial({ color:new THREE.Color(2,2,2), toneMapped:false, transparent:true });
+    const heartMat = new THREE.MeshBasicMaterial({ color:'#00c6ff', toneMapped:false });
+    const hCurve   = new HeartCurve();
+
+    const eyesGrp  = new THREE.Group();
+    eyesGrp.position.set(0,-0.02,0.29);
+
+    function makeEye(xOff, rotY) {
+      const g = new THREE.Group();
+      g.position.set(xOff,0,0); g.rotation.set(0,rotY,0);
+      const heart = new THREE.Mesh(new THREE.TubeGeometry(hCurve,64,0.0035,8,true), heartMat);
+      heart.visible = false; g.add(heart);
+      const norm = new THREE.Group();
+      norm.add(new THREE.Mesh(new THREE.TubeGeometry(eyePath(true), 20,0.0035,8,false), eyeMat));
+      norm.add(new THREE.Mesh(new THREE.TubeGeometry(eyePath(false),20,0.0035,8,false), eyeMat));
+      g.add(norm);
+      return { g, heart, norm };
+    }
+
+    const eL = makeEye(-0.07,-0.2);
+    const eR = makeEye( 0.07, 0.2);
+    eyesGrp.add(eL.g); eyesGrp.add(eR.g);
+    headGrp.add(eyesGrp);
+
+    /* ── Ears */
+    const earL = buildEar(true);  earL.position.set(-0.29,0,0); earL.scale.setScalar(1.3);
+    const earR = buildEar(false); earR.position.set( 0.29,0,0); earR.scale.setScalar(1.3);
+    headGrp.add(earL); headGrp.add(earR);
+
+    headGrp.position.y = 0.6;
+    bodyGrp.add(headGrp);
+    bodyGrp.position.y = -0.3;
+    scaleGrp.add(bodyGrp);
+
+    /* ── Ground shadow (gradient disk) */
+    const sCv = document.createElement('canvas');
+    sCv.width = sCv.height = 256;
+    const sCtx = sCv.getContext('2d');
+    const sg = sCtx.createRadialGradient(128,128,0,128,128,100);
+    sg.addColorStop(0,'rgba(0,0,0,0.85)'); sg.addColorStop(1,'rgba(0,0,0,0)');
+    sCtx.fillStyle = sg; sCtx.fillRect(0,0,256,256);
+    const shadow = new THREE.Mesh(
+      new THREE.PlaneGeometry(1.8,1.0),
+      new THREE.MeshBasicMaterial({ map:new THREE.CanvasTexture(sCv), transparent:true, depthWrite:false })
+    );
+    shadow.rotation.x = -Math.PI/2; shadow.position.y = -0.79;
+    scaleGrp.add(shadow);
+    scene.add(scaleGrp);
+
+    /* ── Click = heart eyes */
+    let isLoved = false, loveTimer = null;
+    renderer.domElement.addEventListener('pointerdown', () => {
+      isLoved = true;
+      clearTimeout(loveTimer);
+      loveTimer = setTimeout(() => { isLoved = false; }, 2000);
+    });
+
+    /* ── Helpers */
+    const projVec = new THREE.Vector3();
+    function viewportW() {
+      const vFov = camera.fov * Math.PI / 180;
+      const aspect = wrap.clientWidth / (wrap.clientHeight || 1);
+      return 2 * camera.position.z * Math.tan(vFov/2) * aspect;
+    }
+
+    /* ── Animation loop */
+    let lastT = performance.now(), elapsed = 0;
+    const BLINK_CYCLE = 3.0, BLINK_DUR = 0.45, EYE_SCALE = 1.1;
+
+    function frame(now) {
+      requestAnimationFrame(frame);
+      const dt = Math.min((now - lastT) / 1000, 0.1);
+      lastT = now; elapsed += dt;
+
+      /* Responsive scale (matches M0: Math.min(1.3, vw/2.8)) */
+      const vw = viewportW();
+      scaleGrp.scale.setScalar(Math.min(1.7, vw / 2.2));
+
+      /* Body follows pointer */
+      const maxX = viewportW() / 3.5;
+      bodyGrp.position.x = THREE.MathUtils.lerp(bodyGrp.position.x, px * maxX, 0.35 * dt);
+      const relX = px - bodyGrp.position.x / 2.5;
+      bodyGrp.rotation.y = THREE.MathUtils.lerp(bodyGrp.rotation.y, -relX * 0.95, 10 * dt);
+      bodyGrp.rotation.z = THREE.MathUtils.lerp(bodyGrp.rotation.z, -relX * 0.15, 10 * dt);
+
+      /* Head looks at pointer */
+      headGrp.rotation.y = THREE.MathUtils.lerp(headGrp.rotation.y,  relX * 1.8, 20 * dt);
+      headGrp.rotation.x = THREE.MathUtils.lerp(headGrp.rotation.x, -py  * 0.3, 20 * dt);
+
+      /* Blink */
+      const phase = elapsed % BLINK_CYCLE;
+      let sy = EYE_SCALE;
+      if (phase < BLINK_DUR && !isLoved) {
+        sy = Math.max(0.05, EYE_SCALE * (1.0 - Math.sin(phase / BLINK_DUR * Math.PI)));
+      }
+      eL.g.scale.set(EYE_SCALE, sy, EYE_SCALE);
+      eR.g.scale.set(EYE_SCALE, sy, EYE_SCALE);
+
+      /* Heart eyes toggle */
+      eL.heart.visible = isLoved; eR.heart.visible = isLoved;
+      eL.norm.visible = !isLoved; eR.norm.visible = !isLoved;
+
+      /* Project head position → bubble screen coords */
+      if (bubbleEl) {
+        headGrp.getWorldPosition(projVec);
+        projVec.x += 0.52; projVec.y += 0.08;
+        projVec.project(camera);
+        const canvR = renderer.domElement.getBoundingClientRect();
+        const heroR = heroEl.getBoundingClientRect();
+        const sx = canvR.left - heroR.left + (projVec.x * 0.5 + 0.5) * canvR.width;
+        const sy2 = canvR.top  - heroR.top  + (-projVec.y * 0.5 + 0.5) * canvR.height;
+        bubbleEl.style.left = (sx / heroR.width  * 100) + '%';
+        bubbleEl.style.top  = (sy2 / heroR.height * 100) + '%';
+      }
+
+      renderer.render(scene, camera);
+    }
+    requestAnimationFrame(frame);
+  });
+
+  /* ── Resize */
+  function onResize() {
+    const w = wrap.clientWidth, h = wrap.clientHeight || 1;
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    renderer.setSize(w, h);
+  }
+  new ResizeObserver(onResize).observe(wrap);
+  onResize();
+})();
+</script>
 
 <div class="app-shell">
   <!-- Top Navigation Header -->
@@ -1828,12 +2533,184 @@ body {
           <div class="service-table-wrap" id="dashboard-services"><div class="dashboard-empty">Loading services…</div></div>
         </section>
       </div>
-      <section class="dashboard-ask">
-        <div class="dashboard-ask-copy"><strong>Ask about operations</strong><span>Ask about delays, current movement, maintenance, or a train on this board.</span></div>
-        <form class="dashboard-ask-form" onsubmit="askDashboardAssistant(event)"><input id="dashboard-question" placeholder="Is PM-4082 delayed?" autocomplete="off" /><button type="submit">Ask assistant</button></form>
-        <div id="dashboard-ask-result" class="dashboard-ask-result"></div>
+      <section class="dashboard-card incident-overview">
+        <div class="dashboard-card-header"><div><div class="dashboard-card-title">Incidents on the network</div><div class="dashboard-card-subtitle">Disruptions confirmed by railway operations · updates automatically</div></div><span class="dashboard-live" id="incident-overview-count">LIVE</span></div>
+        <div id="incident-overview-map" class="incident-overview-map"></div>
       </section>
       <div class="dashboard-note">Service data, schedules, and availability are read from the shared railway source of truth. Live operational positions are shown only when the network provides them; unavailable values remain marked as N/A.</div>
+
+      <!-- ── Fleet Section ── -->
+      <div class="fleet-section">
+        <div class="fleet-section-head">
+          <div class="fleet-section-kicker">Sri Lanka Railways</div>
+          <div class="fleet-section-title">The Fleet</div>
+          <div class="fleet-section-sub">Iconic trains monitored and managed by the RailSense AI network.</div>
+        </div>
+        <div class="fleet-grid">
+
+          <!-- Yal Devi -->
+          <div class="fleet-card">
+            <div class="fleet-card-img-wrap">
+              <img src="http://localhost:8006/trains/yal-devi.jpg" alt="Yal Devi" loading="lazy"/>
+              <span class="fleet-card-type-badge" style="background:rgba(0,198,255,0.18);color:#00c6ff;border:1px solid rgba(0,198,255,0.35)">Intercity Express</span>
+              <span class="fleet-card-line-label">Northern Line</span>
+            </div>
+            <div class="fleet-card-body">
+              <div class="fleet-card-name">Yal Devi</div>
+              <div class="fleet-card-route" style="color:#00c6ff">Colombo Fort &rarr; Jaffna</div>
+              <div class="fleet-card-stats">
+                <div class="fleet-card-stat"><span class="fleet-card-stat-val">398 km</span><span class="fleet-card-stat-lbl">Distance</span></div>
+                <div class="fleet-card-stat"><span class="fleet-card-stat-val">~7 h</span><span class="fleet-card-stat-lbl">Duration</span></div>
+                <div class="fleet-card-stat"><span class="fleet-card-stat-val">1·2·3</span><span class="fleet-card-stat-lbl">Class</span></div>
+              </div>
+              <p class="fleet-card-desc">The pride of the North — connects Colombo to the Jaffna Peninsula across the restored Northern Railway.</p>
+            </div>
+            <div class="fleet-card-accent" style="background:linear-gradient(to right,rgba(0,198,255,0.7),transparent)"></div>
+          </div>
+
+          <!-- Udarata Menike -->
+          <div class="fleet-card">
+            <div class="fleet-card-img-wrap">
+              <img src="http://localhost:8006/trains/udarata-menike.png" alt="Udarata Menike" loading="lazy"/>
+              <span class="fleet-card-type-badge" style="background:rgba(16,185,129,0.18);color:#10b981;border:1px solid rgba(16,185,129,0.35)">Intercity</span>
+              <span class="fleet-card-line-label">Main Line</span>
+            </div>
+            <div class="fleet-card-body">
+              <div class="fleet-card-name">Udarata Menike</div>
+              <div class="fleet-card-route" style="color:#10b981">Colombo Fort &rarr; Badulla</div>
+              <div class="fleet-card-stats">
+                <div class="fleet-card-stat"><span class="fleet-card-stat-val">292 km</span><span class="fleet-card-stat-lbl">Distance</span></div>
+                <div class="fleet-card-stat"><span class="fleet-card-stat-val">~9.5 h</span><span class="fleet-card-stat-lbl">Duration</span></div>
+                <div class="fleet-card-stat"><span class="fleet-card-stat-val">1·2·3</span><span class="fleet-card-stat-lbl">Class</span></div>
+              </div>
+              <p class="fleet-card-desc">Winds through the stunning Hill Country passing Kandy, Ella, and Haputale.</p>
+            </div>
+            <div class="fleet-card-accent" style="background:linear-gradient(to right,rgba(16,185,129,0.7),transparent)"></div>
+          </div>
+
+          <!-- Denuwara Menike -->
+          <div class="fleet-card">
+            <div class="fleet-card-img-wrap">
+              <img src="http://localhost:8006/trains/denuwara-menike.jpg" alt="Denuwara Menike" loading="lazy"/>
+              <span class="fleet-card-type-badge" style="background:rgba(99,102,241,0.18);color:#6366f1;border:1px solid rgba(99,102,241,0.35)">Intercity Express</span>
+              <span class="fleet-card-line-label">Main Line</span>
+            </div>
+            <div class="fleet-card-body">
+              <div class="fleet-card-name">Denuwara Menike</div>
+              <div class="fleet-card-route" style="color:#6366f1">Colombo Fort &rarr; Badulla</div>
+              <div class="fleet-card-stats">
+                <div class="fleet-card-stat"><span class="fleet-card-stat-val">292 km</span><span class="fleet-card-stat-lbl">Distance</span></div>
+                <div class="fleet-card-stat"><span class="fleet-card-stat-val">~8.5 h</span><span class="fleet-card-stat-lbl">Duration</span></div>
+                <div class="fleet-card-stat"><span class="fleet-card-stat-val">1·2</span><span class="fleet-card-stat-lbl">Class</span></div>
+              </div>
+              <p class="fleet-card-desc">Premium Hill Country service — air-conditioned observation saloons with panoramic views.</p>
+            </div>
+            <div class="fleet-card-accent" style="background:linear-gradient(to right,rgba(99,102,241,0.7),transparent)"></div>
+          </div>
+
+          <!-- Podi Menike -->
+          <div class="fleet-card">
+            <div class="fleet-card-img-wrap">
+              <img src="http://localhost:8006/trains/podi-menike.png" alt="Podi Menike" loading="lazy"/>
+              <span class="fleet-card-type-badge" style="background:rgba(245,158,11,0.18);color:#f59e0b;border:1px solid rgba(245,158,11,0.35)">Intercity</span>
+              <span class="fleet-card-line-label">Main Line</span>
+            </div>
+            <div class="fleet-card-body">
+              <div class="fleet-card-name">Podi Menike</div>
+              <div class="fleet-card-route" style="color:#f59e0b">Colombo Fort &rarr; Badulla</div>
+              <div class="fleet-card-stats">
+                <div class="fleet-card-stat"><span class="fleet-card-stat-val">292 km</span><span class="fleet-card-stat-lbl">Distance</span></div>
+                <div class="fleet-card-stat"><span class="fleet-card-stat-val">~9 h</span><span class="fleet-card-stat-lbl">Duration</span></div>
+                <div class="fleet-card-stat"><span class="fleet-card-stat-val">2·3</span><span class="fleet-card-stat-lbl">Class</span></div>
+              </div>
+              <p class="fleet-card-desc">The "Little Queen" of the hill trains — beloved morning service through tea country.</p>
+            </div>
+            <div class="fleet-card-accent" style="background:linear-gradient(to right,rgba(245,158,11,0.7),transparent)"></div>
+          </div>
+
+          <!-- Ruhunu Kumari -->
+          <div class="fleet-card">
+            <div class="fleet-card-img-wrap">
+              <img src="http://localhost:8006/trains/ruhunu-kumari.png" alt="Ruhunu Kumari" loading="lazy"/>
+              <span class="fleet-card-type-badge" style="background:rgba(236,72,153,0.18);color:#ec4899;border:1px solid rgba(236,72,153,0.35)">Intercity Express</span>
+              <span class="fleet-card-line-label">Southern Line</span>
+            </div>
+            <div class="fleet-card-body">
+              <div class="fleet-card-name">Ruhunu Kumari</div>
+              <div class="fleet-card-route" style="color:#ec4899">Colombo Fort &rarr; Matara</div>
+              <div class="fleet-card-stats">
+                <div class="fleet-card-stat"><span class="fleet-card-stat-val">157 km</span><span class="fleet-card-stat-lbl">Distance</span></div>
+                <div class="fleet-card-stat"><span class="fleet-card-stat-val">~2.5 h</span><span class="fleet-card-stat-lbl">Duration</span></div>
+                <div class="fleet-card-stat"><span class="fleet-card-stat-val">1·2·3</span><span class="fleet-card-stat-lbl">Class</span></div>
+              </div>
+              <p class="fleet-card-desc">Speedy coastal service hugging the Indian Ocean from Colombo to the deep south.</p>
+            </div>
+            <div class="fleet-card-accent" style="background:linear-gradient(to right,rgba(236,72,153,0.7),transparent)"></div>
+          </div>
+
+          <!-- Galu Kumari -->
+          <div class="fleet-card">
+            <div class="fleet-card-img-wrap">
+              <img src="http://localhost:8006/trains/galu-kumari.jpg" alt="Galu Kumari" loading="lazy"/>
+              <span class="fleet-card-type-badge" style="background:rgba(249,115,22,0.18);color:#f97316;border:1px solid rgba(249,115,22,0.35)">Intercity</span>
+              <span class="fleet-card-line-label">Southern Line</span>
+            </div>
+            <div class="fleet-card-body">
+              <div class="fleet-card-name">Galu Kumari</div>
+              <div class="fleet-card-route" style="color:#f97316">Colombo Fort &rarr; Galle</div>
+              <div class="fleet-card-stats">
+                <div class="fleet-card-stat"><span class="fleet-card-stat-val">116 km</span><span class="fleet-card-stat-lbl">Distance</span></div>
+                <div class="fleet-card-stat"><span class="fleet-card-stat-val">~2 h</span><span class="fleet-card-stat-lbl">Duration</span></div>
+                <div class="fleet-card-stat"><span class="fleet-card-stat-val">2·3</span><span class="fleet-card-stat-lbl">Class</span></div>
+              </div>
+              <p class="fleet-card-desc">Scenic ocean-side journey to the historic fort city of Galle along the Southern coast.</p>
+            </div>
+            <div class="fleet-card-accent" style="background:linear-gradient(to right,rgba(249,115,22,0.7),transparent)"></div>
+          </div>
+
+          <!-- Intercity Express -->
+          <div class="fleet-card">
+            <div class="fleet-card-img-wrap">
+              <img src="http://localhost:8006/trains/intercity-express.png" alt="Intercity Express" loading="lazy"/>
+              <span class="fleet-card-type-badge" style="background:rgba(14,165,233,0.18);color:#0ea5e9;border:1px solid rgba(14,165,233,0.35)">Intercity Express</span>
+              <span class="fleet-card-line-label">Main Line</span>
+            </div>
+            <div class="fleet-card-body">
+              <div class="fleet-card-name">Intercity Express</div>
+              <div class="fleet-card-route" style="color:#0ea5e9">Colombo Fort &rarr; Kandy</div>
+              <div class="fleet-card-stats">
+                <div class="fleet-card-stat"><span class="fleet-card-stat-val">121 km</span><span class="fleet-card-stat-lbl">Distance</span></div>
+                <div class="fleet-card-stat"><span class="fleet-card-stat-val">~2.5 h</span><span class="fleet-card-stat-lbl">Duration</span></div>
+                <div class="fleet-card-stat"><span class="fleet-card-stat-val">1·2·3</span><span class="fleet-card-stat-lbl">Class</span></div>
+              </div>
+              <p class="fleet-card-desc">Flagship Colombo–Kandy service, the most frequently operated intercity route on the network.</p>
+            </div>
+            <div class="fleet-card-accent" style="background:linear-gradient(to right,rgba(14,165,233,0.7),transparent)"></div>
+          </div>
+
+          <!-- Night Mail -->
+          <div class="fleet-card">
+            <div class="fleet-card-img-wrap">
+              <img src="http://localhost:8006/trains/night-mail.jpg" alt="Night Mail" loading="lazy"/>
+              <span class="fleet-card-type-badge" style="background:rgba(139,92,246,0.18);color:#8b5cf6;border:1px solid rgba(139,92,246,0.35)">Night Express</span>
+              <span class="fleet-card-line-label">Batticaloa Line</span>
+            </div>
+            <div class="fleet-card-body">
+              <div class="fleet-card-name">Night Mail</div>
+              <div class="fleet-card-route" style="color:#8b5cf6">Colombo Fort &rarr; Batticaloa</div>
+              <div class="fleet-card-stats">
+                <div class="fleet-card-stat"><span class="fleet-card-stat-val">312 km</span><span class="fleet-card-stat-lbl">Distance</span></div>
+                <div class="fleet-card-stat"><span class="fleet-card-stat-val">~8 h</span><span class="fleet-card-stat-lbl">Duration</span></div>
+                <div class="fleet-card-stat"><span class="fleet-card-stat-val">Slpr·2·3</span><span class="fleet-card-stat-lbl">Class</span></div>
+              </div>
+              <p class="fleet-card-desc">Overnight express to the East Coast — sleeper cars available for the long haul to Batticaloa.</p>
+            </div>
+            <div class="fleet-card-accent" style="background:linear-gradient(to right,rgba(139,92,246,0.7),transparent)"></div>
+          </div>
+
+        </div><!-- /.fleet-grid -->
+      </div><!-- /.fleet-section -->
+
     </section>
   </main>
 
@@ -2736,12 +3613,12 @@ function renderDashboardServices(data) {
     list.innerHTML = `<div class="dashboard-empty">No shared train schedules were found for ${escapeHtml(data.travel_date)}.<br>Choose another service date to view the daily board.</div>`;
     return;
   }
-  list.innerHTML = `<table class="service-table"><thead><tr><th>Train</th><th>Route & stops</th><th>Time</th><th>Status</th></tr></thead><tbody>${data.services.map(service => {
+  list.innerHTML = `<table class="service-table"><thead><tr><th>Train</th><th>Route & stops</th><th>Time</th><th>Status</th></tr></thead><tbody>${data.services.map((service, index) => {
     const status = String(service.service_status || 'SCHEDULED').toLowerCase();
     const stops = Array.isArray(service.stops) && service.stops.length ? `Stops: ${service.stops.join(' · ')}` : 'Stops: N/A';
     const position = formatLivePosition(service);
     const trainId = service.train_id || '';
-    return `<tr><td>${escapeHtml(trainId || 'N/A')}<br><small style="color:var(--text-sub);">${escapeHtml(service.train_name || 'N/A')}</small><div class="service-actions"><button class="service-action" type="button" onclick="askDashboardQuestion('Is ${escapeHtml(trainId)} delayed?')">Delay</button><button class="service-action" type="button" onclick="askDashboardQuestion('What is the current operational status of ${escapeHtml(trainId)}?')">Operations</button></div></td><td class="route-cell"><strong>${escapeHtml(service.from_station || 'N/A')} → ${escapeHtml(service.to_station || 'N/A')}</strong><span class="service-stops">${escapeHtml(stops)}</span><span class="service-position">${escapeHtml(position)}</span></td><td>${escapeHtml(service.departure_time || 'N/A')}<br><small style="color:var(--text-sub);">Arrive ${escapeHtml(service.arrival_time || 'N/A')}</small></td><td><span class="service-status ${status}">${escapeHtml(status.replaceAll('_',' '))}</span></td></tr>`;
+    return `<tr><td>${escapeHtml(trainId || 'N/A')}<br><small style="color:var(--text-sub);">${escapeHtml(service.train_name || 'N/A')}</small><div class="service-actions"><button class="service-action" type="button" onclick="openOpsPopup(${index}, 'delay', event)">Delay</button><button class="service-action" type="button" onclick="openOpsPopup(${index}, 'operations', event)">Operations</button></div></td><td class="route-cell"><strong>${escapeHtml(service.from_station || 'N/A')} → ${escapeHtml(service.to_station || 'N/A')}</strong><span class="service-stops">${escapeHtml(stops)}</span><span class="service-position">${escapeHtml(position)}</span></td><td>${escapeHtml(service.departure_time || 'N/A')}<br><small style="color:var(--text-sub);">Arrive ${escapeHtml(service.arrival_time || 'N/A')}</small></td><td><span class="service-status ${status}">${escapeHtml(status.replaceAll('_',' '))}</span></td></tr>`;
   }).join('')}</tbody></table>`;
 }
 
@@ -2756,33 +3633,6 @@ function formatLivePosition(service) {
   if (liveStatus === 'IN_TRANSIT' && progress !== null && progress !== undefined) return `En route — ${progress}% of journey`;
   if (liveStatus === 'SCHEDULED') return `Not yet departed (${service.departure_time || 'scheduled'})`;
   return 'Live position: N/A';
-}
-
-function askDashboardQuestion(question) {
-  const input = $('dashboard-question');
-  if (!input) return;
-  input.value = question;
-  input.focus();
-  askDashboardAssistant();
-}
-
-async function askDashboardAssistant(event) {
-  if (event) event.preventDefault();
-  const input = $('dashboard-question');
-  const result = $('dashboard-ask-result');
-  if (!input || !result) return;
-  const question = input.value.trim();
-  if (!question) return;
-  result.textContent = 'Checking the Passenger Assistant and Operations Agent…';
-  result.classList.add('visible');
-  try {
-    const response = await fetch('/api/chat', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ message: question }) });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error || data.detail || 'Assistant unavailable');
-    result.textContent = data.reply || 'No operational answer was returned.';
-  } catch (error) {
-    result.textContent = error.message;
-  }
 }
 
 function renderDashboardMap(services) {
@@ -3734,6 +4584,562 @@ function escapeHtml(text) {
   if (!text) return '';
   return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
+</script>
+
+
+<!-- ==================== VERIFIED INCIDENT MAP ====================
+     Read-only overview. The map script and feed come from the M2 Operations
+     Agent, which only ever serves admin-VERIFIED incidents with public fields
+     (type, station, train, short summary, time). No controls beyond pan/zoom. -->
+<script>
+(function () {
+  const OPS = `${location.protocol}//${location.hostname}:8005`;
+  function start() {
+    const el = document.getElementById('incident-overview-map');
+    if (!el || !window.RailSenseIncidentMap) return;
+    RailSenseIncidentMap.create(el, {
+      feedUrl: `${OPS}/api/incidents/map-feed`,
+      theme: 'light',
+      scrollWheelZoom: false,
+      onUpdate: items => {
+        const badge = document.getElementById('incident-overview-count');
+        if (badge) badge.textContent = items.length ? `${items.length} ACTIVE` : 'ALL CLEAR';
+      },
+    });
+  }
+  const script = document.createElement('script');
+  script.src = `${OPS}/shared/incident-map.js`;
+  script.onload = start;
+  // Operations Agent offline: say so instead of leaving an empty box.
+  script.onerror = () => {
+    const el = document.getElementById('incident-overview-map');
+    if (el) el.innerHTML = '<div class="dashboard-empty">Incident map is temporarily unavailable.</div>';
+  };
+  document.head.appendChild(script);
+})();
+</script>
+
+<!-- ==================== OPERATIONS POPUP (Delay / Operations buttons) ====================
+     Opened from a row on Today's services. Answers come from the M2 Operations Agent
+     (POST /passenger/ask): intent detection + grounded, friendly NLG. Booking / fare
+     questions are handed to the Passenger Assistant via /api/chat. -->
+<style>
+@property --ops-angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+
+.ops-backdrop {
+  position: fixed; inset: 0; z-index: 9000;
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px;
+  background:
+    radial-gradient(600px circle at var(--ox, 50%) var(--oy, 50%), rgba(16,185,129,0.28), transparent 60%),
+    rgba(6, 20, 16, 0.55);
+  backdrop-filter: blur(0px) saturate(1);
+  -webkit-backdrop-filter: blur(0px) saturate(1);
+  opacity: 0; visibility: hidden;
+  transition: opacity .35s ease, backdrop-filter .45s ease, -webkit-backdrop-filter .45s ease, visibility 0s linear .45s;
+}
+.ops-backdrop.open {
+  opacity: 1; visibility: visible;
+  backdrop-filter: blur(10px) saturate(1.3);
+  -webkit-backdrop-filter: blur(10px) saturate(1.3);
+  transition: opacity .35s ease, backdrop-filter .45s ease, -webkit-backdrop-filter .45s ease;
+}
+
+.ops-card {
+  position: relative;
+  width: min(560px, 100%);
+  max-height: 88vh;
+  display: flex; flex-direction: column;
+  border-radius: 24px;
+  background: rgba(255,255,255,0.86);
+  backdrop-filter: blur(22px) saturate(1.6);
+  -webkit-backdrop-filter: blur(22px) saturate(1.6);
+  box-shadow: 0 30px 80px -20px rgba(4,47,36,0.55), 0 0 0 1px rgba(255,255,255,0.6) inset;
+  transform-origin: var(--tx, 50%) var(--ty, 50%);
+  transform: scale(.55) translateY(30px);
+  filter: blur(8px);
+  opacity: 0;
+  transition: transform .55s cubic-bezier(.2,1.25,.35,1), opacity .3s ease, filter .4s ease;
+  overflow: hidden;
+  isolation: isolate;
+}
+.ops-backdrop.open .ops-card { transform: none; filter: none; opacity: 1; }
+.ops-backdrop.closing .ops-card { transform: scale(.7) translateY(20px); filter: blur(6px); opacity: 0; transition-duration: .3s; }
+
+/* Animated conic border */
+.ops-card::before {
+  content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 1.5px; z-index: 2; pointer-events: none;
+  background: conic-gradient(from var(--ops-angle), #10B981, #22D3EE, #6366F1, #10B981 40%, rgba(16,185,129,0) 60%, #10B981);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+  animation: ops-spin 5s linear infinite;
+}
+@keyframes ops-spin { to { --ops-angle: 360deg; } }
+
+.ops-particles { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
+
+/* Header */
+.ops-head {
+  position: relative; padding: 20px 22px 16px;
+  background: linear-gradient(135deg, #064E3B 0%, #047857 55%, #0E7490 100%);
+  color: #fff; overflow: hidden;
+}
+.ops-head::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(115deg, transparent 30%, rgba(255,255,255,0.18) 48%, transparent 66%);
+  transform: translateX(-100%); animation: ops-sheen 3.2s ease-in-out .4s infinite;
+}
+@keyframes ops-sheen { 0% { transform: translateX(-100%); } 55%, 100% { transform: translateX(100%); } }
+.ops-kicker { font: 700 10px/1 'Courier New', monospace; letter-spacing: .18em; text-transform: uppercase; color: #6EE7B7; display: flex; align-items: center; gap: 8px; }
+.ops-live-dot { width: 7px; height: 7px; border-radius: 50%; background: #34D399; box-shadow: 0 0 0 0 rgba(52,211,153,.7); animation: ops-pulse 1.6s infinite; }
+@keyframes ops-pulse { 70% { box-shadow: 0 0 0 9px rgba(52,211,153,0); } 100% { box-shadow: 0 0 0 0 rgba(52,211,153,0); } }
+.ops-title { margin-top: 8px; font-size: 20px; font-weight: 900; letter-spacing: -.01em; }
+.ops-title small { font-size: 12px; font-weight: 700; color: #A7F3D0; margin-left: 6px; }
+.ops-close {
+  position: absolute; top: 14px; right: 14px; z-index: 3;
+  width: 32px; height: 32px; border-radius: 50%; border: 1px solid rgba(255,255,255,.25);
+  background: rgba(255,255,255,.12); color: #fff; font-size: 16px; cursor: pointer;
+  transition: transform .25s, background .2s;
+}
+.ops-close:hover { transform: rotate(90deg) scale(1.08); background: rgba(255,255,255,.25); }
+
+/* Only the thread scrolls; header, chips and input keep their size. */
+.ops-head, .ops-suggest, .ops-input { flex-shrink: 0; }
+
+/* Rail track with moving train */
+.ops-track { margin-top: 16px; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; font-size: 11.5px; font-weight: 700; color: #D1FAE5; }
+.ops-rail { position: relative; height: 6px; border-radius: 99px; background: repeating-linear-gradient(90deg, rgba(255,255,255,.28) 0 6px, transparent 6px 10px); }
+.ops-rail-fill { position: absolute; inset: 0 auto 0 0; width: 0; border-radius: inherit; background: linear-gradient(90deg, #34D399, #22D3EE); box-shadow: 0 0 12px #22D3EE; transition: width 1.4s cubic-bezier(.2,.8,.2,1) .25s; }
+.ops-train {
+  position: absolute; top: 50%; left: 0; width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%;
+  background: #fff; box-shadow: 0 0 0 4px rgba(34,211,238,.35), 0 0 18px #22D3EE;
+  transition: left 1.4s cubic-bezier(.2,.8,.2,1) .25s;
+}
+.ops-times { margin-top: 6px; display: flex; justify-content: space-between; font-size: 10.5px; color: #A7F3D0; font-family: 'Courier New', monospace; }
+
+/* Thread */
+.ops-thread { position: relative; flex: 1; min-height: 0; overflow-y: auto; padding: 18px 20px 8px; display: flex; flex-direction: column; gap: 12px; scroll-behavior: smooth; }
+.ops-msg { max-width: 92%; animation: ops-rise .45s cubic-bezier(.2,1.1,.3,1) both; }
+@keyframes ops-rise { from { opacity: 0; transform: translateY(12px) scale(.97); } to { opacity: 1; transform: none; } }
+.ops-msg.user {
+  align-self: flex-end; padding: 9px 14px; border-radius: 16px 16px 4px 16px;
+  background: var(--primary-grad); color: #fff; font-size: 13px; font-weight: 600;
+  box-shadow: 0 6px 16px -6px rgba(5,150,105,.6);
+}
+.ops-msg.bot {
+  align-self: flex-start; width: 100%; padding: 14px 16px; border-radius: 4px 18px 18px 18px;
+  background: rgba(255,255,255,.92); border: 1px solid #D1FAE5; color: var(--text-dark);
+  box-shadow: 0 8px 24px -12px rgba(4,47,36,.25);
+}
+.ops-headline { font-size: 15px; font-weight: 800; color: #065F46; margin-bottom: 6px; }
+.ops-para { font-size: 13.2px; line-height: 1.6; color: #1F2937; margin: 4px 0; }
+.ops-para strong { color: #047857; }
+.ops-word { opacity: 0; display: inline; animation: ops-word .35s ease forwards; }
+@keyframes ops-word { from { opacity: 0; filter: blur(3px); } to { opacity: 1; filter: none; } }
+
+.ops-summary { display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: center; margin: 4px 0 10px; }
+.ops-summary.no-gauge { grid-template-columns: 1fr; }
+.ops-gauge { position: relative; width: 92px; height: 92px; }
+.ops-gauge svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.ops-gauge .ring-bg { fill: none; stroke: #E5E7EB; stroke-width: 9; }
+.ops-gauge .ring { fill: none; stroke-width: 9; stroke-linecap: round; transition: stroke-dashoffset 1.3s cubic-bezier(.2,.8,.2,1) .2s; filter: drop-shadow(0 0 5px currentColor); }
+.ops-gauge-val { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.ops-gauge-val b { font-size: 22px; font-weight: 900; color: var(--text-dark); line-height: 1; }
+.ops-gauge-val span { font-size: 9.5px; font-weight: 700; color: var(--text-sub); text-transform: uppercase; letter-spacing: .08em; margin-top: 3px; }
+.ops-facts { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px; }
+.ops-fact {
+  padding: 8px 10px; border-radius: 12px; background: #F9FAFB; border: 1px solid var(--border-light);
+  animation: ops-rise .5s cubic-bezier(.2,1.1,.3,1) both;
+}
+.ops-fact small { display: block; font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--text-sub); }
+.ops-fact b { font-size: 13.5px; font-weight: 800; }
+.ops-fact.good b { color: #059669; } .ops-fact.warn b { color: #D97706; } .ops-fact.bad b { color: #DC2626; } .ops-fact.neutral b { color: #111827; }
+.ops-sources { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
+.ops-sources span { font-size: 10px; font-weight: 700; color: #0E7490; background: #ECFEFF; border: 1px solid #A5F3FC; border-radius: 99px; padding: 2px 8px; }
+
+.ops-typing { display: inline-flex; gap: 5px; padding: 12px 16px; border-radius: 4px 18px 18px 18px; background: #fff; border: 1px solid #D1FAE5; align-self: flex-start; }
+.ops-typing i { width: 7px; height: 7px; border-radius: 50%; background: #10B981; animation: ops-bounce 1s infinite ease-in-out; }
+.ops-typing i:nth-child(2) { animation-delay: .15s; background: #14B8A6; } .ops-typing i:nth-child(3) { animation-delay: .3s; background: #22D3EE; }
+@keyframes ops-bounce { 0%, 80%, 100% { transform: translateY(0); opacity: .5; } 40% { transform: translateY(-6px); opacity: 1; } }
+
+/* Suggestions + input */
+.ops-suggest { display: flex; gap: 7px; flex-wrap: wrap; padding: 6px 20px 10px; }
+.ops-chip {
+  padding: 6px 12px; border-radius: 99px; border: 1px solid #A7F3D0; background: #ECFDF5; color: #047857;
+  font: 700 11.5px 'Plus Jakarta Sans', 'Inter', sans-serif; cursor: pointer;
+  animation: ops-rise .4s cubic-bezier(.2,1.1,.3,1) both; transition: transform .15s, background .15s, box-shadow .15s;
+}
+.ops-chip:hover { transform: translateY(-2px); background: #D1FAE5; box-shadow: 0 6px 14px -6px rgba(5,150,105,.5); }
+.ops-input { display: flex; gap: 8px; padding: 12px 16px 16px; border-top: 1px solid rgba(209,250,229,.9); background: rgba(255,255,255,.7); }
+.ops-input input {
+  flex: 1; min-width: 0; padding: 11px 16px; border-radius: 99px; border: 1.5px solid #D1D5DB; background: #fff;
+  font: 13px 'Plus Jakarta Sans', 'Inter', sans-serif; color: var(--text-dark); outline: none; transition: border-color .2s, box-shadow .25s;
+}
+.ops-input input:focus { border-color: #10B981; box-shadow: 0 0 0 4px rgba(16,185,129,.18), 0 0 22px rgba(34,211,238,.25); }
+.ops-send {
+  position: relative; overflow: hidden; width: 44px; height: 44px; flex-shrink: 0; border: 0; border-radius: 50%;
+  background: linear-gradient(135deg, #059669, #0891B2); color: #fff; font-size: 17px; cursor: pointer;
+  box-shadow: 0 8px 18px -6px rgba(8,145,178,.7); transition: transform .15s;
+}
+.ops-send:hover { transform: scale(1.07) rotate(-8deg); }
+.ops-send:disabled { opacity: .55; cursor: wait; transform: none; }
+.ops-ripple { position: absolute; border-radius: 50%; background: rgba(255,255,255,.55); transform: scale(0); animation: ops-ripple .6s ease-out forwards; pointer-events: none; }
+@keyframes ops-ripple { to { transform: scale(4); opacity: 0; } }
+
+@media (max-width: 640px) {
+  .ops-backdrop { align-items: flex-end; padding: 0; }
+  .ops-card { width: 100%; max-height: 92vh; border-radius: 24px 24px 0 0; }
+  .ops-summary { grid-template-columns: 1fr; justify-items: center; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ops-backdrop, .ops-card, .ops-msg, .ops-fact, .ops-chip, .ops-word, .ops-rail-fill, .ops-train, .ops-gauge .ring { animation: none !important; transition: none !important; }
+  .ops-card::before, .ops-head::after, .ops-live-dot { animation: none !important; }
+  .ops-word { opacity: 1; }
+}
+</style>
+
+<div class="ops-backdrop" id="ops-backdrop" aria-hidden="true">
+  <div class="ops-card" id="ops-card" role="dialog" aria-modal="true" aria-labelledby="ops-title">
+    <canvas class="ops-particles" id="ops-particles"></canvas>
+    <div class="ops-head">
+      <button class="ops-close" type="button" onclick="closeOpsPopup()" aria-label="Close">✕</button>
+      <div class="ops-kicker"><span class="ops-live-dot"></span><span id="ops-kicker">RailSense Operations</span></div>
+      <div class="ops-title" id="ops-title">—</div>
+      <div class="ops-track">
+        <span id="ops-from">—</span>
+        <div class="ops-rail"><div class="ops-rail-fill" id="ops-rail-fill"></div><div class="ops-train" id="ops-train"></div></div>
+        <span id="ops-to">—</span>
+      </div>
+      <div class="ops-times"><span id="ops-dep">—</span><span id="ops-pos"></span><span id="ops-arr">—</span></div>
+    </div>
+    <div class="ops-thread" id="ops-thread" aria-live="polite"></div>
+    <div class="ops-suggest" id="ops-suggest"></div>
+    <form class="ops-input" id="ops-form" onsubmit="submitOpsQuestion(event)">
+      <input id="ops-question" placeholder="Ask anything about this train…" autocomplete="off" maxlength="300" />
+      <button class="ops-send" id="ops-send" type="submit" aria-label="Send">➤</button>
+    </form>
+  </div>
+</div>
+
+<script>
+(function () {
+  const OPS_AGENT_URL = `${location.protocol}//${location.hostname}:8005`;
+  const CONTEXT_FIELDS = ['train_id','train_name','route','from_station','to_station','departure_time','arrival_time',
+    'service_status','maintenance_status','live_status','current_station','next_station','progress_percent','stops'];
+  const GAUGE_COLORS = { on_time: '#10B981', minor: '#22C55E', moderate: '#F59E0B', major: '#EF4444' };
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  let current = null;       // the clicked service
+  let busy = false;
+  let particles = null;
+
+  const el = id => document.getElementById(id);
+  const esc = t => String(t ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+  const rich = t => esc(t).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\*(.+?)\*/g, '<em>$1</em>');
+  const hhmm = t => (t ? String(t).slice(0, 5) : '—');
+
+  function serviceContext(svc) {
+    const ctx = {};
+    CONTEXT_FIELDS.forEach(k => { if (svc[k] !== null && svc[k] !== undefined && svc[k] !== '') ctx[k] = svc[k]; });
+    if (ctx.departure_time) ctx.departure_time = String(ctx.departure_time).slice(0, 8);
+    if (ctx.arrival_time) ctx.arrival_time = String(ctx.arrival_time).slice(0, 8);
+    ctx.train_id = String(ctx.train_id || '');
+    return ctx;
+  }
+
+  function progressOf(svc) {
+    const live = String(svc.live_status || '').toUpperCase();
+    if (live === 'ARRIVED') return 100;
+    if (typeof svc.progress_percent === 'number') return Math.max(0, Math.min(100, svc.progress_percent));
+    return 0;
+  }
+
+  function positionLabel(svc) {
+    const live = String(svc.live_status || '').toUpperCase();
+    if (live === 'ARRIVED') return 'ARRIVED';
+    if (svc.current_station && svc.next_station) return `${svc.current_station} → ${svc.next_station}`;
+    if (live === 'IN_TRANSIT') return 'EN ROUTE';
+    if (live === 'SCHEDULED') return 'NOT YET DEPARTED';
+    return '';
+  }
+
+  /* ----------------------------- open / close ----------------------------- */
+  window.openOpsPopup = function (index, mode, evt) {
+    const svc = (typeof dashboardServices !== 'undefined' ? dashboardServices : [])[index];
+    if (!svc) return;
+    current = svc;
+
+    const backdrop = el('ops-backdrop'), card = el('ops-card');
+    // The card grows out of the button that was clicked.
+    const x = evt ? evt.clientX : innerWidth / 2, y = evt ? evt.clientY : innerHeight / 2;
+    backdrop.style.setProperty('--ox', `${x}px`);
+    backdrop.style.setProperty('--oy', `${y}px`);
+    const rect = { w: Math.min(560, innerWidth - 32), h: Math.min(innerHeight * .88, 640) };
+    card.style.setProperty('--tx', `${x - (innerWidth - rect.w) / 2}px`);
+    card.style.setProperty('--ty', `${y - (innerHeight - rect.h) / 2}px`);
+
+    el('ops-kicker').textContent = mode === 'delay' ? 'Delay prediction · Live' : 'Operations status · Live';
+    el('ops-title').innerHTML = `${esc(svc.train_name || 'Train')}<small>${esc(svc.train_id || '')}</small>`;
+    el('ops-from').textContent = svc.from_station || '—';
+    el('ops-to').textContent = svc.to_station || '—';
+    el('ops-dep').textContent = `DEP ${hhmm(svc.departure_time)}`;
+    el('ops-arr').textContent = `ARR ${hhmm(svc.arrival_time)}`;
+    el('ops-pos').textContent = positionLabel(svc);
+    el('ops-rail-fill').style.width = '0%';
+    el('ops-train').style.left = '0%';
+    el('ops-thread').innerHTML = '';
+    el('ops-suggest').innerHTML = '';
+    el('ops-question').value = '';
+
+    backdrop.classList.remove('closing');
+    backdrop.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+    requestAnimationFrame(() => {
+      backdrop.classList.add('open');
+      const p = progressOf(svc);
+      setTimeout(() => { el('ops-rail-fill').style.width = `${p}%`; el('ops-train').style.left = `${p}%`; }, 60);
+    });
+    startParticles();
+
+    const question = mode === 'delay' ? 'Is this train delayed?' : "What's the current operational status?";
+    ask(question, mode);
+  };
+
+  window.closeOpsPopup = function () {
+    const backdrop = el('ops-backdrop');
+    if (!backdrop.classList.contains('open')) return;
+    backdrop.classList.add('closing');
+    backdrop.classList.remove('open');
+    backdrop.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+    stopParticles();
+    current = null;
+    setTimeout(() => backdrop.classList.remove('closing'), 350);
+  };
+
+  // Clicking the blurred background (not the card) dismisses the popup.
+  el('ops-backdrop').addEventListener('mousedown', e => { if (e.target.id === 'ops-backdrop') closeOpsPopup(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeOpsPopup(); });
+
+  /* ------------------------------- asking ------------------------------- */
+  window.submitOpsQuestion = function (e) {
+    e.preventDefault();
+    const q = el('ops-question').value.trim();
+    if (!q || busy) return;
+    ripple(el('ops-send'), null);
+    el('ops-question').value = '';
+    ask(q, null);
+  };
+
+  async function ask(question, mode) {
+    if (!current || busy) return;
+    busy = true;
+    el('ops-send').disabled = true;
+    el('ops-suggest').innerHTML = '';
+    addUser(question);
+    const typing = addTyping();
+    const svc = current;
+    let answer = null;
+    try {
+      const resp = await fetch(`${OPS_AGENT_URL}/passenger/ask`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question, mode, service: serviceContext(svc) }),
+      });
+      if (resp.ok) answer = await resp.json();
+    } catch (_) { /* Operations Agent unreachable - fall through to the Passenger Assistant */ }
+
+    if (!answer || answer.handoff) {
+      // Booking / fare questions (or M2 being down) go to the Passenger Assistant.
+      if (answer && answer.handoff && current === svc) {
+        typing.remove();
+        addBot(answer, true);
+        el('ops-thread').appendChild(typing);
+        scrollThread();
+      }
+      answer = await askPassengerAssistant(question, svc);
+    }
+    typing.remove();
+    if (current !== svc) { busy = false; el('ops-send').disabled = false; return; }  // popup closed/reopened meanwhile
+    addBot(answer, false);
+    renderSuggestions(answer.suggestions || []);
+    busy = false;
+    el('ops-send').disabled = false;
+    el('ops-question').focus({ preventScroll: true });
+  }
+
+  async function askPassengerAssistant(question, svc) {
+    try {
+      const resp = await fetch('/api/chat', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: `${question} (train ${svc.train_id})` }),
+      });
+      const data = await resp.json();
+      return {
+        headline: '', paragraphs: [data.reply || "I couldn't find an answer to that just now."],
+        facts: [], gauge: null, sources: ['Passenger Assistant'],
+        suggestions: ['Is it delayed?', 'When will it arrive?', 'Where is it now?'],
+      };
+    } catch (_) {
+      return {
+        headline: 'Service unavailable', paragraphs: ["I can't reach the operations service right now. Please try again in a moment."],
+        facts: [], gauge: null, sources: [], suggestions: ['Is it delayed?'],
+      };
+    }
+  }
+
+  /* ------------------------------ rendering ------------------------------ */
+  function scrollThread() { const t = el('ops-thread'); t.scrollTop = t.scrollHeight; }
+
+  function addUser(text) {
+    const m = document.createElement('div');
+    m.className = 'ops-msg user';
+    m.textContent = text;
+    el('ops-thread').appendChild(m);
+    scrollThread();
+  }
+
+  function makeTyping() {
+    const t = document.createElement('div');
+    t.className = 'ops-typing';
+    t.innerHTML = '<i></i><i></i><i></i>';
+    return t;
+  }
+  function addTyping() { const t = makeTyping(); el('ops-thread').appendChild(t); scrollThread(); return t; }
+
+  function gaugeHtml(g) {
+    const r = 38, c = 2 * Math.PI * r;
+    const frac = g.level === 'on_time' ? 1 : Math.min(1, g.minutes / 30);
+    const color = GAUGE_COLORS[g.level] || '#10B981';
+    const label = g.level === 'on_time' ? 'on time' : 'min late';
+    return `<div class="ops-gauge" style="color:${color}">
+      <svg viewBox="0 0 92 92"><circle class="ring-bg" cx="46" cy="46" r="${r}"/>
+        <circle class="ring" cx="46" cy="46" r="${r}" stroke="${color}" stroke-dasharray="${c}" stroke-dashoffset="${c}" data-target="${c * (1 - frac)}"/></svg>
+      <div class="ops-gauge-val"><b data-count="${g.level === 'on_time' ? 0 : Math.round(g.minutes)}">${g.level === 'on_time' ? '✓' : '0'}</b><span>${label}</span></div>
+    </div>`;
+  }
+
+  function addBot(a, compact) {
+    const m = document.createElement('div');
+    m.className = 'ops-msg bot';
+    const showSummary = !compact && (a.gauge || (a.facts && a.facts.length)) &&
+      ['delay', 'status', 'eta', 'departure', 'greeting'].includes(a.intent);
+    let html = a.headline ? `<div class="ops-headline">${esc(a.headline)}</div>` : '';
+    if (showSummary) {
+      html += `<div class="ops-summary${a.gauge ? '' : ' no-gauge'}">${a.gauge ? gaugeHtml(a.gauge) : ''}
+        <div class="ops-facts">${(a.facts || []).map((f, i) =>
+          `<div class="ops-fact ${esc(f.tone)}" style="animation-delay:${.15 + i * .08}s"><small>${esc(f.label)}</small><b>${esc(f.value)}</b></div>`).join('')}</div></div>`;
+    }
+    html += (a.paragraphs || []).map(p => `<p class="ops-para">${rich(p)}</p>`).join('');
+    if (!compact && a.sources && a.sources.length) {
+      html += `<div class="ops-sources">${a.sources.map(s => `<span>${esc(s)}</span>`).join('')}</div>`;
+    }
+    m.innerHTML = html;
+    el('ops-thread').appendChild(m);
+    if (!reduceMotion) typewrite(m);
+    animateGauge(m);
+    // Bring the start of the answer (headline + gauge) into view, not its end.
+    el('ops-thread').scrollTop = Math.max(0, m.offsetTop - 12);
+  }
+
+  // Reveal the answer word by word; markup (bold) is preserved.
+  function typewrite(root) {
+    let i = 0;
+    root.querySelectorAll('.ops-para, .ops-headline').forEach(node => {
+      const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT);
+      const texts = [];
+      while (walker.nextNode()) texts.push(walker.currentNode);
+      texts.forEach(tn => {
+        const frag = document.createDocumentFragment();
+        tn.textContent.split(/(\s+)/).forEach(part => {
+          if (!part) return;
+          if (/^\s+$/.test(part)) { frag.appendChild(document.createTextNode(part)); return; }
+          const s = document.createElement('span');
+          s.className = 'ops-word';
+          s.style.animationDelay = `${Math.min(i++ * 0.025, 2.2)}s`;
+          s.textContent = part;
+          frag.appendChild(s);
+        });
+        tn.replaceWith(frag);
+      });
+    });
+  }
+
+  function animateGauge(root) {
+    const ring = root.querySelector('.ops-gauge .ring');
+    const val = root.querySelector('.ops-gauge-val b[data-count]');
+    if (ring) requestAnimationFrame(() => requestAnimationFrame(() => { ring.style.strokeDashoffset = ring.dataset.target; }));
+    if (val && Number(val.dataset.count) > 0) {
+      const target = Number(val.dataset.count), start = performance.now(), dur = reduceMotion ? 1 : 1200;
+      const step = now => {
+        const t = Math.min(1, (now - start) / dur);
+        val.textContent = Math.round(target * (1 - Math.pow(1 - t, 3)));
+        if (t < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    }
+  }
+
+  function renderSuggestions(list) {
+    el('ops-suggest').innerHTML = list.map((s, i) =>
+      `<button class="ops-chip" type="button" style="animation-delay:${.3 + i * .07}s">${esc(s)}</button>`).join('');
+    el('ops-suggest').querySelectorAll('.ops-chip').forEach(b => b.addEventListener('click', e => {
+      ripple(b, e);
+      ask(b.textContent, null);
+    }));
+  }
+
+  function ripple(target, e) {
+    const r = document.createElement('span');
+    r.className = 'ops-ripple';
+    const box = target.getBoundingClientRect(), size = Math.max(box.width, box.height);
+    r.style.width = r.style.height = `${size}px`;
+    r.style.left = `${(e ? e.clientX - box.left : box.width / 2) - size / 2}px`;
+    r.style.top = `${(e ? e.clientY - box.top : box.height / 2) - size / 2}px`;
+    if (getComputedStyle(target).position === 'static') target.style.position = 'relative';
+    target.style.overflow = 'hidden';
+    target.appendChild(r);
+    setTimeout(() => r.remove(), 650);
+  }
+
+  /* ------------------------ floating particle field ------------------------ */
+  function startParticles() {
+    if (reduceMotion) return;
+    stopParticles();
+    const canvas = el('ops-particles'), card = el('ops-card');
+    const ctx = canvas.getContext('2d');
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const resize = () => {
+      canvas.width = card.clientWidth * dpr; canvas.height = card.clientHeight * dpr;
+      canvas.style.width = `${card.clientWidth}px`; canvas.style.height = `${card.clientHeight}px`;
+    };
+    resize();
+    const dots = Array.from({ length: 34 }, () => ({
+      x: Math.random(), y: Math.random(), r: 1 + Math.random() * 2.4,
+      vx: (Math.random() - .5) * .0006, vy: -.0004 - Math.random() * .0008,
+      hue: [158, 172, 188][Math.floor(Math.random() * 3)], a: .15 + Math.random() * .35,
+    }));
+    let raf = 0;
+    const frame = () => {
+      if (canvas.width !== card.clientWidth * dpr || canvas.height !== card.clientHeight * dpr) resize();
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      dots.forEach(d => {
+        d.x += d.vx; d.y += d.vy;
+        if (d.y < -.05) { d.y = 1.05; d.x = Math.random(); }
+        if (d.x < -.05 || d.x > 1.05) d.vx *= -1;
+        const px = d.x * canvas.width, py = d.y * canvas.height, pr = d.r * dpr;
+        const g = ctx.createRadialGradient(px, py, 0, px, py, pr * 4);
+        g.addColorStop(0, `hsla(${d.hue},80%,45%,${d.a})`);
+        g.addColorStop(1, `hsla(${d.hue},80%,45%,0)`);
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(px, py, pr * 4, 0, Math.PI * 2); ctx.fill();
+      });
+      raf = requestAnimationFrame(frame);
+    };
+    raf = requestAnimationFrame(frame);
+    particles = () => cancelAnimationFrame(raf);
+  }
+  function stopParticles() { if (particles) { particles(); particles = null; } }
+})();
 </script>
 
 </body>

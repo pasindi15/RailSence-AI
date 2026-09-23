@@ -12,7 +12,7 @@ This IT3041 Information Retrieval and Web Analytics project combines FastAPI ser
 | M3 Communication Hub | 8002 | JWT verification, allowlisted routing, audit, rate limiting, circuit breakers | `http://localhost:8002/docs` |
 | M3 Booking Agent | 8003 | Schedules, seat holds, fares, bookings, cancellations, waiting lists | `http://localhost:8003/docs` |
 | Security and Fraud Agent | 8004 | IsolationForest risk scoring and review workflow | `http://localhost:8004/docs` |
-| M2 Operations Agent | 8005 | Delay prediction, incident NLP/RAG, Control Room, Admin Console | `http://localhost:8005/` |
+| M2 Operations Agent | 8005 | Delay prediction, incident NLP/RAG, incident approval + verified map, passenger answers, Operations Assistant, Control Room, Admin Console | `http://localhost:8005/` |
 | M4 Maintenance Agent | 8006 | Asset health, reports, manual RAG, maintenance flags | `http://localhost:8006/` |
 | Unified Web Gateway | 3000 | Passenger and staff portals | `http://localhost:3000/` |
 | M1 React application | 5173 | Optional Vite passenger chat UI | `http://localhost:5173/` |
@@ -64,11 +64,17 @@ The Supabase `trains` table is the canonical train registry. M4 can mark a train
 
 ### M2 Operations and Delay Prediction
 
-- `GradientBoostingRegressor` delay prediction with exact historical lookup first.
+Full documentation: [`M2-operations-agent/README.md`](M2-operations-agent/README.md).
+
+- `GradientBoostingRegressor` delay prediction with exact historical lookup first (MAE 2.24 min, R2 0.87).
 - Sanitized incident classification and concise operator summaries.
 - Supabase `pgvector` incident retrieval with local TF-IDF fallback.
 - Grounded explanations containing prediction evidence, model version, retrieval method, and similar incidents.
-- Control Room dashboard with network KPIs, route heatmaps, hourly delay pressure, incident mix, model metrics, and source indicators.
+- Control Room with a live 3D banner (Loco the train robot + corridor delay skyline), network KPIs, route heatmap, hourly delay pressure, type-coloured incident mix, model metrics, and a verified-incident map.
+- Delay prediction form with route-driven train and station dropdowns; incident forms with a station dropdown and a searchable train picker (names such as "Podi Menike · 1005").
+- Passenger "Delay / Operations" popup answers (`POST /passenger/ask`): intent detection + template NLG, booking questions handed to M1.
+- **Incident approval workflow**: staff reports stay `pending`; only administrators can Approve/Reject. Approved incidents appear, with allowlisted public fields only, on the Control Room, Admin Console and passenger maps within 5 seconds, and only for the current day (cut-off 00:00 Asia/Colombo).
+- **Operations Assistant**: floating chatbot for administrators and operations engineers. Gemini function calling over seven fixed data tools filtered by role; a number check rejects any figure not in the tool results; restricted, not-enough-information, out-of-scope and unavailable cases get fixed messages; per-user history and audit logging.
 
 ### M2 Admin Console
 
@@ -77,7 +83,9 @@ The M2 Admin Console uses bcrypt password hashes, signed expiring officer JWTs, 
 - Officer login, logout, profile, permissions, provisioning, role changes, password resets, activation, and audit history.
 - Roles for administrators, operations engineers, managers, dispatchers, analysts, and viewers.
 - Last-active-administrator lockout protection.
-- Incident create/read/update/delete workflows.
+- Incident create/read/update/delete workflows, plus admin-only Approve/Reject and the verified-incident map.
+- Live 3D governance banner (R2 gauge, pending-incident cards, today's approvals, audit stream).
+- Operations Assistant with administrator-only tools (model metrics, audit log, system health).
 - Delay-model retraining against Supabase or the CSV fallback.
 - Timestamped model archives, metrics sidecars, feature-importance refresh, and rollback without restart.
 - Read-only inter-agent audit search, filters, pagination, and Supabase-to-JSONL fallback.
@@ -160,6 +168,7 @@ JWT_SECRET_KEY=replace-with-a-long-random-secret
 JWT_ALGORITHM=HS256
 LLM_PROVIDER=gemini
 GEMINI_API_KEY=your-gemini-key
+GEMINI_MODEL=gemini-3.5-flash-lite
 UPSTASH_REDIS_URL=https://your-instance.upstash.io
 UPSTASH_REDIS_TOKEN=your-upstash-token
 ```
@@ -227,7 +236,7 @@ Every backend exposes `/health`. Important routes include:
 | Hub | `POST /messages`, `/health`, `/ready`, `/api/hub/dashboard`, `/api/hub/timeline` |
 | Booking | `/internal/messages`, booking, cancellation, hold, waiting-list, and schedule routes |
 | Security | `POST /internal/fraud-score`, fraud-review routes, `/health` |
-| M2 | `POST /predict-delay`, `POST /incident-report`, `GET/PATCH/DELETE /incidents`, `/api/dashboard`, `/health` |
+| M2 | `POST /predict-delay`, `POST /passenger/ask`, `POST /incident-report`, `GET/PATCH/DELETE /incidents`, `POST /incidents/{id}/approve` and `/reject`, `GET /api/incidents/map-feed`, `/api/dashboard`, `/api/route-options`, `/api/trains`, `/api/stations`, `/api/ops-agent/ask`, `/api/ops-agent/history`, `/api/ops-agent/capabilities`, `/health` |
 | M2 admin | `POST /admin/api/login`, `/admin/api/me`, officer, model, audit, and health routes |
 | M4 | `POST /asset-health`, `POST /maintenance-report`, `POST /chat`, `GET /manual-search`, train-flag routes |
 | Gateway | `POST /api/chat`, `/api/booking-options`, booking/cancellation routes, `/api/admin/system-health` |
@@ -247,6 +256,7 @@ python scripts/test_m3_booking_integration.py
 python scripts/test_m4_cross_agent_integration.py
 python scripts/test_maintenance_delay_integration.py
 python -m pytest test_m2_rbac.py -q
+python -m pytest M2-operations-agent/tests -q
 python test_startup_commands.py
 ```
 
@@ -272,7 +282,7 @@ Apply the SQL files for the services being deployed:
 - `M1-passenger_assistant/backend/supabase_schema.sql` for M1.
 - `M3-Comunication-Hub&Booking-Agent/supabase_schema.sql` for Hub and Booking.
 - `M4-maintenance-agent/supabase_schema.sql` and `supabase_setup_all.sql` for M4.
-- `M2-operations-agent/supabase_phase5_schema.sql` and `admin/admin_schema.sql` for M2 operations, embeddings, audit, incident, model-run, and RBAC tables.
+- `M2-operations-agent/supabase_phase5_schema.sql` and `admin/admin_schema.sql` for M2 operations, embeddings, audit, incident, model-run, and RBAC tables; `admin/incident_map_migration.sql` (`verified_at`) and `admin/ops_agent_migration.sql` (Operations Assistant history). M2 runs with local fallbacks until these are applied.
 
 Use `scripts/seed_shared_trains.py` and `scripts/validate_shared_train_links.py` to seed and verify canonical train links.
 
@@ -282,7 +292,7 @@ Use `scripts/seed_shared_trains.py` and `scripts/validate_shared_train_links.py`
 RailSence-AI/
 ├── frontend/                         Unified gateway and passenger/admin portals
 ├── M1-passenger_assistant/           Passenger backend and React frontend
-├── M2-operations-agent/              Delay, incident, RAG, Control Room, and RBAC admin
+├── M2-operations-agent/              Delay, incident NLP/RAG, approval map, Operations Assistant, Control Room, RBAC admin
 ├── M2-admin-dashboard/               Admin package and schema assets
 ├── M3-Comunication-Hub&Booking-Agent/ Central Hub, Booking, schemas, and SQL
 ├── M4-maintenance-agent/             Asset intelligence, manuals, flags, and engineer UI

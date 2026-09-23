@@ -2598,6 +2598,14 @@ function toggleSidebar(){
 
 /* ── Engineer Login Gate ── */
 (function(){
+  // Accept token from URL param (passed by admin iframe to survive cross-origin localStorage restrictions)
+  var urlToken=(new URLSearchParams(window.location.search)).get('token')||'';
+  if(urlToken){
+    localStorage.setItem('m4_eng_token',urlToken);
+    localStorage.setItem('m4_eng_auth','1');
+    // Clean URL without reload
+    history.replaceState(null,'',window.location.pathname);
+  }
   var hasToken=!!(localStorage.getItem('m4_eng_token')||'').trim();
   if(hasToken){
     var g=document.getElementById('login-gate');
@@ -2644,6 +2652,10 @@ async function doEngineerLogin(e){
       localStorage.setItem('m4_eng_auth','1');
       localStorage.setItem('m4_eng_token',d.token);
       localStorage.setItem('m4_eng_name',d.name||id);
+      // Notify parent admin frame so it can persist token for iframe reloads
+      if(window.parent && window.parent !== window){
+        window.parent.postMessage({type:'m4_login_success',token:d.token,name:d.name,role:d.role},'*');
+      }
       // Show success state
       document.getElementById('lg-form-wrap').style.display='none';
       var suc=document.getElementById('lg-success');
