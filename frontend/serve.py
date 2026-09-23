@@ -108,6 +108,7 @@ class ConfirmBookingInput(BaseModel):
     seat_class: str = Field(default="")
     passenger_count: int = Field(default=1, ge=1, le=10)
     passenger_email: EmailStr | None = Field(default=None)
+    contact_phone: str | None = Field(default=None, max_length=32)
     user_id: str | None = Field(default=None)
     passengers: list[dict[str, Any]] | None = Field(default=None)
     schedule_id: int | None = Field(default=None)
@@ -1068,6 +1069,7 @@ async def confirm_booking_endpoint(req: ConfirmBookingInput) -> JSONResponse:
             "seat_class": req.seat_class.strip(),
             "passenger_count": req.passenger_count,
             "passenger_email": str(req.passenger_email).strip() if req.passenger_email else None,
+            "contact_phone": str(req.contact_phone).strip() if req.contact_phone else None,
             "user_id": req.user_id or "guest_passenger",
             "passengers": req.passengers,
             "schedule_id": req.schedule_id,

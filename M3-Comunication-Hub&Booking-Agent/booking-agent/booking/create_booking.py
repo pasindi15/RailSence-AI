@@ -134,6 +134,7 @@ def persist_booking(
         seat_class=canonical_class,
         passenger_count=request.passenger_count,
         passenger_email=str(request.passenger_email).strip() if getattr(request, "passenger_email", None) else None,
+        passenger_phone=(str(getattr(request, "contact_phone", None)).strip() if getattr(request, "contact_phone", None) else None),
         fare=resolved_fare,
         status=BookingStatus.CONFIRMED,
     )
@@ -147,9 +148,14 @@ def persist_booking(
         if not p_list and hasattr(request, "passengers") and request.passengers:
             from shared.nic import hash_nic, mask_nic
             p_list = [
-                {"name": p.name, "nic_hash": hash_nic(p.nic), "nic_masked": mask_nic(p.nic)}
+                {"name": p.name, "nic_hash": hash_nic(p.nic), "nic_masked": mask_nic(p.nic), "dob": getattr(p, "dob", None)}
                 for p in request.passengers
             ]
+
+        # Contact phone from the booking contact details (shared by all passengers on the booking).
+        contact_phone = (getattr(request, "contact_phone", None) or None)
+        if contact_phone:
+            contact_phone = str(contact_phone).strip() or None
 
         if p_list:
             all_hashes = [p["nic_hash"] for p in p_list]
@@ -165,10 +171,21 @@ def persist_booking(
                         nic_hash=p_hash,
                         nic_masked=p_info["nic_masked"],
                         full_name=p_info.get("name"),
+                        phone=contact_phone,
+                        dob=p_info.get("dob"),
                     )
                     db.add(p)
                     new_pax.append(p)
                     existing_pax_map[p_hash] = p
+                else:
+                    # Backfill contact phone / DOB on the existing passenger profile
+                    # when this booking provides fresher details.
+                    existing = existing_pax_map[p_hash]
+                    if contact_phone and not existing.phone:
+                        existing.phone = contact_phone
+                    p_dob = p_info.get("dob")
+                    if p_dob and not existing.dob:
+                        existing.dob = p_dob
             if new_pax:
                 db.flush()
 

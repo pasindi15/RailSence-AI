@@ -1718,6 +1718,44 @@ body {
     min-width: auto;
   }
 }
+
+/* ── Date of Birth field: visible label before a date is picked ── */
+.dob-field {
+  position: relative;
+  width: 100%;
+}
+.dob-field .form-input {
+  width: 100%;
+}
+.dob-field .form-input::-webkit-calendar-picker-indicator {
+  opacity: 0.55;
+  cursor: pointer;
+}
+.dob-placeholder {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #8a94a6;
+  font-size: 13.5px;
+  pointer-events: none;
+  white-space: nowrap;
+  transition: opacity 0.12s ease;
+}
+.dob-placeholder.is-hidden {
+  display: none;
+}
+.dob-field:focus-within .dob-placeholder {
+  color: #5b93f0;
+}
+/* Hide the input's built-in mm/dd/yyyy ghost text while empty (required + empty = :invalid)
+   so it doesn't overlap the visible "Date Of Birth (Birthday)" label. */
+.dob-field .form-input:invalid {
+  color: transparent;
+}
+.dob-field .form-input:invalid::-webkit-datetime-edit {
+  color: transparent;
+}
 </style>
 </head>
 <body>
@@ -3229,15 +3267,18 @@ function renderPassengers() {
           <div id="nic-err-${index}" class="field-error-msg">Invalid NIC (9 digits + V/X or 12 digits)</div>
         </div>
         <div class="field-cell">
-          <input
-            type="date"
-            class="form-input"
-            id="pax-dob-${index}"
-            placeholder="Date Of Birth"
-            value="${p.dob}"
-            required
-            onchange="syncPassenger(${index}, 'dob', this.value)"
-          />
+          <div class="dob-field" id="dob-field-${index}" onclick="openDobPicker(${index})">
+            <input
+              type="date"
+              class="form-input"
+              id="pax-dob-${index}"
+              value="${p.dob}"
+              required
+              onchange="syncPassenger(${index}, 'dob', this.value)"
+              aria-label="Date of Birth"
+            />
+            <span class="dob-placeholder${p.dob ? ' is-hidden' : ''}" id="dob-ph-${index}">Date Of Birth (Birthday)</span>
+          </div>
         </div>
         <div class="field-cell">
           <select class="form-select" id="pax-country-${index}" onchange="syncPassenger(${index}, 'country', this.value)">
@@ -3262,6 +3303,25 @@ function renderPassengers() {
 function syncPassenger(index, field, value) {
   if (passengerData[index]) {
     passengerData[index][field] = value;
+  }
+  // Toggle the visible "Date Of Birth" placeholder when a birthday is picked/cleared.
+  if (field === 'dob') {
+    const ph = document.getElementById(`dob-ph-${index}`);
+    if (ph) ph.classList.toggle('is-hidden', !!value);
+  }
+}
+
+// Click anywhere on the DOB field to open the native date picker.
+function openDobPicker(index) {
+  const input = document.getElementById(`pax-dob-${index}`);
+  if (!input) return;
+  input.focus();
+  try {
+    if (typeof input.showPicker === 'function') {
+      input.showPicker();
+    }
+  } catch (_) {
+    // Older browsers open the picker natively on click anyway.
   }
 }
 
@@ -3465,6 +3525,11 @@ async function submitBooking() {
   const trainId = $('train-select-val').value.trim();
   const seatClass = $('seat-class').value.trim();
   const email = $('email-address').value.trim();
+  const contactInput = $('contact-number');
+  const countryCodeEl = $('country-code');
+  const contactPhone = contactInput && contactInput.value.trim()
+    ? `${countryCodeEl ? countryCodeEl.value : ''}${contactInput.value.trim().replace(/^\s+/, '')}`
+    : null;
 
   const passengersPayload = passengerData.map(p => ({
     name: `${p.title !== 'Title' ? p.title + ' ' : ''}${p.firstName.trim()} ${p.lastName.trim()}`,
@@ -3487,6 +3552,7 @@ async function submitBooking() {
         seat_class: seatClass,
         passenger_count: passengerData.length,
         passenger_email: email,
+        contact_phone: contactPhone,
         user_id: 'passenger_web_user',
         passengers: passengersPayload,
         schedule_id: selectedScheduleId,

@@ -209,6 +209,14 @@ def init_db(seed: bool = False) -> None:
                     conn.execute(sa.text("ALTER TABLE bookings ADD COLUMN ticket_token VARCHAR(128)"))
                 if "hold_id" not in cols:
                     conn.execute(sa.text("ALTER TABLE bookings ADD COLUMN hold_id INTEGER"))
+                if "passenger_phone" not in cols:
+                    conn.execute(sa.text("ALTER TABLE bookings ADD COLUMN passenger_phone VARCHAR(32)"))
+            if "passengers" in table_names:
+                cols = [c["name"] for c in insp.get_columns("passengers")]
+                if "phone" not in cols:
+                    conn.execute(sa.text("ALTER TABLE passengers ADD COLUMN phone VARCHAR(32)"))
+                if "dob" not in cols:
+                    conn.execute(sa.text("ALTER TABLE passengers ADD COLUMN dob DATE"))
             if "audit_logs" in table_names:
                 cols = [c["name"] for c in insp.get_columns("audit_logs")]
                 if "correlation_id" not in cols:

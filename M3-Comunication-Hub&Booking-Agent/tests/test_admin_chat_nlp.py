@@ -67,6 +67,10 @@ class TestAdminChatNLP:
         q3 = "What trains operate tomorrow?"
         assert classify_intent(q3) == "schedule_query"
 
+        assert classify_intent("Is Podi Menike sold out tomorrow?", extract_entities("Is Podi Menike sold out tomorrow?")) == "seat_availability_query"
+        assert classify_intent("Which trains have open seats tomorrow?", extract_entities("Which trains have open seats tomorrow?")) == "seat_availability_query"
+        assert classify_intent("When does Udarata Menike leave?", extract_entities("When does Udarata Menike leave?")) == "schedule_query"
+
     def test_intent_classification_manifest_and_summary(self):
         """4. Manifest and booking statistics."""
         q1 = "Show passengers booked on train 1005 tomorrow."
@@ -74,6 +78,8 @@ class TestAdminChatNLP:
 
         q2 = "Give me today's booking summary."
         assert classify_intent(q2) == "booking_statistics"
+
+        assert classify_intent("Give me the booking totals for today.") == "booking_statistics"
 
         q3 = "Find booking RS-10023."
         ents = extract_entities(q3)
@@ -129,3 +135,39 @@ class TestAdminChatNLP:
         assert result["entities"].get("seat_class") == "First Class"
         assert result["entities"].get("train_name") == "Udarata Menike"
         assert result["entities"].get("travel_date") is not None
+
+    def test_common_chat_typos_are_normalized(self):
+        """Frequent spelling mistakes still resolve the requested train and date."""
+        query = "how meny booking have podi manike tommorow?"
+        result = process_admin_nlp(query)
+        assert result["intent"] == "booking_manifest_query"
+        assert result["entities"].get("train_name") == "Podi Menike"
+        assert result["entities"].get("travel_date") is not None
+
+    def test_availability_paraphrases_share_intent(self):
+        queries = [
+            "How many seats are available on Udarata Menike tomorrow?",
+            "Is Udarata Menike full tomorrow?",
+            "Can I still book Udarata Menike tomorrow?",
+            "Are we getting close to capacity on Udarata tomorrow?",
+            "How meny seats are availble on Udarata Manike tommorow?",
+        ]
+        for query in queries:
+            result = process_admin_nlp(query)
+            assert result["intent"] == "seat_availability_query"
+            assert result["understanding"].filters["all_trains"] is False
+
+    def test_broad_and_route_availability_intents(self):
+        broad = process_admin_nlp("Which trains still have seats tomorrow?")
+        route = process_admin_nlp("Which trains from Colombo to Kandy have seats tomorrow?")
+        assert broad["intent"] == "seat_availability_query"
+        assert broad["understanding"].filters["all_trains"] is True
+        assert route["intent"] == "seat_availability_query"
+        assert route["entities"]["origin_station"] == "Colombo"
+        assert route["entities"]["destination_station"] == "Kandy"
+
+    def test_ticket_and_schedule_paraphrases(self):
+        ticket = process_admin_nlp("What's happening with ticket TKT-12345?")
+        schedule = process_admin_nlp("When does Udarata Menike leave tomorrow?")
+        assert ticket["intent"] == "ticket_query"
+        assert schedule["intent"] == "schedule_query"

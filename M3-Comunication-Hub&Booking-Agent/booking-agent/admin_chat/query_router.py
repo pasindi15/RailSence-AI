@@ -20,7 +20,9 @@ from .retrieval import (
     retrieve_cancellations,
     retrieve_fraud_reviews,
     retrieve_manifest,
+    retrieve_schedule,
     retrieve_seat_availability,
+    retrieve_ticket_lookup,
 )
 from .schemas import AdminChatRequest, AdminChatResponse
 
@@ -52,8 +54,11 @@ class AdminChatService:
         if intent == "unsupported_mutation":
             db_evidence = {"refusal": True}
 
-        elif intent in ("seat_availability_query", "schedule_query"):
+        elif intent == "seat_availability_query":
             db_evidence = retrieve_seat_availability(self.db, entities)
+
+        elif intent == "schedule_query":
+            db_evidence = retrieve_schedule(self.db, entities)
 
         elif intent == "fraud_review_query":
             db_evidence = retrieve_fraud_reviews(self.db, entities)
@@ -67,6 +72,9 @@ class AdminChatService:
         elif intent == "booking_lookup":
             b_ref = entities.get("booking_reference", "")
             db_evidence = retrieve_booking_lookup(self.db, b_ref)
+
+        elif intent == "ticket_query":
+            db_evidence = retrieve_ticket_lookup(self.db, entities.get("ticket_reference", ""))
 
         elif intent == "booking_statistics":
             db_evidence = retrieve_booking_summary(self.db, entities)
@@ -92,6 +100,14 @@ class AdminChatService:
             entities=entities,
             conversation_id=conv_id,
         )
+
+        # Keep the answer provenance explicit for the admin UI. Normal runtime
+        # uses the configured PostgreSQL/Supabase engine; SQLite is test-only.
+        try:
+            from database.database import engine
+            response.data_source = "supabase" if engine.dialect.name == "postgresql" else "sqlite_test"
+        except Exception:
+            response.data_source = "m3_database"
 
         # 5. Audit Logging (privacy-safe, no plaintext PII)
         elapsed_ms = (time.time() - t0) * 1000.0

@@ -284,10 +284,12 @@ class BookingService:
                 h = hash_nic(p.nic)
                 m = mask_nic(p.nic)
                 nic_hashes.append(h)
+                p_dob = getattr(p, "dob", None)
                 passenger_records.append({
                     "name": p.name,
                     "nic_hash": h,
                     "nic_masked": m,
+                    "dob": p_dob,
                 })
 
         # 6. Hard Rule 2: Same train duplicate ticket check
