@@ -1691,6 +1691,8 @@ body::after {
 .cx-panel.is-open{opacity:1;pointer-events:auto;transform:translateY(0) scale(1)}
 .cx-panel.is-minimized{height:auto}
 .cx-panel.is-minimized .cx-body{display:none}
+/* Copilot is scoped to the Bookings & Revenue section only — hidden elsewhere */
+.cx-scope-hidden.cx-panel,.cx-scope-hidden.cx-launcher{display:none !important}
 
 /* ── Header ── */
 .cx-head{
@@ -2081,6 +2083,208 @@ body::after {
   .ah-line, .ah-kicker, .ah-sub, .ah-ctas, .ah-stats { animation: none !important; opacity: 1; transform: none; }
 }
 [data-theme="light"] #admin-hero { border-color: rgba(37, 99, 235, 0.35); box-shadow: 0 24px 60px -30px rgba(15, 23, 42, 0.55); }
+
+/* =========================================================
+   BOOKINGS & REVENUE — Redesign (bk-* design system)
+   ========================================================= */
+.bk-page-header{
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding:16px 20px;margin-bottom:14px;
+  background:linear-gradient(135deg,rgba(23,37,66,0.85) 0%,rgba(13,20,40,0.92) 100%);
+  border:1px solid rgba(59,130,246,0.22);border-radius:14px;
+  box-shadow:0 10px 34px rgba(2,6,17,0.45);
+}
+.bk-header-left{display:flex;align-items:center;gap:14px;min-width:0}
+.bk-header-icon{
+  width:48px;height:48px;border-radius:13px;flex-shrink:0;display:grid;place-items:center;font-size:24px;
+  background:linear-gradient(135deg,#1D4ED8,#2563EB);
+  border:1px solid rgba(147,197,253,0.45);
+  box-shadow:0 6px 18px rgba(37,99,235,0.4),inset 0 1px 0 rgba(255,255,255,0.15);
+}
+.bk-header-title{font-size:19px;font-weight:800;color:var(--ink-bright);letter-spacing:-0.2px;line-height:1.2}
+.bk-header-sub{font-size:12px;color:var(--muted-hi);margin-top:3px}
+.bk-date-pill{
+  display:flex;align-items:center;gap:9px;flex-shrink:0;
+  padding:9px 16px;border-radius:11px;
+  background:rgba(10,15,30,0.65);border:1px solid rgba(59,130,246,0.22);
+}
+.bk-date-pill-ico{font-size:16px}
+.bk-date-text{font-size:12px;font-weight:700;color:var(--ink-bright);line-height:1.35;white-space:nowrap}
+.bk-date-time{font-size:11px;color:var(--muted-hi);font-family:'Share Tech Mono',monospace}
+
+.bk-kpi-row{
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:16px;
+}
+@media (max-width:1000px){.bk-kpi-row{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:560px){.bk-kpi-row{grid-template-columns:1fr}}
+.bk-kpi-card{
+  display:flex;align-items:center;gap:14px;
+  padding:16px 18px;border-radius:14px;
+  background:linear-gradient(135deg,var(--bk-accent,rgba(37,99,235,0.16)) 0%,rgba(10,14,26,0.92) 65%);
+  border:1px solid var(--bk-border,rgba(59,130,246,0.28));
+  box-shadow:0 8px 26px rgba(2,6,17,0.4);
+  transition:transform .18s ease,box-shadow .18s ease;
+}
+.bk-kpi-card:hover{transform:translateY(-2px);box-shadow:0 14px 34px rgba(2,6,17,0.55)}
+.bk-kpi-ico{
+  width:46px;height:46px;border-radius:12px;flex-shrink:0;display:grid;place-items:center;font-size:21px;
+  background:var(--bk-ico-bg,rgba(37,99,235,0.15));
+  border:1px solid var(--bk-ico-border,rgba(59,130,246,0.35));
+}
+.bk-kpi-num{font-size:28px;font-weight:800;color:var(--bk-value,#93C5FD);font-family:'Share Tech Mono',monospace;line-height:1}
+.bk-kpi-label{font-size:12px;color:var(--muted-hi);font-weight:600;margin-top:4px}
+.bk-kpi-dot{width:8px;height:8px;border-radius:50%;margin-left:auto;flex-shrink:0;background:var(--bk-dot,transparent);box-shadow:0 0 8px var(--bk-dot,transparent)}
+.bk-kpi-total{--bk-value:#93C5FD;--bk-accent:rgba(37,99,235,0.18);--bk-border:rgba(59,130,246,0.30);--bk-ico-bg:rgba(37,99,235,0.16);--bk-ico-border:rgba(59,130,246,0.4)}
+.bk-kpi-pending{--bk-value:#FBBF24;--bk-accent:rgba(245,158,11,0.14);--bk-border:rgba(245,158,11,0.32);--bk-ico-bg:rgba(245,158,11,0.13);--bk-ico-border:rgba(245,158,11,0.38);--bk-dot:#FBBF24}
+.bk-kpi-approved{--bk-value:#34D399;--bk-accent:rgba(16,185,129,0.13);--bk-border:rgba(16,185,129,0.30);--bk-ico-bg:rgba(16,185,129,0.12);--bk-ico-border:rgba(16,185,129,0.36);--bk-dot:#34D399}
+.bk-kpi-rejected{--bk-value:#F87171;--bk-accent:rgba(239,68,68,0.13);--bk-border:rgba(239,68,68,0.30);--bk-ico-bg:rgba(239,68,68,0.12);--bk-ico-border:rgba(239,68,68,0.36);--bk-dot:#EF4444}
+
+.bk-tab-row{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:18px}
+.bk-tab{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:9px 16px;border-radius:10px;cursor:pointer;
+  background:rgba(13,19,36,0.9);border:1px solid rgba(59,130,246,0.18);
+  color:var(--muted-hi);font-size:12.5px;font-weight:600;font-family:inherit;
+  transition:all .15s ease;
+}
+.bk-tab:hover{color:var(--ink-bright);border-color:rgba(96,165,250,0.45);background:rgba(37,99,235,0.1)}
+.bk-tab.active{
+  background:linear-gradient(135deg,#1D4ED8,#2563EB);border-color:#60A5FA;color:#fff;
+  box-shadow:0 5px 16px rgba(37,99,235,0.4);
+}
+.bk-tab-ico{font-size:14px;line-height:1}
+
+.bk-panel{
+  background:linear-gradient(135deg,rgba(14,20,38,0.94) 0%,rgba(18,26,48,0.92) 100%);
+  border:1px solid rgba(59,130,246,0.18);border-radius:14px;
+  box-shadow:0 12px 40px rgba(2,6,17,0.45);overflow:hidden;
+}
+.bk-panel-head{
+  display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;
+  padding:15px 20px;border-bottom:1px solid rgba(59,130,246,0.14);
+  background:rgba(10,15,30,0.45);
+}
+.bk-panel-head-left{display:flex;align-items:center;gap:11px;min-width:0}
+.bk-panel-ico{
+  width:34px;height:34px;border-radius:9px;flex-shrink:0;display:grid;place-items:center;font-size:16px;
+  background:rgba(37,99,235,0.14);border:1px solid rgba(59,130,246,0.3);
+}
+.bk-panel-title{font-size:14.5px;font-weight:700;color:var(--ink-bright)}
+.bk-panel-sub{font-size:11.5px;color:var(--muted);margin-top:2px}
+.bk-panel-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.bk-seg{display:flex;gap:2px;padding:3px;border-radius:9px;background:rgba(8,12,24,0.8);border:1px solid rgba(59,130,246,0.15)}
+.bk-seg-btn{
+  padding:5px 12px;border-radius:7px;border:none;background:transparent;cursor:pointer;
+  color:var(--muted-hi);font-size:11.5px;font-weight:600;font-family:inherit;transition:all .13s ease;
+}
+.bk-seg-btn:hover{color:var(--ink-bright)}
+.bk-seg-btn.active{background:linear-gradient(135deg,#1D4ED8,#2563EB);color:#fff;box-shadow:0 2px 8px rgba(37,99,235,0.35)}
+.bk-body{padding:18px 20px}
+
+.bk-case-card{
+  position:relative;display:flex;flex-direction:column;gap:11px;
+  background:rgba(12,18,34,0.85);border:1px solid rgba(59,130,246,0.16);
+  border-left:3px solid var(--bk-left,rgba(59,130,246,0.55));
+  border-radius:12px;padding:15px 18px;
+  transition:border-color .18s ease,box-shadow .18s ease,transform .18s ease;
+}
+.bk-case-card:hover{border-color:rgba(96,165,250,0.38);border-left-color:var(--bk-left,#3B82F6);box-shadow:0 8px 26px rgba(2,6,17,0.5);transform:translateY(-1px)}
+.bk-case-card.bk-left-pending{--bk-left:#F59E0B}
+.bk-case-card.bk-left-approved{--bk-left:#10B981}
+.bk-case-card.bk-left-rejected{--bk-left:#EF4444}
+.bk-case-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.bk-case-id-row{display:flex;align-items:center;gap:11px;min-width:0}
+.bk-case-ico{
+  width:36px;height:36px;border-radius:10px;flex-shrink:0;display:grid;place-items:center;font-size:16px;
+  background:rgba(37,99,235,0.14);border:1px solid rgba(59,130,246,0.3);
+}
+.bk-case-card.bk-left-pending .bk-case-ico{background:rgba(245,158,11,0.13);border-color:rgba(245,158,11,0.35)}
+.bk-case-card.bk-left-approved .bk-case-ico{background:rgba(16,185,129,0.12);border-color:rgba(16,185,129,0.32)}
+.bk-case-card.bk-left-rejected .bk-case-ico{background:rgba(239,68,68,0.12);border-color:rgba(239,68,68,0.32)}
+.bk-case-ref{font-family:'Share Tech Mono',monospace;font-size:14.5px;font-weight:700;color:#93C5FD;letter-spacing:0.4px}
+.bk-case-nic{font-size:11.5px;color:var(--muted);margin-top:2px}
+.bk-case-nic strong{color:#FDE68A}
+.bk-case-badges{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.bk-risk{
+  padding:4px 11px;border-radius:8px;font-size:11px;font-weight:800;letter-spacing:0.3px;
+  font-family:'Share Tech Mono',monospace;white-space:nowrap;
+}
+.bk-risk-HIGH{background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.45);color:#FCA5A5}
+.bk-risk-MEDIUM{background:rgba(245,158,11,0.13);border:1px solid rgba(245,158,11,0.45);color:#FDE68A}
+.bk-risk-LOW{background:rgba(16,185,129,0.13);border:1px solid rgba(16,185,129,0.4);color:#6EE7B7}
+.bk-status{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:4px 11px;border-radius:8px;font-size:11px;font-weight:700;letter-spacing:0.4px;white-space:nowrap;
+}
+.bk-status::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor}
+.bk-status-PENDING_REVIEW,.bk-status-PENDING_ADMIN_REVIEW{background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.4);color:#FBBF24}
+.bk-status-APPROVED{background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.38);color:#34D399}
+.bk-status-REJECTED{background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.38);color:#F87171}
+.bk-case-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px 16px;
+  padding:11px 14px;border-radius:9px;
+  background:rgba(8,12,24,0.7);border:1px solid rgba(59,130,246,0.09);
+}
+.bk-cell{min-width:0}
+.bk-cell-label{display:flex;align-items:center;gap:6px;font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;font-weight:600;margin-bottom:3px;white-space:nowrap}
+.bk-cell-label .bk-cell-ico{font-size:12px}
+.bk-cell-val{font-size:12.5px;font-weight:700;color:var(--ink-bright);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bk-cell-val.bk-muted-val{color:var(--muted-hi);font-weight:600}
+.bk-flag{
+  display:flex;align-items:flex-start;gap:8px;
+  font-size:12px;padding:9px 12px;border-radius:8px;
+  background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.18);
+}
+.bk-flag-label{color:#FCA5A5;font-weight:700;font-size:11px;white-space:nowrap;padding-top:1px}
+.bk-flag-text{color:var(--muted-hi);font-style:italic;word-break:break-word}
+.bk-note{
+  display:flex;align-items:flex-start;gap:8px;
+  font-size:12px;padding:9px 12px;border-radius:8px;
+  background:rgba(8,12,24,0.6);border:1px solid rgba(59,130,246,0.12);
+}
+.bk-note-label{color:var(--muted-hi);font-weight:700;font-size:11px;white-space:nowrap;padding-top:1px}
+.bk-note-text{color:var(--muted-hi);font-style:italic;word-break:break-word}
+.bk-ai{
+  font-size:12px;padding:10px 12px;border-radius:8px;line-height:1.55;
+  background:rgba(37,99,235,0.07);border:1px solid rgba(59,130,246,0.22);
+}
+.bk-ai-label{display:block;color:#60A5FA;font-weight:700;font-size:10.5px;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:4px}
+.bk-ai-text{color:var(--ink)}
+.bk-decision{
+  display:flex;justify-content:flex-end;gap:6px;align-items:baseline;flex-wrap:wrap;
+  padding-top:10px;border-top:1px solid rgba(59,130,246,0.1);
+  font-size:12px;color:var(--muted-hi);
+}
+.bk-decision strong{color:var(--ink-bright)}
+.bk-decision em{color:var(--muted-hi)}
+.bk-decision .bk-ticket-ref{color:#60A5FA;font-weight:700}
+.bk-case-actions{display:flex;justify-content:flex-end;gap:10px;padding-top:10px;border-top:1px solid rgba(59,130,246,0.12)}
+
+.bk-empty{
+  text-align:center;padding:46px 20px;color:var(--muted);
+}
+.bk-empty-ico{font-size:36px;margin-bottom:10px}
+.bk-empty-title{font-size:15px;font-weight:700;color:var(--ink);margin-bottom:5px}
+.bk-empty-sub{font-size:12.5px}
+
+[data-theme="light"] .bk-page-header{background:linear-gradient(135deg,#eff6ff,#e0ecff);border-color:rgba(37,99,235,0.25)}
+[data-theme="light"] .bk-header-title{color:#0F172A}
+[data-theme="light"] .bk-date-pill{background:#fff;border-color:rgba(37,99,235,0.25)}
+[data-theme="light"] .bk-date-text{color:#0F172A}
+[data-theme="light"] .bk-tab{background:#fff;border-color:rgba(37,99,235,0.2);color:#334155}
+[data-theme="light"] .bk-tab.active{background:linear-gradient(135deg,#1D4ED8,#2563EB);color:#fff}
+[data-theme="light"] .bk-panel{background:#fff;border-color:rgba(37,99,235,0.18)}
+[data-theme="light"] .bk-panel-head{background:rgba(239,246,255,0.7);border-bottom-color:rgba(37,99,235,0.12)}
+[data-theme="light"] .bk-panel-title{color:#0F172A}
+[data-theme="light"] .bk-seg{background:#eef4fd;border-color:rgba(37,99,235,0.15)}
+[data-theme="light"] .bk-case-card{background:#f8fafc;border-color:rgba(37,99,235,0.14)}
+[data-theme="light"] .bk-case-ref{color:#1D4ED8}
+[data-theme="light"] .bk-case-grid{background:#eef4fd;border-color:rgba(37,99,235,0.1)}
+[data-theme="light"] .bk-cell-val{color:#0F172A}
+[data-theme="light"] .bk-cell-label{color:#64748B}
+[data-theme="light"] .bk-kpi-card{box-shadow:0 6px 20px rgba(15,23,42,0.08)}
+[data-theme="light"] .bk-empty{color:#64748B}
+[data-theme="light"] .bk-empty-title{color:#0F172A}
 </style>
 </head>
 <body>
@@ -2375,93 +2579,161 @@ body::after {
 
   <!-- ==================== SECTION 3: BOOKINGS ==================== -->
   <main id="view-bookings" class="view-panel">
-    <div class="sub-nav">
-      <button class="sub-chip active" id="chip-book-fraud" onclick="switchSubSection('bookings', 'fraud')">🛡️ Fraud Review Queue (ML Flagged)</button>
-      <button class="sub-chip" id="chip-book-canc" onclick="switchSubSection('bookings', 'canc')">🔄 Cancellation Queue (Human-in-the-Loop)</button>
-      <button class="sub-chip" id="chip-book-schedules" onclick="switchSubSection('bookings', 'schedules')">📋 Schedules &amp; Seat Inventory</button>
-      <button class="sub-chip" id="chip-book-tickets" onclick="switchSubSection('bookings', 'tickets'); loadTicketManifestTrains();">🎫 Booked Tickets (Manifest)</button>
+    <!-- Redesigned page header with live date/time -->
+    <div class="bk-page-header">
+      <div class="bk-header-left">
+        <div class="bk-header-icon">🛡️</div>
+        <div>
+          <div class="bk-header-title" id="bk-page-title">Security &amp; Fraud Review Queue</div>
+          <div class="bk-header-sub" id="bk-page-sub">IsolationForest anomaly-detected booking cases awaiting human administrator adjudication</div>
+        </div>
+      </div>
+      <div class="bk-date-pill">
+        <span class="bk-date-pill-ico">📅</span>
+        <div>
+          <div class="bk-date-text" id="bk-date-line">—</div>
+          <div class="bk-date-time" id="bk-time-line">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- KPI stat cards -->
+    <div class="bk-kpi-row">
+      <div class="bk-kpi-card bk-kpi-total">
+        <div class="bk-kpi-ico">🗂</div>
+        <div><div class="bk-kpi-num" id="bk-kpi-total">0</div><div class="bk-kpi-label">Total Cases</div></div>
+        <span class="bk-kpi-dot"></span>
+      </div>
+      <div class="bk-kpi-card bk-kpi-pending">
+        <div class="bk-kpi-ico">🕐</div>
+        <div><div class="bk-kpi-num" id="bk-kpi-pending">0</div><div class="bk-kpi-label">Pending Review</div></div>
+        <span class="bk-kpi-dot"></span>
+      </div>
+      <div class="bk-kpi-card bk-kpi-approved">
+        <div class="bk-kpi-ico">✅</div>
+        <div><div class="bk-kpi-num" id="bk-kpi-approved">0</div><div class="bk-kpi-label">Approved</div></div>
+        <span class="bk-kpi-dot"></span>
+      </div>
+      <div class="bk-kpi-card bk-kpi-rejected">
+        <div class="bk-kpi-ico">✖</div>
+        <div><div class="bk-kpi-num" id="bk-kpi-rejected">0</div><div class="bk-kpi-label">Rejected</div></div>
+        <span class="bk-kpi-dot"></span>
+      </div>
+    </div>
+
+    <!-- Pill tab navigation -->
+    <div class="bk-tab-row">
+      <button class="bk-tab active" id="chip-book-fraud" onclick="switchSubSection('bookings', 'fraud')"><span class="bk-tab-ico">🛡️</span> Fraud Review Queue (ML Flagged)</button>
+      <button class="bk-tab" id="chip-book-canc" onclick="switchSubSection('bookings', 'canc')"><span class="bk-tab-ico">🔄</span> Cancellation Queue (Human-in-the-Loop)</button>
+      <button class="bk-tab" id="chip-book-schedules" onclick="switchSubSection('bookings', 'schedules')"><span class="bk-tab-ico">📋</span> Schedules &amp; Seat Inventory</button>
+      <button class="bk-tab" id="chip-book-tickets" onclick="switchSubSection('bookings', 'tickets'); loadTicketManifestTrains();"><span class="bk-tab-ico">🎫</span> Booked Tickets (Manifest)</button>
     </div>
 
     <!-- View A: Fraud Review Queue -->
     <div id="subview-book-fraud">
-      <div class="card-section">
-        <div class="card-header">
-          <div>
-            <div class="card-title">Security &amp; Fraud Review Queue</div>
-            <div style="font-size:12px;color:var(--muted);margin-top:2px;">IsolationForest anomaly-detected booking cases awaiting human administrator adjudication</div>
+      <div class="bk-panel">
+        <div class="bk-panel-head">
+          <div class="bk-panel-head-left">
+            <div class="bk-panel-ico">🗂</div>
+            <div>
+              <div class="bk-panel-title">Flagged Booking Cases</div>
+              <div class="bk-panel-sub">Review ML-flagged bookings and make a decision</div>
+            </div>
           </div>
-          <div style="display:flex;gap:6px;">
-            <button class="chip-btn" id="filter-fraud-all" onclick="filterFraudCases('ALL')">All</button>
-            <button class="chip-btn" id="filter-fraud-pending" onclick="filterFraudCases('PENDING_REVIEW')">Pending Review</button>
-            <button class="chip-btn" id="filter-fraud-approved" onclick="filterFraudCases('APPROVED')">Approved</button>
-            <button class="chip-btn" id="filter-fraud-rejected" onclick="filterFraudCases('REJECTED')">Rejected</button>
+          <div class="bk-panel-tools">
+            <div class="bk-seg">
+              <button class="bk-seg-btn active" id="filter-fraud-all" onclick="filterFraudCases('ALL')">All</button>
+              <button class="bk-seg-btn" id="filter-fraud-pending" onclick="filterFraudCases('PENDING_REVIEW')">Pending Review</button>
+              <button class="bk-seg-btn" id="filter-fraud-approved" onclick="filterFraudCases('APPROVED')">Approved</button>
+              <button class="bk-seg-btn" id="filter-fraud-rejected" onclick="filterFraudCases('REJECTED')">Rejected</button>
+            </div>
             <button class="btn-refresh" onclick="loadAdminFraudReviews()">⟳ Refresh</button>
           </div>
         </div>
-
-        <div id="admin-fraud-cases-container" class="admin-cases-grid">
-          <div style="padding:20px;text-align:center;color:var(--muted)">Loading fraud review cases...</div>
+        <div class="bk-body">
+          <div id="admin-fraud-cases-container" class="admin-cases-grid">
+            <div style="padding:20px;text-align:center;color:var(--muted)">Loading fraud review cases...</div>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- View B: Cancellation Review Queue -->
     <div id="subview-book-canc" style="display:none;">
-      <div class="card-section">
-        <div class="card-header">
-          <div>
-            <div class="card-title">Passenger Cancellation Adjudication Queue</div>
-            <div style="font-size:12px;color:var(--muted);margin-top:2px;">Human-in-the-Loop review for ticket refund and cancellation requests</div>
+      <div class="bk-panel">
+        <div class="bk-panel-head">
+          <div class="bk-panel-head-left">
+            <div class="bk-panel-ico">🔄</div>
+            <div>
+              <div class="bk-panel-title">Cancellation Requests</div>
+              <div class="bk-panel-sub">Human-in-the-Loop review for ticket refund and cancellation requests</div>
+            </div>
           </div>
-          <div style="display:flex;gap:6px;">
-            <button class="chip-btn" id="filter-canc-all" onclick="filterAdminCases('all')">All</button>
-            <button class="chip-btn" id="filter-canc-pending" onclick="filterAdminCases('PENDING_ADMIN_REVIEW')">Pending Review</button>
-            <button class="chip-btn" id="filter-canc-approved" onclick="filterAdminCases('APPROVED')">Approved</button>
-            <button class="chip-btn" id="filter-canc-rejected" onclick="filterAdminCases('REJECTED')">Rejected</button>
+          <div class="bk-panel-tools">
+            <div class="bk-seg">
+              <button class="bk-seg-btn active" id="filter-canc-all" onclick="filterAdminCases('all')">All</button>
+              <button class="bk-seg-btn" id="filter-canc-pending" onclick="filterAdminCases('PENDING_ADMIN_REVIEW')">Pending Review</button>
+              <button class="bk-seg-btn" id="filter-canc-approved" onclick="filterAdminCases('APPROVED')">Approved</button>
+              <button class="bk-seg-btn" id="filter-canc-rejected" onclick="filterAdminCases('REJECTED')">Rejected</button>
+            </div>
             <button class="btn-refresh" onclick="loadAdminCancellations()">⟳ Refresh</button>
           </div>
         </div>
-
-        <div id="admin-cases-container" class="admin-cases-grid">
-          <div style="padding:20px;text-align:center;color:var(--muted)">Loading cancellation cases...</div>
+        <div class="bk-body">
+          <div id="admin-cases-container" class="admin-cases-grid">
+            <div style="padding:20px;text-align:center;color:var(--muted)">Loading cancellation cases...</div>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- View C: Schedules & Seats Inspector -->
     <div id="subview-book-schedules" style="display:none;">
-      <div class="card-section">
-        <div class="card-title">Live Schedule &amp; Dynamic Seat Inventory</div>
-        <div style="font-size:12px;color:var(--muted);margin-bottom:14px;">Direct query through M3 Booking Agent (Port 8003)</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:flex-end;">
-          <div>
-            <label style="font-size:11.5px;color:var(--muted-hi);display:block;margin-bottom:4px;">From</label>
-            <input type="text" id="insp-from" value="Colombo" style="width:100%;padding:8px 12px;background:rgba(10,15,26,0.8);border:1px solid var(--border);border-radius:6px;color:#fff;outline:none;" />
+      <div class="bk-panel">
+        <div class="bk-panel-head">
+          <div class="bk-panel-head-left">
+            <div class="bk-panel-ico">📋</div>
+            <div>
+              <div class="bk-panel-title">Live Schedule &amp; Dynamic Seat Inventory</div>
+              <div class="bk-panel-sub">Direct query through M3 Booking Agent (Port 8003)</div>
+            </div>
           </div>
-          <div>
-            <label style="font-size:11.5px;color:var(--muted-hi);display:block;margin-bottom:4px;">To</label>
-            <input type="text" id="insp-to" value="Kandy" style="width:100%;padding:8px 12px;background:rgba(10,15,26,0.8);border:1px solid var(--border);border-radius:6px;color:#fff;outline:none;" />
-          </div>
-          <div>
-            <label style="font-size:11.5px;color:var(--muted-hi);display:block;margin-bottom:4px;">Date</label>
-            <input type="date" id="insp-date" style="width:100%;padding:8px 12px;background:rgba(10,15,26,0.8);border:1px solid var(--border);border-radius:6px;color:#fff;outline:none;" />
-          </div>
-          <button class="btn-approve" onclick="inspectSchedules()">Query Trains</button>
         </div>
-        <div id="insp-results" style="margin-top:14px;"></div>
+        <div class="bk-body">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:flex-end;">
+            <div>
+              <label style="font-size:11.5px;color:var(--muted-hi);display:block;margin-bottom:4px;">From</label>
+              <input type="text" id="insp-from" value="Colombo" style="width:100%;padding:8px 12px;background:rgba(10,15,26,0.8);border:1px solid var(--border);border-radius:6px;color:#fff;outline:none;" />
+            </div>
+            <div>
+              <label style="font-size:11.5px;color:var(--muted-hi);display:block;margin-bottom:4px;">To</label>
+              <input type="text" id="insp-to" value="Kandy" style="width:100%;padding:8px 12px;background:rgba(10,15,26,0.8);border:1px solid var(--border);border-radius:6px;color:#fff;outline:none;" />
+            </div>
+            <div>
+              <label style="font-size:11.5px;color:var(--muted-hi);display:block;margin-bottom:4px;">Date</label>
+              <input type="date" id="insp-date" style="width:100%;padding:8px 12px;background:rgba(10,15,26,0.8);border:1px solid var(--border);border-radius:6px;color:#fff;outline:none;" />
+            </div>
+            <button class="btn-approve" onclick="inspectSchedules()">Query Trains</button>
+          </div>
+          <div id="insp-results" style="margin-top:14px;"></div>
+        </div>
       </div>
     </div>
 
     <!-- View D: Ticket Manifest -->
     <div id="subview-book-tickets" style="display:none;">
-      <div class="card-section">
-        <div class="card-header">
-          <div>
-            <div class="card-title">🎫 Booked Ticket Manifest</div>
-            <div style="font-size:12px;color:var(--muted);margin-top:2px;">Filter bookings by train and travel date — queries Booking.travel_date (journey date, not booking date)</div>
+      <div class="bk-panel">
+        <div class="bk-panel-head">
+          <div class="bk-panel-head-left">
+            <div class="bk-panel-ico">🎫</div>
+            <div>
+              <div class="bk-panel-title">Booked Ticket Manifest</div>
+              <div class="bk-panel-sub">Filter bookings by train and travel date — queries Booking.travel_date (journey date, not booking date)</div>
+            </div>
           </div>
           <button class="btn-refresh" onclick="searchTicketManifest()">🔍 Refresh</button>
         </div>
+        <div class="bk-body">
 
         <!-- Filter toolbar -->
         <div style="display:grid;grid-template-columns:2fr 1fr 1fr auto auto;gap:10px;align-items:flex-end;margin:16px 0 18px;">
@@ -2556,8 +2828,9 @@ body::after {
               </tbody>
             </table>
           </div>
-        </div>
-      </div>
+        </div><!-- /ticket-manifest-container -->
+        </div><!-- /bk-body -->
+      </div><!-- /bk-panel -->
     </div>
   </main>
 
@@ -3152,6 +3425,19 @@ function handleUrlRouting() {
 
 let adminHubInterval = null;
 
+/* The RailSense Copilot (admin booking chat) is only available inside the
+   Bookings & Revenue section. Hide panel + launcher on every other section. */
+const ADMIN_CHAT_SECTIONS = ['bookings'];
+
+function updateAdminChatVisibility(secName) {
+  const allowed = ADMIN_CHAT_SECTIONS.includes(secName);
+  const panel = $('admin-booking-chat-panel');
+  const launcher = $('admin-chat-launcher');
+  if (panel) panel.classList.toggle('cx-scope-hidden', !allowed);
+  if (launcher) launcher.classList.toggle('cx-scope-hidden', !allowed);
+  if (!allowed) closeAdminChat();
+}
+
 function switchSection(secName) {
   document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.admin-nav-tab').forEach(t => t.classList.remove('active'));
@@ -3160,6 +3446,8 @@ function switchSection(secName) {
   const navEl = $(`nav-${secName}`);
   if (viewEl) viewEl.classList.add('active');
   if (navEl) navEl.classList.add('active');
+
+  updateAdminChatVisibility(secName);
 
   const token = getOfficerToken();
   const opsParams = new URLSearchParams();
@@ -3186,6 +3474,16 @@ function switchSection(secName) {
     }
   }
 }
+
+/* Apply initial Copilot visibility based on the URL the officer landed on,
+   before the first switchSection runs. */
+updateAdminChatVisibility((() => {
+  const path = window.location.pathname;
+  const hash = window.location.hash;
+  const search = window.location.search;
+  if (path.includes('/bookings') || hash === '#bookings' || search.includes('tab=bookings')) return 'bookings';
+  return 'dashboard';
+})());
 
 function switchSubSection(parent, sub) {
   const token = getOfficerToken();
@@ -3230,8 +3528,11 @@ function switchSubSection(parent, sub) {
     $('chip-book-schedules').classList.toggle('active', sub === 'schedules');
     $('chip-book-tickets').classList.toggle('active', sub === 'tickets');
 
+    updateBkPageHeader(sub);
+
     if (sub === 'fraud') loadAdminFraudReviews();
     if (sub === 'canc') loadAdminCancellations();
+    if (sub === 'tickets') loadTicketManifestTrains();
   } else if (parent === 'maintenance') {
     // Maintenance now opens full page — nothing to switch inside admin
   }
@@ -3325,6 +3626,73 @@ let allFraudCases = [];
 let currentFraudFilter = 'ALL';
 let currentFraudRejectionCase = null;
 
+/* Shared helpers for the redesigned Bookings & Revenue page */
+const BK_PAGE_META = {
+  fraud:     { icon: '🛡️', title: 'Security & Fraud Review Queue', sub: 'IsolationForest anomaly-detected booking cases awaiting human administrator adjudication' },
+  canc:      { icon: '🔄', title: 'Passenger Cancellation Adjudication Queue', sub: 'Human-in-the-Loop review for ticket refund and cancellation requests' },
+  schedules: { icon: '📋', title: 'Live Schedule & Dynamic Seat Inventory', sub: 'Direct query through M3 Booking Agent (Port 8003)' },
+  tickets:   { icon: '🎫', title: 'Booked Ticket Manifest', sub: 'Filter bookings by train and travel date — queries Booking.travel_date (journey date, not booking date)' }
+};
+
+function updateBkClock() {
+  const d = new Date();
+  const dateLine = $('bk-date-line');
+  const timeLine = $('bk-time-line');
+  if (dateLine) dateLine.textContent = d.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' });
+  if (timeLine) timeLine.textContent = d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+setInterval(updateBkClock, 1000);
+updateBkClock();
+
+function updateBkKpis(cases, pendingStatus) {
+  // Only refresh the KPI row if the owning subview is the one on screen,
+  // since both queues load when the section opens.
+  const owningView = pendingStatus === 'PENDING_REVIEW' ? 'subview-book-fraud' : 'subview-book-canc';
+  const view = $(owningView);
+  if (view && view.style.display === 'none') return;
+  const total = $('bk-kpi-total');
+  const pending = $('bk-kpi-pending');
+  const approved = $('bk-kpi-approved');
+  const rejected = $('bk-kpi-rejected');
+  if (!total || !pending || !approved || !rejected) return;
+  total.textContent = cases.length;
+  pending.textContent = cases.filter(c => c.status === pendingStatus).length;
+  approved.textContent = cases.filter(c => c.status === 'APPROVED').length;
+  rejected.textContent = cases.filter(c => c.status === 'REJECTED').length;
+}
+
+function updateBkPageHeader(sub) {
+  const meta = BK_PAGE_META[sub];
+  if (!meta) return;
+  const icon = document.querySelector('#view-bookings .bk-header-icon');
+  const title = $('bk-page-title');
+  const subtitle = $('bk-page-sub');
+  if (icon) icon.textContent = meta.icon;
+  if (title) title.innerHTML = meta.title;
+  if (subtitle) subtitle.textContent = meta.sub;
+}
+
+function bkStatusClass(status) {
+  if (status === 'PENDING_REVIEW' || status === 'PENDING_ADMIN_REVIEW') return 'bk-left-pending';
+  if (status === 'APPROVED') return 'bk-left-approved';
+  if (status === 'REJECTED') return 'bk-left-rejected';
+  return '';
+}
+
+function bkStatusBadge(status) {
+  return `<span class="bk-status bk-status-${escapeHtml(String(status || '').replace(/\s+/g, '_'))}">${escapeHtml(String(status || '').replace(/_/g, ' '))}</span>`;
+}
+
+function bkDecisionBlock(c) {
+  return `
+    <div class="bk-decision">
+      <span>Decision: <strong>${escapeHtml(c.admin_decision || c.status)}</strong> | Reviewed: ${c.reviewed_at ? new Date(c.reviewed_at).toLocaleString() : 'N/A'}</span>
+      <span><em>Reason: "${escapeHtml(c.admin_reason || 'None specified')}"</em></span>
+      ${c.booking_reference ? `<span class="bk-ticket-ref">Issued Ticket: ${escapeHtml(c.booking_reference)}</span>` : ''}
+    </div>
+  `;
+}
+
 async function loadAdminFraudReviews() {
   const container = $('admin-fraud-cases-container');
   if (!container) return;
@@ -3336,6 +3704,7 @@ async function loadAdminFraudReviews() {
       allFraudCases = cases;
       const pendingCount = cases.filter(c => c.status === 'PENDING_REVIEW').length;
       $('kpi-fraud-pending').textContent = pendingCount;
+      updateBkKpis(cases, 'PENDING_REVIEW');
       renderFraudCases();
     }
   } catch (err) {
@@ -3345,6 +3714,8 @@ async function loadAdminFraudReviews() {
 
 function filterFraudCases(filter) {
   currentFraudFilter = filter;
+  const idMap = { ALL: 'filter-fraud-all', PENDING_REVIEW: 'filter-fraud-pending', APPROVED: 'filter-fraud-approved', REJECTED: 'filter-fraud-rejected' };
+  Object.entries(idMap).forEach(([val, id]) => { const el = $(id); if (el) el.classList.toggle('active', val === filter); });
   renderFraudCases();
 }
 
@@ -3358,59 +3729,62 @@ function renderFraudCases() {
   }
 
   if (filtered.length === 0) {
-    container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted)">No fraud review cases found matching filter.</div>';
+    container.innerHTML = `
+      <div class="bk-empty">
+        <div class="bk-empty-ico">🛡️</div>
+        <div class="bk-empty-title">No Fraud Cases Found</div>
+        <div class="bk-empty-sub">No fraud review cases match the current filter — the network looks clean.</div>
+      </div>
+    `;
     return;
   }
 
   container.innerHTML = '';
   filtered.forEach(c => {
     const card = document.createElement('div');
-    card.className = 'admin-case-card';
+    card.className = 'bk-case-card ' + bkStatusClass(c.status);
 
     const isPending = c.status === 'PENDING_REVIEW';
-    const riskBadge = c.risk_level === 'HIGH' ? 'badge-red' : (c.risk_level === 'MEDIUM' ? 'badge-yellow' : 'badge-green');
 
     let actionsHtml = '';
     if (isPending) {
       actionsHtml = `
-        <div class="case-actions-row">
+        <div class="bk-case-actions">
           <button class="btn-reject" onclick="openFraudRejectionModal('${c.case_reference}')">Reject (Block)</button>
           <button class="btn-approve" onclick="reviewFraudCase('${c.case_reference}', 'APPROVE')">Approve &amp; Issue Ticket</button>
         </div>
       `;
     } else {
-      actionsHtml = `
-        <div style="font-size:12px;color:var(--muted-hi);text-align:right;padding-top:6px;border-top:1px solid rgba(59,130,246,0.1)">
-          Decision: <strong>${c.admin_decision || c.status}</strong> | Reviewed: ${c.reviewed_at ? new Date(c.reviewed_at).toLocaleString() : 'N/A'}<br>
-          <em>Reason: "${escapeHtml(c.admin_reason || 'None specified')}"</em>
-          ${c.booking_reference ? `<br><strong style="color:#60A5FA">Issued Ticket: ${c.booking_reference}</strong>` : ''}
-        </div>
-      `;
+      actionsHtml = bkDecisionBlock(c);
     }
 
     const reasonsList = Array.isArray(c.reasons) ? c.reasons.join(', ') : (c.reasons || 'Behavioral risk threshold triggered');
 
     card.innerHTML = `
-      <div class="case-top-row">
-        <div>
-          <span class="case-ref">${escapeHtml(c.case_reference)}</span>
-          <span style="font-size:12px;color:var(--muted);margin-left:8px;">NIC: <strong style="color:#FDE68A">${escapeHtml(c.primary_nic_masked || 'N/A')}</strong></span>
+      <div class="bk-case-top">
+        <div class="bk-case-id-row">
+          <div class="bk-case-ico">⚠</div>
+          <div>
+            <div class="bk-case-ref">${escapeHtml(c.case_reference)}</div>
+            <div class="bk-case-nic">NIC: <strong>${escapeHtml(c.primary_nic_masked || 'N/A')}</strong></div>
+          </div>
         </div>
-        <div style="display:flex;gap:6px;align-items:center;">
-          <span class="badge-tag ${riskBadge}">${escapeHtml(c.risk_level)} (${(Number(c.risk_score || 0) * 100).toFixed(0)}%)</span>
-          <span class="badge-tag" style="background:rgba(255,255,255,0.06);">● ${escapeHtml(c.status)}</span>
+        <div class="bk-case-badges">
+          <span class="bk-risk bk-risk-${escapeHtml(c.risk_level)}">${escapeHtml(c.risk_level)} (${(Number(c.risk_score || 0) * 100).toFixed(0)}%)</span>
+          ${bkStatusBadge(c.status)}
         </div>
       </div>
 
-      <div class="case-grid-details">
-        <div><span style="color:var(--muted)">Route:</span> <strong>${escapeHtml(c.from_station)} → ${escapeHtml(c.to_station)}</strong></div>
-        <div><span style="color:var(--muted)">Date:</span> <strong>${escapeHtml(c.travel_date)}</strong></div>
-        <div><span style="color:var(--muted)">Train/Class:</span> <strong>${escapeHtml(c.train_id)} · ${escapeHtml(c.seat_class)}</strong></div>
-        <div><span style="color:var(--muted)">Passengers:</span> <strong>${escapeHtml(c.passenger_count)}</strong></div>
+      <div class="bk-case-grid">
+        <div class="bk-cell"><div class="bk-cell-label"><span class="bk-cell-ico">📍</span>Route</div><div class="bk-cell-val">${escapeHtml(c.from_station)} → ${escapeHtml(c.to_station)}</div></div>
+        <div class="bk-cell"><div class="bk-cell-label"><span class="bk-cell-ico">📅</span>Date</div><div class="bk-cell-val">${escapeHtml(c.travel_date)}</div></div>
+        <div class="bk-cell"><div class="bk-cell-label"><span class="bk-cell-ico">🚆</span>Train / Class</div><div class="bk-cell-val">${escapeHtml(c.train_id)} · ${escapeHtml(c.seat_class)}</div></div>
+        <div class="bk-cell"><div class="bk-cell-label"><span class="bk-cell-ico">👥</span>Passengers</div><div class="bk-cell-val">${escapeHtml(c.passenger_count)}</div></div>
       </div>
 
-      <div style="font-size:12px;padding:8px 10px;background:rgba(10,14,26,0.6);border-radius:6px;">
-        <span style="color:var(--muted);font-weight:600;">Flag Reasons:</span> <em>${escapeHtml(reasonsList)}</em>
+      <div class="bk-flag">
+        <span class="bk-flag-label">Flag Reasons</span>
+        <span class="bk-flag-text">${escapeHtml(reasonsList)}</span>
       </div>
 
       ${actionsHtml}
@@ -3497,6 +3871,7 @@ async function loadAdminCancellations() {
       allAdminCases = cases;
       const pending = cases.filter(c => c.status === 'PENDING_ADMIN_REVIEW').length;
       $('kpi-canc-pending').textContent = pending;
+      updateBkKpis(cases, 'PENDING_ADMIN_REVIEW');
       renderAdminCases();
     }
   } catch (err) {
@@ -3506,6 +3881,8 @@ async function loadAdminCancellations() {
 
 function filterAdminCases(filter) {
   currentAdminFilter = filter;
+  const idMap = { all: 'filter-canc-all', PENDING_ADMIN_REVIEW: 'filter-canc-pending', APPROVED: 'filter-canc-approved', REJECTED: 'filter-canc-rejected' };
+  Object.entries(idMap).forEach(([val, id]) => { const el = $(id); if (el) el.classList.toggle('active', val === filter); });
   renderAdminCases();
 }
 
@@ -3519,57 +3896,62 @@ function renderAdminCases() {
   }
 
   if (filtered.length === 0) {
-    container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted)">No cancellation cases found.</div>';
+    container.innerHTML = `
+      <div class="bk-empty">
+        <div class="bk-empty-ico">🔄</div>
+        <div class="bk-empty-title">No Cancellation Requests</div>
+        <div class="bk-empty-sub">No cancellation cases match the current filter — nothing awaiting adjudication.</div>
+      </div>
+    `;
     return;
   }
 
   container.innerHTML = '';
   filtered.forEach(c => {
     const card = document.createElement('div');
-    card.className = 'admin-case-card';
+    card.className = 'bk-case-card ' + bkStatusClass(c.status);
 
     const isPending = c.status === 'PENDING_ADMIN_REVIEW';
     let actionsHtml = '';
 
     if (isPending) {
       actionsHtml = `
-        <div class="case-actions-row">
+        <div class="bk-case-actions">
           <button class="btn-reject" onclick="openRejectionModal('${c.case_reference}')">Reject Request</button>
           <button class="btn-approve" onclick="reviewCancellationCase('${c.case_reference}', 'APPROVE')">Approve Cancellation</button>
         </div>
       `;
     } else {
-      actionsHtml = `
-        <div style="font-size:12px;color:var(--muted-hi);text-align:right;padding-top:6px;border-top:1px solid rgba(59,130,246,0.1)">
-          Decision: <strong>${c.admin_decision || c.status}</strong> | Reviewed: ${c.reviewed_at ? new Date(c.reviewed_at).toLocaleString() : 'N/A'}<br>
-          <em>Reason: "${escapeHtml(c.admin_reason || 'None specified')}"</em>
-        </div>
-      `;
+      actionsHtml = bkDecisionBlock(c);
     }
 
     card.innerHTML = `
-      <div class="case-top-row">
-        <div>
-          <span class="case-ref">${escapeHtml(c.case_reference)}</span>
-          <span style="font-size:12px;color:var(--muted);margin-left:8px;">Booking: <strong style="color:#fff;">${escapeHtml(c.booking_reference)}</strong></span>
+      <div class="bk-case-top">
+        <div class="bk-case-id-row">
+          <div class="bk-case-ico">↻</div>
+          <div>
+            <div class="bk-case-ref">${escapeHtml(c.case_reference)}</div>
+            <div class="bk-case-nic">Booking: <strong>${escapeHtml(c.booking_reference)}</strong></div>
+          </div>
         </div>
-        <span class="badge-tag" style="background:rgba(255,255,255,0.06);">● ${escapeHtml(c.status)}</span>
+        ${bkStatusBadge(c.status)}
       </div>
 
-      <div class="case-grid-details">
-        <div><span style="color:var(--muted)">Route:</span> <strong>${escapeHtml(c.route)}</strong></div>
-        <div><span style="color:var(--muted)">Date:</span> <strong>${escapeHtml(c.travel_date)}</strong></div>
-        <div><span style="color:var(--muted)">Gross Fare:</span> <strong>Rs. ${c.fare}</strong></div>
-        <div><span style="color:var(--muted)">NLP Category:</span> <strong>${escapeHtml(c.reason_category)}</strong></div>
-        <div><span style="color:var(--muted)">Eligibility:</span> <strong style="color:#34D399">${escapeHtml(c.eligibility)}</strong></div>
-        <div><span style="color:var(--muted)">Suggested Refund:</span> <strong style="color:#FDE68A">Rs. ${c.suggested_refund}</strong></div>
+      <div class="bk-case-grid">
+        <div class="bk-cell"><div class="bk-cell-label"><span class="bk-cell-ico">📍</span>Route</div><div class="bk-cell-val">${escapeHtml(c.route)}</div></div>
+        <div class="bk-cell"><div class="bk-cell-label"><span class="bk-cell-ico">📅</span>Date</div><div class="bk-cell-val">${escapeHtml(c.travel_date)}</div></div>
+        <div class="bk-cell"><div class="bk-cell-label"><span class="bk-cell-ico">💵</span>Gross Fare</div><div class="bk-cell-val">Rs. ${escapeHtml(String(c.fare))}</div></div>
+        <div class="bk-cell"><div class="bk-cell-label"><span class="bk-cell-ico">🧠</span>NLP Category</div><div class="bk-cell-val">${escapeHtml(c.reason_category)}</div></div>
+        <div class="bk-cell"><div class="bk-cell-label"><span class="bk-cell-ico">✅</span>Eligibility</div><div class="bk-cell-val" style="color:#34D399">${escapeHtml(c.eligibility)}</div></div>
+        <div class="bk-cell"><div class="bk-cell-label"><span class="bk-cell-ico">💰</span>Suggested Refund</div><div class="bk-cell-val" style="color:#FDE68A">Rs. ${escapeHtml(String(c.suggested_refund))}</div></div>
       </div>
 
-      <div style="font-size:12px;padding:8px 10px;background:rgba(10,14,26,0.6);border-radius:6px;">
-        <span style="color:var(--muted);font-weight:600;">Passenger Reason:</span> <em>"${escapeHtml(c.reason)}"</em>
+      <div class="bk-note">
+        <span class="bk-note-label">Passenger Reason</span>
+        <span class="bk-note-text">"${escapeHtml(c.reason)}"</span>
       </div>
 
-      ${c.ai_summary ? `<div style="font-size:12px;padding:8px 10px;background:rgba(37,99,235,0.08);border:1px solid rgba(59,130,246,0.25);border-radius:6px;"><strong style="color:#60A5FA;font-size:10.5px;text-transform:uppercase;">AI Grounded Advisory:</strong><br>${escapeHtml(c.ai_summary)}</div>` : ''}
+      ${c.ai_summary ? `<div class="bk-ai"><span class="bk-ai-label">AI Grounded Advisory</span><span class="bk-ai-text">${escapeHtml(c.ai_summary)}</span></div>` : ''}
 
       ${actionsHtml}
     `;

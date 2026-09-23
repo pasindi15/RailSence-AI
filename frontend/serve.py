@@ -290,6 +290,23 @@ def redirect_user_chat():
 _TRAIN_BOARD_CACHE: dict[str, tuple[float, dict[str, Any]]] = {}
 _TRAIN_BOARD_CACHE_TTL = 30.0  # 30 seconds in-memory TTL
 
+# Static assets (video, images) served from frontend/ under /static/
+_STATIC_DIR = _CURRENT_DIR / "video"
+_STATIC_MOUNT_ENABLED = True
+if _STATIC_MOUNT_ENABLED:
+    app.mount("/static", StaticFiles(directory=_CURRENT_DIR), name="static")
+
+# Frontend-only booking demo page (UI showcase, no live booking dispatch)
+_BOOKING_DEMO_HTML_FILE = _CURRENT_DIR / "booking-demo.html"
+
+
+@app.get("/booking-demo", include_in_schema=False)
+@app.get("/user/booking-demo", include_in_schema=False)
+def get_booking_demo_page():
+    if _BOOKING_DEMO_HTML_FILE.is_file():
+        return FileResponse(_BOOKING_DEMO_HTML_FILE)
+    raise HTTPException(status_code=404, detail="booking-demo.html not found")
+
 # Canonical Sri Lanka Railways timetable data, cross-referenced against the
 # two other places this project states it independently (M1's schedules.md
 # FAQ doc and M3's booking services_catalog.py) so train_id/name/route stay
