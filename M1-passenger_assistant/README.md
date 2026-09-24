@@ -27,7 +27,7 @@ M1-passenger_assistant/
 │   │   ├── test_chat.py
 │   │   └── test_rag.py
 │   ├── requirements.txt
-│   └── .env                     # SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, GEMINI_API_KEY
+│   └── .env                     # SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, OPENROUTER_API_KEY
 └── frontend/
     ├── src/
     │   ├── components/
@@ -58,7 +58,8 @@ pip install -r requirements.txt
 Create `backend/.env` with:
 
 ```
-GEMINI_API_KEY=your_gemini_key
+OPENROUTER_API_KEY=your_openrouter_key
+# optional: OPENROUTER_MODEL=google/gemma-4-31b-it:free
 SUPABASE_URL=your_supabase_project_url
 SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 ```
@@ -88,7 +89,7 @@ npm install
 npm run dev
 ```
 
-Open the URL Vite prints (usually `http://localhost:5173`).
+Open `http://localhost:5173/user/chat/` for dev. In the full system, run `npm run build` here; the gateway then serves the app at `http://localhost:3000/user/chat/`.
 
 ### 3. Try it
 

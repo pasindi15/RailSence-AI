@@ -2226,8 +2226,8 @@ body.view-away #rs-hero { display: none !important; }
            onclick="event.preventDefault(); navigateTo('/user');">
           View Schedule
         </a>
-        <a href="http://localhost:5280" target="_blank" rel="noopener noreferrer" class="hero-btn-outline">
-          Ask AI &rarr;
+        <a href="/user/chat/" class="hero-btn-outline">
+          Chat with AI &rarr;
         </a>
       </div>
       <div class="hero-stats-row">
@@ -5312,6 +5312,25 @@ function escapeHtml(text) {
   function stopParticles() { if (particles) { particles(); particles = null; } }
 })();
 </script>
+
+<!-- Choo chat widget: framework-free mascot + chat panel. Loaded only on this
+     file (served for /user, /user/dashboard, /user/booking, /user/confirmation),
+     not on /admin or /login. Backend is M1's FastAPI /chat (port 8001), which
+     already accepts {message, session_id} and returns a "reply" field, so this
+     uses the widget's own defaults with no buildBody/parseReply override.
+     Docked bottom-right at 64px (no left-side collision risk with the sidebar
+     drawer, and nothing else is anchored bottom-right on this page). -->
+<script>
+  window.CHOO_CONFIG = {
+    endpoint: 'http://127.0.0.1:8001/chat',
+    right: 20,
+    bottom: 20,
+    size: 64,
+    firstHelloDelay: 10000,
+    helloGap: 10000
+  };
+</script>
+<script src="/static/choo-widget.js"></script>
 
 </body>
 </html>

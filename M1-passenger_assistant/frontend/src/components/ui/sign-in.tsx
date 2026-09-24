@@ -100,7 +100,7 @@ const AnimatedSignIn: React.FC<AnimatedSignInProps> = ({ onLogin }) => {
 
             {/* Row 1 — img1 */}
             <div className="overflow-hidden">
-              <img src="/login-images/img1.jpg" alt="Sri Lanka train" className="w-full h-full object-cover block" />
+              <img src={`${import.meta.env.BASE_URL}login-images/img1.jpg`} alt="Sri Lanka train" className="w-full h-full object-cover block" />
             </div>
 
             {/* Row 1 — Stat card 1 (blue) */}
@@ -119,12 +119,12 @@ const AnimatedSignIn: React.FC<AnimatedSignInProps> = ({ onLogin }) => {
 
             {/* Row 2 — img2 */}
             <div className="overflow-hidden">
-              <img src="/login-images/img2.jpg" alt="Railway station" className="w-full h-full object-cover block" />
+              <img src={`${import.meta.env.BASE_URL}login-images/img2.jpg`} alt="Railway station" className="w-full h-full object-cover block" />
             </div>
 
             {/* Row 2 — img3 */}
             <div className="overflow-hidden">
-              <img src="/login-images/img3.jpg" alt="Train journey" className="w-full h-full object-cover block" />
+              <img src={`${import.meta.env.BASE_URL}login-images/img3.jpg`} alt="Train journey" className="w-full h-full object-cover block" />
             </div>
 
             {/* Row 3 — Stat card 2 (emerald) */}
@@ -143,7 +143,7 @@ const AnimatedSignIn: React.FC<AnimatedSignInProps> = ({ onLogin }) => {
 
             {/* Row 3 — img4 */}
             <div className="overflow-hidden">
-              <img src="/login-images/img4.jpg" alt="Sri Lanka scenery" className="w-full h-full object-cover block" />
+              <img src={`${import.meta.env.BASE_URL}login-images/img4.jpg`} alt="Sri Lanka scenery" className="w-full h-full object-cover block" />
             </div>
 
           </div>
@@ -153,7 +153,7 @@ const AnimatedSignIn: React.FC<AnimatedSignInProps> = ({ onLogin }) => {
             style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, transparent 100%)' }}
           >
             <div className="flex items-center gap-3">
-              <img src="/logo.png" alt="RailSense AI" className="h-8 w-auto object-contain brightness-0 invert" />
+              <img src={`${import.meta.env.BASE_URL}logo.png`} alt="RailSense AI" className="h-8 w-auto object-contain brightness-0 invert" />
               <span className="text-white font-semibold text-sm tracking-wide" style={{ fontFamily: 'Poppins, system-ui, sans-serif' }}>
                 RailSense AI
               </span>
@@ -206,7 +206,7 @@ const AnimatedSignIn: React.FC<AnimatedSignInProps> = ({ onLogin }) => {
             <>
               {/* Logo */}
               <div className="flex justify-center mb-7">
-                <img src="/logo.png" alt="RailSense AI" className="h-16 w-auto object-contain" />
+                <img src={`${import.meta.env.BASE_URL}logo.png`} alt="RailSense AI" className="h-16 w-auto object-contain" />
               </div>
 
               <h1 className={`text-2xl font-bold mb-1 ${dark ? 'text-white' : 'text-gray-900'}`} style={{ fontFamily: 'Poppins, system-ui, sans-serif' }}>

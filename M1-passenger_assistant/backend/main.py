@@ -33,11 +33,6 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
-try:
-    # pyrefly: ignore [missing-import]
-    import google.generativeai as genai
-except ImportError:
-    genai = None
 import httpx
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
@@ -50,6 +45,7 @@ from nlu.intent_classifier import classify_intent, is_greeting
 from nlu.ner_extractor import STATION_ALIASES, extract_entities
 from hub_client import build_envelope, send_to_hub, USE_MOCK_HUB
 from i18n import t
+from llm_client import build_model
 from rag.retriever import retrieve_faq_chunks
 from shared.train_repository import TrainRepositoryUnavailable, get_train, get_train_details, get_train_schedule, search_trains
 
@@ -68,14 +64,13 @@ if SUPABASE_URL and SUPABASE_KEY:
 
 SYSTEM_PROMPT = (Path(__file__).parent / "prompts" / "system_prompt.md").read_text(encoding="utf-8")
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-gemini_model = None
-if GEMINI_API_KEY and genai is not None:
-    genai.configure(api_key=GEMINI_API_KEY)
-    gemini_model = genai.GenerativeModel("gemini-flash-latest", system_instruction=SYSTEM_PROMPT)
-    print(f"[startup] GEMINI_API_KEY loaded (len={len(GEMINI_API_KEY)}) - Gemini model ready: gemini-flash-latest")
+# LLM is served through OpenRouter (see llm_client.py). The variable keeps its
+# historical name `gemini_model` because the answer/guard code and tests use it.
+gemini_model = build_model(system_instruction=SYSTEM_PROMPT)
+if gemini_model:
+    print(f"[startup] OPENROUTER_API_KEY loaded - LLM ready: {gemini_model.model}")
 else:
-    print("[startup] WARNING: GEMINI_API_KEY not set - /chat will fall back to raw RAG chunk text, not LLM answers")
+    print("[startup] WARNING: OPENROUTER_API_KEY not set (or openai not installed) - /chat will fall back to raw RAG chunk text, not LLM answers")
 
 app = FastAPI(title="RailSense AI - Passenger Assistant Agent")
 
@@ -851,7 +846,7 @@ def compose_rag_answer(
         f"Passenger's question: {text}"
     )
 
-    print("[llm] Gemini request started (gemini-flash-latest)")
+    print("[llm] LLM request started")
     try:
         response = gemini_model.generate_content(prompt)
         answer = (response.text or "").strip()

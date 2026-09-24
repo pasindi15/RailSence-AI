@@ -282,9 +282,18 @@ def get_user_portal():
     raise HTTPException(status_code=404, detail="user.html not found")
 
 
-@app.get("/user/chat", include_in_schema=False)
-def redirect_user_chat():
-    return RedirectResponse(url="/user", status_code=status.HTTP_302_FOUND)
+# M1 React chat app: built with `npm run build` in M1-passenger_assistant/frontend
+# (vite base is /user/chat/) and served here so it shares port 3000.
+_M1_CHAT_DIST = _CURRENT_DIR.parent / "M1-passenger_assistant" / "frontend" / "dist"
+
+if (_M1_CHAT_DIST / "index.html").is_file():
+    app.mount("/user/chat", StaticFiles(directory=_M1_CHAT_DIST, html=True), name="m1-chat")
+else:
+    @app.get("/user/chat", include_in_schema=False)
+    @app.get("/user/chat/{path:path}", include_in_schema=False)
+    def redirect_user_chat(path: str = ""):
+        # M1 chat app not built yet; fall back to the portal's built-in chat.
+        return RedirectResponse(url="/user", status_code=status.HTTP_302_FOUND)
 
 
 _TRAIN_BOARD_CACHE: dict[str, tuple[float, dict[str, Any]]] = {}

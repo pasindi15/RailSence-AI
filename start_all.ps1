@@ -48,20 +48,21 @@ Start-Process powershell -ArgumentList "-NoExit", "-Command", "Write-Host 'Start
 $m4Dir = Join-Path $root "M4-maintenance-agent"
 Start-Process powershell -ArgumentList "-NoExit", "-Command", "Write-Host 'Starting M4 Maintenance Agent on port 8006...' -ForegroundColor DarkYellow; python -m uvicorn main:app --host 127.0.0.1 --port 8006 --reload" -WorkingDirectory $m4Dir
 
+# 7a. Build the M1 React chat app so the gateway can serve it at /user/chat
+$reactDir = Join-Path $root "M1-passenger_assistant\frontend"
+Write-Host "Building M1 chat app..." -ForegroundColor Green
+Push-Location $reactDir; npm.cmd run build; Pop-Location
+
 # 7. Unified Frontend Gateway (Port 3000)
 $frontendDir = Join-Path $root "frontend"
 Start-Process powershell -ArgumentList "-NoExit", "-Command", "Write-Host 'Starting RailSense Gateway on port 3000...' -ForegroundColor Magenta; python serve.py" -WorkingDirectory $frontendDir
 
-# 8. M1 React App (Port 5173)
-$reactDir = Join-Path $root "M1-passenger_assistant\frontend"
-Start-Process cmd -ArgumentList "/k", "npm.cmd run dev" -WorkingDirectory $reactDir
-
-# 9. M4 Maintenance Login Portal (Port 3002)
+# 8. M4 Maintenance Login Portal (Port 3002)
 $m4FrontendDir = Join-Path $root "M4-maintenance-agent\frontend"
 Start-Process cmd -ArgumentList "/k", "npm.cmd run dev" -WorkingDirectory $m4FrontendDir
 
 Write-Host "`nAll RailSense AI services launched in separate windows!" -ForegroundColor Green
 Write-Host "User Portal:       http://localhost:3000/user" -ForegroundColor Cyan
 Write-Host "Admin Portal:      http://localhost:3000/admin" -ForegroundColor Yellow
-Write-Host "M1 React Chat App: http://localhost:5173" -ForegroundColor Green
+Write-Host "M1 React Chat App: http://localhost:3000/user/chat" -ForegroundColor Green
 Write-Host "M4 Login Portal:   http://localhost:3002" -ForegroundColor DarkYellow

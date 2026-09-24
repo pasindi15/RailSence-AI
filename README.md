@@ -15,7 +15,7 @@ This IT3041 Information Retrieval and Web Analytics project combines FastAPI ser
 | M2 Operations Agent | 8005 | Delay prediction, incident NLP/RAG, incident approval + verified map, passenger answers, Operations Assistant, Control Room, Admin Console | `http://localhost:8005/` |
 | M4 Maintenance Agent | 8006 | Asset health, reports, manual RAG, maintenance flags | `http://localhost:8006/` |
 | Unified Web Gateway | 3000 | Passenger and staff portals | `http://localhost:3000/` |
-| M1 React application | 5173 | Optional Vite passenger chat UI | `http://localhost:5173/` |
+| M1 React application | 3000 (via gateway) | Built Vite passenger chat UI served by the gateway | `http://localhost:3000/user/chat/` |
 
 ### Main URLs
 
@@ -36,7 +36,7 @@ All internal agent traffic is hub-mediated. A sender creates a signed `AgentMess
 ```mermaid
 flowchart LR
     Browser[Passenger or Staff Browser] --> Gateway[Unified Gateway :3000]
-    React[M1 React UI :5173] --> M1[M1 Passenger :8001]
+    React[M1 React UI /user/chat] --> M1[M1 Passenger :8001]
     Gateway --> Hub[M3 Communication Hub :8002]
     M1 --> Hub
     Hub --> M2[M2 Operations :8005]
