@@ -31,3 +31,14 @@ DO $$ BEGIN
 EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;
+
+-- Rolling conversation summaries used by /chat for context (see
+-- get_conversation_context in main.py). One row per session; `turns_covered`
+-- is how many completed turns the summary already includes. Run this in the
+-- Supabase SQL editor - until it exists the backend just keeps summaries in memory.
+CREATE TABLE IF NOT EXISTS chat_summaries (
+    session_id TEXT PRIMARY KEY,
+    summary TEXT NOT NULL DEFAULT '',
+    turns_covered INTEGER NOT NULL DEFAULT 0,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);

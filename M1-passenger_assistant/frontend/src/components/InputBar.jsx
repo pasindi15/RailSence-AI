@@ -17,7 +17,7 @@ export default function InputBar({ onSend, disabled }) {
   };
 
   return (
-    <div className="input-bar">
+    <div className={`input-bar${text.trim() ? " has-text" : ""}`}>
       <textarea
         value={text}
         onChange={(e) => setText(e.target.value)}

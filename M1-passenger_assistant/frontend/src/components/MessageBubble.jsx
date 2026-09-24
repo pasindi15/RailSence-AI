@@ -94,16 +94,11 @@ export default function MessageBubble({
         {isNotice && <div className="notice-label">Service notice · Not available</div>}
         <div className="msg-content">{renderFormattedText(text)}</div>
 
-        <div className="msg-meta-row">
-          <span className="msg-meta-role">
-            {isUser ? "Passenger · You" : "passenger-agent · Assistant"}
-          </span>
-          {source && !isUser && (
-            <span className="msg-meta-source" title={`Verified response from: ${source}`}>
-              Source: {source}
-            </span>
-          )}
-        </div>
+        {isUser && (
+          <div className="msg-meta-row">
+            <span className="msg-meta-role">Passenger · You</span>
+          </div>
+        )}
 
         {!isUser && (action?.type === "continue_to_booking" || prefill) && (
           <div className="action-card booking-action-card">
