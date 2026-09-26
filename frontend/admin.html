@@ -2285,6 +2285,199 @@ body::after {
 [data-theme="light"] .bk-kpi-card{box-shadow:0 6px 20px rgba(15,23,42,0.08)}
 [data-theme="light"] .bk-empty{color:#64748B}
 [data-theme="light"] .bk-empty-title{color:#0F172A}
+
+/* =========================================================
+   BOOKING LIST — light workspace (bk-mira)
+   The Bookings & Revenue section renders as a self-contained
+   light page: left rail + table-first manifest. The dark app
+   chrome is hidden while this section is active.
+   ========================================================= */
+body.bk-mira{background:#F5F7FB}
+body.bk-mira::before,body.bk-mira::after{display:none}
+body.bk-mira .top-nav,
+body.bk-mira .admin-nav-bar,
+body.bk-mira .sidebar-backdrop{display:none !important}
+body.bk-mira .app-shell{max-width:none;padding:0}
+
+#view-bookings{
+  --mx-ink:#0F172A; --mx-body:#3D4759; --mx-mute:#8A94A6; --mx-line:#EAEDF4;
+  --mx-brand:#5B5BD6; --mx-brand-2:#7C6CF3;
+}
+
+.mira-shell{display:grid;grid-template-columns:236px minmax(0,1fr);min-height:100vh;background:#F5F7FB}
+.mira-side{
+  position:sticky;top:0;height:100vh;overflow-y:auto;display:flex;flex-direction:column;gap:6px;
+  padding:18px 14px;background:#fff;border-right:1px solid var(--mx-line);
+}
+.mira-brand{display:flex;align-items:center;gap:11px;padding:4px 8px 18px}
+.mira-logo{
+  width:34px;height:34px;border-radius:10px;display:grid;place-items:center;flex-shrink:0;
+  background:linear-gradient(135deg,var(--mx-brand),var(--mx-brand-2));
+  color:#fff;font-size:17px;box-shadow:0 4px 12px rgba(91,91,214,.32);
+}
+.mira-brand-title{font-size:13.5px;font-weight:800;color:var(--mx-ink);letter-spacing:-0.2px}
+.mira-brand-sub{font-size:10.5px;color:var(--mx-mute);margin-top:1px}
+.mira-nav{display:flex;flex-direction:column;gap:2px}
+.mira-nav-foot{margin-top:auto;padding-top:14px;border-top:1px solid var(--mx-line)}
+.mira-nav-item{
+  display:flex;align-items:center;gap:11px;width:100%;padding:9px 11px;
+  border:0;border-radius:9px;background:transparent;color:#4A5568;
+  font-family:inherit;font-size:13px;font-weight:600;text-align:left;cursor:pointer;
+  transition:background .14s ease,color .14s ease;
+}
+.mira-nav-item:hover{background:#F4F6FC;color:var(--mx-ink)}
+.mira-nav-item.active{background:#EEF0FF;color:var(--mx-brand)}
+.mira-nav-ico{display:grid;place-items:center;width:20px;height:20px;color:#9AA3B2;flex-shrink:0}
+.mira-nav-item.active .mira-nav-ico{color:var(--mx-brand)}
+
+.mira-main{padding:22px 26px 96px;max-width:1180px}
+.mira-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;flex-wrap:wrap;margin-bottom:18px}
+.mira-title{font-size:20px;font-weight:800;color:var(--mx-ink);letter-spacing:-0.3px;margin:0}
+.mira-sub{font-size:12.5px;color:var(--mx-mute);margin:5px 0 0}
+.mira-head-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.mira-btn{
+  display:inline-flex;align-items:center;gap:8px;padding:9px 16px;border-radius:9px;
+  font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s ease;
+}
+.mira-btn.ghost{background:#fff;border:1px solid #E3E8F2;color:var(--mx-body)}
+.mira-btn.ghost:hover{border-color:#C9D2E4;color:var(--mx-ink);box-shadow:0 2px 8px rgba(15,23,42,.06)}
+.mira-btn.primary{background:linear-gradient(135deg,var(--mx-brand),var(--mx-brand-2));border:1px solid var(--mx-brand);color:#fff;box-shadow:0 6px 16px rgba(91,91,214,.28)}
+.mira-btn.primary:hover{filter:brightness(1.06)}
+.mira-btn-ico{display:grid;place-items:center}
+
+.mira-card{background:#fff;border:1px solid var(--mx-line);border-radius:14px;box-shadow:0 1px 2px rgba(16,24,40,.04);overflow:hidden}
+.mira-toolbar{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--mx-line);flex-wrap:wrap}
+.mira-search{display:flex;align-items:center;gap:9px;flex:1;max-width:340px;padding:8px 12px;border:1px solid #E3E8F2;border-radius:9px;background:#fff;color:#9AA3B2}
+.mira-search:focus-within{border-color:#B9C0F5;box-shadow:0 0 0 3px rgba(91,91,214,.10)}
+.mira-search input{flex:1;min-width:0;border:0;outline:0;background:transparent !important;font-family:inherit;font-size:12.5px;color:var(--mx-body)}
+.mira-search input::placeholder{color:#A9B1C1}
+.mira-tool-btn{
+  display:inline-flex;align-items:center;gap:7px;padding:8px 13px;border:1px solid #E3E8F2;border-radius:9px;
+  background:#fff;color:#4A5568;font-family:inherit;font-size:12.5px;font-weight:600;cursor:pointer;transition:all .14s ease;
+}
+.mira-tool-btn:hover{border-color:#C9D2E4;color:var(--mx-ink)}
+.mira-tool-btn.is-on{background:#EEF0FF;border-color:#D9DDFB;color:var(--mx-brand)}
+.mira-tool-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.mira-filters{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;padding:13px 16px;background:#FAFBFE;border-bottom:1px solid var(--mx-line)}
+.mira-field{display:flex;flex-direction:column;gap:5px}
+.mira-field label{font-size:10.5px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:#9AA3B2}
+.mira-field select,.mira-field input{padding:8px 11px;border:1px solid #E3E8F2;border-radius:8px;background:#fff;font-family:inherit;font-size:12.5px;color:var(--mx-body);outline:none;min-width:180px}
+
+.mira-table-wrap{overflow-x:auto}
+.mira-table{width:100%;border-collapse:collapse;font-size:12.5px}
+.mira-table thead th{
+  padding:12px 16px;text-align:left;font-size:10.5px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
+  color:#9AA3B2;background:#FCFDFF;border-bottom:1px solid var(--mx-line);white-space:nowrap;
+}
+.mira-table tbody td{padding:13px 16px;border-bottom:1px solid #F2F5FA;color:var(--mx-body);vertical-align:middle}
+.mira-table tbody tr:last-child td{border-bottom:0}
+.mira-table tbody tr:hover td{background:#FAFBFF}
+.mira-table tbody tr.is-selected td{background:#F6F7FF}
+.mira-col-check{width:40px}
+.mira-col-num{width:70px;text-align:center !important}
+.mira-col-act{width:60px;text-align:center !important}
+.mira-table input[type="checkbox"]{width:15px;height:15px;accent-color:#5B5BD6;cursor:pointer}
+
+.mira-cell{display:flex;align-items:center;gap:11px}
+.mira-avatar{
+  width:32px;height:32px;border-radius:50%;flex-shrink:0;display:grid;place-items:center;
+  font-size:11.5px;font-weight:700;color:#4C51BF;background:#EEF0FF;border:1px solid #E1E4FF;
+}
+.mira-name{font-size:12.5px;font-weight:700;color:var(--mx-ink);white-space:nowrap}
+.mira-name-sub{font-size:11px;color:#9AA3B2;margin-top:2px;font-family:'Share Tech Mono',monospace}
+.mira-strong{font-size:12.5px;font-weight:600;color:var(--mx-ink)}
+.mira-mini{font-size:11px;color:#9AA3B2;margin-top:2px}
+.mira-num{text-align:center;font-family:'Share Tech Mono',monospace;font-size:12.5px;color:var(--mx-body)}
+
+.mira-pill{display:inline-flex;align-items:center;padding:4px 11px;border-radius:999px;font-size:11.5px;font-weight:600;white-space:nowrap}
+.mira-pill.green{background:#E9F9F1;color:#0E9F6E;border:1px solid #CBEFDD}
+.mira-pill.amber{background:#FFF6E6;color:#C97A08;border:1px solid #FBE3B5}
+.mira-pill.red{background:#FEECEC;color:#E02424;border:1px solid #F9D2D2}
+.mira-pill.blue{background:#EAF3FF;color:#1A6EE0;border:1px solid #CFE2FD}
+.mira-pill.violet{background:#F1EEFE;color:#7C3AED;border:1px solid #E3DCFB}
+.mira-pill.gray{background:#F4F6FA;color:#7A8394;border:1px dashed #DCE2EC}
+.mira-word{font-size:12.5px;font-weight:600}
+
+.mira-row-btn{
+  width:30px;height:26px;border:1px solid transparent;border-radius:7px;background:transparent;
+  color:#9AA3B2;cursor:pointer;font-size:15px;line-height:1;font-family:inherit;
+}
+.mira-row-btn:hover{background:#F2F5FB;color:var(--mx-body);border-color:#E3E8F2}
+#bk-row-menu{
+  position:fixed;z-index:4000;display:none;min-width:200px;padding:6px;
+  background:#fff;border:1px solid var(--mx-line);border-radius:11px;box-shadow:0 12px 34px rgba(15,23,42,.16);
+}
+#bk-row-menu button{
+  display:block;width:100%;padding:8px 10px;border:0;border-radius:7px;background:transparent;
+  color:var(--mx-body);font-family:inherit;font-size:12.5px;font-weight:600;text-align:left;cursor:pointer;
+}
+#bk-row-menu button:hover{background:#F4F6FC;color:var(--mx-ink)}
+
+.mira-state{padding:46px 18px;text-align:center;color:var(--mx-mute);font-size:12.5px}
+.mira-state-title{font-size:14px;font-weight:700;color:var(--mx-ink);margin-bottom:5px}
+.mira-state-ico{font-size:28px;margin-bottom:10px}
+
+.mira-bulk{
+  position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:3000;
+  display:flex;align-items:center;gap:22px;padding:11px 12px 11px 20px;border-radius:11px;
+  background:#111827;box-shadow:0 14px 40px rgba(15,23,42,.35);color:#fff;
+}
+.mira-bulk-count{font-size:12.5px;font-weight:600;color:#E5E7EB;white-space:nowrap}
+.mira-bulk-btn{border:0;background:transparent;color:#fff;font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;padding:2px}
+.mira-bulk-btn:hover{text-decoration:underline}
+.mira-bulk-btn.danger{color:#F87171}
+
+@media (max-width:900px){
+  .mira-shell{grid-template-columns:1fr}
+  .mira-side{position:static;height:auto;border-right:0;border-bottom:1px solid var(--mx-line)}
+  .mira-main{padding:18px 16px 96px}
+}
+
+/* Keep the existing queues / schedule / manifest subviews legible on the
+   light background while they live inside the new workspace. */
+body.bk-mira #view-bookings .mira-main{
+  --panel-dark:#F8FAFC; --card:#FFFFFF; --card-hi:#FFFFFF;
+  --border:#E7EAF3; --border-hi:#C9D2E4;
+  --ink:#334155; --ink-bright:#0F172A; --muted:#9AA3B2; --muted-hi:#64748B;
+  --brand:#5B5BD6; --brand-light:#7C6CF3;
+  --shadow:0 1px 2px rgba(16,24,40,.05); --shadow-card:0 1px 3px rgba(16,24,40,.06);
+}
+body.bk-mira .bk-panel{background:#fff;border-color:#EAEDF4;box-shadow:0 1px 2px rgba(16,24,40,.04)}
+body.bk-mira .btn-refresh{background:#fff;border-color:#E3E8F2;color:#4A5568}
+body.bk-mira .btn-refresh:hover{border-color:#C9D2E4;color:var(--mx-ink);background:#F8FAFF}
+body.bk-mira .bk-panel-head{background:#FCFDFF;border-bottom-color:#EAEDF4}
+body.bk-mira .bk-panel-ico{background:#EEF0FF;border-color:#E1E4FF}
+body.bk-mira .bk-seg{background:#F4F6FA;border-color:#EAEDF4}
+body.bk-mira .bk-seg-btn{color:#64748B}
+body.bk-mira .bk-seg-btn:hover{color:#0F172A}
+body.bk-mira .bk-seg-btn.active{background:linear-gradient(135deg,#5B5BD6,#7C6CF3);color:#fff;box-shadow:0 2px 8px rgba(91,91,214,.3)}
+body.bk-mira .bk-case-card{background:#fff;border-color:#EAEDF4}
+body.bk-mira .bk-case-grid{background:#F7F9FC;border-color:#EAEDF4}
+body.bk-mira .bk-case-ref{color:#5B5BD6}
+body.bk-mira .bk-note{background:#F8FAFF;border-color:#E7EAF3}
+body.bk-mira .bk-note-label,
+body.bk-mira .bk-note-text{color:#475569}
+body.bk-mira .bk-flag-label{color:#C2410C}
+body.bk-mira .bk-flag-text{color:#475569}
+body.bk-mira .bk-ai{background:#F5F7FF;border-color:#E1E4FF}
+body.bk-mira .bk-ai-label{color:#5B5BD6}
+body.bk-mira .bk-ai-text{color:#334155}
+body.bk-mira .bk-decision{border-top-color:#EDF0F7;color:#8A94A6}
+body.bk-mira .bk-decision .bk-ticket-ref{color:#5B5BD6}
+body.bk-mira .bk-case-actions{border-top-color:#EDF0F7}
+body.bk-mira .bk-kpi-card{background:#fff;border-color:#EAEDF4;box-shadow:0 1px 2px rgba(16,24,40,.04)}
+body.bk-mira .mira-main input:not([type="checkbox"]),
+body.bk-mira .mira-main select,
+body.bk-mira .mira-main textarea{background:#fff !important;color:#334155 !important;border-color:#E3E8F2 !important}
+body.bk-mira #ticket-kpi-row > div{background:#fff !important;border-color:#EAEDF4 !important;box-shadow:0 1px 2px rgba(16,24,40,.05)}
+body.bk-mira #ticket-kpi-row > div > div:first-child{color:#8A94A6 !important}
+body.bk-mira #ticket-kpi-row #kpi-total{color:#1A6EE0 !important}
+body.bk-mira #ticket-kpi-row #kpi-passengers,
+body.bk-mira #ticket-kpi-row #kpi-confirmed{color:#0E9F6E !important}
+body.bk-mira #ticket-kpi-row #kpi-cancelled{color:#E02424 !important}
+body.bk-mira #ticket-manifest-table thead tr{background:#FCFDFF !important}
+body.bk-mira #ticket-manifest-table tbody tr{background:transparent !important}
+body.bk-mira #ticket-manifest-table tbody tr:hover{background:#FAFBFF !important}
 </style>
 </head>
 <body>
@@ -2579,58 +2772,184 @@ body::after {
 
   <!-- ==================== SECTION 3: BOOKINGS ==================== -->
   <main id="view-bookings" class="view-panel">
-    <!-- Redesigned page header with live date/time -->
-    <div class="bk-page-header">
-      <div class="bk-header-left">
-        <div class="bk-header-icon">🛡️</div>
-        <div>
-          <div class="bk-header-title" id="bk-page-title">Security &amp; Fraud Review Queue</div>
-          <div class="bk-header-sub" id="bk-page-sub">IsolationForest anomaly-detected booking cases awaiting human administrator adjudication</div>
-        </div>
-      </div>
-      <div class="bk-date-pill">
-        <span class="bk-date-pill-ico">📅</span>
-        <div>
-          <div class="bk-date-text" id="bk-date-line">—</div>
-          <div class="bk-date-time" id="bk-time-line">—</div>
-        </div>
-      </div>
-    </div>
+    <div class="mira-shell">
 
-    <!-- KPI stat cards -->
-    <div class="bk-kpi-row">
-      <div class="bk-kpi-card bk-kpi-total">
-        <div class="bk-kpi-ico">🗂</div>
-        <div><div class="bk-kpi-num" id="bk-kpi-total">0</div><div class="bk-kpi-label">Total Cases</div></div>
-        <span class="bk-kpi-dot"></span>
-      </div>
-      <div class="bk-kpi-card bk-kpi-pending">
-        <div class="bk-kpi-ico">🕐</div>
-        <div><div class="bk-kpi-num" id="bk-kpi-pending">0</div><div class="bk-kpi-label">Pending Review</div></div>
-        <span class="bk-kpi-dot"></span>
-      </div>
-      <div class="bk-kpi-card bk-kpi-approved">
-        <div class="bk-kpi-ico">✅</div>
-        <div><div class="bk-kpi-num" id="bk-kpi-approved">0</div><div class="bk-kpi-label">Approved</div></div>
-        <span class="bk-kpi-dot"></span>
-      </div>
-      <div class="bk-kpi-card bk-kpi-rejected">
-        <div class="bk-kpi-ico">✖</div>
-        <div><div class="bk-kpi-num" id="bk-kpi-rejected">0</div><div class="bk-kpi-label">Rejected</div></div>
-        <span class="bk-kpi-dot"></span>
-      </div>
-    </div>
+      <!-- ── Left rail: booking workspace navigation ──────────────────── -->
+      <aside class="mira-side" aria-label="Booking workspace navigation">
+        <div class="mira-brand">
+          <div class="mira-logo">🚆</div>
+          <div>
+            <div class="mira-brand-title">RailSense AI</div>
+            <div class="mira-brand-sub">Booking Intelligence</div>
+          </div>
+        </div>
 
-    <!-- Pill tab navigation -->
-    <div class="bk-tab-row">
-      <button class="bk-tab active" id="chip-book-fraud" onclick="switchSubSection('bookings', 'fraud')"><span class="bk-tab-ico">🛡️</span> Fraud Review Queue (ML Flagged)</button>
-      <button class="bk-tab" id="chip-book-canc" onclick="switchSubSection('bookings', 'canc')"><span class="bk-tab-ico">🔄</span> Cancellation Queue (Human-in-the-Loop)</button>
-      <button class="bk-tab" id="chip-book-schedules" onclick="switchSubSection('bookings', 'schedules')"><span class="bk-tab-ico">📋</span> Schedules &amp; Seat Inventory</button>
-      <button class="bk-tab" id="chip-book-tickets" onclick="switchSubSection('bookings', 'tickets'); loadTicketManifestTrains();"><span class="bk-tab-ico">🎫</span> Booked Tickets (Manifest)</button>
-    </div>
+        <nav class="mira-nav">
+          <button type="button" class="mira-nav-item" onclick="navigateTo('/admin')">
+            <span class="mira-nav-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></span>
+            Home
+          </button>
+          <button type="button" class="mira-nav-item active" id="chip-book-list" onclick="switchSubSection('bookings', 'list')">
+            <span class="mira-nav-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M3.5 9.5h17M9.5 9.5v10"/></svg></span>
+            Bookings
+          </button>
+          <button type="button" class="mira-nav-item" id="chip-book-fraud" onclick="switchSubSection('bookings', 'fraud')">
+            <span class="mira-nav-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.2 19 6v6c0 4.4-2.9 7.4-7 8.8-4.1-1.4-7-4.4-7-8.8V6z"/></svg></span>
+            Fraud Review
+          </button>
+          <button type="button" class="mira-nav-item" id="chip-book-canc" onclick="switchSubSection('bookings', 'canc')">
+            <span class="mira-nav-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.6-5.9"/><path d="M20.5 4v5h-5"/></svg></span>
+            Cancellations
+          </button>
+          <button type="button" class="mira-nav-item" id="chip-book-schedules" onclick="switchSubSection('bookings', 'schedules')">
+            <span class="mira-nav-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M8 3.5v3M16 3.5v3M3.5 10h17"/></svg></span>
+            Schedules &amp; Seats
+          </button>
+          <button type="button" class="mira-nav-item" id="chip-book-tickets" onclick="switchSubSection('bookings', 'tickets')">
+            <span class="mira-nav-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 9.2V7.5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2v1.7a3 3 0 0 0 0 5.6v1.7a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2v-1.7a3 3 0 0 0 0-5.6z"/><path d="M12 9v6"/></svg></span>
+            Ticket Manifest
+          </button>
+          <button type="button" class="mira-nav-item" onclick="navigateTo('/admin?tab=hub')">
+            <span class="mira-nav-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6.2 3.5h3l1.6 4-2.1 1.4a12.5 12.5 0 0 0 5.9 5.9l1.4-2.1 4 1.6v3a2 2 0 0 1-2.2 2A16.5 16.5 0 0 1 4.2 5.7a2 2 0 0 1 2-2.2z"/></svg></span>
+            Call Logs
+          </button>
+        </nav>
+
+        <nav class="mira-nav mira-nav-foot">
+          <button type="button" class="mira-nav-item" onclick="toggleTheme()">
+            <span class="mira-nav-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h16"/><circle cx="9" cy="7" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="9" cy="17" r="2"/></svg></span>
+            Settings
+          </button>
+          <button type="button" class="mira-nav-item" onclick="toggleAdminChat()">
+            <span class="mira-nav-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.3 2.4c-.7.3-1 .8-1 1.5v.3"/><circle cx="12" cy="16.6" r=".7" fill="currentColor" stroke="none"/></svg></span>
+            Support
+          </button>
+        </nav>
+      </aside>
+
+      <!-- ── Main column ─────────────────────────────────────────────── -->
+      <div class="mira-main">
+        <header class="mira-head">
+          <div>
+            <h1 class="mira-title" id="bk-page-title">Booking List</h1>
+            <p class="mira-sub" id="bk-page-sub">You can find all of your bookings here</p>
+          </div>
+          <div class="mira-head-actions" id="bk-head-actions">
+            <button type="button" class="mira-btn ghost" onclick="exportBookingListCsv(false)">
+              <span class="mira-btn-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 4.5-4.5M12 15l-4.5-4.5M4.5 20h15"/></svg></span>
+              Export Manifest
+            </button>
+            <button type="button" class="mira-btn primary" onclick="openBookingDesk()">
+              <span class="mira-btn-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>
+              Add Booking
+            </button>
+          </div>
+        </header>
+
+        <!-- KPI strip — owned by the fraud / cancellation queues -->
+        <div class="bk-kpi-row" id="bk-kpi-row" style="display:none;">
+          <div class="bk-kpi-card bk-kpi-total">
+            <div class="bk-kpi-ico">🗂</div>
+            <div><div class="bk-kpi-num" id="bk-kpi-total">0</div><div class="bk-kpi-label">Total Cases</div></div>
+            <span class="bk-kpi-dot"></span>
+          </div>
+          <div class="bk-kpi-card bk-kpi-pending">
+            <div class="bk-kpi-ico">🕐</div>
+            <div><div class="bk-kpi-num" id="bk-kpi-pending">0</div><div class="bk-kpi-label">Pending Review</div></div>
+            <span class="bk-kpi-dot"></span>
+          </div>
+          <div class="bk-kpi-card bk-kpi-approved">
+            <div class="bk-kpi-ico">✅</div>
+            <div><div class="bk-kpi-num" id="bk-kpi-approved">0</div><div class="bk-kpi-label">Approved</div></div>
+            <span class="bk-kpi-dot"></span>
+          </div>
+          <div class="bk-kpi-card bk-kpi-rejected">
+            <div class="bk-kpi-ico">✖</div>
+            <div><div class="bk-kpi-num" id="bk-kpi-rejected">0</div><div class="bk-kpi-label">Rejected</div></div>
+            <span class="bk-kpi-dot"></span>
+          </div>
+        </div>
+
+        <!-- ── View 0: Booking List (default) ───────────────────────────── -->
+        <div id="subview-book-list">
+          <section class="mira-card">
+            <div class="mira-toolbar">
+              <label class="mira-search" for="bk-search-input">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.7-3.7"/></svg>
+                <input type="text" id="bk-search-input" placeholder="Search bookings..." autocomplete="off" oninput="renderBookingList()" />
+              </label>
+              <button type="button" class="mira-tool-btn" id="bk-filter-toggle" onclick="toggleBookingFilters()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                Filters
+              </button>
+              <div class="mira-tool-right">
+                <button type="button" class="mira-tool-btn" id="bk-sort-btn" onclick="cycleBookingSort()">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v16M4 17l3 3 3-3M17 20V4M14 7l3-3 3 3"/></svg>
+                  <span id="bk-sort-label">Sort</span>
+                </button>
+                <button type="button" class="mira-tool-btn" onclick="exportBookingListCsv(false)">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 4.5-4.5M12 15l-4.5-4.5M4.5 20h15"/></svg>
+                  Export
+                </button>
+              </div>
+            </div>
+
+            <div class="mira-filters" id="bk-filter-row" style="display:none;">
+              <div class="mira-field">
+                <label for="bk-filter-train">Train</label>
+                <select id="bk-filter-train" onchange="loadBookingList()"><option value="">All trains</option></select>
+              </div>
+              <div class="mira-field">
+                <label for="bk-filter-date">Travel Date</label>
+                <input type="date" id="bk-filter-date" onchange="loadBookingList()" />
+              </div>
+              <div class="mira-field">
+                <label for="bk-filter-status">Booking Status</label>
+                <select id="bk-filter-status" onchange="loadBookingList()">
+                  <option value="">All statuses</option>
+                  <option value="CONFIRMED">Confirmed</option>
+                  <option value="PENDING_FRAUD_REVIEW">Pending fraud review</option>
+                  <option value="HELD">Held</option>
+                  <option value="CANCELLED">Cancelled</option>
+                  <option value="EXPIRED">Expired</option>
+                </select>
+              </div>
+              <button type="button" class="mira-tool-btn" onclick="resetBookingFilters()">Reset</button>
+            </div>
+
+            <div class="mira-table-wrap">
+              <table class="mira-table" id="bk-list-table">
+                <thead>
+                  <tr>
+                    <th class="mira-col-check"><input type="checkbox" id="bk-select-all" onchange="toggleSelectAllBookings(this.checked)" aria-label="Select all bookings" /></th>
+                    <th>Passenger Name</th>
+                    <th>Train &amp; Route</th>
+                    <th>Booking Status</th>
+                    <th>Travel Date</th>
+                    <th>Payment Status</th>
+                    <th class="mira-col-num">Pax</th>
+                    <th class="mira-col-act">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="bk-list-body"></tbody>
+              </table>
+              <div class="mira-state" id="bk-list-state">Loading bookings…</div>
+            </div>
+          </section>
+        </div>
+
+        <!-- Floating bulk-action bar for the booking list -->
+        <div class="mira-bulk" id="bk-bulk-bar" style="display:none;">
+          <span class="mira-bulk-count" id="bk-bulk-count">0 of 0 selected</span>
+          <button type="button" class="mira-bulk-btn" onclick="exportBookingListCsv(true)">Export</button>
+          <button type="button" class="mira-bulk-btn danger" onclick="clearBookingSelection()">Clear</button>
+        </div>
+
+        <!-- Row action popover -->
+        <div id="bk-row-menu" role="menu"></div>
 
     <!-- View A: Fraud Review Queue -->
-    <div id="subview-book-fraud">
+    <div id="subview-book-fraud" style="display:none;">
       <div class="bk-panel">
         <div class="bk-panel-head">
           <div class="bk-panel-head-left">
@@ -2831,7 +3150,9 @@ body::after {
         </div><!-- /ticket-manifest-container -->
         </div><!-- /bk-body -->
       </div><!-- /bk-panel -->
-    </div>
+    </div><!-- /subview-book-tickets -->
+      </div><!-- /.mira-main -->
+    </div><!-- /.mira-shell -->
   </main>
 
   <!-- ==================== SECTION 4: MAINTENANCE ==================== -->
@@ -3442,6 +3763,10 @@ function switchSection(secName) {
   document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.admin-nav-tab').forEach(t => t.classList.remove('active'));
 
+  /* Bookings & Revenue is a self-contained light workspace, so the dark app
+     chrome (top header + drawer nav) is hidden while it is on screen. */
+  document.body.classList.toggle('bk-mira', secName === 'bookings');
+
   const viewEl = $(`view-${secName}`);
   const navEl = $(`nav-${secName}`);
   if (viewEl) viewEl.classList.add('active');
@@ -3467,6 +3792,8 @@ function switchSection(secName) {
   } else if (secName === 'bookings') {
     loadAdminFraudReviews();
     loadAdminCancellations();
+    loadTicketManifestTrains();
+    switchSubSection('bookings', _bkActiveSub || 'list');
   } else if (secName === 'hub') {
     loadAdminHubDashboard();
     if (!adminHubInterval) {
@@ -3518,18 +3845,39 @@ function switchSubSection(parent, sub) {
       if (linkAdmin) linkAdmin.href = `http://localhost:8005/admin${tokenParam}`;
     }
   } else if (parent === 'bookings') {
+    _bkActiveSub = sub;
+
+    const listEl = $('subview-book-list');
+    if (listEl) listEl.style.display = sub === 'list' ? 'block' : 'none';
     $('subview-book-fraud').style.display = sub === 'fraud' ? 'block' : 'none';
     $('subview-book-canc').style.display = sub === 'canc' ? 'block' : 'none';
     $('subview-book-schedules').style.display = sub === 'schedules' ? 'block' : 'none';
     $('subview-book-tickets').style.display = sub === 'tickets' ? 'block' : 'none';
 
-    $('chip-book-fraud').classList.toggle('active', sub === 'fraud');
-    $('chip-book-canc').classList.toggle('active', sub === 'canc');
-    $('chip-book-schedules').classList.toggle('active', sub === 'schedules');
-    $('chip-book-tickets').classList.toggle('active', sub === 'tickets');
+    /* The blue KPI strip belongs to the fraud / cancellation queues only. */
+    const kpiRow = $('bk-kpi-row');
+    if (kpiRow) kpiRow.style.display = (sub === 'fraud' || sub === 'canc') ? 'grid' : 'none';
+
+    /* The manifest toolbar actions only make sense on the booking list. */
+    const headActions = $('bk-head-actions');
+    if (headActions) headActions.style.display = sub === 'list' ? 'flex' : 'none';
+
+    const BK_LEFT_RAIL = {
+      list:      'chip-book-list',
+      fraud:     'chip-book-fraud',
+      canc:      'chip-book-canc',
+      schedules: 'chip-book-schedules',
+      tickets:   'chip-book-tickets',
+    };
+    Object.entries(BK_LEFT_RAIL).forEach(([name, id]) => {
+      const el = $(id);
+      if (el) el.classList.toggle('active', name === sub);
+    });
 
     updateBkPageHeader(sub);
+    bkSyncBulkBar();
 
+    if (sub === 'list') loadBookingList();
     if (sub === 'fraud') loadAdminFraudReviews();
     if (sub === 'canc') loadAdminCancellations();
     if (sub === 'tickets') loadTicketManifestTrains();
@@ -3628,6 +3976,7 @@ let currentFraudRejectionCase = null;
 
 /* Shared helpers for the redesigned Bookings & Revenue page */
 const BK_PAGE_META = {
+  list:      { icon: '', title: 'Booking List', sub: 'You can find all of your bookings here' },
   fraud:     { icon: '🛡️', title: 'Security & Fraud Review Queue', sub: 'IsolationForest anomaly-detected booking cases awaiting human administrator adjudication' },
   canc:      { icon: '🔄', title: 'Passenger Cancellation Adjudication Queue', sub: 'Human-in-the-Loop review for ticket refund and cancellation requests' },
   schedules: { icon: '📋', title: 'Live Schedule & Dynamic Seat Inventory', sub: 'Direct query through M3 Booking Agent (Port 8003)' },
@@ -4396,6 +4745,429 @@ function clearTicketFilters() {
   if (err) err.style.display = 'none';
   const kpi = $('ticket-kpi-row');
   if (kpi) kpi.style.display = 'none';
+}
+
+// =========================================================================
+// Booking List — table-first manifest for the Bookings workspace
+// =========================================================================
+
+let _bkActiveSub = 'list';
+let _bkRows = [];
+let _bkSelection = new Set();
+let _bkSort = 'date_desc';
+let _bkTrainsLoaded = false;
+
+const BK_STATUS_META = {
+  CONFIRMED:            ['Confirmed', 'green'],
+  PENDING_FRAUD_REVIEW: ['Pending Review', 'amber'],
+  HELD:                 ['Held', 'amber'],
+  CANCELLED:            ['Cancelled', 'red'],
+  EXPIRED:              ['Expired', 'gray'],
+  REJECTED:             ['Rejected', 'red'],
+};
+
+const BK_PAY_META = {
+  PAID:     ['Paid',     '#0E9F6E'],
+  PENDING:  ['Pending',  '#C97A08'],
+  REFUNDED: ['Refunded', '#7C3AED'],
+  UNKNOWN:  ['Unknown',  '#8A94A6'],
+};
+
+const BK_SORT_MODES = [
+  ['date_desc', 'Newest journey'],
+  ['date_asc',  'Oldest journey'],
+  ['passenger', 'Passenger A-Z'],
+  ['status',    'Booking status'],
+];
+
+function openBookingDesk() {
+  window.open('/user/booking', '_blank');
+}
+
+function _bkEscape(value) {
+  return escapeHtml(String(value == null ? '' : value));
+}
+
+function bkInitials(name) {
+  const clean = String(name || '').trim();
+  if (!clean || /^unknown/i.test(clean)) return '?';
+  const parts = clean.split(/\s+/).filter(Boolean);
+  return (parts[0][0] + (parts[1] ? parts[1][0] : '')).toUpperCase();
+}
+
+function bkDisplayName(b) {
+  const p = (b.passengers || [])[0];
+  return ((p && p.full_name) || b.passenger_email || '').toLowerCase();
+}
+
+function bkPassengerCell(b) {
+  const pax = b.passengers || [];
+  const first = pax[0] || null;
+  const rawName = (first && first.full_name) || '';
+  const email = b.passenger_email || '';
+  const named = !!rawName && !/^unknown$/i.test(rawName.trim());
+  /* Guest checkouts only store an e-mail, so fall back to it rather than
+     printing "Unknown" for every row. */
+  const name = named ? rawName : (email || 'Unknown passenger');
+  const extra = pax.length > 1 ? ` · +${pax.length - 1} more` : '';
+  const nic = (first && first.nic_masked) || '';
+  const sub = (named ? (nic || email || '—') : (nic || 'no NIC on file')) + extra;
+  return `<div class="mira-cell">
+      <div class="mira-avatar">${_bkEscape(bkInitials(name))}</div>
+      <div style="min-width:0;">
+        <div class="mira-name">${_bkEscape(name)}</div>
+        <div class="mira-name-sub">${_bkEscape(sub)}</div>
+      </div>
+    </div>`;
+}
+
+function bkTrainCell(b) {
+  const title = b.train_name || b.train_id || '—';
+  const route = b.route || [b.from_station, b.to_station].filter(Boolean).join(' → ') || '—';
+  const id = (b.train_name && b.train_id) ? `${b.train_id} · ` : '';
+  return `<div>
+      <div class="mira-strong">${_bkEscape(title)}</div>
+      <div class="mira-mini">${_bkEscape(id + route)}</div>
+    </div>`;
+}
+
+function bkDateCell(b) {
+  const raw = b.travel_date || '';
+  let day = raw || '—';
+  if (raw) {
+    const d = new Date(`${raw}T00:00:00`);
+    if (!isNaN(d.getTime())) {
+      day = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+    }
+  }
+  const dep = b.departure_time ? `${b.departure_time} dep` : '';
+  return `<div>
+      <div class="mira-strong" title="${_bkEscape(raw)}">${_bkEscape(day)}</div>
+      ${dep ? `<div class="mira-mini">${_bkEscape(dep)}</div>` : ''}
+    </div>`;
+}
+
+function bkStatusPill(status) {
+  const known = BK_STATUS_META[status];
+  const label = known ? known[0] : String(status || 'Unknown').replace(/_/g, ' ');
+  const tone = known ? known[1] : 'gray';
+  return `<span class="mira-pill ${tone}">${_bkEscape(label)}</span>`;
+}
+
+function bkPayWord(status) {
+  const meta = BK_PAY_META[status] || [String(status || 'Unknown'), '#8A94A6'];
+  return `<span class="mira-word" style="color:${meta[1]};">${_bkEscape(meta[0])}</span>`;
+}
+
+function bkSortRows(rows) {
+  const out = rows.slice();
+  const key = (b) => `${b.travel_date || ''} ${b.departure_time || ''}`;
+  if (_bkSort === 'date_asc')       out.sort((a, b) => key(a).localeCompare(key(b)));
+  else if (_bkSort === 'passenger') out.sort((a, b) => {
+    // Rows without a usable name (guest checkouts) sink to the bottom.
+    const an = bkDisplayName(a) || '\uffff';
+    const bn = bkDisplayName(b) || '\uffff';
+    return an.localeCompare(bn);
+  });
+  else if (_bkSort === 'status')    out.sort((a, b) => String(a.status).localeCompare(String(b.status)));
+  else                              out.sort((a, b) => key(b).localeCompare(key(a)));
+  return out;
+}
+
+function bkSearchMatch(b, needle) {
+  if (!needle) return true;
+  const hay = [
+    b.booking_reference, b.ticket_token, b.train_id, b.train_name, b.route,
+    b.from_station, b.to_station, b.status, b.payment_status, b.seat_class,
+    b.passenger_email,
+  ].concat((b.passengers || []).map(p => `${p.full_name || ''} ${p.nic_masked || ''}`))
+   .join(' ').toLowerCase();
+  return hay.includes(needle);
+}
+
+function bkVisibleRows() {
+  const needle = ($('bk-search-input')?.value || '').trim().toLowerCase();
+  return bkSortRows(_bkRows.filter(b => bkSearchMatch(b, needle)));
+}
+
+function bkSetListState(state, message) {
+  const stateEl = $('bk-list-state');
+  const table = $('bk-list-table');
+  if (stateEl) {
+    stateEl.style.display = state === 'table' ? 'none' : 'block';
+    if (state === 'loading') {
+      stateEl.innerHTML = 'Loading bookings…';
+    } else if (state === 'error') {
+      stateEl.innerHTML = `<div class="mira-state-ico">⚠️</div>
+        <div class="mira-state-title">Could not load bookings</div>
+        ${_bkEscape(message || 'The booking agent did not respond.')}`;
+    } else if (state === 'empty') {
+      stateEl.innerHTML = `<div class="mira-state-ico">🎫</div>
+        <div class="mira-state-title">No bookings found</div>
+        Try clearing the search box or the filters.`;
+    }
+  }
+  if (table) table.style.display = state === 'table' ? 'table' : 'none';
+}
+
+async function loadBookingList() {
+  if (!$('bk-list-body')) return;
+  bkSetListState('loading');
+  bkLoadBookingFilterTrains();
+
+  const params = new URLSearchParams();
+  const train = $('bk-filter-train')?.value || '';
+  const date  = $('bk-filter-date')?.value || '';
+  const stat  = $('bk-filter-status')?.value || '';
+  if (train) params.set('train_id', train);
+  if (date)  params.set('travel_date', date);
+  if (stat)  params.set('booking_status', stat);
+  if (!train && !date) params.set('limit', '250');
+
+  try {
+    const res = await fetch('/api/admin/bookings?' + params.toString());
+    const data = await res.json();
+    if (!res.ok) {
+      bkSetListState('error', data.detail || data.error || `HTTP ${res.status}`);
+      return;
+    }
+    _bkRows = data.bookings || [];
+    _bkSelection.clear();
+    if (!_bkRows.length) {
+      $('bk-list-body').innerHTML = '';
+      bkSetListState('empty');
+      bkSyncBulkBar();
+      return;
+    }
+    renderBookingList();
+  } catch (e) {
+    console.error('[BookingList] load failed:', e);
+    bkSetListState('error', e.message || 'Unexpected error.');
+  }
+}
+
+async function bkLoadBookingFilterTrains() {
+  if (_bkTrainsLoaded) return;
+  const sel = $('bk-filter-train');
+  if (!sel) return;
+  try {
+    const res = await fetch('/api/admin/trains');
+    if (!res.ok) return;
+    const trains = await res.json();
+    trains.forEach(t => {
+      const opt = document.createElement('option');
+      opt.value = t.train_id;
+      opt.textContent = `${t.train_id} — ${t.train_name}`;
+      sel.appendChild(opt);
+    });
+    _bkTrainsLoaded = true;
+  } catch (e) {
+    console.warn('[BookingList] train filter unavailable:', e);
+  }
+}
+
+function renderBookingList() {
+  const body = $('bk-list-body');
+  if (!body) return;
+  const rows = bkVisibleRows();
+  if (!rows.length) {
+    body.innerHTML = '';
+    bkSetListState('empty');
+    bkSyncBulkBar();
+    return;
+  }
+  bkSetListState('table');
+  body.innerHTML = rows.map(b => {
+    const id = String(b.id);
+    const checked = _bkSelection.has(id) ? 'checked' : '';
+    const rowCls = _bkSelection.has(id) ? ' class="is-selected"' : '';
+    return `<tr${rowCls} data-booking-id="${id}">
+      <td class="mira-col-check"><input type="checkbox" ${checked} onchange="toggleBookingSelection('${id}', this.checked)" aria-label="Select ${_bkEscape(b.booking_reference)}" /></td>
+      <td>${bkPassengerCell(b)}</td>
+      <td>${bkTrainCell(b)}</td>
+      <td>${bkStatusPill(b.status)}</td>
+      <td>${bkDateCell(b)}</td>
+      <td>${bkPayWord(b.payment_status)}</td>
+      <td class="mira-num">${b.passenger_count || 1}</td>
+      <td class="mira-col-act"><button type="button" class="mira-row-btn" onclick="openBookingRowMenu(event, '${id}')" aria-label="Actions for ${_bkEscape(b.booking_reference)}">⋯</button></td>
+    </tr>`;
+  }).join('');
+  bkSyncSelectAll(rows);
+  bkSyncBulkBar();
+}
+
+function bkSyncSelectAll(rows) {
+  const all = $('bk-select-all');
+  if (!all) return;
+  const list = rows || bkVisibleRows();
+  all.checked = list.length > 0 && list.every(b => _bkSelection.has(String(b.id)));
+  all.indeterminate = !all.checked && list.some(b => _bkSelection.has(String(b.id)));
+}
+
+function toggleBookingSelection(id, on) {
+  const key = String(id);
+  if (on) _bkSelection.add(key); else _bkSelection.delete(key);
+  const row = document.querySelector(`#bk-list-body tr[data-booking-id="${key}"]`);
+  if (row) row.classList.toggle('is-selected', !!on);
+  bkSyncSelectAll();
+  bkSyncBulkBar();
+}
+
+function toggleSelectAllBookings(on) {
+  const rows = bkVisibleRows();
+  rows.forEach(b => {
+    const key = String(b.id);
+    if (on) _bkSelection.add(key); else _bkSelection.delete(key);
+  });
+  renderBookingList();
+}
+
+function clearBookingSelection() {
+  _bkSelection.clear();
+  renderBookingList();
+}
+
+function bkSyncBulkBar() {
+  const bar = $('bk-bulk-bar');
+  const label = $('bk-bulk-count');
+  if (!bar || !label) return;
+  const n = _bkSelection.size;
+  const show = n > 0 && _bkActiveSub === 'list';
+  bar.style.display = show ? 'flex' : 'none';
+  label.textContent = `${n} of ${_bkRows.length} selected`;
+}
+
+function toggleBookingFilters() {
+  const row = $('bk-filter-row');
+  const btn = $('bk-filter-toggle');
+  if (!row) return;
+  const open = row.style.display === 'none';
+  row.style.display = open ? 'flex' : 'none';
+  if (btn) btn.classList.toggle('is-on', open);
+}
+
+function resetBookingFilters() {
+  ['bk-filter-train', 'bk-filter-date', 'bk-filter-status'].forEach(id => {
+    const el = $(id);
+    if (el) el.value = '';
+  });
+  const search = $('bk-search-input');
+  if (search) search.value = '';
+  loadBookingList();
+}
+
+function cycleBookingSort() {
+  const idx = BK_SORT_MODES.findIndex(m => m[0] === _bkSort);
+  const next = BK_SORT_MODES[(idx + 1) % BK_SORT_MODES.length];
+  _bkSort = next[0];
+  const label = $('bk-sort-label');
+  if (label) label.textContent = next[1];
+  renderBookingList();
+}
+
+/* ── Per-row action popover ────────────────────────────────────────── */
+function openBookingRowMenu(ev, id) {
+  ev.stopPropagation();
+  const menu = $('bk-row-menu');
+  const b = _bkRows.find(x => String(x.id) === String(id));
+  if (!menu || !b) return;
+  menu.innerHTML = `
+    <button type="button" onclick="bkCopyReference('${String(id)}')">Copy booking reference</button>
+    <button type="button" onclick="bkShowTicketToken('${String(id)}')">Show ticket token</button>
+    <button type="button" onclick="bkOpenInManifest('${String(id)}')">Open in ticket manifest</button>`;
+  menu.style.display = 'block';
+  const rect = ev.currentTarget.getBoundingClientRect();
+  const w = menu.offsetWidth || 200;
+  const h = menu.offsetHeight || 120;
+  const left = Math.min(rect.right - w, window.innerWidth - w - 12);
+  const top = (rect.bottom + h + 12 > window.innerHeight) ? rect.top - h - 6 : rect.bottom + 6;
+  menu.style.left = `${Math.max(12, left)}px`;
+  menu.style.top = `${Math.max(12, top)}px`;
+}
+
+function closeBookingRowMenu() {
+  const menu = $('bk-row-menu');
+  if (menu) menu.style.display = 'none';
+}
+
+document.addEventListener('click', closeBookingRowMenu);
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeBookingRowMenu();
+});
+
+function bkCopyReference(id) {
+  closeBookingRowMenu();
+  const b = _bkRows.find(x => String(x.id) === String(id));
+  if (!b) return;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(b.booking_reference).catch(() => {});
+  } else {
+    window.prompt('Copy booking reference', b.booking_reference);
+  }
+}
+
+function bkShowTicketToken(id) {
+  closeBookingRowMenu();
+  const b = _bkRows.find(x => String(x.id) === String(id));
+  if (b) window.prompt(`Ticket token for ${b.booking_reference}`, b.ticket_token || '(none)');
+}
+
+function bkOpenInManifest(id) {
+  closeBookingRowMenu();
+  const b = _bkRows.find(x => String(x.id) === String(id));
+  if (!b) return;
+  switchSubSection('bookings', 'tickets');
+  const train = $('ticket-filter-train');
+  const date = $('ticket-filter-date');
+  const status = $('ticket-filter-status');
+  if (train) train.value = b.train_id || '';
+  if (date) date.value = b.travel_date || '';
+  if (status) status.value = '';
+  searchTicketManifest();
+}
+
+/* ── CSV export ────────────────────────────────────────────────────── */
+function _bkCsvCell(value) {
+  const s = String(value == null ? '' : value);
+  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+function exportBookingListCsv(selectedOnly) {
+  const rows = selectedOnly
+    ? bkVisibleRows().filter(b => _bkSelection.has(String(b.id)))
+    : bkVisibleRows();
+  if (!rows.length) {
+    alert(selectedOnly ? 'Select at least one booking to export.' : 'There are no bookings to export.');
+    return;
+  }
+  const lines = [[
+    'Reference', 'Passengers', 'Train', 'Route', 'Travel Date', 'Departure',
+    'Class', 'Pax', 'Fare (LKR)', 'Booking Status', 'Payment Status',
+  ].join(',')];
+  rows.forEach(b => {
+    lines.push([
+      b.booking_reference,
+      (b.passengers || []).map(p => p.full_name).join(' | '),
+      `${b.train_id || ''} ${b.train_name || ''}`.trim(),
+      b.route || [b.from_station, b.to_station].filter(Boolean).join(' -> '),
+      b.travel_date,
+      b.departure_time,
+      b.seat_class,
+      b.passenger_count || 1,
+      b.fare,
+      b.status,
+      b.payment_status,
+    ].map(_bkCsvCell).join(','));
+  });
+  const blob = new Blob([lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `railsense-bookings-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
 }
 
 // =========================================================================
