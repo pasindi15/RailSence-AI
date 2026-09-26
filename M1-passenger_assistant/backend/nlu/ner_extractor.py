@@ -11,20 +11,15 @@ import re
 from datetime import date, timedelta
 from pathlib import Path
 
-try:
-    import google.generativeai as genai
-except ImportError:  # Gemini is optional; alias-based extraction still works offline.
-    genai = None
 from dotenv import load_dotenv
+
+from llm_client import build_model
 
 # Anchor to backend/.env - see main.py for why load_dotenv() with no path is unsafe.
 load_dotenv(Path(__file__).parent.parent / ".env")
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-_llm_model = None
-if GEMINI_API_KEY and genai is not None:
-    genai.configure(api_key=GEMINI_API_KEY)
-    _llm_model = genai.GenerativeModel("gemini-flash-latest")
+# Optional (OpenRouter); alias-based extraction still works offline without it.
+_llm_model = build_model()
 
 # Extend this dict as you confirm real station names with your dataset.
 # Each canonical (English) name maps to its English/Sinhala/Tamil aliases.

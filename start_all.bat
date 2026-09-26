@@ -14,16 +14,20 @@ start "Security Agent (Port 8004)" cmd /k "cd /d "%~dp0security-agent" && python
 
 start "M4 Maintenance Agent (Port 8006)" cmd /k "cd /d "%~dp0M4-maintenance-agent" && python -m uvicorn main:app --host 127.0.0.1 --port 8006 --reload"
 
+echo Building M1 chat app for the gateway...
+pushd "%~dp0M1-passenger_assistant\frontend"
+call npm.cmd run build
+popd
+
 start "Frontend Gateway (Port 3000)" cmd /k "cd /d "%~dp0frontend" && python serve.py"
 
-start "M1 React App (Port 5173)" cmd /k "cd /d "%~dp0M1-passenger_assistant\frontend" && npm.cmd run dev"
 
 start "M4 Maintenance Login (Port 3002)" cmd /k "cd /d "%~dp0M4-maintenance-agent\frontend" && npm.cmd run dev"
 
 echo All RailSense services launched!
 echo User Portal:       http://localhost:3000/user
 echo Admin Portal:      http://localhost:3000/admin
-echo M1 React App:      http://localhost:5173
+echo M1 Chat App:       http://localhost:3000/user/chat
 echo M4 Login Portal:   http://localhost:3002
 pause
 

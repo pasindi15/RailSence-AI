@@ -75,3 +75,13 @@ export async function submitCancellationRequest(bookingRef, reason, userId = "pa
   if (!gatewayRes.ok) throw new Error("Cancellation request failed");
   return gatewayRes.json();
 }
+
+export async function renameChat(sessionId, title) {
+  const res = await fetch(`${BASE_URL}/chat/${sessionId}/title`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ title }),
+  });
+  if (!res.ok) throw new Error("Failed to rename chat");
+  return res.json();
+}

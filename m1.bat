@@ -11,6 +11,6 @@ start "M1 React App (Port 5173)" cmd /k "cd /d "%~dp0M1-passenger_assistant\fron
 echo.
 echo Both M1 services started!
 echo M1 Backend:   http://localhost:8001
-echo M1 React App: http://localhost:5173
+echo M1 React App: http://localhost:5173/user/chat/
 echo.
 pause
