@@ -7,6 +7,7 @@ Deterministic Named Entity Extractor for railway admin queries.
 from __future__ import annotations
 
 import re
+from difflib import get_close_matches
 from typing import Any
 from .date_parser import parse_query_date
 
@@ -38,8 +39,8 @@ def extract_entities(query: str) -> dict[str, Any]:
     if iso_date:
         entities["travel_date"] = iso_date
 
-    # 2. Booking Reference (e.g. RS-10023, BKG-102, BKG-10051, RS-84521)
-    bkg_match = re.search(r"\b((?:RS|BKG|BOOKING)-?[A-Za-z0-9]{3,12})\b", normalized, re.IGNORECASE)
+    # 2. Booking Reference (also supports compact BK12345 references)
+    bkg_match = re.search(r"\b((?:RS|BKG|BK|BOOKING)-?[A-Za-z0-9]{3,12})\b", normalized, re.IGNORECASE)
     if bkg_match:
         ref_raw = bkg_match.group(1).upper()
         # Canonicalize to standard RS- or retain BKG- for matching
@@ -60,6 +61,17 @@ def extract_entities(query: str) -> dict[str, Any]:
         if re.search(rf"\b{re.escape(name.lower())}\b", lowered):
             entities["train_name"] = name
             break
+    if "train_name" not in entities:
+        words = re.findall(r"[a-z]+", lowered)
+        candidates = []
+        for name in KNOWN_TRAIN_NAMES:
+            name_words = name.lower().split()
+            score = sum(1 for word in words if get_close_matches(word, name_words, n=1, cutoff=0.78))
+            if score:
+                candidates.append((score, name))
+        candidates.sort(reverse=True)
+        if candidates and (len(candidates) == 1 or candidates[0][0] > candidates[1][0]):
+            entities["train_name"] = candidates[0][1]
 
     # 6. Train Number / ID (e.g. "train 1005", "1005", "PM-4082")
     tid_match = re.search(r"\b(?:train\s*(?:#|no\.?|id)?\s*)?([A-Za-z]{2}-\d{3,5})\b", normalized, re.IGNORECASE)
@@ -83,7 +95,11 @@ def extract_entities(query: str) -> dict[str, Any]:
         entities["seat_class"] = "Third Class"
 
     # 8. Stations (Origin / Destination)
-    route_match = re.search(r"\b(?:between|from)\s+([a-zA-Z\s]+?)\s+(?:and|to)\s+([a-zA-Z\s]+?)(?:\s+(?:on|tomorrow|today|\?|$))", normalized, re.IGNORECASE)
+    route_match = re.search(r"\b(?:between|from|departing)\s+([a-zA-Z\s]+?)\s+(?:and|to|for|towards)\s+([a-zA-Z\s]+?)(?:\s+(?:on|tomorrow|today|\?|$))", normalized, re.IGNORECASE)
+    if not route_match:
+        route_match = re.search(r"\b([a-zA-Z][a-zA-Z\s]+?)\s*(?:->|→)\s*([a-zA-Z][a-zA-Z\s]+?)(?:\s+(?:on|tomorrow|today)|\?|$)", normalized, re.IGNORECASE)
+    if not route_match:
+        route_match = re.search(r"\b([a-zA-Z][a-zA-Z\s]+?)\s+from\s+([a-zA-Z][a-zA-Z\s]+?)(?:\s+(?:on|tomorrow|today)|\?|$)", normalized, re.IGNORECASE)
     if route_match:
         cand_from = route_match.group(1).strip()
         cand_to = route_match.group(2).strip()

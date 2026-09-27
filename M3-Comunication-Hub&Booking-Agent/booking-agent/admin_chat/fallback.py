@@ -49,34 +49,44 @@ def generate_deterministic_response(
     if intent == "seat_availability_query":
         records = db_ev.get("records", [])
         retrieved_count = len(records)
-        train_name = db_ev.get("train_name") or entities.get("train_name") or "Train Service"
+        requested_train_name = db_ev.get("train_name") or entities.get("train_name")
+        train_name = requested_train_name or "Train Service"
         train_id = db_ev.get("train_id") or entities.get("train_id") or ""
         travel_date = db_ev.get("travel_date") or entities.get("travel_date") or ""
 
         if not records:
             answer = f"I could not find matching seat availability for {train_name} on {travel_date}."
         else:
-            lines = [f"{train_name} (#{train_id}) seat availability for {travel_date}:"]
+            grouped_records: dict[str, list[dict[str, Any]]] = {}
+            for record in records:
+                grouped_records.setdefault(record.get("train_name") or train_name or "Train Service", []).append(record)
+            is_multi_train = len(grouped_records) > 1 or not requested_train_name
+            lines = [
+                (f"Seat availability for {travel_date}:" if is_multi_train
+                 else f"{train_name} (#{train_id}) seat availability for {travel_date}:")
+            ]
             card_items = []
-            for r in records:
-                s_cls = r.get("seat_class", "")
-                cap = r.get("capacity", 0)
-                conf = r.get("confirmed", 0)
-                held = r.get("held", 0)
-                avail = r.get("available", 0)
-                lines.append(f"• {s_cls}: {avail} seats available (Capacity: {cap}, Booked: {conf}, Held: {held})")
-                card_items.append({
-                    "label": s_cls,
-                    "available": avail,
-                    "capacity": cap,
-                    "booked": conf,
-                    "held": held,
-                })
-                sources.append(SourceEvidence(
-                    type="seat_inventory",
-                    id=f"{train_id}-{travel_date}-{s_cls}".replace(" ", "_"),
-                    label=f"Seat Inventory — {s_cls}",
-                ))
+            for group_name, group_records in grouped_records.items():
+                if is_multi_train:
+                    lines.append(f"{group_name}:")
+                for r in group_records:
+                    s_cls = r.get("seat_class", "")
+                    cap = r.get("capacity", 0)
+                    conf = r.get("confirmed", 0)
+                    held = r.get("held", 0)
+                    lines.append(f"• {s_cls}: {r.get('available', 0)} seats available (Capacity: {cap}, Booked: {conf}, Held: {held})")
+                    card_items.append({
+                        "label": f"{group_name} — {s_cls}" if is_multi_train else s_cls,
+                        "available": r.get("available", 0),
+                        "capacity": cap,
+                        "booked": conf,
+                        "held": held,
+                    })
+                    sources.append(SourceEvidence(
+                        type="seat_inventory",
+                        id=f"{r.get('train_id', train_id)}-{travel_date}-{s_cls}".replace(" ", "_"),
+                        label=f"Seat Inventory — {group_name} {s_cls}",
+                    ))
 
             sources.append(SourceEvidence(
                 type="schedule",
@@ -86,7 +96,7 @@ def generate_deterministic_response(
 
             card = CardPayload(
                 type="seat_availability",
-                title=f"{train_name} (#{train_id})",
+                title=f"{train_name} (#{train_id})" if not is_multi_train else "Available Train Seats",
                 subtitle=f"Travel Date: {travel_date}",
                 items=card_items,
             )
@@ -215,9 +225,11 @@ def generate_deterministic_response(
                     ref = b.get("booking_reference", "")
                     s_cls = b.get("seat_class", "")
                     p_cnt = b.get("passenger_count", 1)
+                    contact_email = b.get("contact_email")
+                    email_part = f", email: {contact_email}" if contact_email else ""
                     pax_list = b.get("passengers", [])
                     pax_desc = ", ".join(f"{p.get('full_name')} ({p.get('nic_masked')})" for p in pax_list[:2])
-                    lines.append(f"• {ref}: {p_cnt} pax ({s_cls}) — {pax_desc}")
+                    lines.append(f"• {ref}: {p_cnt} pax ({s_cls}) — {pax_desc}{email_part}")
                     card_items.append({"ref": ref, "class": s_cls, "pax": p_cnt, "details": pax_desc})
                     sources.append(SourceEvidence(type="booking", id=ref, label=f"Booking {ref}"))
                 answer = "\n".join(lines)
@@ -238,12 +250,16 @@ def generate_deterministic_response(
             fare = db_ev.get("fare", "0.00")
             st = db_ev.get("status", "")
             canc = db_ev.get("cancellation")
+            contact_email = db_ev.get("passenger_email")
+            contact_phone = db_ev.get("passenger_phone")
 
             lines = [
                 f"Booking {ref}:",
                 f"• Train & Route: {t_name} ({route})",
                 f"• Travel Date: {t_date} ({s_cls})",
                 f"• Status: {st} (Gross Fare: Rs. {fare})",
+                f"• Passenger Email: {contact_email if contact_email else 'Not recorded on this booking'}",
+                f"• Passenger Phone: {contact_phone if contact_phone else 'Not recorded on this booking'}",
             ]
             if canc:
                 c_st = canc.get("status", "")
@@ -262,10 +278,26 @@ def generate_deterministic_response(
                     {"label": "Status", "value": st},
                     {"label": "Fare", "value": f"Rs. {fare}"},
                     {"label": "Route", "value": route},
+                    {"label": "Passenger Email", "value": contact_email or "Not recorded"},
+                    {"label": "Passenger Phone", "value": contact_phone or "Not recorded"},
                 ],
             )
 
-    # 7. Booking Statistics Summary
+    # 7. Ticket lookup uses the same grounded booking presentation.
+    elif intent == "ticket_query":
+        if not db_ev.get("found"):
+            answer = f"I could not find matching ticket information for reference '{entities.get('ticket_reference', 'UNKNOWN')}'."
+        else:
+            ref = db_ev.get("booking_reference", "")
+            contact_email = db_ev.get("passenger_email")
+            email_note = f" The passenger email on record is {contact_email}." if contact_email else ""
+            answer = (
+                f"Ticket {entities.get('ticket_reference', '')} is linked to booking {ref}, "
+                f"which is currently {db_ev.get('status', 'UNKNOWN')}.{email_note}"
+            )
+            sources.append(SourceEvidence(type="ticket", id=entities.get("ticket_reference", ""), label=f"Ticket {entities.get('ticket_reference', '')}"))
+
+    # 8. Booking Statistics Summary
     elif intent == "booking_statistics":
         dt = db_ev.get("date", "")
         conf = db_ev.get("confirmed_bookings", 0)
@@ -304,17 +336,26 @@ def generate_deterministic_response(
         if not records:
             answer = f"No operating train schedules found for {train_name} on {t_date}."
         else:
-            r0 = records[0]
-            dep = r0.get("departure_time", "")
-            arr = r0.get("arrival_time", "")
-            fro = r0.get("from_station", "")
-            to = r0.get("to_station", "")
-            answer = f"{train_name} operates on {t_date}: {fro} → {to}, departing at {dep} and arriving at {arr}."
-            sources.append(SourceEvidence(type="schedule", id=str(r0.get("schedule_id", "")), label=f"Schedule #{r0.get('train_id')}"))
+            lines = []
+            card_items = []
+            for record in records[:12]:
+                label = record.get("train_name") or train_name
+                dep = record.get("departure_time", "")
+                arr = record.get("arrival_time", "")
+                fro = record.get("from_station", "")
+                to = record.get("to_station", "")
+                lines.append(f"• {label} (#{record.get('train_id', '')}): {fro} → {to}, departing {dep}, arriving {arr}")
+                card_items.append({"label": label, "value": f"{dep} · {fro} → {to}"})
+                sources.append(SourceEvidence(type="schedule", id=str(record.get("schedule_id", record.get("train_id", ""))), label=f"Schedule #{record.get('train_id', '')}"))
+            answer = f"Train schedules for {t_date}:\n" + "\n".join(lines)
+            card = CardPayload(type="schedule", title="Train Schedules", subtitle=t_date, items=card_items)
 
     # Fallback default
     else:
-        answer = "I could not find matching booking information for that request."
+        answer = (
+            "I could not confidently understand that request. I can help with "
+            "seats, schedules, bookings, cancellations, fraud reviews, and passenger manifests."
+        )
 
     # Attach any policy sources
     for p in policies[:2]:

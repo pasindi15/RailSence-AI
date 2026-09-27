@@ -483,13 +483,19 @@ class QueryHistory:
             "tool_calls_made": response["tool_calls_made"],
             "sources": response["sources"],
             "highlights": response["highlights"],
+            "answer_method": response.get("answer_method"),
             "created_at": datetime.now(timezone.utc).isoformat(),
         }
         stored = "local"
         client = self.get_client()
         if client is not None:
             try:
-                client.table("ops_agent_queries").insert(row).execute()
+                try:
+                    client.table("ops_agent_queries").insert(row).execute()
+                except Exception:
+                    # answer_method column not migrated yet: keep history working without it
+                    client.table("ops_agent_queries").insert(
+                        {k: v for k, v in row.items() if k != "answer_method"}).execute()
                 stored = "supabase"
             except Exception as exc:
                 logger.info("ops_agent_queries not in Supabase yet, keeping local copy: %s", exc.__class__.__name__)

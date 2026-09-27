@@ -53,6 +53,20 @@ class TestAdminChatAPI:
         assert len(data["sources"]) > 0
         assert data["is_fallback"] is True  # In offline test mode
 
+    def test_catalog_train_name_seat_query_api(self):
+        """Named catalog trains such as Podi Menike must return live availability."""
+        resp = booking_client.post("/api/admin/booking-chat", json={
+            "message": "How many seats are available on Podi Menike tomorrow?"
+        })
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["intent"] == "seat_availability_query"
+        assert data["retrieved_records"] > 0
+        assert "available" in data["answer"].lower()
+        assert "podi menike" in data["answer"].lower()
+        assert "udarata menike" not in data["answer"].lower()
+        assert data["data_source"] in {"sqlite_test", "supabase", "m3_database"}
+
     def test_booking_agent_fraud_query_api(self):
         """2. Fraud review query on Booking Agent endpoint."""
         resp = booking_client.post("/api/admin/booking-chat", json={

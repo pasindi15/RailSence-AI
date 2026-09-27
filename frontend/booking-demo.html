@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RailSense AI — Book Your Journey</title>
+<style>
+  :root {
+    --bg: #0b1020;
+    --panel: rgba(13, 20, 40, 0.82);
+    --panel-border: rgba(96, 165, 250, 0.18);
+    --accent: #3b82f6;
+    --accent-2: #60a5fa;
+    --text: #e6edf7;
+    --muted: #8fa3c0;
+    --green: #34d399;
+    --radius: 16px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* ---------- Video background ---------- */
+  .video-bg {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+  }
+  .video-bg video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .video-bg .veil {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(6,10,22,0.30) 0%, rgba(8,13,28,0.55) 55%, rgba(6,10,22,0.85) 100%);
+  }
+
+  /* ---------- Top bar ---------- */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 32px;
+    background: rgba(8, 13, 28, 0.55);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--panel-border);
+    position: sticky;
+    top: 0;
+    z-index: 20;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand-tile {
+    width: 40px; height: 40px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    display: grid; place-items: center;
+    font-size: 20px;
+    box-shadow: 0 4px 18px rgba(59,130,246,0.35);
+  }
+  .brand h1 { font-size: 18px; font-weight: 700; letter-spacing: 0.3px; }
+  .brand h1 span { color: var(--accent-2); }
+  .brand small { display: block; color: var(--muted); font-size: 11px; font-weight: 400; }
+  .top-links { display: flex; gap: 10px; align-items: center; }
+  .top-link {
+    color: var(--muted); text-decoration: none; font-size: 13px;
+    padding: 8px 14px; border-radius: 999px; transition: 0.2s;
+  }
+  .top-link:hover { color: var(--text); background: rgba(96,165,250,0.12); }
+  .btn-ghost {
+    background: transparent; color: var(--accent-2);
+    border: 1px solid rgba(96,165,250,0.4);
+    padding: 8px 18px; border-radius: 999px;
+    font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.2s;
+  }
+  .btn-ghost:hover { background: rgba(59,130,246,0.18); }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    text-align: center;
+    padding: 64px 24px 40px;
+  }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 18px; border-radius: 999px;
+    background: rgba(59,130,246,0.15);
+    border: 1px solid rgba(96,165,250,0.35);
+    color: var(--accent-2);
+    font-size: 12px; font-weight: 600; letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+  .hero h2 {
+    font-size: clamp(30px, 5vw, 52px);
+    font-weight: 800;
+    letter-spacing: -1px;
+    line-height: 1.1;
+    margin-bottom: 14px;
+  }
+  .hero h2 em { font-style: normal; color: var(--accent-2); }
+  .hero p { color: var(--muted); font-size: 16px; max-width: 560px; margin: 0 auto; }
+
+  /* ---------- Booking card ---------- */
+  .booking-wrap {
+    max-width: 1040px;
+    margin: 0 auto 48px;
+    padding: 0 24px;
+  }
+  .booking-card {
+    background: rgba(13, 20, 40, 0.55);
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius);
+    backdrop-filter: blur(14px);
+    box-shadow: 0 24px 60px rgba(0,0,0,0.45);
+    overflow: hidden;
+  }
+  .bc-head {
+    display: flex; align-items: center; gap: 12px;
+    padding: 20px 28px;
+    border-bottom: 1px solid var(--panel-border);
+  }
+  .bc-head .tile {
+    width: 38px; height: 38px; border-radius: 10px;
+    background: rgba(59,130,246,0.16);
+    display: grid; place-items: center; font-size: 18px;
+  }
+  .bc-head h3 { font-size: 16px; font-weight: 700; }
+  .bc-head p { color: var(--muted); font-size: 12px; }
+  .bc-head .live {
+    margin-left: auto; display: flex; align-items: center; gap: 7px;
+    font-size: 12px; color: var(--green); font-weight: 600;
+  }
+  .live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); animation: pulse 1.6s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+  .bc-body { padding: 26px 28px 30px; }
+
+  /* Trip type */
+  .trip-types { display: flex; gap: 10px; margin-bottom: 24px; }
+  .trip-type {
+    flex: 0 0 auto;
+    padding: 9px 20px; border-radius: 999px;
+    border: 1px solid rgba(96,165,250,0.25);
+    background: transparent; color: var(--muted);
+    font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.2s;
+  }
+  .trip-type.active {
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    border-color: transparent; color: #fff;
+    box-shadow: 0 4px 14px rgba(59,130,246,0.35);
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+  }
+  .field label {
+    display: block; font-size: 11px; font-weight: 700;
+    letter-spacing: 1px; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 7px;
+  }
+  .field .control {
+    position: relative;
+  }
+  .field .control .ico {
+    position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
+    font-size: 15px; opacity: 0.7; pointer-events: none;
+  }
+  .field input, .field select {
+    width: 100%;
+    padding: 12px 14px 12px 40px;
+    background: rgba(7, 12, 26, 0.65);
+    border: 1px solid rgba(96,165,250,0.22);
+    border-radius: 10px;
+    color: var(--text);
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .field input:focus, .field select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.18);
+  }
+  .field select option { background: #0b1020; color: var(--text); }
+
+  /* Passengers / class row */
+  .pax-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+
+  .search-btn {
+    margin-top: 26px;
+    width: 100%;
+    padding: 15px;
+    border: none; border-radius: 12px;
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    color: #fff; font-size: 15px; font-weight: 700;
+    cursor: pointer; transition: 0.2s;
+    box-shadow: 0 8px 24px rgba(59,130,246,0.35);
+    letter-spacing: 0.3px;
+  }
+  .search-btn:hover { transform: translateY(-1px); box-shadow: 0 12px 30px rgba(59,130,246,0.45); }
+
+  /* ---------- Result strip (fake results) ---------- */
+  .results { margin-top: 26px; display: none; }
+  .results.show { display: block; }
+  .results-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .results-head h4 { font-size: 14px; }
+  .results-head span { color: var(--muted); font-size: 12px; }
+  .result-item {
+    display: flex; align-items: center; gap: 18px;
+    padding: 16px 20px;
+    background: rgba(7, 12, 26, 0.6);
+    border: 1px solid rgba(96,165,250,0.16);
+    border-left: 3px solid var(--accent);
+    border-radius: 12px;
+    margin-bottom: 12px;
+    transition: 0.2s;
+  }
+  .result-item:hover { background: rgba(59,130,246,0.08); transform: translateX(4px); }
+  .ri-train { display: flex; align-items: center; gap: 10px; min-width: 170px; }
+  .ri-train .t-ico {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: rgba(59,130,246,0.16);
+    display: grid; place-items: center; font-size: 17px;
+  }
+  .ri-train strong { font-size: 14px; display: block; }
+  .ri-train small { color: var(--muted); font-size: 11px; }
+  .ri-times { display: flex; align-items: center; gap: 14px; flex: 1; }
+  .ri-time { text-align: center; }
+  .ri-time strong { font-size: 15px; display: block; font-variant-numeric: tabular-nums; }
+  .ri-time small { color: var(--muted); font-size: 11px; }
+  .ri-dur { text-align: center; color: var(--muted); font-size: 11px; }
+  .ri-dur::before { content: "———"; display: block; color: rgba(96,165,250,0.4); margin-bottom: 2px; }
+  .ri-price { text-align: right; }
+  .ri-price strong { font-size: 18px; color: var(--green); font-variant-numeric: tabular-nums; }
+  .ri-price small { display: block; color: var(--muted); font-size: 11px; }
+  .book-btn {
+    padding: 10px 22px; border-radius: 10px; border: none;
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    color: #fff; font-weight: 700; font-size: 13px; cursor: pointer;
+    transition: 0.2s;
+  }
+  .book-btn:hover { transform: translateY(-1px); }
+
+  /* ---------- Footer strip ---------- */
+  .perks {
+    max-width: 1040px; margin: 0 auto 60px; padding: 0 24px;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px;
+  }
+  .perk {
+    background: rgba(13, 20, 40, 0.6);
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius);
+    padding: 20px;
+    display: flex; gap: 14px; align-items: flex-start;
+    backdrop-filter: blur(8px);
+  }
+  .perk .p-ico {
+    width: 40px; height: 40px; border-radius: 12px; flex: 0 0 auto;
+    background: rgba(59,130,246,0.16);
+    display: grid; place-items: center; font-size: 18px;
+  }
+  .perk strong { display: block; font-size: 14px; margin-bottom: 4px; }
+  .perk p { color: var(--muted); font-size: 12px; line-height: 1.5; }
+
+  footer {
+    text-align: center; padding: 20px; color: var(--muted); font-size: 12px;
+    border-top: 1px solid var(--panel-border);
+    background: rgba(8,13,28,0.55);
+  }
+
+  @media (max-width: 720px) {
+    .topbar { padding: 12px 16px; }
+    .top-links .top-link { display: none; }
+    .ri-times { flex-direction: column; gap: 4px; }
+    .result-item { flex-wrap: wrap; }
+    .pax-row { grid-template-columns: 1fr; }
+  }
+</style>
+<link rel="icon" type="image/png" href="/static/logo.png">
+<style>
+/* RailSense AI brand logo - the one logo used in every header across M1-M4.
+   White tile so the navy artwork stays legible on dark and light headers. */
+.rs-brand-logo{display:block;flex-shrink:0;height:46px;width:auto;object-fit:contain;
+  background:#fff;border-radius:10px;padding:3px 6px;box-sizing:content-box;
+  box-shadow:0 2px 10px rgba(15,23,42,.18)}
+</style>
+</head>
+<body>
+
+  <!-- Video background -->
+  <div class="video-bg">
+    <video autoplay muted loop playsinline preload="auto">
+      <source src="/static/video/train.mp4" type="video/mp4">
+    </video>
+    <div class="veil"></div>
+  </div>
+
+  <!-- Top bar -->
+  <header class="topbar">
+    <div class="brand">
+      <img class="rs-brand-logo" src="/static/logo.png" alt="RailSense AI">
+      <div>
+        <h1>Rail<span>Sense</span> AI</h1>
+        <small>Passenger Booking Portal</small>
+      </div>
+    </div>
+    <nav class="top-links">
+      <a class="top-link" href="/">Home</a>
+      <a class="top-link" href="#">My Bookings</a>
+      <a class="top-link" href="#">Schedules</a>
+      <button class="btn-ghost">Sign In</button>
+    </nav>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-badge">● Live Schedules</div>
+    <h2>Book your <em>journey</em> in seconds</h2>
+    <p>Search live train schedules, pick your class, and reserve seats across the network — powered by real-time RailSense operations data.</p>
+  </section>
+
+  <!-- Booking card -->
+  <main class="booking-wrap">
+    <div class="booking-card">
+      <div class="bc-head">
+        <div class="tile">🎫</div>
+        <div>
+          <h3>Plan Your Trip</h3>
+          <p>Fares update live from the operations hub</p>
+        </div>
+        <div class="live"><span class="live-dot"></span> Live</div>
+      </div>
+
+      <div class="bc-body">
+        <div class="trip-types">
+          <button class="trip-type active" data-trip="oneway">One Way</button>
+          <button class="trip-type" data-trip="return">Return</button>
+        </div>
+
+        <div class="form-grid">
+          <div class="field">
+            <label>From</label>
+            <div class="control">
+              <span class="ico">📍</span>
+              <select id="bk-from">
+                <option>Colombo Fort</option>
+                <option>Kandy</option>
+                <option>Galle</option>
+                <option>Matara</option>
+                <option>Badulla</option>
+                <option>Jaffna</option>
+                <option>Anuradhapura</option>
+                <option>Batticaloa</option>
+                <option>Trincomalee</option>
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <label>To</label>
+            <div class="control">
+              <span class="ico">🏁</span>
+              <select id="bk-to">
+                <option>Kandy</option>
+                <option>Colombo Fort</option>
+                <option>Galle</option>
+                <option>Matara</option>
+                <option>Badulla</option>
+                <option>Jaffna</option>
+                <option>Anuradhapura</option>
+                <option>Batticaloa</option>
+                <option>Trincomalee</option>
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <label>Journey Date</label>
+            <div class="control">
+              <span class="ico">📅</span>
+              <input type="date" id="bk-date">
+            </div>
+          </div>
+          <div class="field">
+            <label>Return Date</label>
+            <div class="control">
+              <span class="ico">📅</span>
+              <input type="date" id="bk-return-date" disabled>
+            </div>
+          </div>
+        </div>
+
+        <div class="pax-row">
+          <div class="field">
+            <label>Passengers</label>
+            <div class="control">
+              <span class="ico">👥</span>
+              <select id="bk-pax">
+                <option>1 Passenger</option>
+                <option>2 Passengers</option>
+                <option>3 Passengers</option>
+                <option>4 Passengers</option>
+                <option>5 Passengers</option>
+                <option>6 Passengers</option>
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <label>Class</label>
+            <div class="control">
+              <span class="ico">💺</span>
+              <select id="bk-class">
+                <option>1st Class (A/C)</option>
+                <option>2nd Class</option>
+                <option>3rd Class (Reserved)</option>
+                <option>Observation Saloon</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <button class="search-btn" id="bk-search">🔍 &nbsp;Search Trains</button>
+
+        <!-- Fake search results -->
+        <div class="results" id="bk-results">
+          <div class="results-head">
+            <h4>Available Trains</h4>
+            <span id="bk-results-meta"></span>
+          </div>
+          <div id="bk-results-list"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Perks -->
+  <section class="perks">
+    <div class="perk">
+      <div class="p-ico">⚡</div>
+      <div><strong>Instant Confirmation</strong><p>Tickets are issued the moment payment clears — no waiting, no queues.</p></div>
+    </div>
+    <div class="perk">
+      <div class="p-ico">🛡</div>
+      <div><strong>AI Fraud Protection</strong><p>Every booking is screened by RailSense anomaly detection for a safe purchase.</p></div>
+    </div>
+    <div class="perk">
+      <div class="p-ico">🔄</div>
+      <div><strong>Easy Cancellations</strong><p>Change of plans? Cancel online with human-in-the-loop review within minutes.</p></div>
+    </div>
+    <div class="perk">
+      <div class="p-ico">🚄</div>
+      <div><strong>Live Train Tracking</strong><p>Follow your train in real time from departure to arrival on the network map.</p></div>
+    </div>
+  </section>
+
+  <footer>RailSense AI · Central Operations &amp; Admin Suite — Frontend UI Demo · Version 1.0.0</footer>
+
+<script>
+  // Default dates: today / tomorrow
+  const dateInput = document.getElementById('bk-date');
+  const returnInput = document.getElementById('bk-return-date');
+  const today = new Date();
+  const tomorrow = new Date(Date.now() + 86400000);
+  const fmt = d => d.toISOString().split('T')[0];
+  dateInput.value = fmt(today);
+  dateInput.min = fmt(today);
+  returnInput.value = fmt(tomorrow);
+  returnInput.min = fmt(today);
+
+  // Trip type toggle
+  document.querySelectorAll('.trip-type').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.trip-type').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      returnInput.disabled = btn.dataset.trip !== 'return';
+    });
+  });
+
+  // Swap "from"/"to" if same
+  const fromSel = document.getElementById('bk-from');
+  const toSel = document.getElementById('bk-to');
+  fromSel.addEventListener('change', () => { if (fromSel.value === toSel.value) toSel.selectedIndex = (fromSel.selectedIndex + 1) % toSel.options.length; });
+  toSel.addEventListener('change', () => { if (fromSel.value === toSel.value) fromSel.selectedIndex = (toSel.selectedIndex + 1) % fromSel.options.length; });
+
+  // Fake search
+  document.getElementById('bk-search').addEventListener('click', () => {
+    const results = document.getElementById('bk-results');
+    const list = document.getElementById('bk-results-list');
+    const meta = document.getElementById('bk-results-meta');
+    const pax = parseInt(document.getElementById('bk-pax').value, 10) || 1;
+    const cls = document.getElementById('bk-class').value;
+    const clsFactor = cls.startsWith('1st') ? 2.0 : cls.startsWith('Observation') ? 1.8 : cls.startsWith('2nd') ? 1.3 : 1.0;
+
+    const trains = [
+      { name: 'Blue Line Express', code: 'EXP-01', dep: '06:00', arr: '09:35', base: 950, seats: 'Available 42' },
+      { name: 'Udarata Menike', code: 'UDR-05', dep: '08:30', arr: '13:15', base: 1200, seats: 'Available 18' },
+      { name: 'Yal Devi Express', code: 'YAL-11', dep: '11:00', arr: '15:40', base: 1400, seats: 'Available 27' },
+      { name: 'Ruhunu Kumari', code: 'RUH-21', dep: '14:15', arr: '18:05', base: 850, seats: 'Filling Fast' },
+    ];
+
+    meta.textContent = `${fromSel.value} → ${toSel.value} · ${dateInput.value} · ${pax} passenger${pax > 1 ? 's' : ''}`;
+    list.innerHTML = trains.map(t => {
+      const price = Math.round(t.base * clsFactor * pax);
+      return `
+      <div class="result-item">
+        <div class="ri-train">
+          <div class="t-ico">🚆</div>
+          <div><strong>${t.name}</strong><small>${t.code} · ${t.seats}</small></div>
+        </div>
+        <div class="ri-times">
+          <div class="ri-time"><strong>${t.dep}</strong><small>Departs</small></div>
+          <div class="ri-dur">2h 45m</div>
+          <div class="ri-time"><strong>${t.arr}</strong><small>Arrives</small></div>
+        </div>
+        <div class="ri-price"><strong>LKR ${price.toLocaleString()}</strong><small>${cls}</small></div>
+        <button class="book-btn" onclick="alert('Frontend demo only — booking dispatch is disabled.')">Book Now</button>
+      </div>`;
+    }).join('');
+    results.classList.add('show');
+    results.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  });
+</script>
+</body>
+</html>

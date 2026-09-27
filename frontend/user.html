@@ -2019,9 +2019,192 @@ body {
   .hero-3d-wrap  { min-height: 300px; }
   .hero-bubble { max-width: 200px; font-size: 12px; }
 }
+
+/* ── Date of Birth field: visible label before a date is picked ── */
+.dob-field {
+  position: relative;
+  width: 100%;
+}
+.dob-field .form-input {
+  width: 100%;
+}
+.dob-field .form-input::-webkit-calendar-picker-indicator {
+  opacity: 0.55;
+  cursor: pointer;
+}
+.dob-placeholder {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #8a94a6;
+  font-size: 13.5px;
+  pointer-events: none;
+  white-space: nowrap;
+  transition: opacity 0.12s ease;
+}
+.dob-placeholder.is-hidden {
+  display: none;
+}
+.dob-field:focus-within .dob-placeholder {
+  color: #5b93f0;
+}
+/* Hide the input's built-in mm/dd/yyyy ghost text while empty (required + empty = :invalid)
+   so it doesn't overlap the visible "Date Of Birth (Birthday)" label. */
+.dob-field .form-input:invalid {
+  color: transparent;
+}
+.dob-field .form-input:invalid::-webkit-datetime-edit {
+  color: transparent;
+}
+/* ── Booking view: cinematic train-video background theme ─────────────
+   Scoped via body.bkvid-on (toggled by switchView) so only #view-booking
+   gets the dark glass look; dashboard/confirmation keep the light theme. */
+body.bkvid-on { background: #0a0f1e; }
+
+/* Video layer only visible while the booking view is active */
+.bk-video-bg { position: fixed; inset: 0; z-index: -1; overflow: hidden; }
+body:not(.bkvid-on) .bk-video-bg { display: none !important; }
+.bk-video-bg video { width: 100%; height: 100%; object-fit: cover; }
+.bk-video-bg .veil {
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(6,10,22,0.32) 0%, rgba(8,13,28,0.58) 55%, rgba(6,10,22,0.88) 100%);
+}
+
+/* Chrome: top nav, sidebar toggle, tabs */
+.bkvid-on .app-shell { color: #e6edf7; }
+.bkvid-on .top-nav { background: rgba(10,16,32,0.62); border-color: rgba(96,165,250,0.18); backdrop-filter: blur(12px); box-shadow: 0 10px 30px rgba(0,0,0,0.35); }
+.bkvid-on .brand-title { color: #e6edf7; }
+.bkvid-on .brand-subtitle { color: #60a5fa; }
+.bkvid-on .clock-display { color: #8fa3c0; }
+.bkvid-on .sidebar-toggle-btn { background: rgba(255,255,255,0.08); border-color: rgba(96,165,250,0.3); color: #cdd8ea; }
+.bkvid-on .sidebar-toggle-btn:hover { background: rgba(59,130,246,0.2); border-color: #3b82f6; color: #fff; }
+.bkvid-on .tab-btn { color: #aab8cf; }
+.bkvid-on .tab-btn:hover { background: rgba(59,130,246,0.15); color: #dbe7f8; border-color: rgba(96,165,250,0.35); }
+.bkvid-on .sidebar-section-title { color: #64748b; }
+.bkvid-on .sidebar-link { color: #8fa3c0; }
+.bkvid-on .sidebar-link:hover { background: rgba(59,130,246,0.15); color: #dbe7f8; }
+.bkvid-on .sidebar-status-card { background: rgba(255,255,255,0.06); border-color: rgba(96,165,250,0.18); }
+
+/* Page heading + stepper */
+.bkvid-on .page-heading { color: #e6edf7; text-decoration-color: #3b82f6; }
+.bkvid-on .workflow-stepper { background: rgba(13,20,40,0.66); border-color: rgba(96,165,250,0.18); backdrop-filter: blur(12px); box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+.bkvid-on .step-pill { background: transparent; border-right-color: rgba(96,165,250,0.14); color: #8fa3c0; }
+.bkvid-on .step-pill:hover { background: rgba(59,130,246,0.14); color: #dbe7f8; }
+.bkvid-on .step-pill.active { background: linear-gradient(135deg, #2563eb, #1d4ed8); }
+.bkvid-on .step-circle { background: rgba(255,255,255,0.07); border-color: rgba(96,165,250,0.3); color: #aab8cf; }
+.bkvid-on .step-pill.active .step-circle { background: rgba(255,255,255,0.25); border-color: rgba(255,255,255,0.4); color: #fff; }
+
+/* Cards + inputs */
+.bkvid-on #view-booking .card-box { background: rgba(13,20,40,0.66); border-color: rgba(96,165,250,0.18); backdrop-filter: blur(14px); box-shadow: 0 18px 50px rgba(0,0,0,0.35); }
+.bkvid-on #view-booking .section-title { color: #e6edf7; }
+.bkvid-on .form-label { color: #8fa3c0; }
+.bkvid-on #view-booking .form-input,
+.bkvid-on #view-booking .form-select { background: rgba(7,12,26,0.6); border-color: rgba(96,165,250,0.25); color: #e6edf7; }
+.bkvid-on #view-booking .form-input::placeholder { color: #5f7191; }
+.bkvid-on #view-booking .form-input:focus,
+.bkvid-on #view-booking .form-select:focus { border-color: #3b82f6; background: rgba(7,12,26,0.75); box-shadow: 0 0 0 3px rgba(59,130,246,0.2); }
+.bkvid-on #view-booking select option { background: #0b1020; color: #e6edf7; }
+
+/* Alerts */
+.bkvid-on .alert-error { background: rgba(127,29,29,0.55); border-color: rgba(248,113,113,0.4); color: #fecaca; }
+.bkvid-on .alert-warning { background: rgba(120,53,15,0.5); border-color: rgba(251,191,36,0.4); color: #fde68a; }
+.bkvid-on .alert-success { background: rgba(6,78,59,0.5); border-color: rgba(52,211,153,0.4); color: #a7f3d0; }
+
+/* Popular routes + train options + class cards */
+.bkvid-on .route-chip-card { background: rgba(7,12,26,0.5); border-color: rgba(96,165,250,0.2); }
+.bkvid-on .route-chip-card:hover { border-color: #3b82f6; box-shadow: 0 4px 14px rgba(59,130,246,0.25); }
+.bkvid-on .route-chip-title { color: #e6edf7; }
+.bkvid-on .route-chip-meta { color: #8fa3c0; }
+.bkvid-on .train-option-card { background: rgba(7,12,26,0.5); border-color: rgba(96,165,250,0.2); box-shadow: none; }
+.bkvid-on .train-option-card:hover { border-color: #3b82f6; background: rgba(59,130,246,0.12); box-shadow: 0 4px 14px rgba(59,130,246,0.22); }
+.bkvid-on .train-option-card.selected { border-color: #3b82f6; background: rgba(59,130,246,0.18); box-shadow: 0 0 0 2px rgba(59,130,246,0.8), 0 4px 14px rgba(59,130,246,0.25); }
+.bkvid-on .train-title-name { color: #e6edf7; }
+.bkvid-on .train-times { color: #8fa3c0; }
+.bkvid-on .class-select-card { border-color: rgba(96,165,250,0.25); background: rgba(7,12,26,0.5); }
+.bkvid-on .class-select-card.selected { background: rgba(59,130,246,0.16); box-shadow: 0 0 0 1.5px #3b82f6; }
+.bkvid-on .class-name { color: #e6edf7; }
+.bkvid-on .class-price { color: #60a5fa; }
+
+/* JS/inline-styled light boxes (empty states, seat pills, itinerary box) */
+.bkvid-on [style*="F9FAFB"] { background: rgba(7,12,26,0.5) !important; border-color: rgba(96,165,250,0.25) !important; color: #aab8cf !important; }
+.bkvid-on [style*="F3F4F6"] { background: rgba(255,255,255,0.08) !important; color: #dbe7f8 !important; }
+
+/* Buttons */
+.bkvid-on .btn-add-passenger { color: #e6edf7; }
+.bkvid-on .btn-add-passenger:hover { color: #60a5fa; }
+.bkvid-on .btn-prev { background: rgba(255,255,255,0.08); border-color: rgba(96,165,250,0.3); color: #e6edf7; }
+.bkvid-on .btn-prev:hover { background: rgba(255,255,255,0.15); }
+.bkvid-on .btn-next-action { background: linear-gradient(135deg, #2563eb, #1d4ed8); box-shadow: 0 6px 20px rgba(37,99,235,0.4); }
+
+/* Summary table */
+.bkvid-on .summary-review-table th, .bkvid-on .summary-review-table td { border-bottom-color: rgba(96,165,250,0.15); }
+.bkvid-on .summary-review-table th { background: rgba(7,12,26,0.5); color: #8fa3c0; }
+.bkvid-on .summary-review-table td { color: #dbe7f8; }
+
+/* Payment methods */
+.bkvid-on .pay-method-card { background: rgba(7,12,26,0.5); border-color: rgba(96,165,250,0.22); }
+.bkvid-on .pay-method-card.selected { background: rgba(59,130,246,0.16); box-shadow: 0 0 0 1px #3b82f6; }
+.bkvid-on .pay-method-title { color: #e6edf7; }
+
+/* Order summary sidebar */
+.bkvid-on .order-summary-card { background: rgba(13,20,40,0.7); border-color: rgba(96,165,250,0.18); backdrop-filter: blur(14px); box-shadow: 0 18px 50px rgba(0,0,0,0.35); }
+.bkvid-on .summary-top-banner { background: linear-gradient(135deg, #2563eb, #1d4ed8); }
+.bkvid-on .summary-content { color: #dbe7f8; }
+.bkvid-on .transport-badge { background: rgba(255,255,255,0.08); color: #aab8cf; }
+.bkvid-on .route-name { color: #e6edf7; }
+.bkvid-on .route-arrow { color: #60a5fa; }
+.bkvid-on .route-date { color: #8fa3c0; }
+.bkvid-on .summary-line-item { color: #aab8cf; }
+.bkvid-on .summary-hr { border-top-color: rgba(96,165,250,0.15); }
+.bkvid-on .total-line-item { color: #e6edf7; }
+
+/* Receipt / pending-review slips */
+.bkvid-on .receipt-card { background: rgba(13,20,40,0.75); border-color: rgba(96,165,250,0.18); backdrop-filter: blur(14px); }
+.bkvid-on .receipt-header { border-bottom-color: rgba(96,165,250,0.2); }
+.bkvid-on .receipt-check-circle { background: rgba(59,130,246,0.15); border-color: #3b82f6; color: #60a5fa; }
+.bkvid-on .receipt-title { color: #e6edf7; }
+.bkvid-on .receipt-ref-pill { color: #93c5fd; background: rgba(59,130,246,0.12); border-color: rgba(96,165,250,0.4); }
+.bkvid-on .receipt-item-label { color: #8fa3c0; }
+.bkvid-on .receipt-item-value { color: #e6edf7; }
+.bkvid-on .receipt-manifest-box { background: rgba(7,12,26,0.5); border-color: rgba(96,165,250,0.18); }
+.bkvid-on .receipt-manifest-title { color: #aab8cf; }
+.bkvid-on .manifest-line { color: #dbe7f8; border-bottom-color: rgba(96,165,250,0.12); }
+.bkvid-on .btn-print { background: rgba(255,255,255,0.08); border-color: rgba(96,165,250,0.3); color: #e6edf7; }
+
+/* DOB placeholder */
+.bkvid-on .dob-placeholder { color: #7f92b3; }
+
+@media print {
+  .bk-video-bg { display: none; }
+  body.bkvid-on { background: #fff; }
+}
+
+/* ── Hero as landing page ─────────────────────────────────────────────
+   The hero is the "home" screen. When the user navigates to Booking or
+   Confirmation (body.view-away), the hero is removed so the chosen page
+   sits at the top — no manual scrolling needed. Dashboard view keeps the
+   hero above the train board, and navigateTo() auto-scrolls to it. */
+body.view-away #rs-hero { display: none !important; }
+</style>
+<link rel="icon" type="image/png" href="/static/logo.png">
+<style>
+/* RailSense AI brand logo - the one logo used in every header across M1-M4.
+   White tile so the navy artwork stays legible on dark and light headers. */
+.rs-brand-logo{display:block;flex-shrink:0;height:46px;width:auto;object-fit:contain;
+  background:#fff;border-radius:10px;padding:3px 6px;box-sizing:content-box;
+  box-shadow:0 2px 10px rgba(15,23,42,.18)}
 </style>
 </head>
 <body>
+
+<!-- Train video background for the booking view -->
+<div class="bk-video-bg" aria-hidden="true">
+  <video autoplay muted loop playsinline preload="auto">
+    <source src="/static/video/train.mp4" type="video/mp4">
+  </video>
+  <div class="veil"></div>
+</div>
 
 <!-- ══════════════════════════════════════════════════════════════
      HERO SECTION
@@ -2043,16 +2226,16 @@ body {
       </p>
       <div class="hero-ctas">
         <a href="#" class="hero-btn-primary"
-           onclick="event.preventDefault(); navigateTo('/user/booking'); setTimeout(function(){ document.querySelector('.app-shell').scrollIntoView({behavior:'smooth'}); },60);">
+           onclick="event.preventDefault(); navigateTo('/user/booking');">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="3"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
           Book a Ticket
         </a>
         <a href="#" class="hero-btn-outline"
-           onclick="event.preventDefault(); document.querySelector('.app-shell').scrollIntoView({behavior:'smooth'});">
+           onclick="event.preventDefault(); navigateTo('/user');">
           View Schedule
         </a>
-        <a href="http://localhost:5280" target="_blank" rel="noopener noreferrer" class="hero-btn-outline">
-          Ask AI &rarr;
+        <a href="/user/chat/" class="hero-btn-outline">
+          Chat with AI &rarr;
         </a>
       </div>
       <div class="hero-stats-row">
@@ -2432,7 +2615,7 @@ const QUOTES = [
   <header class="top-nav">
     <div class="brand-area">
       <button class="sidebar-toggle-btn" id="sidebarToggleBtn" onclick="toggleSidebar()" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="sidebarNav" title="Menu">☰</button>
-      <div class="brand-emblem">🚆</div>
+      <img class="rs-brand-logo" src="/static/logo.png" alt="RailSense AI">
       <div>
         <div class="brand-title">RailSense AI</div>
         <div class="brand-subtitle">Train Ticket Reservation Desk</div>
@@ -3273,10 +3456,31 @@ window.addEventListener('message', (event) => {
   }
 });
 
+/* After a user-initiated navigation, land the viewport on the relevant
+   page: dashboard keeps the hero above it, so scroll to the app shell;
+   booking/confirmation hide the hero, so land at the top of the page. */
+function scrollToView(viewName) {
+  requestAnimationFrame(() => {
+    if (viewName === 'dashboard') {
+      const shell = document.querySelector('.app-shell');
+      if (shell) shell.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  });
+}
+
+function viewNameForPath(path) {
+  if (path.includes('/booking')) return 'booking';
+  if (path.includes('/confirmation')) return 'confirmation';
+  return 'dashboard';
+}
+
 function navigateTo(path) {
   history.pushState(null, '', path);
   handleUrlRouting();
   closeSidebar();
+  scrollToView(viewNameForPath(path));
 }
 
 /* ── Sidebar drawer: ☰ opens it, ☰ again / backdrop / Esc / picking a
@@ -3354,6 +3558,19 @@ function handleUrlRouting() {
 }
 
 function switchView(viewName) {
+  // Booking view gets the cinematic train-video dark theme; others stay light.
+  document.body.classList.toggle('bkvid-on', viewName === 'booking');
+  // Pause the background video whenever the booking view is not on screen
+  // (saves CPU/network when the layer is hidden via CSS).
+  const bgVideo = document.querySelector('.bk-video-bg video');
+  if (bgVideo) {
+    if (viewName === 'booking') { bgVideo.play().catch(() => {}); }
+    else { bgVideo.pause(); }
+  }
+  // Hide the hero landing section when on Booking/Confirmation so the
+  // chosen page sits at the top (no scrolling past the hero).
+  document.body.classList.toggle('view-away', viewName !== 'dashboard');
+
   document.querySelectorAll('.view-panel').forEach(panel => panel.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(button => button.classList.remove('active'));
 
@@ -4079,15 +4296,18 @@ function renderPassengers() {
           <div id="nic-err-${index}" class="field-error-msg">Invalid NIC (9 digits + V/X or 12 digits)</div>
         </div>
         <div class="field-cell">
-          <input
-            type="date"
-            class="form-input"
-            id="pax-dob-${index}"
-            placeholder="Date Of Birth"
-            value="${p.dob}"
-            required
-            onchange="syncPassenger(${index}, 'dob', this.value)"
-          />
+          <div class="dob-field" id="dob-field-${index}" onclick="openDobPicker(${index})">
+            <input
+              type="date"
+              class="form-input"
+              id="pax-dob-${index}"
+              value="${p.dob}"
+              required
+              onchange="syncPassenger(${index}, 'dob', this.value)"
+              aria-label="Date of Birth"
+            />
+            <span class="dob-placeholder${p.dob ? ' is-hidden' : ''}" id="dob-ph-${index}">Date Of Birth (Birthday)</span>
+          </div>
         </div>
         <div class="field-cell">
           <select class="form-select" id="pax-country-${index}" onchange="syncPassenger(${index}, 'country', this.value)">
@@ -4112,6 +4332,25 @@ function renderPassengers() {
 function syncPassenger(index, field, value) {
   if (passengerData[index]) {
     passengerData[index][field] = value;
+  }
+  // Toggle the visible "Date Of Birth" placeholder when a birthday is picked/cleared.
+  if (field === 'dob') {
+    const ph = document.getElementById(`dob-ph-${index}`);
+    if (ph) ph.classList.toggle('is-hidden', !!value);
+  }
+}
+
+// Click anywhere on the DOB field to open the native date picker.
+function openDobPicker(index) {
+  const input = document.getElementById(`pax-dob-${index}`);
+  if (!input) return;
+  input.focus();
+  try {
+    if (typeof input.showPicker === 'function') {
+      input.showPicker();
+    }
+  } catch (_) {
+    // Older browsers open the picker natively on click anyway.
   }
 }
 
@@ -4315,6 +4554,11 @@ async function submitBooking() {
   const trainId = $('train-select-val').value.trim();
   const seatClass = $('seat-class').value.trim();
   const email = $('email-address').value.trim();
+  const contactInput = $('contact-number');
+  const countryCodeEl = $('country-code');
+  const contactPhone = contactInput && contactInput.value.trim()
+    ? `${countryCodeEl ? countryCodeEl.value : ''}${contactInput.value.trim().replace(/^\s+/, '')}`
+    : null;
 
   const passengersPayload = passengerData.map(p => ({
     name: `${p.title !== 'Title' ? p.title + ' ' : ''}${p.firstName.trim()} ${p.lastName.trim()}`,
@@ -4337,6 +4581,7 @@ async function submitBooking() {
         seat_class: seatClass,
         passenger_count: passengerData.length,
         passenger_email: email,
+        contact_phone: contactPhone,
         user_id: 'passenger_web_user',
         passengers: passengersPayload,
         schedule_id: selectedScheduleId,
@@ -4688,6 +4933,18 @@ function escapeHtml(text) {
 .ops-fact small { display: block; font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--text-sub); }
 .ops-fact b { font-size: 13.5px; font-weight: 800; }
 .ops-fact.good b { color: #059669; } .ops-fact.warn b { color: #D97706; } .ops-fact.bad b { color: #DC2626; } .ops-fact.neutral b { color: #111827; }
+.ops-timeline { list-style: none; margin: 8px 0 4px; padding: 0 0 0 4px; }
+.ops-timeline li { position: relative; display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; padding: 5px 0 5px 20px; font-size: 12.5px; color: #374151; }
+.ops-timeline li::before { content: ''; position: absolute; left: 4px; top: 0; bottom: 0; width: 2px; background: #D1FAE5; }
+.ops-timeline li::after { content: ''; position: absolute; left: 0; top: 10px; width: 10px; height: 10px; border-radius: 50%; background: #fff; border: 2px solid #A7F3D0; }
+.ops-timeline li.passed { color: #9CA3AF; } .ops-timeline li.passed::after { background: #A7F3D0; }
+.ops-timeline li.current, .ops-timeline li.next { font-weight: 800; color: #065F46; }
+.ops-timeline li.current::after { background: #10B981; border-color: #10B981; box-shadow: 0 0 0 4px rgba(16,185,129,.2); }
+.ops-timeline li.next::after { border-color: #10B981; }
+.ops-timeline .t { text-align: right; font-variant-numeric: tabular-nums; }
+.ops-timeline .t s { color: #9CA3AF; font-weight: 500; margin-right: 4px; }
+.ops-timeline .t.late b { color: #D97706; }
+.ops-timeline .why { grid-column: 1 / -1; font-size: 11px; font-weight: 600; color: #B45309; }
 .ops-sources { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
 .ops-sources span { font-size: 10px; font-weight: 700; color: #0E7490; background: #ECFEFF; border: 1px solid #A5F3FC; border-radius: 99px; padding: 2px 8px; }
 
@@ -4895,6 +5152,7 @@ function escapeHtml(text) {
     typing.remove();
     if (current !== svc) { busy = false; el('ops-send').disabled = false; return; }  // popup closed/reopened meanwhile
     addBot(answer, false);
+    applyLive(answer.live);
     renderSuggestions(answer.suggestions || []);
     busy = false;
     el('ops-send').disabled = false;
@@ -4964,6 +5222,7 @@ function escapeHtml(text) {
           `<div class="ops-fact ${esc(f.tone)}" style="animation-delay:${.15 + i * .08}s"><small>${esc(f.label)}</small><b>${esc(f.value)}</b></div>`).join('')}</div></div>`;
     }
     html += (a.paragraphs || []).map(p => `<p class="ops-para">${rich(p)}</p>`).join('');
+    if (!compact && Array.isArray(a.timeline) && a.timeline.length) html += timelineHtml(a.timeline, a.live);
     if (!compact && a.sources && a.sources.length) {
       html += `<div class="ops-sources">${a.sources.map(s => `<span>${esc(s)}</span>`).join('')}</div>`;
     }
@@ -4973,6 +5232,31 @@ function escapeHtml(text) {
     animateGauge(m);
     // Bring the start of the answer (headline + gauge) into view, not its end.
     el('ops-thread').scrollTop = Math.max(0, m.offsetTop - 12);
+  }
+
+  // Station-by-station timetable from M2's live journey (expected times include
+  // today's verified delays; the reason is shown under the affected stops).
+  function timelineHtml(rows, live) {
+    const next = live && live.next_station;
+    return `<ol class="ops-timeline">${rows.map(r => {
+      const cls = r.state === 'upcoming' && r.station === next ? 'next' : r.state;
+      const late = r.delay > 2 && r.expected !== r.scheduled;
+      const time = late ? `<s>${esc(r.scheduled)}</s><b>${esc(r.expected)}</b>` : `<b>${esc(r.scheduled)}</b>`;
+      return `<li class="${esc(cls)}"><span>${esc(r.station)}</span><span class="t${late ? ' late' : ''}">${time}</span>${
+        r.why ? `<span class="why">+${Math.round(r.delay)} min · ${esc(r.why)}</span>` : ''}</li>`;
+    }).join('')}</ol>`;
+  }
+
+  // The header track follows M2's server-side position, not the board's snapshot.
+  function applyLive(live) {
+    if (!live) return;
+    const label = { SCHEDULED: 'NOT YET DEPARTED', ARRIVED: 'ARRIVED' }[live.status]
+      || (live.status === 'AT_STATION' ? `AT ${live.at_station}` : `${live.last_station || ''} → ${live.next_station || ''}`);
+    el('ops-pos').textContent = label.toUpperCase();
+    const p = Math.max(0, Math.min(100, Number(live.progress_percent) || 0));
+    el('ops-rail-fill').style.width = `${p}%`;
+    el('ops-train').style.left = `${p}%`;
+    if (live.delay_minutes > 2 && live.expected_arrival) el('ops-arr').textContent = `ARR ${live.expected_arrival}`;
   }
 
   // Reveal the answer word by word; markup (bold) is preserved.
@@ -5075,6 +5359,25 @@ function escapeHtml(text) {
   function stopParticles() { if (particles) { particles(); particles = null; } }
 })();
 </script>
+
+<!-- Choo chat widget: framework-free mascot + chat panel. Loaded only on this
+     file (served for /user, /user/dashboard, /user/booking, /user/confirmation),
+     not on /admin or /login. Backend is M1's FastAPI /chat (port 8001), which
+     already accepts {message, session_id} and returns a "reply" field, so this
+     uses the widget's own defaults with no buildBody/parseReply override.
+     Docked bottom-right at 64px (no left-side collision risk with the sidebar
+     drawer, and nothing else is anchored bottom-right on this page). -->
+<script>
+  window.CHOO_CONFIG = {
+    endpoint: 'http://127.0.0.1:8001/chat',
+    right: 20,
+    bottom: 20,
+    size: 64,
+    firstHelloDelay: 10000,
+    helloGap: 10000
+  };
+</script>
+<script src="/static/choo-widget.js"></script>
 
 </body>
 </html>

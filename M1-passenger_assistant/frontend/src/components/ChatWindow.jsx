@@ -1,6 +1,7 @@
 import { useState } from "react";
 import MessageBubble from "./MessageBubble.jsx";
 import InputBar from "./InputBar.jsx";
+import TrainThinking from "./TrainThinking.jsx";
 
 const QUICK_INQUIRIES = [
   {
@@ -95,7 +96,6 @@ export default function ChatWindow({ messages, onSend, loading }) {
         {messages.length === 0 ? (
           <div className="empty-state-container">
             <div className="empty-state-card">
-              <div className="empty-state-badge">🚆 Central Hub Connected</div>
               <h2 className="empty-state-title">Welcome to RailSense AI</h2>
               <p className="empty-state-desc">
                 I can assist with real-time train routes, schedules, ticket fares, delay predictions,
@@ -135,9 +135,7 @@ export default function ChatWindow({ messages, onSend, loading }) {
         {loading && (
           <div className="bubble-row left">
             <div className="bubble bot typing-indicator-bubble">
-              <span className="typing-dot"></span>
-              <span className="typing-dot"></span>
-              <span className="typing-dot"></span>
+              <TrainThinking />
               <span className="typing-label">Consulting RailSense Multi-Agent Hub...</span>
             </div>
           </div>

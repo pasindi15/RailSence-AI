@@ -1,3 +1,4 @@
+import { useState, useRef, useEffect } from "react";
 import ThemeToggle from "./ThemeToggle.jsx";
 
 const PinIcon = ({ filled = false }) => (
@@ -12,7 +13,47 @@ const TrashIcon = () => (
   </svg>
 );
 
-function ChatItem({ chat, isActive, onSelect, onPin, onDeleteRequest }) {
+const PencilIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 20h9" />
+    <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+  </svg>
+);
+
+const MAX_TITLE = 80;
+
+function ChatItem({ chat, isActive, onSelect, onPin, onRename, onDeleteRequest }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
+  const inputRef = useRef(null);
+  const finished = useRef(false);
+
+  useEffect(() => {
+    if (editing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [editing]);
+
+  const startEdit = () => {
+    finished.current = false;
+    setDraft(chat.title || "");
+    setEditing(true);
+  };
+
+  const commit = () => {
+    if (finished.current) return;
+    finished.current = true;
+    const next = draft.trim().slice(0, MAX_TITLE);
+    setEditing(false);
+    if (next && next !== chat.title) onRename(chat.id, next);
+  };
+
+  const cancel = () => {
+    finished.current = true;
+    setEditing(false);
+  };
+
   return (
     <div
       className={`chat-item ${isActive ? "active" : ""}`}
@@ -23,8 +64,37 @@ function ChatItem({ chat, isActive, onSelect, onPin, onDeleteRequest }) {
           <PinIcon filled />
         </span>
       )}
-      <span className="chat-item-title">{chat.title || "New conversation"}</span>
+      {editing ? (
+        <input
+          ref={inputRef}
+          className="chat-item-rename"
+          aria-label="Rename chat"
+          value={draft}
+          maxLength={MAX_TITLE}
+          onChange={(e) => setDraft(e.target.value)}
+          onClick={(e) => e.stopPropagation()}
+          onBlur={commit}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") commit();
+            else if (e.key === "Escape") cancel();
+          }}
+        />
+      ) : (
+        <span className="chat-item-title">{chat.title || "New conversation"}</span>
+      )}
       <span className="chat-item-actions">
+        <button
+          type="button"
+          className="chat-item-icon-btn"
+          aria-label="Rename chat"
+          title="Rename chat"
+          onClick={(e) => {
+            e.stopPropagation();
+            startEdit();
+          }}
+        >
+          <PencilIcon />
+        </button>
         <button
           type="button"
           className="chat-item-icon-btn"
@@ -54,21 +124,14 @@ function ChatItem({ chat, isActive, onSelect, onPin, onDeleteRequest }) {
   );
 }
 
-export default function Sidebar({ chats, activeChatId, onNewChat, onSelectChat, onPin, onDeleteRequest, passenger, onLogout, isOpen = true }) {
+export default function Sidebar({ chats, activeChatId, onNewChat, onSelectChat, onPin, onRename, onDeleteRequest, passenger, onLogout, isOpen = true }) {
   const pinned = chats.filter((c) => c.isPinned);
   const recent = chats.filter((c) => !c.isPinned);
 
   return (
     <div className={`sidebar${isOpen ? "" : " sidebar--collapsed"}`}>
       <div className="sidebar-brand">
-        <div className="sidebar-brand-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" width="14" height="14">
-            <rect x="2" y="7" width="20" height="13" rx="2"/>
-            <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
-            <line x1="12" y1="12" x2="12" y2="16"/>
-            <line x1="8" y1="14" x2="16" y2="14"/>
-          </svg>
-        </div>
+        <img className="sidebar-brand-logo" src={`${import.meta.env.BASE_URL}logo.png`} alt="RailSense AI" />
         <span className="sidebar-brand-name">RailSense AI</span>
       </div>
 
@@ -86,6 +149,7 @@ export default function Sidebar({ chats, activeChatId, onNewChat, onSelectChat, 
                   isActive={chat.id === activeChatId}
                   onSelect={onSelectChat}
                   onPin={onPin}
+                  onRename={onRename}
                   onDeleteRequest={onDeleteRequest}
                 />
               ))}
@@ -103,6 +167,7 @@ export default function Sidebar({ chats, activeChatId, onNewChat, onSelectChat, 
                 isActive={chat.id === activeChatId}
                 onSelect={onSelectChat}
                 onPin={onPin}
+                onRename={onRename}
                 onDeleteRequest={onDeleteRequest}
               />
             ))}

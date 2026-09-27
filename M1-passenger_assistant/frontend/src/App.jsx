@@ -5,7 +5,7 @@ import LoginPage from "./components/LoginPage.jsx";
 import ConfirmDialog from "./components/ConfirmDialog.jsx";
 import Toast from "./components/Toast.jsx";
 import TrainDetailsPanel from "./components/TrainDetailsPanel.jsx";
-import { sendMessage, getHistory, listChats, deleteChat, pinChat } from "./api.js";
+import { sendMessage, getHistory, listChats, deleteChat, pinChat, renameChat } from "./api.js";
 
 const CHATS_KEY = "railsense_chats";
 const ACTIVE_KEY = "railsense_active_chat";
@@ -310,6 +310,23 @@ export default function App() {
     }
   };
 
+  const handleRename = async (id, nextTitle) => {
+    const chat = chats.find((c) => c.id === id);
+    if (!chat) return;
+    if (!chat.persisted) {
+      showToast("Send a message first, then you can rename this chat.");
+      return;
+    }
+    const previous = chat.title;
+    setChats((prev) => prev.map((c) => (c.id === id ? { ...c, title: nextTitle } : c)));
+    try {
+      await renameChat(id, nextTitle);
+    } catch (err) {
+      setChats((prev) => prev.map((c) => (c.id === id ? { ...c, title: previous } : c)));
+      showToast("Couldn't rename this chat. Please try again.");
+    }
+  };
+
   const handleDeleteRequest = (id) => setPendingDeleteId(id);
   const handleCancelDelete = () => setPendingDeleteId(null);
 
@@ -370,6 +387,7 @@ export default function App() {
         onNewChat={handleNewChat}
         onSelectChat={handleSelectChat}
         onPin={handlePin}
+        onRename={handleRename}
         onDeleteRequest={handleDeleteRequest}
         passenger={passenger}
         onLogout={handleLogout}

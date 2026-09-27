@@ -244,6 +244,13 @@ select option { background: #0C1120; color: #E2E8F0; }
   color: var(--ink);
   display: flex; flex-direction: column; padding: 22px 16px;
 }
+/* Desktop: the sidebar stays in view while long pages scroll, and scrolls on
+   its own when the window (or the portal iframe) is shorter than the menu, so
+   the signed-in user row at the bottom is never cut off. */
+@media (min-width: 951px) {
+  .sidebar { position: sticky; top: 0; height: 100vh; height: 100dvh; overflow-y: auto; overscroll-behavior: contain; }
+  .sidebar-footer { flex-shrink: 0; }
+}
 [data-theme="light"] .sidebar { box-shadow: 1px 0 14px rgba(15, 23, 42, 0.06); }
 
 .sidebar .logo {

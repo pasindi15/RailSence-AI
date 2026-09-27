@@ -33,11 +33,6 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
-try:
-    # pyrefly: ignore [missing-import]
-    import google.generativeai as genai
-except ImportError:
-    genai = None
 import httpx
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
@@ -50,6 +45,7 @@ from nlu.intent_classifier import classify_intent, is_greeting
 from nlu.ner_extractor import STATION_ALIASES, extract_entities
 from hub_client import build_envelope, send_to_hub, USE_MOCK_HUB
 from i18n import t
+from llm_client import build_model
 from rag.retriever import retrieve_faq_chunks
 from shared.train_repository import TrainRepositoryUnavailable, get_train, get_train_details, get_train_schedule, search_trains
 
@@ -68,14 +64,13 @@ if SUPABASE_URL and SUPABASE_KEY:
 
 SYSTEM_PROMPT = (Path(__file__).parent / "prompts" / "system_prompt.md").read_text(encoding="utf-8")
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-gemini_model = None
-if GEMINI_API_KEY and genai is not None:
-    genai.configure(api_key=GEMINI_API_KEY)
-    gemini_model = genai.GenerativeModel("gemini-flash-latest", system_instruction=SYSTEM_PROMPT)
-    print(f"[startup] GEMINI_API_KEY loaded (len={len(GEMINI_API_KEY)}) - Gemini model ready: gemini-flash-latest")
+# LLM is served through OpenRouter (see llm_client.py). The variable keeps its
+# historical name `gemini_model` because the answer/guard code and tests use it.
+gemini_model = build_model(system_instruction=SYSTEM_PROMPT)
+if gemini_model:
+    print(f"[startup] OPENROUTER_API_KEY loaded - LLM ready: {gemini_model.model}")
 else:
-    print("[startup] WARNING: GEMINI_API_KEY not set - /chat will fall back to raw RAG chunk text, not LLM answers")
+    print("[startup] WARNING: OPENROUTER_API_KEY not set (or openai not installed) - /chat will fall back to raw RAG chunk text, not LLM answers")
 
 app = FastAPI(title="RailSense AI - Passenger Assistant Agent")
 
@@ -124,6 +119,10 @@ class PinRequest(BaseModel):
     pinned: bool
 
 
+class TitleRequest(BaseModel):
+    title: str
+
+
 # Matches crypto.randomUUID() from the frontend (and str(uuid.uuid4()) from the
 # ChatRequest default). Rejecting anything else before it reaches a Supabase
 # filter keeps session_id out of query-building entirely, not just escaped.
@@ -152,6 +151,135 @@ def get_recent_history(session_id: str, turns: int = 3) -> list[dict]:
     except Exception as e:
         print(f"Supabase history fetch failed: {e}")
         return []
+
+
+# ── Rolling conversation memory ──────────────────────────────────────
+# Every SUMMARY_EVERY completed turns (a turn = user message + reply) the older
+# part of the chat is folded into a running summary. The prompt then carries
+# that summary plus every turn after it verbatim, so the model always sees the
+# whole chat: fewer than 5 turns -> all verbatim; more -> summary + recent.
+# Kept in process memory; if lost (restart) it is rebuilt from chat_messages.
+SUMMARY_EVERY = 5
+MAX_HISTORY_MESSAGES = 200
+_session_summaries: dict[str, dict] = {}  # session_id -> {"summary": str, "turns": int}
+
+
+def _fetch_all_messages(session_id: str) -> list[dict]:
+    if not supabase:
+        return []
+    try:
+        result = (
+            supabase.table("chat_messages")
+            .select("role,message")
+            .eq("session_id", session_id)
+            .order("created_at", desc=True)
+            .limit(MAX_HISTORY_MESSAGES)
+            .execute()
+        )
+        return list(reversed(result.data))
+    except Exception as e:
+        print(f"[context] history fetch failed: {e}")
+        return []
+
+
+def _load_summary(session_id: str) -> dict | None:
+    """Stored summary row for the session, or None."""
+    if not supabase:
+        return None
+    try:
+        result = (
+            supabase.table("chat_summaries")
+            .select("summary,turns_covered")
+            .eq("session_id", session_id)
+            .limit(1)
+            .execute()
+        )
+        if result.data:
+            row = result.data[0]
+            return {"summary": row["summary"], "turns": row["turns_covered"]}
+    except Exception as e:
+        print(f"[context] summary load failed (does chat_summaries exist?): {e}")
+    return None
+
+
+def _save_summary(session_id: str, state: dict) -> None:
+    if not supabase:
+        return
+    try:
+        supabase.table("chat_summaries").upsert({
+            "session_id": session_id,
+            "summary": state["summary"],
+            "turns_covered": state["turns"],
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        }).execute()
+        print(f"[context] session={session_id} summary saved to DB (turns_covered={state['turns']})")
+    except Exception as e:
+        print(f"[context] summary save failed (does chat_summaries exist?): {e}")
+
+
+def _split_turns(messages: list[dict]) -> list[list[dict]]:
+    """Group messages into turns, each starting at a user message."""
+    turns: list[list[dict]] = []
+    for m in messages:
+        if m["role"] == "user" or not turns:
+            turns.append([m])
+        else:
+            turns[-1].append(m)
+    return turns
+
+
+def _format_turns(turns: list[list[dict]]) -> str:
+    return "\n".join(f"{m['role']}: {m['message']}" for turn in turns for m in turn)
+
+
+def _summarize_turns(previous: str, turns: list[list[dict]]) -> str:
+    """Fold `turns` into the running summary. LLM when available, else a plain digest."""
+    transcript = _format_turns(turns)
+    if gemini_model:
+        prompt = (
+            "Summarize this railway passenger chat so an assistant can continue it later. "
+            "Keep concrete details: stations, train names/ids, dates, times, passenger counts, "
+            "seat classes, bookings, fares quoted, complaints, unresolved questions and the "
+            "passenger's language. Max 120 words, plain text, no preamble.\n\n"
+            f"Existing summary (may be empty):\n{previous or '(none)'}\n\n"
+            f"New conversation turns to add:\n{transcript}"
+        )
+        try:
+            text = (gemini_model.generate_content(prompt).text or "").strip()
+            if text:
+                return text
+        except Exception as e:
+            print(f"[context] LLM summary failed ({type(e).__name__}): {e} - using plain digest")
+    digest = " | ".join(f"Q: {t[0]['message'][:120]}" for t in turns)
+    return f"{previous} | {digest}".strip(" |")[-1200:]
+
+
+def get_conversation_context(session_id: str) -> tuple[str, str]:
+    """Return (summary, recent_verbatim_text) for the session's prior turns."""
+    turns = _split_turns(_fetch_all_messages(session_id))
+    total = len(turns)
+    covered_target = (total // SUMMARY_EVERY) * SUMMARY_EVERY
+    state = _session_summaries.get(session_id)
+    if state is None:
+        state = _load_summary(session_id) or {"summary": "", "turns": 0}
+        _session_summaries[session_id] = state
+        if state["turns"]:
+            print(f"[context] session={session_id} summary loaded from DB (turns_covered={state['turns']})")
+
+    if covered_target > state["turns"]:
+        new_turns = turns[state["turns"]:covered_target]
+        print(f"[context] session={session_id} summarizing turns {state['turns'] + 1}-{covered_target} of {total}")
+        state = {"summary": _summarize_turns(state["summary"], new_turns), "turns": covered_target}
+        _session_summaries[session_id] = state
+        _save_summary(session_id, state)
+        print(f"[context] session={session_id} new summary: {state['summary']!r}")
+
+    recent = _format_turns(turns[state["turns"]:])
+    print(
+        f"[context] session={session_id} turns={total} summarized={state['turns']} "
+        f"verbatim={total - state['turns']} has_summary={bool(state['summary'])}"
+    )
+    return state["summary"], recent
 
 
 # fare_query / schedule_query map 1:1 to a doc, so retrieval can skip
@@ -765,8 +893,11 @@ def compose_rag_answer(
         print("[llm] SKIPPED - gemini_model is None (GEMINI_API_KEY missing/not loaded) - returning raw RAG chunk text")
         return _raw_fallback_text(), sources
 
-    history = get_recent_history(session_id)
-    history_text = "\n".join(f"{h['role']}: {h['message']}" for h in history) or "(no prior messages)"
+    summary, recent_text = get_conversation_context(session_id)
+    history_text = (
+        (f"Summary of earlier conversation: {summary}\n\n" if summary else "")
+        + (f"Recent messages:\n{recent_text}" if recent_text else "")
+    ) or "(no prior messages)"
     # Only surface entities the NLU actually found - an empty/None-filled dict
     # would just add noise to the prompt instead of useful grounding signal.
     known_details = ", ".join(f"{k}={v}" for k, v in (entities or {}).items() if v) or "none extracted"
@@ -851,7 +982,7 @@ def compose_rag_answer(
         f"Passenger's question: {text}"
     )
 
-    print("[llm] Gemini request started (gemini-flash-latest)")
+    print("[llm] LLM request started")
     try:
         response = gemini_model.generate_content(prompt)
         answer = (response.text or "").strip()
@@ -954,6 +1085,26 @@ def train_details(train_id: str):
     return {"train": details, "updated_at": datetime.now(timezone.utc).isoformat()}
 
 
+OPERATIONS_AGENT_URL = os.getenv("OPERATIONS_AGENT_URL", "http://127.0.0.1:8005")
+_OPERATIONS_INTENTS = {"delay_check", "train_status", "train_info", "schedule_query", "unknown"}
+
+
+async def ask_operations_agent(text: str) -> dict | None:
+    """M2's /passenger/query answer, or None when M2 declines or is unreachable."""
+    try:
+        async with httpx.AsyncClient(timeout=25) as client:
+            resp = await client.post(f"{OPERATIONS_AGENT_URL.rstrip('/')}/passenger/query",
+                                     json={"question": text, "language": "en"})
+        data = resp.json() if resp.status_code == 200 else {}
+    except Exception as exc:
+        print(f"[chat] operations agent unavailable: {exc!r}")
+        return None
+    if data.get("handled") and data.get("reply"):
+        return data
+    print(f"[chat] operations agent declined: {data.get('reason')}")
+    return None
+
+
 @app.post("/chat", response_model=ChatResponse)
 async def chat(req: ChatRequest):
     text = req.message.strip()
@@ -980,6 +1131,23 @@ async def chat(req: ChatRequest):
     if entities.get("train_id") and intent == "schedule_query":
         intent = "train_info"
     print(f"[chat] language={language} intent={intent}")
+
+    # Train operations questions (live position, delays, "any train to X after
+    # 19:15?", station ETAs, incidents) are answered by the Operations Agent
+    # (M2) from the real timetable, live journey and verified incidents. M2
+    # returns handled=false for anything else, which then continues below.
+    if language == "en" and intent in _OPERATIONS_INTENTS:
+        ops = await ask_operations_agent(text)
+        if ops:
+            save_message(req.session_id, "user", text)
+            save_message(req.session_id, "assistant", ops["reply"])
+            return ChatResponse(
+                session_id=req.session_id, reply=ops["reply"], intent=intent,
+                language=language,
+                entities={**entities, "operations": {"intent": ops.get("intent"), "kind": ops.get("kind"),
+                                                     **(ops.get("entities") or {})}},
+                source="via Operations Agent (M2)",
+            )
 
     source = "local"
     reply = ""
@@ -1545,11 +1713,39 @@ def delete_chat(session_id: str):
         # DELETE CASCADE - keeps this correct even on a database where that
         # constraint didn't attach cleanly (see supabase_schema.sql).
         supabase.table("chat_messages").delete().eq("session_id", session_id).execute()
+        _session_summaries.pop(session_id, None)
+        try:
+            supabase.table("chat_summaries").delete().eq("session_id", session_id).execute()
+        except Exception as e:
+            print(f"[context] summary delete failed: {e}")
         supabase.table("chat_sessions").delete().eq("session_id", session_id).execute()
     except Exception as e:
         print(f"Supabase delete failed: {e}")
         raise HTTPException(status_code=500, detail="Failed to delete session")
     return None
+
+
+@app.patch("/chat/{session_id}/title", response_model=SessionSummary)
+def rename_chat(session_id: str, req: TitleRequest):
+    validate_session_id(session_id)
+    title = req.title.strip()[:80]
+    if not title:
+        raise HTTPException(status_code=400, detail="Title cannot be empty")
+    if not supabase:
+        raise HTTPException(status_code=503, detail="Supabase is not configured")
+    get_session_or_404(session_id)
+
+    try:
+        result = (
+            supabase.table("chat_sessions")
+            .update({"title": title})
+            .eq("session_id", session_id)
+            .execute()
+        )
+        return result.data[0]
+    except Exception as e:
+        print(f"Supabase rename failed: {e}")
+        raise HTTPException(status_code=500, detail="Failed to rename session")
 
 
 @app.patch("/chat/{session_id}/pin", response_model=SessionSummary)

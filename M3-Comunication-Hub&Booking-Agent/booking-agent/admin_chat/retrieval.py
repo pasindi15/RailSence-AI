@@ -8,12 +8,19 @@ Executes parameterized, read-only queries against M3 database tables.
 from __future__ import annotations
 
 import json
+import sys
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
+from pathlib import Path
 from typing import Any
 
 from sqlalchemy import func
 from sqlalchemy.orm import Session
+
+_CURRENT_DIR = Path(__file__).resolve().parent
+_WORKSPACE_ROOT = _CURRENT_DIR.parents[2]
+if str(_WORKSPACE_ROOT) not in sys.path:
+    sys.path.insert(0, str(_WORKSPACE_ROOT))
 
 from database.models import (
     Booking,
@@ -35,9 +42,60 @@ from booking.availability import (
     get_schedules_for_route,
     get_train_by_public_id,
     normalize_seat_class,
+    stations_match,
 )
 from shared.nic import mask_nic
 from .date_parser import get_current_colombo_date
+
+
+def retrieve_schedule(db: Session, entities: dict[str, Any]) -> dict[str, Any]:
+    """Retrieve deterministic train schedules without treating them as seat queries."""
+    travel_date = date.fromisoformat(entities["travel_date"]) if entities.get("travel_date") else get_current_colombo_date()
+    train = _resolve_train(db, entities.get("train_name"), entities.get("train_id"))
+    if train is None and entities.get("train_name"):
+        from booking.services_catalog import DAILY_SERVICES
+        wanted = entities["train_name"].lower()
+        service = next((s for s in DAILY_SERVICES if wanted in s.train_name.lower()), None)
+        if service:
+            from booking.availability import ensure_journeys_for_date
+            try:
+                ensure_journeys_for_date(db, travel_date, train_id=service.train_id)
+            except Exception:
+                pass
+            train = _resolve_train(db, None, service.train_id)
+
+    from_station = entities.get("origin_station")
+    to_station = entities.get("destination_station")
+    if from_station and to_station:
+        from booking.availability import get_schedules_for_route
+        options = get_schedules_for_route(db, from_station, to_station, travel_date)
+    else:
+        query = db.query(TrainSchedule, Train).join(Train, TrainSchedule.train_id == Train.id).filter(
+            TrainSchedule.travel_date == travel_date,
+            Train.active == True,  # noqa: E712
+        )
+        if train:
+            query = query.filter(Train.id == train.id)
+        options = []
+        for schedule, row_train in query.order_by(TrainSchedule.departure_time).all():
+            options.append({
+                "schedule_id": schedule.id,
+                "train_id": row_train.train_id,
+                "train_name": row_train.train_name,
+                "from_station": schedule.from_station,
+                "to_station": schedule.to_station,
+                "departure_time": schedule.departure_time.strftime("%H:%M") if schedule.departure_time else "",
+                "arrival_time": schedule.arrival_time.strftime("%H:%M") if schedule.arrival_time else "",
+                "travel_date": schedule.travel_date.isoformat(),
+                "service_status": getattr(schedule.service_status, "value", schedule.service_status) or "SCHEDULED",
+            })
+
+    return {
+        "found": bool(options),
+        "travel_date": travel_date.isoformat(),
+        "train_name": train.train_name if train else entities.get("train_name"),
+        "records": options[:25],
+    }
 
 
 def _resolve_train(db: Session, train_name: str | None, train_id: str | None) -> Train | None:
@@ -77,7 +135,47 @@ def retrieve_seat_availability(db: Session, entities: dict[str, Any]) -> dict[st
 
     train_name = entities.get("train_name")
     train_id = entities.get("train_id")
-    train = _resolve_train(db, train_name, train_id)
+    catalog_service = None
+    if train_name and not train_id:
+        from booking.services_catalog import DAILY_SERVICES
+        requested_name = train_name.strip().lower()
+        catalog_service = next(
+            (
+                service for service in DAILY_SERVICES
+                if requested_name == service.train_name.lower()
+                or requested_name in service.train_name.lower()
+            ),
+            None,
+        )
+
+    # Resolve named daily services through the M3 catalog first. This prevents
+    # a stale row with the same public ID but a different display name from
+    # answering a Podi Menike question as Udarata Menike (or vice versa).
+    if catalog_service:
+        from booking.availability import ensure_journeys_for_date
+        train = _resolve_train(db, None, catalog_service.train_id)
+        if train:
+            existing_schedule = db.query(TrainSchedule.id).filter(
+                TrainSchedule.train_id == train.id,
+                TrainSchedule.travel_date == parsed_date,
+            ).first()
+        else:
+            existing_schedule = None
+        if not existing_schedule:
+            try:
+                ensure_journeys_for_date(db, parsed_date, train_id=catalog_service.train_id)
+            except Exception:
+                pass
+            train = _resolve_train(db, None, catalog_service.train_id)
+    else:
+        train = _resolve_train(db, train_name, train_id)
+
+    display_train_name = (
+        catalog_service.train_name if catalog_service else (train.train_name if train else train_name)
+    )
+    display_train_id = (
+        catalog_service.train_id if catalog_service else (train.train_id if train else train_id)
+    )
 
     # 1. Single Train Query
     if train:
@@ -109,10 +207,10 @@ def retrieve_seat_availability(db: Session, entities: dict[str, Any]) -> dict[st
         if not schedules:
             return {
                 "found": False,
-                "train_name": train.train_name,
-                "train_id": train.train_id,
+                "train_name": display_train_name,
+                "train_id": display_train_id,
                 "travel_date": parsed_date.isoformat(),
-                "message": f"No active schedule found for {train.train_name} (#{train.train_id}) on {parsed_date.isoformat()}.",
+                "message": f"No active schedule found for {display_train_name} (#{display_train_id}) on {parsed_date.isoformat()}.",
                 "records": [],
             }
 
@@ -140,8 +238,8 @@ def retrieve_seat_availability(db: Session, entities: dict[str, Any]) -> dict[st
 
                 records.append({
                     "schedule_id": s.id,
-                    "train_id": train.train_id,
-                    "train_name": train.train_name,
+                    "train_id": display_train_id,
+                    "train_name": display_train_name,
                     "from_station": s.from_station,
                     "to_station": s.to_station,
                     "departure_time": s.departure_time.strftime("%H:%M") if s.departure_time else "",
@@ -156,8 +254,9 @@ def retrieve_seat_availability(db: Session, entities: dict[str, Any]) -> dict[st
 
         # Deduplicate: Multiple schedule rows can exist for the same train+date+departure_time
         # (e.g. "Colombo" and "Colombo Fort" are two rows for the same physical service).
-        # Collapse by (departure_time, seat_class) — merge confirmed/held, take minimum
-        # available (most conservative), prefer the longer/canonical origin station name.
+        # Collapse by (departure_time, seat_class). Keep one internally
+        # consistent record, choosing the most conservative availability when
+        # duplicate/stale schedules exist for the same physical service.
         seen_dedup: dict[tuple, dict] = {}
         for r in records:
             key = (r["departure_time"], r["seat_class"])
@@ -165,17 +264,14 @@ def retrieve_seat_availability(db: Session, entities: dict[str, Any]) -> dict[st
                 seen_dedup[key] = dict(r)
             else:
                 prev = seen_dedup[key]
-                prev["confirmed"] = max(prev["confirmed"], r["confirmed"])
-                prev["held"] = prev["held"] + r["held"]
-                prev["available"] = min(prev["available"], r["available"])
-                if len(r["from_station"]) > len(prev["from_station"]):
-                    prev["from_station"] = r["from_station"]
+                if r["available"] < prev["available"]:
+                    seen_dedup[key] = dict(r)
         records = list(seen_dedup.values())
 
         return {
             "found": True,
-            "train_name": train.train_name,
-            "train_id": train.train_id,
+            "train_name": display_train_name,
+            "train_id": display_train_id,
             "travel_date": parsed_date.isoformat(),
             "records": records,
         }
@@ -200,6 +296,10 @@ def retrieve_seat_availability(db: Session, entities: dict[str, Any]) -> dict[st
     classes_to_check = entities.get("seat_classes") or ([target_class] if target_class else ["First Class", "Second Class"])
     records = []
     for s, t in active_schedules:
+        if entities.get("origin_station") and not stations_match(s.from_station, entities["origin_station"]):
+            continue
+        if entities.get("destination_station") and not stations_match(s.to_station, entities["destination_station"]):
+            continue
         for cname in classes_to_check:
             if cname in ["First Class", "Second Class"]:
                 avail = get_available_seats(db, schedule=s, seat_class=cname)
@@ -211,6 +311,9 @@ def retrieve_seat_availability(db: Session, entities: dict[str, Any]) -> dict[st
                     "train_id": t.train_id,
                     "train_name": t.train_name,
                     "seat_class": cname,
+                    "capacity": s.first_class_capacity if cname == "First Class" else s.second_class_capacity,
+                    "confirmed": max(0, (s.first_class_capacity if cname == "First Class" else s.second_class_capacity) - avail),
+                    "held": 0,
                     "available": avail,
                     "from_station": s.from_station,
                     "to_station": s.to_station,
@@ -547,6 +650,7 @@ def retrieve_manifest(db: Session, entities: dict[str, Any]) -> dict[str, Any]:
             "travel_date": b.travel_date.isoformat(),
             "seat_class": b.seat_class,
             "passenger_count": b.passenger_count,
+            "contact_email": b.passenger_email,
             "passengers": passengers_info,
             "fare": f"{b.fare:.2f}",
             "status": b.status.value if hasattr(b.status, "value") else str(b.status),
@@ -592,6 +696,9 @@ def retrieve_booking_lookup(db: Session, booking_ref: str) -> dict[str, Any]:
     return {
         "found": True,
         "booking_reference": booking.booking_reference,
+        "passenger_email": booking.passenger_email,
+        "passenger_phone": getattr(booking, "passenger_phone", None),
+        "user_id": booking.user_id,
         "train_id": booking.train.train_id if booking.train else "",
         "train_name": booking.train.train_name if booking.train else "",
         "route": f"{booking.from_station} to {booking.to_station}",
@@ -610,6 +717,15 @@ def retrieve_booking_lookup(db: Session, booking_ref: str) -> dict[str, Any]:
             "admin_decision": canc.admin_decision,
         } if canc else None,
     }
+
+
+def retrieve_ticket_lookup(db: Session, ticket_ref: str) -> dict[str, Any]:
+    """Resolve an opaque ticket token to its linked booking without exposing secrets."""
+    clean_ref = ticket_ref.strip().upper()
+    booking = db.query(Booking).filter(Booking.ticket_token == clean_ref).first()
+    if not booking:
+        return {"found": False, "ticket_reference": clean_ref}
+    return retrieve_booking_lookup(db, booking.booking_reference)
 
 
 def retrieve_booking_summary(db: Session, entities: dict[str, Any]) -> dict[str, Any]:

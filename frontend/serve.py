@@ -108,6 +108,7 @@ class ConfirmBookingInput(BaseModel):
     seat_class: str = Field(default="")
     passenger_count: int = Field(default=1, ge=1, le=10)
     passenger_email: EmailStr | None = Field(default=None)
+    contact_phone: str | None = Field(default=None, max_length=32)
     user_id: str | None = Field(default=None)
     passengers: list[dict[str, Any]] | None = Field(default=None)
     schedule_id: int | None = Field(default=None)
@@ -281,13 +282,39 @@ def get_user_portal():
     raise HTTPException(status_code=404, detail="user.html not found")
 
 
-@app.get("/user/chat", include_in_schema=False)
-def redirect_user_chat():
-    return RedirectResponse(url="/user", status_code=status.HTTP_302_FOUND)
+# M1 React chat app: built with `npm run build` in M1-passenger_assistant/frontend
+# (vite base is /user/chat/) and served here so it shares port 3000.
+_M1_CHAT_DIST = _CURRENT_DIR.parent / "M1-passenger_assistant" / "frontend" / "dist"
+
+if (_M1_CHAT_DIST / "index.html").is_file():
+    app.mount("/user/chat", StaticFiles(directory=_M1_CHAT_DIST, html=True), name="m1-chat")
+else:
+    @app.get("/user/chat", include_in_schema=False)
+    @app.get("/user/chat/{path:path}", include_in_schema=False)
+    def redirect_user_chat(path: str = ""):
+        # M1 chat app not built yet; fall back to the portal's built-in chat.
+        return RedirectResponse(url="/user", status_code=status.HTTP_302_FOUND)
 
 
 _TRAIN_BOARD_CACHE: dict[str, tuple[float, dict[str, Any]]] = {}
 _TRAIN_BOARD_CACHE_TTL = 30.0  # 30 seconds in-memory TTL
+
+# Static assets (video, images) served from frontend/ under /static/
+_STATIC_DIR = _CURRENT_DIR / "video"
+_STATIC_MOUNT_ENABLED = True
+if _STATIC_MOUNT_ENABLED:
+    app.mount("/static", StaticFiles(directory=_CURRENT_DIR), name="static")
+
+# Frontend-only booking demo page (UI showcase, no live booking dispatch)
+_BOOKING_DEMO_HTML_FILE = _CURRENT_DIR / "booking-demo.html"
+
+
+@app.get("/booking-demo", include_in_schema=False)
+@app.get("/user/booking-demo", include_in_schema=False)
+def get_booking_demo_page():
+    if _BOOKING_DEMO_HTML_FILE.is_file():
+        return FileResponse(_BOOKING_DEMO_HTML_FILE)
+    raise HTTPException(status_code=404, detail="booking-demo.html not found")
 
 # Canonical Sri Lanka Railways timetable data, cross-referenced against the
 # two other places this project states it independently (M1's schedules.md
@@ -478,7 +505,10 @@ def _compute_live_position(
     if arr_dt <= dep_dt:
         # Overnight service (e.g. departs 20:15, arrives 04:10 the next day).
         arr_dt += timedelta(days=1)
-        if now_ref < dep_dt:
+        # Only while last night's run is still before its arrival; after that
+        # (e.g. 18:52 for a 19:15 -> 04:30 train) tonight's run is next and the
+        # train must show "not yet departed", not "arrived".
+        if now_ref < arr_dt - timedelta(days=1):
             # Viewed after local midnight but before this evening's departure:
             # the run actually on the rails is the one that left yesterday
             # evening and lands this morning, so measure against yesterday's
@@ -1068,6 +1098,7 @@ async def confirm_booking_endpoint(req: ConfirmBookingInput) -> JSONResponse:
             "seat_class": req.seat_class.strip(),
             "passenger_count": req.passenger_count,
             "passenger_email": str(req.passenger_email).strip() if req.passenger_email else None,
+            "contact_phone": str(req.contact_phone).strip() if req.contact_phone else None,
             "user_id": req.user_id or "guest_passenger",
             "passengers": req.passengers,
             "schedule_id": req.schedule_id,

@@ -250,6 +250,7 @@ class Booking(Base):
     seat_class:        Mapped[str]            = mapped_column(String(50), nullable=False)
     passenger_count:   Mapped[int]            = mapped_column(Integer, nullable=False)
     passenger_email:   Mapped[str | None]     = mapped_column(String(255), nullable=True)
+    passenger_phone:   Mapped[str | None]     = mapped_column(String(32), nullable=True)
     fare:              Mapped[Decimal]        = mapped_column(Numeric(10, 2), nullable=False)
     status:            Mapped[BookingStatus]  = mapped_column(
                            SAEnum(BookingStatus, name="booking_status"),
@@ -393,6 +394,8 @@ class Passenger(Base):
     nic_hash:   Mapped[str]               = mapped_column(String(64), nullable=False, unique=True, index=True)
     nic_masked: Mapped[str]               = mapped_column(String(30), nullable=False)
     full_name:  Mapped[str | None]        = mapped_column(String(150), nullable=True)
+    phone:      Mapped[str | None]        = mapped_column(String(32), nullable=True)
+    dob:        Mapped[date | None]       = mapped_column(Date, nullable=True)
     created_at: Mapped[datetime]          = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )

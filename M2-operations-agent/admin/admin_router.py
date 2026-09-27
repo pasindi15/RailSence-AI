@@ -506,7 +506,8 @@ def health_status(identity: dict = Depends(require_admin)):
     supabase_configured = admin_db.supabase_configured()
     supabase_ok = admin_db.supabase_reachable() if supabase_configured else False
 
-    upstash_configured = bool(os.getenv("UPSTASH_REDIS_URL") and os.getenv("UPSTASH_REDIS_TOKEN"))
+    import hub_client  # same source the alert publisher uses, so the pill can't disagree with it
+    upstash_configured = all(hub_client._upstash_config())
 
     # Same default as hub_client.HUB_BASE_URL (the Hub runs on :8002); the old
     # :8000 default made the Hub pill report "down" whenever the env var was unset.

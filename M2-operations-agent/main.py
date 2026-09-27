@@ -8,12 +8,14 @@ Endpoints:
 
 """
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 from collections import Counter
 from contextlib import asynccontextmanager
 import csv
 import json
+import re
+import time
 import logging
 import os
 import uuid
@@ -49,6 +51,7 @@ from admin import admin_db
 from admin.admin_router import router as admin_router
 from admin.admin_auth import ROLE_DISPLAY_NAMES, get_permissions_for_role, require_permission
 import incident_map
+import live_tracker
 from shared.train_repository import TrainRepositoryUnavailable, get_train, resolve_train
 
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO").upper())
@@ -823,15 +826,75 @@ def _todays_incidents(ctx: PassengerServiceContext) -> list[dict]:
     return matches[:3]
 
 
+STATIONS = live_tracker.StationIndex(incident_map.STATION_LOCATIONS)
+_IMPACT_CACHE: dict[tuple, dict] = {}
+
+
+def _incident_impact(incident: dict, corridor: Optional[str]) -> dict:
+    """How long a verified incident is likely to hold a train (IR over the corpus).
+
+    The incident's own words are the query: the most similar past incidents on
+    the same corridor/type are retrieved (TF-IDF, local and deterministic) and
+    the median of their recorded delays is the estimate. Cached per incident.
+    """
+    key = (incident.get("id"), incident.get("summary"), corridor)
+    if key in _IMPACT_CACHE:
+        return _IMPACT_CACHE[key]
+    kind = incident.get("incident_type") or "other"
+    query = " ".join(filter(None, [incident.get("summary"), kind.replace("_", " "), incident.get("station")]))
+    minutes, samples = 0.0, 0
+    try:
+        hits = incident_retriever.retrieve_similar_incidents(
+            query, top_k=5, route=corridor, station=incident.get("station"),
+            incident_type=kind if kind != "other" else None, use_cloud=False)["incidents"]
+        same = [h for h in hits if h["incident_type"] == kind] or hits
+        delays = sorted(float(h["delay_minutes"]) for h in same)
+        if delays:
+            mid = len(delays) // 2
+            minutes = delays[mid] if len(delays) % 2 else (delays[mid - 1] + delays[mid]) / 2
+            samples = len(delays)
+    except Exception:
+        logger.exception("incident impact retrieval failed")
+    if not samples:
+        typed = [float(r.get("delay_minutes") or 0) for r in HISTORY if r.get("incident_type") == kind]
+        if typed:
+            typed.sort()
+            minutes, samples = typed[len(typed) // 2], len(typed)
+    result = {"minutes": round(minutes, 1), "samples": samples,
+              "basis": f"{samples} similar past incident{'s' if samples != 1 else ''}" if samples else ""}
+    _IMPACT_CACHE[key] = result
+    return result
+
+
+def _live_journey(ctx: PassengerServiceContext, corridor: Optional[str], estimate: Optional[dict]) -> Optional[dict]:
+    """Server-side timetable + position; the board's own live fields are not trusted."""
+    try:
+        incidents = MAP_FEED.get().get("incidents", [])
+    except Exception:
+        incidents = []
+    try:
+        return live_tracker.compute_live(
+            ctx.model_dump(), STATIONS, incidents,
+            impact_for=lambda inc, _label: _incident_impact(inc, corridor),
+            baseline_minutes=float(estimate["minutes"]) if estimate else 0.0,
+        )
+    except Exception:
+        logger.exception("live journey computation failed")
+        return None
+
+
 @app.post("/passenger/ask")
 @limiter.limit("30/minute")
 def passenger_ask(request: Request, req: PassengerAskRequest):
     """Friendly, grounded answer to a passenger's question about one train.
 
     Powers the Delay / Operations popup on the user portal. The question is
-    classified by nlp/passenger_answer.detect_intent(); the answer is built
-    from the delay model (or this train's own history), retrieved incident
-    precedent, today's incident reports and the board's live schedule.
+    classified by nlp/passenger_answer.detect_intent() (keyword rules, TF-IDF
+    fallback) and any station it names is extracted. The answer is built from
+    a server-side live journey (live_tracker: per-station timetable, position
+    on the Asia/Colombo clock, delays from verified map incidents on this
+    train's path, each sized by retrieving similar past incidents), the delay
+    model, retrieved incident precedent and today's incident reports.
     Booking/fare questions come back with handoff=true for the Booking flow.
     """
     question = bleach.clean(req.question, tags=[], strip=True).strip()
@@ -841,21 +904,406 @@ def passenger_ask(request: Request, req: PassengerAskRequest):
     if intent == "handoff":
         return passenger_answer.compose_answer(intent, ctx.model_dump(), None, [], [])
 
+    answer = _answer_for_service(question, intent, ctx)
+    answer.pop("_live_full", None)
+    return answer
+
+
+def _answer_for_service(question: str, intent: str, ctx: PassengerServiceContext) -> dict:
+    """Shared by the popup and the chat assistant: live journey + NLP + IR answer."""
     corridor = _corridor_for(ctx.route, ctx.from_station, ctx.to_station)
     estimate = _passenger_delay_estimate(ctx, corridor)
+    live = _live_journey(ctx, corridor, estimate)
+    if live:
+        # The board's position can be stale or wrong (e.g. an overnight train
+        # shown "arrived" before it has even left); the live journey wins.
+        ctx = ctx.model_copy(update={
+            "live_status": "IN_TRANSIT" if live["status"] == "AT_STATION" else live["status"],
+            "current_station": live["current_station"],
+            "next_station": live["next_station"],
+            "progress_percent": live["progress_percent"],
+        })
+    station = None
+    if live:
+        station = live_tracker.find_station_mention(
+            question, [r["station"] for r in live["timeline"]], STATIONS)
     live_incidents = _todays_incidents(ctx)
     precedent: list[dict] = []
     if intent == "reason" and corridor:
+        causes = " ".join(d["incident_type"].replace("_", " ") for d in (live or {}).get("disruptions", []))
         try:
             precedent = incident_retriever.retrieve_similar_incidents(
-                f"{corridor} delay", top_k=2, route=corridor)["incidents"]
+                f"{question} {causes} {corridor} delay", top_k=2, route=corridor)["incidents"]
         except Exception:
             precedent = []
 
-    answer = passenger_answer.compose_answer(intent, ctx.model_dump(), estimate, live_incidents, precedent)
+    answer = passenger_answer.compose_answer(intent, ctx.model_dump(), estimate, live_incidents, precedent,
+                                             live=live, station=station)
     answer["train_id"] = ctx.train_id
     answer["corridor"] = corridor
+    answer["station"] = station
+    answer["_live_full"] = live
     return answer
+
+
+# ------------------------------------------------ free-text chat questions
+
+_BOARD_CACHE: dict[str, tuple[float, list[dict]]] = {}
+BOARD_CACHE_TTL_SECONDS = 60
+
+
+def _board_services(day) -> list[dict]:
+    """The day's services from the shared Supabase timetable (train_schedules + trains).
+
+    Same source and shape as the passenger board; cached for a minute. Raises
+    when the store is unreachable so the caller can decline instead of guessing.
+    """
+    key = day.isoformat()
+    hit = _BOARD_CACHE.get(key)
+    if hit and time.monotonic() - hit[0] < BOARD_CACHE_TTL_SECONDS:
+        return hit[1]
+    from shared.train_repository import get_client
+    rows = (get_client().table("train_schedules").select("*, trains(*)")
+            .eq("travel_date", key).order("departure_time").execute().data or [])
+    services = []
+    for sched in rows:
+        train = sched.get("trains") or {}
+        meta_t = train.get("metadata") if isinstance(train.get("metadata"), dict) else {}
+        meta_s = sched.get("metadata") if isinstance(sched.get("metadata"), dict) else {}
+        stops = sched.get("stops") or meta_s.get("stops") or meta_t.get("stops") or meta_t.get("route_stops")
+        maintenance = str(train.get("maintenance_status") or "UNKNOWN").upper()
+        status = str(sched.get("service_status") or "SCHEDULED").upper()
+        if train and (not train.get("active") or maintenance in {"OUT_OF_SERVICE", "DECOMMISSIONED"}):
+            status = "OUT_OF_SERVICE"
+        services.append({
+            "train_id": str(train.get("train_id") or sched.get("train_id") or ""),
+            "train_name": train.get("train_name"),
+            "route": train.get("route"),
+            "from_station": sched.get("from_station") or train.get("origin_station"),
+            "to_station": sched.get("to_station") or train.get("destination_station"),
+            "departure_time": str(sched.get("departure_time") or "")[:8] or None,
+            "arrival_time": str(sched.get("arrival_time") or "")[:8] or None,
+            "service_status": status,
+            "maintenance_status": maintenance,
+            "platform": sched.get("platform"),
+            "stops": [str(x) for x in stops] if isinstance(stops, list) else [],
+        })
+    _BOARD_CACHE[key] = (time.monotonic(), services)
+    return services
+
+
+def _service_ctx(row: dict) -> PassengerServiceContext:
+    fields = PassengerServiceContext.model_fields
+    data = {k: v for k, v in row.items() if k in fields and v not in (None, "")}
+    data["stops"] = (row.get("stops") or [])[:40]
+    return PassengerServiceContext(**data)
+
+
+def _plain(text: str) -> str:
+    return re.sub(r"\*\*(.+?)\*\*", r"\1", str(text))
+
+
+def _answer_text(answer: dict) -> str:
+    """Popup answer -> plain chat text (headline, paragraphs, timetable)."""
+    lines = [answer.get("headline") or ""]
+    lines += [_plain(p) for p in answer.get("paragraphs") or []]
+    for row in answer.get("timeline") or []:
+        mark = {"passed": "✓", "current": "●"}.get(row["state"], "•")
+        when = row["scheduled"] if row["expected"] == row["scheduled"] else f"{row['expected']} (sched {row['scheduled']})"
+        why = f" — +{round(row['delay'])} min: {row['why']}" if row.get("why") else ""
+        lines.append(f"{mark} {row['station']}: {when}{why}")
+    return "\n".join(line for line in lines if line).strip()
+
+
+def _resolve_train(parsed, board: list[dict]) -> list[dict]:
+    if parsed.train_id:
+        want = parsed.train_id.casefold()
+        rows = [r for r in board if r["train_id"].casefold() == want]
+        if not rows:
+            try:
+                train, _ = resolve_train(parsed.train_id)
+                canonical = (train or {}).get("train_id")
+                rows = [r for r in board if canonical and r["train_id"] == canonical]
+            except Exception:
+                rows = []
+        return rows
+    if parsed.train_number:
+        return [r for r in board if r["train_id"] == parsed.train_number
+                or r["train_id"].split("-")[-1] == parsed.train_number]
+    return [r for r in board if r["train_id"] in parsed.train_name_matches]
+
+
+def _journey_options(parsed, board: list[dict], day, now: datetime) -> list[dict]:
+    """Services on the board that serve origin -> destination inside the time window."""
+    today = day == now.date()
+    incidents = []
+    if today:
+        try:
+            incidents = MAP_FEED.get().get("incidents", [])
+        except Exception:
+            incidents = []
+    options = []
+    for row in board:
+        if row["service_status"] == "OUT_OF_SERVICE":
+            continue
+        f_origin = 0.0
+        if parsed.origin:
+            f_origin = live_tracker.station_fraction(row, parsed.origin, STATIONS)
+            if f_origin is None:
+                continue
+        f_dest = 1.0
+        if parsed.destination:
+            f_dest = live_tracker.station_fraction(row, parsed.destination, STATIONS)
+            if f_dest is None:
+                continue
+        if f_dest <= f_origin:
+            continue  # wrong direction
+        dep = live_tracker.parse_clock(row.get("departure_time"))
+        if dep is None:
+            continue
+        corridor = _corridor_for(row.get("route"), row.get("from_station"), row.get("to_station"))
+        run_day_start = datetime.combine(day, dep, tzinfo=live_tracker.LOCAL_TZ)
+        # Another day is timed as if seen just before it departs, with no live incidents.
+        live = live_tracker.compute_live(
+            row, STATIONS, incidents if today else [],
+            impact_for=lambda inc, _l, c=corridor: _incident_impact(inc, c),
+            now=now if today else run_day_start - timedelta(minutes=1))
+        if not live:
+            continue
+        if datetime.fromisoformat(live["run_start"]).date() != day:
+            # an overnight run still finishing from yesterday; list today's departure instead
+            live = live_tracker.compute_live(row, STATIONS, [], impact_for=lambda *_: {},
+                                             now=run_day_start - timedelta(minutes=1))
+        board_at = live_tracker.passage_at(live, f_origin)
+        reach = live_tracker.passage_at(live, f_dest)
+        clock = board_at["scheduled_dt"].time()
+        if parsed.after and clock < parsed.after:
+            continue
+        if parsed.before and clock > parsed.before:
+            continue
+        if not parsed.after and not parsed.before and today and board_at["expected_dt"] < now:
+            continue  # already left the boarding point
+        options.append({"row": row, "live": live, "board": board_at, "reach": reach, "f_dest": f_dest})
+    options.sort(key=lambda o: o["board"]["scheduled_dt"])
+    return options
+
+
+def _describe_option(o: dict, parsed, today: bool) -> str:
+    row, live, b, r = o["row"], o["live"], o["board"], o["reach"]
+    name = _service_label(row)
+    board_station = parsed.origin or live["timeline"][0]["station"]
+    dest_station = parsed.destination or live["timeline"][-1]["station"]
+    text = f"• {name}: leaves {board_station} {b['expected']}, reaches {dest_station} around {r['expected']}"
+    if r["delay_minutes"] > 2:
+        text += f" (about {r['delay_minutes']} min late"
+        reasons = [d for d in live["disruptions"] if d.get("affects_this_run") and d["fraction"] <= o["f_dest"]]
+        if reasons:
+            text += ": " + ", ".join(f"{passenger_answer._cause(d['incident_type'])} near {d['station']}"
+                                     for d in reasons)
+        text += ")"
+    if row.get("platform"):
+        text += f", platform {row['platform']}"
+    if today and live["status"] in ("IN_TRANSIT", "AT_STATION"):
+        text += f". Running now, between {live['last_station']} and {live['next_station']}"
+    return text + "."
+
+
+def _service_label(row: dict) -> str:
+    name = str(row.get("train_name") or "").strip()
+    if not name or name.lower().startswith("historical"):
+        return f"Train {row['train_id']}"
+    return f"{name} ({row['train_id']})"
+
+
+def _window_text(parsed) -> str:
+    fmt = lambda t: t.strftime("%H:%M")
+    if parsed.after and parsed.before:
+        return f" between {fmt(parsed.after)} and {fmt(parsed.before)}"
+    if parsed.after:
+        return f" after {fmt(parsed.after)}"
+    if parsed.before:
+        return f" before {fmt(parsed.before)}"
+    return ""
+
+
+class PassengerQueryRequest(BaseModel):
+    question: str = Field(..., min_length=1, max_length=400)
+    language: Optional[str] = Field(None, max_length=8)
+
+
+@app.post("/passenger/query")
+@limiter.limit("60/minute")
+def passenger_query(request: Request, req: PassengerQueryRequest):
+    """Free-text operations question from the passenger chat (Choo / M1).
+
+    NLP (nlp/passenger_query.parse): intent, time window, date, stations with
+    origin/destination roles, and the train by id, number or name. Data: the
+    day's real timetable from Supabase, the live journey (live_tracker) and
+    today's verified map incidents, each sized by IR over past incidents.
+    Returns handled=false when it isn't an operations question (fares,
+    bookings...) so the caller can answer it another way.
+    """
+    from dataclasses import replace
+    from nlp import passenger_query as pq
+
+    question = bleach.clean(req.question, tags=[], strip=True).strip()
+    now = live_tracker.local_now()
+    try:
+        board_today = _board_services(now.date())
+    except Exception as exc:
+        logger.warning("passenger query: timetable unavailable: %s", exc)
+        return {"handled": False, "reason": "timetable_unavailable"}
+
+    names = STATIONS.names() + [r[k] for r in board_today for k in ("from_station", "to_station") if r.get(k)]
+    parsed = pq.parse(question, names, board_today)
+    parsed.origin = STATIONS.canonical(parsed.origin) if parsed.origin else None
+    parsed.destination = STATIONS.canonical(parsed.destination) if parsed.destination else None
+    parsed.stations = [STATIONS.canonical(s) for s in parsed.stations]
+    base = {"handled": True, "intent": parsed.intent, "entities": {
+        "train_id": parsed.train_id or parsed.train_number, "train_name_matches": parsed.train_name_matches,
+        "origin": parsed.origin, "destination": parsed.destination, "stations": parsed.stations,
+        "after": parsed.after.strftime("%H:%M") if parsed.after else None,
+        "before": parsed.before.strftime("%H:%M") if parsed.before else None,
+        "day_offset": parsed.day_offset}}
+    if parsed.intent == "handoff":
+        return {**base, "handled": False, "reason": "booking_or_fare"}
+    # Only railway questions: a named train, or railway wording. "Weather in
+    # London" or "restaurants in Colombo" are left to the caller's notice.
+    railway_words = re.search(r"\b(trains?|rail\w*|station|platform|line|delay\w*|late|services?|arriv\w*|"
+                              r"depart\w*|incidents?|alerts?|timetable|schedule|running|night mail)\b",
+                              question, re.I)
+    if not (parsed.train_id or parsed.train_number or parsed.train_name_matches or railway_words):
+        return {**base, "handled": False, "reason": "not_a_railway_question"}
+
+    day = now.date() + timedelta(days=parsed.day_offset)
+    try:
+        board = board_today if parsed.day_offset == 0 else _board_services(day)
+    except Exception:
+        return {"handled": False, "reason": "timetable_unavailable"}
+    when = "today" if parsed.day_offset == 0 else "tomorrow"
+
+    # 1. A specific train -> the same live answer the popup gives.
+    trains = _resolve_train(parsed, board)
+    if trains:
+        if parsed.stations and len(trains) > 1:
+            narrowed = [t for t in trains if all(
+                live_tracker.station_fraction(t, s, STATIONS) is not None for s in parsed.stations)]
+            trains = narrowed or trains
+        answers = []
+        for row in trains[:2]:
+            intent = "status" if parsed.intent == "greeting" else parsed.intent
+            ans = _answer_for_service(question, intent, _service_ctx(row))
+            ans.pop("_live_full", None)
+            answers.append(ans)
+        if len(answers) > 1:
+            reply = "\n\n".join(
+                f"{_service_label(row)}, {row.get('from_station')} → {row.get('to_station')} "
+                f"(departs {str(row.get('departure_time') or '')[:5]}):\n{_answer_text(a)}"
+                for row, a in zip(trains, answers))
+        else:
+            reply = _answer_text(answers[0])
+        if len(trains) > 2:
+            reply += (f"\n\n{len(trains) - 2} more service(s) share that name {when}; "
+                      "ask with the train number for another.")
+        return {**base, "kind": "train", "train_ids": [t["train_id"] for t in trains[:2]], "reply": reply,
+                "answers": answers, "sources": sorted({s for a in answers for s in a.get("sources", [])})}
+    if parsed.train_id or parsed.train_number:
+        ref = parsed.train_id or parsed.train_number
+        return {**base, "kind": "train_not_running",
+                "reply": f"I can't find train {ref} on {when}'s timetable. Check the number, or tell me where "
+                         "you're travelling to and I'll list the trains that go there.",
+                "sources": [f"{when.capitalize()}'s timetable"]}
+
+    # 2. "Is there a train to X after 19:15?" -> search the timetable.
+    if parsed.find_trains:
+        options = _journey_options(parsed, board, day, now)
+        route_txt = " ".join(filter(None, [f"from {parsed.origin}" if parsed.origin else "",
+                                           f"to {parsed.destination}" if parsed.destination else ""]))
+        window = _window_text(parsed)
+        if options:
+            count = f"{len(options)} train{'s' if len(options) > 1 else ''}"
+            head = f"Yes, {count} {route_txt} {when}{window}:" if route_txt else f"{count} {when}{window}:"
+            lines = [" ".join(head.split())] + [_describe_option(o, parsed, parsed.day_offset == 0)
+                                                 for o in options[:5]]
+            if len(options) > 5:
+                lines.append(f"…and {len(options) - 5} more.")
+            lines.append("Times at stations between the first and last stop are estimated from distance "
+                         "along the line" + ("; they include today's verified delays." if parsed.day_offset == 0
+                                             else "."))
+        else:
+            lines = [" ".join(f"There's no train {route_txt} {when}{window} on the timetable.".split())]
+            if parsed.day_offset == 0:
+                try:
+                    tomorrow = now.date() + timedelta(days=1)
+                    nxt = _journey_options(replace(parsed, after=None, before=None),
+                                           _board_services(tomorrow), tomorrow, now)
+                except Exception:
+                    nxt = []
+                if nxt:
+                    lines.append("The first options tomorrow:")
+                    lines += [_describe_option(o, parsed, False) for o in nxt[:3]]
+        return {**base, "kind": "journey_search", "reply": "\n".join(lines),
+                "options": [{"train_id": o["row"]["train_id"], "train_name": o["row"].get("train_name"),
+                             "board_time": o["board"]["expected"], "arrival_time": o["reach"]["expected"],
+                             "delay_minutes": o["reach"]["delay_minutes"]} for o in options[:10]],
+                "sources": [f"{when.capitalize()}'s timetable", "Live position", "Verified incident map"]}
+
+    # 3. Incidents / alerts on the network or on a named line.
+    if parsed.intent in ("incidents", "reason"):
+        feed = MAP_FEED.get().get("incidents", [])
+        if parsed.stations:
+            lines_with = [set(stations) for stations in live_tracker.CORRIDOR_STATIONS.values()
+                          if any(s in stations for s in parsed.stations)]
+            feed = [i for i in feed if i.get("station") in parsed.stations
+                    or any(i.get("station") in line for line in lines_with)]
+        where = f" on the line through {', '.join(parsed.stations)}" if parsed.stations else " on the network"
+        if not feed:
+            reply = f"No verified incidents{where} today, so trains there are running to their normal schedule."
+        else:
+            out = [f"{len(feed)} verified incident{'s' if len(feed) > 1 else ''}{where} today:"]
+            for inc in feed[:6]:
+                impact = _incident_impact(inc, _route_for_station(inc.get("station")))
+                extra = (f"; similar past incidents held trains about {impact['minutes']:.0f} min"
+                         if impact["minutes"] else "")
+                out.append(f"• {passenger_answer._cause(inc.get('incident_type')).capitalize()} at "
+                           f"{inc.get('station')}{extra}. {inc.get('summary') or ''}".strip())
+            reply = "\n".join(out)
+        return {**base, "kind": "incidents", "reply": reply,
+                "sources": ["Verified incident map", "Similar past incidents (IR)"]}
+
+    # 4. "Which trains are delayed / running now?" -> network overview from live journeys.
+    if parsed.delay_overview or (parsed.intent in ("delay", "location", "status") and not parsed.stations):
+        running, delayed = [], []
+        for row in board_today:
+            if row["service_status"] == "OUT_OF_SERVICE":
+                continue
+            ans = _answer_for_service("status", "status", _service_ctx(row))
+            live = ans.get("_live_full")
+            if not live:
+                continue
+            label = _service_label(row)
+            dest = live["timeline"][-1]["station"]
+            if live["status"] in ("IN_TRANSIT", "AT_STATION"):
+                where = (f"at {live['at_station']}" if live["at_station"]
+                         else f"between {live['last_station']} and {live['next_station']}")
+                running.append(f"• {label}: {where}, due at {dest} {live['expected_arrival']}")
+            if live["status"] != "ARRIVED" and live["delay_minutes"] > 2:
+                delayed.append(f"• {label}: about {live['delay_minutes']} min late, expected at {dest} "
+                               f"{live['expected_arrival']}")
+        parts = [(f"It's {now.strftime('%H:%M')}. Trains running right now:\n" + "\n".join(running))
+                 if running else f"It's {now.strftime('%H:%M')} and no train is on the move right now."]
+        parts.append(("Expected to run late:\n" + "\n".join(delayed)) if delayed else
+                     "No train still to run today is expected to be more than a couple of minutes late.")
+        asks_position = any(k in question.casefold() for k in ("running now", "right now", "on the move",
+                                                                  "currently", "where are"))
+        if (parsed.delay_overview or parsed.intent == "delay") and not asks_position:
+            parts.reverse()
+        reply = "\n".join(parts)
+        reply += "\nAsk about one train by name or number (e.g. \"where is the Night Mail?\") for its full timetable."
+        return {**base, "kind": "overview", "reply": reply,
+                "sources": ["Today's timetable", "Live position", "RailSense delay model", "Verified incident map"]}
+
+    return {**base, "handled": False, "reason": "not_an_operations_question"}
 
 
 def _compute_prediction(req: DelayPredictionRequest) -> DelayPredictionResponse:

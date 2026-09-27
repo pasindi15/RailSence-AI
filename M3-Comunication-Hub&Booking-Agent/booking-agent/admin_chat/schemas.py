@@ -21,6 +21,16 @@ class AdminChatRequest(BaseModel):
     history: list[AdminChatMessage] | None = Field(default=None, description="Recent conversation turns for follow-up context")
 
 
+class AdminQueryUnderstanding(BaseModel):
+    """Normalized, retrieval-safe interpretation of an administrator question."""
+    intent: str
+    confidence: float = Field(default=0.0, ge=0.0, le=1.0)
+    entities: dict[str, Any] = Field(default_factory=dict)
+    filters: dict[str, Any] = Field(default_factory=dict)
+    requires_clarification: bool = False
+    clarification: str | None = None
+
+
 class SourceEvidence(BaseModel):
     type: str = Field(..., description="Source type e.g. 'schedule', 'seat_inventory', 'policy', 'cancellation', 'fraud_review', 'manifest'")
     id: str = Field(..., description="Entity ID or passage ID e.g. '1005', 'POL-REF-003-ART-2'")
@@ -59,6 +69,7 @@ class AdminChatResponse(BaseModel):
     intent: str = Field(..., description="Classified intent")
     entities: dict[str, Any] = Field(default_factory=dict, description="Extracted entities")
     sources: list[SourceEvidence] = Field(default_factory=list, description="Verified evidence sources")
+    data_source: str = Field(default="m3_database", description="Database used for the live answer")
     card: CardPayload | None = Field(default=None, description="Optional structured presentation card")
     retrieved_records: int = Field(default=0, description="Number of primary database records retrieved")
     is_fallback: bool = Field(default=False, description="True if response generated via deterministic synthesizer")

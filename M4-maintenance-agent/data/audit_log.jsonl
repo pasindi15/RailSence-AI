@@ -121,3 +121,12 @@
 {"ts": "2026-09-21T18:06:15.217070+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "4085", "sender": "passenger-agent"}
 {"ts": "2026-09-21T18:06:29.253550+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "4085", "sender": "passenger-agent"}
 {"ts": "2026-09-21T18:06:38.674158+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "4085", "sender": "passenger-agent"}
+{"ts": "2026-09-23T06:30:07.528634+00:00", "action": "engineer_login_success", "agent": "maintenance-agent", "client": "127.0.0.1", "engineer_id": "ENG-001", "username": "admin"}
+{"ts": "2026-09-27T10:37:06.774563+00:00", "action": "engineer_chat", "agent": "maintenance-agent", "client": "127.0.0.1", "detected_asset_type": "", "answer_method": "llm_grounded", "retrieval_method": "none"}
+{"ts": "2026-09-27T10:37:22.681657+00:00", "action": "engineer_chat", "agent": "maintenance-agent", "client": "127.0.0.1", "detected_asset_type": "", "answer_method": "template_grounded", "retrieval_method": "local_tfidf"}
+{"ts": "2026-09-27T10:37:47.935877+00:00", "action": "engineer_chat", "agent": "maintenance-agent", "client": "127.0.0.1", "detected_asset_type": "", "answer_method": "template_grounded", "retrieval_method": "local_tfidf"}
+{"ts": "2026-09-27T10:37:57.585581+00:00", "action": "engineer_chat", "agent": "maintenance-agent", "client": "127.0.0.1", "detected_asset_type": "brake_system", "answer_method": "template_grounded", "retrieval_method": "local_tfidf"}
+{"ts": "2026-09-27T14:20:53.627432+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "IC-1001", "sender": "passenger-agent"}
+{"ts": "2026-09-27T14:21:04.444634+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "IC-1001", "sender": "passenger-agent"}
+{"ts": "2026-09-27T14:39:43.058144+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "IC-1001", "sender": "passenger-agent"}
+{"ts": "2026-09-27T14:39:59.100189+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "IC-1001", "sender": "passenger-agent"}

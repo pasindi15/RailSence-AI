@@ -34,6 +34,15 @@ def retrieve_policy_context(intent: str, query: str, top_k: int = 2) -> list[dic
     """
     Retrieve relevant policy articles using the existing RAG knowledge base.
     """
+    # Live operational facts come from structured M3 retrieval. Policy RAG is
+    # only relevant for cancellation/fraud policy questions or explicit policy
+    # wording, avoiding irrelevant citations on seat and booking counts.
+    policy_words = ("policy", "rule", "refund", "eligibility", "why", "reason")
+    if intent not in ("cancellation_query", "fraud_review_query") and not any(
+        word in query.lower() for word in policy_words
+    ):
+        return []
+
     kb = get_policy_knowledge_base()
 
     # Domain-guided search query

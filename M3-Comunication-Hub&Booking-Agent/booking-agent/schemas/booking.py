@@ -30,6 +30,7 @@ class PassengerDetail(BaseModel):
     """Individual passenger record with verified Sri Lankan NIC."""
     nic: str = Field(..., min_length=1, description="Sri Lankan National Identity Card (NIC)")
     name: str | None = Field(default=None, description="Passenger full name")
+    dob: str | date | None = Field(default=None, description="Passenger date of birth (ISO YYYY-MM-DD)")
 
     model_config = {"str_strip_whitespace": True}
 
@@ -41,6 +42,22 @@ class PassengerDetail(BaseModel):
         if not valid:
             raise ValueError(result)
         return result
+
+    @field_validator("dob")
+    @classmethod
+    def validate_dob(cls, v: str | date | None) -> date | None:
+        """Accept ISO date strings (from HTML date inputs) or date objects."""
+        if v is None or v == "":
+            return None
+        if isinstance(v, date):
+            return v
+        try:
+            parsed = date.fromisoformat(str(v).strip())
+        except ValueError as exc:
+            raise ValueError("dob must be a valid date in YYYY-MM-DD format") from exc
+        if parsed > date.today():
+            raise ValueError("dob cannot be in the future")
+        return parsed
 
 
 class BookingRequest(BaseModel):
@@ -66,6 +83,7 @@ class BookingRequest(BaseModel):
     seat_class:      str              = Field(..., min_length=1, description="Seat/class type")
     passenger_count: int              = Field(..., ge=1, le=10,  description="Number of passengers (1–10)")
     passenger_email: EmailStr | None  = Field(default=None,      description="Passenger contact email address")
+    contact_phone:   str | None       = Field(default=None, max_length=32, description="Passenger contact phone number (with country code)")
     passengers:      list[PassengerDetail] | None = Field(
         default=None,
         description="List of individual passengers, each with their own verified NIC",

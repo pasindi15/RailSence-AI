@@ -16,6 +16,9 @@ create table if not exists ops_agent_queries (
 
 -- Added after the first version of this file; harmless if already present.
 alter table ops_agent_queries add column if not exists answer_type text not null default 'answer';
+-- Which path produced the answer (llm_tool_calling | rule_based_fallback | template_after_guard);
+-- drives the technique badges when an answer is replayed from history.
+alter table ops_agent_queries add column if not exists answer_method text;
 
 -- History is always read per officer, newest first.
 create index if not exists idx_ops_agent_queries_user
