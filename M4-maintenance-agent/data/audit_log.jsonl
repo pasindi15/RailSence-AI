@@ -130,3 +130,5 @@
 {"ts": "2026-09-27T14:21:04.444634+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "IC-1001", "sender": "passenger-agent"}
 {"ts": "2026-09-27T14:39:43.058144+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "IC-1001", "sender": "passenger-agent"}
 {"ts": "2026-09-27T14:39:59.100189+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "IC-1001", "sender": "passenger-agent"}
+{"ts": "2026-09-27T18:16:49.153006+00:00", "action": "hub_issue_report", "agent": "maintenance-agent", "client": "127.0.0.1", "ticket_id": "MT-5FDE4D", "sender": "passenger-agent", "description": "The AC is broken in my compartment"}
+{"ts": "2026-09-27T18:23:02.375331+00:00", "action": "engineer_login_success", "agent": "maintenance-agent", "client": "127.0.0.1", "engineer_id": "ENG-001", "username": "admin"}
