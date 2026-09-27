@@ -1,82 +1,82 @@
 [
   {
     "feature": "incident_type_none",
-    "importance": 0.7332424399985216
+    "importance": 0.7289259348598254
   },
   {
     "feature": "incident_type_mechanical",
-    "importance": 0.07687530300043263
+    "importance": 0.07053339441638781
   },
   {
     "feature": "incident_type_staffing",
-    "importance": 0.036784651709446704
+    "importance": 0.04817117836661777
   },
   {
     "feature": "weather_clear",
-    "importance": 0.03631971074540145
+    "importance": 0.03991386120595196
   },
   {
     "feature": "weather_heavy_rain",
-    "importance": 0.031638352616421894
+    "importance": 0.032085268787069146
   },
   {
     "feature": "day_type_public_holiday",
-    "importance": 0.023435958671947234
+    "importance": 0.021042402061795515
   },
   {
     "feature": "incident_type_track_obstruction",
-    "importance": 0.01816687038070178
+    "importance": 0.017666001582440544
   },
   {
     "feature": "incident_type_weather",
-    "importance": 0.00907353706104527
+    "importance": 0.011761349925363821
   },
   {
     "feature": "weather_fog",
-    "importance": 0.006382823351908981
-  },
-  {
-    "feature": "weather_light_rain",
-    "importance": 0.006195406934640348
+    "importance": 0.007330319479607567
   },
   {
     "feature": "scheduled_hour",
-    "importance": 0.005975875336680008
+    "importance": 0.005242200692565284
+  },
+  {
+    "feature": "weather_light_rain",
+    "importance": 0.003533968455388783
   },
   {
     "feature": "day_type_weekend",
-    "importance": 0.004624612107467463
+    "importance": 0.0032778716303430884
   },
   {
     "feature": "incident_type_signal_fault",
-    "importance": 0.001599745004880194
+    "importance": 0.001131373860463741
   },
   {
     "feature": "station_Polonnaruwa",
-    "importance": 0.0008077054883161173
-  },
-  {
-    "feature": "station_Badulla",
-    "importance": 0.0005993758084901377
-  },
-  {
-    "feature": "station_Panadura",
-    "importance": 0.0005626799179439001
+    "importance": 0.0007595190088062074
   },
   {
     "feature": "station_Trincomalee",
-    "importance": 0.0005188424476943545
+    "importance": 0.0007124735945313035
   },
   {
-    "feature": "station_Matara",
-    "importance": 0.0005128966425991706
+    "feature": "station_Panadura",
+    "importance": 0.0005735388208684969
   },
   {
-    "feature": "route_Colombo Fort - Jaffna",
-    "importance": 0.00047571224010870477
+    "feature": "route_Colombo Fort - Trincomalee",
+    "importance": 0.0005712146254328222
   },
   {
-    "feature": "station_Polgahawela",
-    "importance": 0.00047154485423814497
+    "feature": "weather_extreme_heat",
+    "importance": 0.0005500798607590554
+  },
+  {
+    "feature": "route_Colombo Fort - Matara",
+    "importance": 0.0005422652632272754
+  },
+  {
+    "feature": "station_Jaffna",
+    "importance": 0.0005389515413278252
   }
 ]

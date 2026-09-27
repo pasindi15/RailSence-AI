@@ -260,7 +260,7 @@ question ─► Gemini (GEMINI_MODEL) with ONLY the tools this role may use
 |---|---|---|
 | `answer` | Grounded answer | "Across **2,999** trips the network averages **8.4 min**…" + stat chips + citations |
 | `restricted` 🔒 | An engineer asks about an admin topic | "🔒 **The audit log** is only available to administrators, so I can't share it with your Operations Engineer account…" |
-| `insufficient_data` ℹ | Missing details, unknown route, a date the data can't be broken down by, or an action (officers, passwords, retraining, approving) | "…The operations data covers 2025-01-01 to 2025-07-30 as a whole and can't be broken down by a specific date or month." |
+| `insufficient_data` ℹ | Missing details, unknown route, a date the data can't be broken down by, or an action (officers, passwords, retraining, approving) | "…The operations data covers 2026-03-01 to 2026-09-27 as a whole and can't be broken down by a specific date or month." |
 | `out_of_scope` ↪ | Not about railway operations | "That's outside what I can help with…" |
 | `unavailable` ⚠ | The data source can't be reached | "I can't reach the live operations data right now, so I won't guess." |
 

@@ -219,7 +219,7 @@ class OpsAgent:
                  coverage: Optional[Callable[[], dict]] = None):
         self.tools = {t.name: t for t in tools}
         self.known_routes = known_routes
-        self.coverage = coverage  # {"from": "2025-01-01", "to": "2025-07-30"} of the corpus
+        self.coverage = coverage  # {"from": "2026-03-01", "to": "2026-09-27"} of the corpus (see data/refresh_corpus.py)
 
     # -- role helpers ----------------------------------------------------
     def allowed_tools(self, permissions: set[str]) -> list[str]:
