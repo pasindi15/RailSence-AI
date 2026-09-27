@@ -131,7 +131,7 @@ export default function Sidebar({ chats, activeChatId, onNewChat, onSelectChat, 
   return (
     <div className={`sidebar${isOpen ? "" : " sidebar--collapsed"}`}>
       <div className="sidebar-brand">
-        <img className="sidebar-brand-logo" src={`${import.meta.env.BASE_URL}railsense-icon.svg`} alt="" width="28" height="28" />
+        <img className="sidebar-brand-logo" src={`${import.meta.env.BASE_URL}logo.png`} alt="RailSense AI" />
         <span className="sidebar-brand-name">RailSense AI</span>
       </div>
 
