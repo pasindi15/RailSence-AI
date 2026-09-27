@@ -1085,6 +1085,26 @@ def train_details(train_id: str):
     return {"train": details, "updated_at": datetime.now(timezone.utc).isoformat()}
 
 
+OPERATIONS_AGENT_URL = os.getenv("OPERATIONS_AGENT_URL", "http://127.0.0.1:8005")
+_OPERATIONS_INTENTS = {"delay_check", "train_status", "train_info", "schedule_query", "unknown"}
+
+
+async def ask_operations_agent(text: str) -> dict | None:
+    """M2's /passenger/query answer, or None when M2 declines or is unreachable."""
+    try:
+        async with httpx.AsyncClient(timeout=25) as client:
+            resp = await client.post(f"{OPERATIONS_AGENT_URL.rstrip('/')}/passenger/query",
+                                     json={"question": text, "language": "en"})
+        data = resp.json() if resp.status_code == 200 else {}
+    except Exception as exc:
+        print(f"[chat] operations agent unavailable: {exc!r}")
+        return None
+    if data.get("handled") and data.get("reply"):
+        return data
+    print(f"[chat] operations agent declined: {data.get('reason')}")
+    return None
+
+
 @app.post("/chat", response_model=ChatResponse)
 async def chat(req: ChatRequest):
     text = req.message.strip()
@@ -1111,6 +1131,23 @@ async def chat(req: ChatRequest):
     if entities.get("train_id") and intent == "schedule_query":
         intent = "train_info"
     print(f"[chat] language={language} intent={intent}")
+
+    # Train operations questions (live position, delays, "any train to X after
+    # 19:15?", station ETAs, incidents) are answered by the Operations Agent
+    # (M2) from the real timetable, live journey and verified incidents. M2
+    # returns handled=false for anything else, which then continues below.
+    if language == "en" and intent in _OPERATIONS_INTENTS:
+        ops = await ask_operations_agent(text)
+        if ops:
+            save_message(req.session_id, "user", text)
+            save_message(req.session_id, "assistant", ops["reply"])
+            return ChatResponse(
+                session_id=req.session_id, reply=ops["reply"], intent=intent,
+                language=language,
+                entities={**entities, "operations": {"intent": ops.get("intent"), "kind": ops.get("kind"),
+                                                     **(ops.get("entities") or {})}},
+                source="via Operations Agent (M2)",
+            )
 
     source = "local"
     reply = ""

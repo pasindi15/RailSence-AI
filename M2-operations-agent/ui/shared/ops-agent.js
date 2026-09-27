@@ -16,11 +16,41 @@
 window.RailSenseOpsAgent = (function () {
   const TOKEN_KEY = "railsense_m2_token";
   const THREAD_KEY = "railsense_ops_agent_thread";
-  const METHOD_LABELS = {
-    llm_tool_calling: "Gemini · tool calling",
-    rule_based_fallback: "Rule-based fallback",
-    template_after_guard: "Template (number check)",
+  // Technique badges: which parts of the system produced this answer. Worked
+  // out from what actually ran (answer method, answer type and the tools
+  // behind the cited sources), so a badge is never shown for work not done.
+  const TOOL_TECHNIQUES = {
+    predict_delay: [["nlp", "NLP · entity extraction"], ["ml", "ML · delay model"],
+                    ["ir", "IR · similar past incidents"], ["xai", "Explainable AI"]],
+    get_route_status: [["nlp", "NLP · entity extraction"], ["data", "Analytics · route records"]],
+    get_incident_queue: [["nlp", "NLP · classification & summarisation"], ["data", "Incident store"]],
+    get_model_metrics: [["ml", "ML · model evaluation"], ["xai", "Explainable AI · feature importance"]],
+    get_audit_log: [["sec", "Security · audit trail"]],
+    check_system_health: [["proto", "Protocol · HTTP / agent Hub"]],
+    get_dashboard_kpis: [["data", "Analytics · live KPIs"]],
   };
+  const NOTICE_TECHNIQUES = {
+    restricted: [["sec", "Security · role-based access"]],
+    out_of_scope: [["resp", "Responsible AI · stays in scope"]],
+    insufficient_data: [["resp", "Responsible AI · no guessing"]],
+    unavailable: [["resp", "Responsible AI · no guessing"]],
+  };
+
+  function techniques(d) {
+    const out = [];
+    if (d.answer_method === "llm_tool_calling") out.push(["llm", "LLM · Gemini tool calling"]);
+    else if (d.answer_method === "rule_based_fallback") out.push(["nlp", "NLP · rule-based intent routing"]);
+    else if (d.answer_method === "template_after_guard") out.push(["llm", "LLM · Gemini tool calling"]);
+    (d.sources || []).forEach((src) => (TOOL_TECHNIQUES[src.tool] || []).forEach((t) => out.push(t)));
+    (NOTICE_TECHNIQUES[d.answer_type] || []).forEach((t) => out.push(t));
+    if ((d.answer_type || "answer") === "answer" && (d.sources || []).length) {
+      out.push(["resp", d.answer_method === "template_after_guard"
+        ? "Grounded · number guard corrected" : "Grounded · numbers verified"]);
+    }
+    out.push(["sec", "Security · JWT + RBAC"]);
+    const seen = new Set();
+    return out.filter(([, label]) => !seen.has(label) && seen.add(label));
+  }
   const NOTICES = {
     restricted: { icon: "🔒", label: "Administrator only" },
     insufficient_data: { icon: "ℹ", label: "Not enough information" },
@@ -168,7 +198,22 @@ window.RailSenseOpsAgent = (function () {
 .oa-stat.good b{color:#34D399}.oa-stat.warn b{color:#FBBF24}.oa-stat.bad b{color:#F87171}
 .oa-sources{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}
 .oa-src{font-size:10.5px;padding:2px 8px;border-radius:99px;color:var(--oa-gold);border:1px solid rgba(201,162,42,.35);background:rgba(201,162,42,.08)}
-.oa-meta{margin-top:6px;font:10px 'Share Tech Mono',monospace;color:var(--muted,#8291a8);letter-spacing:.04em}
+.oa-techs{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.oa-tech{font:600 9.5px 'Share Tech Mono',monospace;letter-spacing:.03em;padding:2px 7px;border-radius:5px;border:1px solid;white-space:nowrap}
+.oa-tech.t-llm{color:#C4B5FD;border-color:rgba(167,139,250,.45);background:rgba(139,92,246,.12)}
+.oa-tech.t-nlp{color:#5EEAD4;border-color:rgba(45,212,191,.45);background:rgba(20,184,166,.12)}
+.oa-tech.t-ir{color:#93C5FD;border-color:rgba(96,165,250,.45);background:rgba(59,130,246,.12)}
+.oa-tech.t-ml{color:#FCD34D;border-color:rgba(251,191,36,.45);background:rgba(245,158,11,.12)}
+.oa-tech.t-xai{color:#F9A8D4;border-color:rgba(244,114,182,.45);background:rgba(236,72,153,.1)}
+.oa-tech.t-sec{color:#FCA5A5;border-color:rgba(248,113,113,.45);background:rgba(239,68,68,.1)}
+.oa-tech.t-proto{color:#CBD5E1;border-color:rgba(148,163,184,.45);background:rgba(100,116,139,.12)}
+.oa-tech.t-resp{color:#86EFAC;border-color:rgba(74,222,128,.45);background:rgba(34,197,94,.1)}
+.oa-tech.t-data{color:#A5B4FC;border-color:rgba(129,140,248,.45);background:rgba(99,102,241,.1)}
+[data-theme="light"] .oa-tech.t-llm{color:#6D28D9}[data-theme="light"] .oa-tech.t-nlp{color:#0F766E}
+[data-theme="light"] .oa-tech.t-ir{color:#1D4ED8}[data-theme="light"] .oa-tech.t-ml{color:#B45309}
+[data-theme="light"] .oa-tech.t-xai{color:#BE185D}[data-theme="light"] .oa-tech.t-sec{color:#B91C1C}
+[data-theme="light"] .oa-tech.t-proto{color:#475569}[data-theme="light"] .oa-tech.t-resp{color:#15803D}
+[data-theme="light"] .oa-tech.t-data{color:#4338CA}
 .oa-typing{display:inline-flex;gap:4px}
 .oa-typing i{width:6px;height:6px;border-radius:50%;background:var(--brand-light,#60a5fa);animation:oa-bounce 1s infinite ease-in-out}
 .oa-typing i:nth-child(2){animation-delay:.15s}.oa-typing i:nth-child(3){animation-delay:.3s}
@@ -211,7 +256,8 @@ window.RailSenseOpsAgent = (function () {
       ${stats ? `<div class="oa-stats">${stats}</div>` : ""}
       <div class="oa-text">${md(d.answer)}</div>
       ${sources ? `<div class="oa-sources">${sources}</div>` : ""}
-      ${d.answer_method ? `<div class="oa-meta">${esc(METHOD_LABELS[d.answer_method] || d.answer_method)}</div>` : ""}`;
+      <div class="oa-techs">${techniques(d).map(([kind, label]) =>
+        `<span class="oa-tech t-${kind}">${esc(label)}</span>`).join("")}</div>`;
   }
 
   function renderThread() {
