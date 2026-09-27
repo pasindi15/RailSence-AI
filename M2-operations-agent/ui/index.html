@@ -130,7 +130,8 @@ body::after{
   border-right:1px solid var(--border);
   color:var(--ink);
   padding:22px 16px;
-  position:sticky;top:0;height:100vh;
+  position:sticky;top:0;height:100vh;height:100dvh;
+  display:flex;flex-direction:column;overflow-y:auto;overscroll-behavior:contain;
   backdrop-filter:blur(20px);
 }
 [data-theme="light"] .side{
@@ -182,7 +183,7 @@ body::after{
 }
 
 .side-foot{
-  position:absolute;bottom:22px;left:22px;right:18px;
+  margin-top:auto;padding-bottom:4px;flex-shrink:0;
   color:var(--muted);font-size:10.5px;line-height:1.65;
   border-top:1px solid var(--border);padding-top:12px;
 }
