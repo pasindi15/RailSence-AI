@@ -188,7 +188,16 @@ def main() -> None:
             svc_env["SECURITY_AGENT_PORT"] = str(port)
         if key == "m4":
             svc_env["MAINTENANCE_AGENT_PORT"] = str(port)
-        spawn(f"{label} :{port}", colour, [PYTHON, "-m", "uvicorn", "main:app", "--host", "127.0.0.1",
+        # A service with its own venv (e.g. M1, which needs the exact chromadb
+        # version its on-disk .chroma index was built with) must be run with
+        # that venv's Python, never the interpreter that launched start.py -
+        # otherwise it silently loads a different package version and RAG
+        # retrieval fails with KeyError: '_type'.
+        venv_python = cwd / "venv" / ("Scripts" if sys.platform == "win32" else "bin") / (
+            "python.exe" if sys.platform == "win32" else "python")
+        service_python = str(venv_python) if venv_python.exists() else PYTHON
+        say(f"  [launcher] {label} -> {service_python}", "gray")
+        spawn(f"{label} :{port}", colour, [service_python, "-m", "uvicorn", "main:app", "--host", "127.0.0.1",
                                            "--port", str(port), *reload], cwd, svc_env)
     for side in ("user", "admin"):
         port = ports["public"][side]

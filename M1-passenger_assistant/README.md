@@ -70,14 +70,22 @@ Build the RAG index (only needed once, or after editing `data/faq_docs/`):
 python -m rag.embed_documents
 ```
 
-Start the API. `frontend/src/api.js` currently points `BASE_URL` at port
-**8010**, so run uvicorn on the same port:
+Start the API on port **8010** (match whatever `VITE_M1_URL`/gateway config the
+frontend is using). Always launch uvicorn through the venv's own Python
+directly - don't rely on `uvicorn` being on PATH / the venv being activated.
+If a global Python is ever picked up instead, the `.chroma` index (built with
+`chromadb==1.5.9`) becomes unreadable and every RAG query silently falls back
+to "I'm having trouble looking that up right now" (`KeyError: '_type'`):
 
 ```bash
-uvicorn main:app --reload --port 8010
+venv\Scripts\python.exe -m uvicorn main:app --reload --port 8010
 ```
 
-Check it's alive: open `http://localhost:8010/health`.
+or just run `run.bat` / `.\run.ps1` from `backend/`, which do the same thing.
+
+Check it's alive: open `http://localhost:8010/health`. The startup log prints
+the Python executable and chromadb version in use - confirm it points at
+`backend\venv\Scripts\python.exe` and chromadb `1.5.9`.
 
 ### 2. Frontend
 

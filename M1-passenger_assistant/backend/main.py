@@ -33,6 +33,30 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
+# The on-disk .chroma index is only readable by the chromadb version pinned in
+# requirements.txt (currently 1.5.9) - running this process with any other
+# Python (e.g. a global interpreter instead of backend/venv) silently loads a
+# different chromadb and every RAG retrieval fails with KeyError: '_type'.
+# Log both up front so a wrong-interpreter mistake is obvious in the logs
+# instead of showing up as "I'm having trouble looking that up right now."
+_EXPECTED_CHROMADB_VERSION = "1.5.9"
+print(f"[startup] python executable: {sys.executable}")
+try:
+    import chromadb as _chromadb_check
+    print(f"[startup] chromadb version: {_chromadb_check.__version__}")
+    print(f"[startup] chromadb location: {_chromadb_check.__file__}")
+    if _chromadb_check.__version__ != _EXPECTED_CHROMADB_VERSION:
+        print(
+            f"[startup] WARNING: chromadb {_chromadb_check.__version__} is loaded, "
+            f"but requirements.txt pins {_EXPECTED_CHROMADB_VERSION} (the version the "
+            f".chroma index on disk was built with). This process is probably running "
+            f"under the wrong Python interpreter - use backend\\venv\\Scripts\\python.exe, "
+            f"not a global/system python. RAG retrieval will likely fail with "
+            f"KeyError: '_type' until this is fixed."
+        )
+except ImportError as _e:
+    print(f"[startup] WARNING: could not import chromadb to check its version: {_e}")
+
 import httpx
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException

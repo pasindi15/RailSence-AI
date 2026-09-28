@@ -2,6 +2,15 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
+			"label": "Run M1 backend (venv)",
+			"type": "shell",
+			"command": "cd M1-passenger_assistant/backend; .\\venv\\Scripts\\python.exe -m uvicorn main:app --reload --port 8010",
+			"isBackground": true,
+			"problemMatcher": [
+				"$python"
+			]
+		},
+		{
 			"label": "Run maintenance-agent",
 			"type": "shell",
 			"command": "cd maintenance-agent; python -m uvicorn main:app --host 0.0.0.0 --port 8004",
