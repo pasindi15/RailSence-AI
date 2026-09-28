@@ -375,8 +375,19 @@ def answer_engineer_question(
     message: str,
     asset_type: str = "",
     history: Optional[list[dict]] = None,
+    flags: Optional[dict[str, dict]] = None,
+    reports: Optional[list[dict]] = None,
 ) -> dict[str, Any]:
     history = history or []
+
+    # 0. Operational questions ("which trains are unavailable?", "is the Yal Devi running
+    # today?") are answered from live flags + latest inspections + open reports, with
+    # manual RAG only for assets that show a fault (rag/ops_status.py). Technical
+    # questions return None here and continue to manual RAG below.
+    from rag.ops_status import answer_ops_question
+    ops = answer_ops_question(message, flags or {}, reports or [])
+    if ops is not None:
+        return ops
 
     # 0a. Short-circuit: train list query
     if _is_train_list_query(message):

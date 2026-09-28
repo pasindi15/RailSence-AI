@@ -878,6 +878,9 @@
   .sb-item.active { border-color: rgba(37,99,235,0.16); box-shadow: inset 0 1px 0 rgba(255,255,255,0.35); }
 
   .chat-window { padding-top: 28px; gap: 22px; }
+  /* Never squeeze the welcome card: when a category's questions open, the chat
+     window scrolls instead of clipping the list inside the card. */
+  .chat-window > .welcome { flex-shrink: 0; }
   .welcome {
     position: relative; isolation: isolate; overflow: hidden;
     margin: 4px auto 20px; padding: 30px 26px 24px;
@@ -1549,6 +1552,7 @@ function toggleCategory(key, btn) {
 
   activeCategory = key;
   btn.classList.add('active');
+  requestAnimationFrame(() => panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' }));
 
   const { label, items } = SUGGESTIONS[key];
   title.textContent = label;
@@ -1666,7 +1670,7 @@ function appendBotBubble(data, storedTime) {
     return;
   }
 
-  const cards = renderAnswerCards(data.answer);
+  const cards = renderAnswerCards(data.answer, data.status_level);
   const bodyHtml = cards || renderMarkdown(data.answer);
   const bubbleClass = cards ? 'bubble card-bubble' : 'bubble';
   div.innerHTML = `
@@ -1812,7 +1816,7 @@ function renderMarkdown(text) {
 }
 
 // ── Answer card renderer ──
-function renderAnswerCards(text) {
+function renderAnswerCards(text, statusLevel) {
   let actionHtml = '';
   text = text.replace(/\*{1,2}Action:\*{1,2}\s*([\s\S]*?)(?=\*{1,2}(?:Status|Assets|Details|Action Required|Reference):\*{0,2}|$)/i, (_, body) => {
     const line = (body.trim().split('\n')[0] || '').trim();
@@ -1860,7 +1864,9 @@ function renderAnswerCards(text) {
   if (found['Status']) {
     const s = found['Status'];
     let col = '', badge = 'INFO';
-    if      (/\bGREEN\b|healthy|good condition|no fault|cleared|nominal/i.test(s)) { col='ac-green'; badge='GREEN'; }
+    const LEVEL = { GREEN: ['ac-green', 'GREEN'], AMBER: ['ac-amber', 'CAUTION'], RED: ['ac-red', 'RED'] };
+    if (statusLevel && LEVEL[statusLevel]) { [col, badge] = LEVEL[statusLevel]; }
+    else if (/\bGREEN\b|healthy|good condition|no fault|cleared|nominal/i.test(s)) { col='ac-green'; badge='GREEN'; }
     else if (/\bRED\b|critical|out of service|failure|severe|danger/i.test(s))     { col='ac-red';   badge='RED'; }
     else if (/\bAMBER\b|caution|warning|approaching|degraded|overdue/i.test(s))    { col='ac-amber'; badge='CAUTION'; }
 
@@ -1995,7 +2001,8 @@ function updateMethodBadge(method, retrieval) {
   } else {
     const isLLM = method === 'llm_grounded';
     dot.style.background = isLLM ? 'var(--primary-light)' : 'var(--green)';
-    label.textContent = `${isLLM ? 'LLM · ' : 'Template · '}${retrieval === 'supabase_pgvector' ? 'pgvector' : 'TF-IDF'}`;
+    const ret = retrieval === 'live_ir_rag' ? 'IR + RAG' : retrieval === 'supabase_pgvector' ? 'pgvector' : 'TF-IDF';
+    label.textContent = `${isLLM ? 'LLM · ' : 'Template · '}${ret}`;
   }
 }
 
@@ -2090,7 +2097,7 @@ function escAttr(str) {
     return;
   }
   if(localStorage.getItem('m4_eng_auth')==='1'){g.style.display='none';return;}
-  window.location.replace('http://localhost:3002');
+  window.location.replace('/');  // M4's own login gate (the separate :3002 login is retired)
 })();
 async function doEngineerLogin(e){
   e.preventDefault();
@@ -2123,7 +2130,7 @@ function engineerLogout(){
   if(confirm('Sign out of the Maintenance Portal?')){
     localStorage.removeItem('m4_eng_auth');
     localStorage.removeItem('m4_eng_token');
-    location.replace('http://localhost:3002');
+    location.replace('/');
   }
 }
 </script>

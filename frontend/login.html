@@ -1,6 +1,10 @@
 <!doctype html>
 <html lang="en" data-theme="dark">
 <head>
+<script src="/railsense-config.js"></script>
+<script>/* fallback if the gateway config is unavailable: RailSense default ports */
+window.RAILSENSE = window.RAILSENSE || {ports: {user: 3000, admin: 3001, m1: 8001, hub: 8002, booking: 8003, security: 8004, m2: 8005, m4: 8006}, svc: "/svc", url: function (k, p) { return location.protocol + "//" + location.hostname + ":" + this.ports[k] + (p || ""); }};</script>
+
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>RailSense AI — Operations Login</title>
@@ -240,8 +244,8 @@ form.onsubmit = async (e) => {
         body: JSON.stringify({ email, password })
       });
     } catch (_) {
-      // Fallback direct to port 8005
-      resp = await fetch('http://localhost:8005/admin/api/login', {
+      // Fallback: straight to M2 through the gateway pass-through
+      resp = await fetch('/svc/m2/admin/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })

@@ -1,270 +1,335 @@
 # RailSense AI
 
-RailSense AI is a multi-agent railway intelligence platform for passenger self-service, deterministic booking, delay prediction, railway operations, fraud detection, and rolling-stock maintenance.
+<p align="center"><img src="M1-passenger_assistant/frontend/public/logo.png" alt="RailSense AI logo" width="260"></p>
 
-This IT3041 Information Retrieval and Web Analytics project combines FastAPI services, machine-learning models, NLP, retrieval-augmented generation, Supabase PostgreSQL, and browser-based operations portals.
+**Four AI agents. One seamless railway experience. Built for the future of Sri Lankan railways.**
 
-## Services and Portals
+RailSense AI is a multi-agent railway intelligence platform for Sri Lanka Railways. Four specialised
+agents — a passenger assistant, an operations and delay-prediction agent, a communication hub with a
+booking and fraud-security agent, and a maintenance agent — work together through one secure hub
+and one shared train registry. It covers passenger self-service in English, Sinhala and Tamil, live
+train positions and delay prediction, deterministic booking with QR tickets, fraud screening,
+incident management, and rolling-stock maintenance.
 
-| Service | Port | Purpose | URL |
-| --- | ---: | --- | --- |
-| M1 Passenger Assistant | 8001 | Multilingual chat, NLU, FAQ RAG, and dispatch | `http://localhost:8001/docs` |
-| M3 Communication Hub | 8002 | JWT verification, allowlisted routing, audit, rate limiting, circuit breakers | `http://localhost:8002/docs` |
-| M3 Booking Agent | 8003 | Schedules, seat holds, fares, bookings, cancellations, waiting lists | `http://localhost:8003/docs` |
-| Security and Fraud Agent | 8004 | IsolationForest risk scoring and review workflow | `http://localhost:8004/docs` |
-| M2 Operations Agent | 8005 | Delay prediction, incident NLP/RAG, incident approval + verified map, passenger answers, Operations Assistant, Control Room, Admin Console | `http://localhost:8005/` |
-| M4 Maintenance Agent | 8006 | Asset health, reports, manual RAG, maintenance flags | `http://localhost:8006/` |
-| Unified Web Gateway | 3000 | Passenger and staff portals | `http://localhost:3000/` |
-| M1 React application | 3000 (via gateway) | Built Vite passenger chat UI served by the gateway | `http://localhost:3000/user/chat/` |
+Built for **IT3041 – Information Retrieval and Web Analytics** (SLIIT) with FastAPI services, machine
+learning, NLP, information retrieval and RAG, LLMs, Supabase PostgreSQL + pgvector, and browser portals.
 
-### Main URLs
+---
 
-- Passenger portal: `http://localhost:3000/user`
-- Passenger chat: `http://localhost:3000/user/chat`
-- Booking desk: `http://localhost:3000/user/booking`
-- Ticket confirmation and QR verification: `http://localhost:3000/user/confirmation`
-- Unified admin portal: `http://localhost:3000/admin`
-- M2 Operations Control Room: `http://localhost:8005/`
-- M2 Admin Operations Console: `http://localhost:8005/admin`
-- M4 Asset Dashboard: `http://localhost:8006/`
-- M4 Engineer Chat: `http://localhost:8006/chat-ui`
+## Contents
+
+1. [Team](#team)
+2. [How the assignment requirements are met](#how-the-assignment-requirements-are-met)
+3. [Portals and ports](#portals-and-ports)
+4. [Architecture](#architecture)
+5. [Modules](#modules)
+6. [Quick start](#quick-start)
+7. [Installation and configuration](#installation-and-configuration)
+8. [Running the platform](#running-the-platform)
+9. [APIs and health checks](#apis-and-health-checks)
+10. [Evaluation](#evaluation)
+11. [Testing](#testing)
+12. [Database setup](#database-setup)
+13. [Security, ethics and responsible AI](#security-ethics-and-responsible-ai)
+14. [Repository layout](#repository-layout)
+15. [Known limitations](#known-limitations)
+16. [Troubleshooting](#troubleshooting)
+17. [Project information](#project-information)
+
+---
+
+## Team
+
+| Module | Responsibility | Member |
+| --- | --- | --- |
+| **M1** | Passenger Assistant — multilingual chat, NLU, FAQ RAG, Choo widget | **Thisarani Kawya** |
+| **M2** | Operations & Delay Prediction — ML, incident NLP/RAG, live journeys, Control Room, RBAC admin, Operations Assistant | **Pasindi Alawatta** (team leader) |
+| **M3** | Communication Hub, Booking & Security — signed routing, audit, deterministic booking, fraud model | **Navoda Dasun** |
+| **M4** | Maintenance & Asset Intelligence — asset-health ML, maintenance flags, manual RAG, engineer assistant | **Primesh Marasingha** |
+
+---
+
+## How the assignment requirements are met
+
+| Requirement | Where it is implemented |
+| --- | --- |
+| **One or more LLMs** | M1 passenger replies via OpenRouter (free-model fallback chain); M2 Operations Assistant with **Gemini function calling** over fixed data tools; M4 engineer assistant via **Groq** (Qwen). Every LLM answer is grounded: M2 and M4 reject any number or ID the LLM writes that is not in the retrieved evidence. |
+| **NLP techniques** | Intent classification (M1, M2 keyword rules + TF-IDF fallback, M4), **named-entity recognition** of stations, trains, dates, times, classes, IDs (M1, M2 passenger query, M4 train/asset NER with typo tolerance), incident **classification and extractive summarisation** (M2), technician-note extraction (M4), NIC normalisation (M3), template NLG. |
+| **Information retrieval** | Supabase **pgvector** + local **TF-IDF** incident retrieval (M2, P@1 = 1.0), manual retrieval with relevance thresholds and re-ranking (M4), ChromaDB FAQ retrieval (M1), IR over live records (flags, inspections, timetables). |
+| **RAG** | M2 explains predictions with retrieved past incidents and sizes live map alerts by retrieving similar incidents; M4 answers from retrieved manual sections plus live flags/inspections; M1 answers FAQs with citations. |
+| **Security features** | JWT-signed inter-agent messages verified by the Hub, allowlisted interactions, bcrypt officer passwords, signed expiring officer tokens, **role-based access control**, input sanitisation (bleach, schema validation, HTML rejection), rate limiting, circuit breakers, HMAC-hashed NIC numbers, append-only audit logs, admin-only incident approval. |
+| **Agent communication protocols** | HTTP/JSON with an MCP-style `AgentMessage` envelope through the M3 Hub (`/messages`), agent start-up handshake (`POST /register`), gateway pass-through (`/svc/<agent>`), Upstash Redis pub/sub for delay and maintenance alerts. |
+| **Fairness, explainability, transparency, data protection** | Model explanations and feature importance, confidence labels, "estimate, not a live signal" wording, cited sources on every answer, technique badges (LLM / NLP / IR / RAG) in the Operations Assistant, human-in-the-loop fraud and cancellation review, public map shows only admin-verified incidents with an allowlist of fields, masked NICs, secrets only server-side. |
+
+---
+
+## Portals and ports
+
+Browsers use **two ports only** — one for passengers, one for officers. Every agent runs on an
+internal port that `start.py` chooses on each laptop (defaults in `railsense_ports.json`). Pages reach
+agents through the gateway (`/svc/m1`, `/svc/m2`, `/svc/m4`), so no page hard-codes a port.
+
+| Side | Default port | What's there |
+| --- | ---: | --- |
+| **User side** | **3000** | Passenger portal and live train board, booking desk, confirmation / QR verification, M1 chat app, M2 delay popup, Choo assistant, verified-incident map |
+| **Admin side** | **3001** | Officer login, command deck, M2 Control Room + Admin Console, M3 fraud and cancellation queues, Hub monitor, Security page, M4 maintenance |
+
+| Internal agent | Default port | Purpose |
+| --- | ---: | --- |
+| M1 Passenger Assistant | 8001 | Multilingual chat, NLU, FAQ RAG, dispatch |
+| M3 Communication Hub | 8002 | JWT verification, allowlisted routing, audit, rate limiting, circuit breakers |
+| M3 Booking Agent | 8003 | Schedules, seat holds, fares, bookings, cancellations, waiting lists |
+| Security & Fraud Agent | 8004 | IsolationForest risk scoring and review workflow |
+| M2 Operations Agent | 8005 | Delay prediction, live journeys, incident NLP/RAG, verified map, passenger answers, Operations Assistant, Control Room, Admin Console |
+| M4 Maintenance Agent | 8006 | Asset health, maintenance flags, reports, manual RAG, engineer assistant |
+
+If a default port is busy, `start.py` stops it when an earlier RailSense run left it behind, or moves
+to the next free port when another program owns it — and tells every agent and page.
+
+Main URLs:
+
+- Passenger portal: `http://localhost:3000/user` (chat `…/user/chat`, booking `…/user/booking`, tickets `…/user/confirmation`)
+- Officer portal: `http://localhost:3001/admin` (login `http://localhost:3001/login`)
+- Opening an admin page on 3000 (or a passenger page on 3001) forwards you to the right side.
+
+---
 
 ## Architecture
 
-All internal agent traffic is hub-mediated. A sender creates a signed `AgentMessage`; the Communication Hub validates its Pydantic schema and JWT sender/audience, checks the interaction allowlist, records the event, and forwards it to the receiver's `/internal/messages` endpoint.
-
 ```mermaid
 flowchart LR
-    Browser[Passenger or Staff Browser] --> Gateway[Unified Gateway :3000]
-    React[M1 React UI /user/chat] --> M1[M1 Passenger :8001]
-    Gateway --> Hub[M3 Communication Hub :8002]
+    Browser[Passenger / officer browser] --> Gateway["Unified gateway<br/>user :3000 · admin :3001"]
+    Gateway -- "/svc/m1" --> M1[M1 Passenger :8001]
+    Gateway -- "/svc/m2" --> M2[M2 Operations :8005]
+    Gateway -- "/svc/m4" --> M4[M4 Maintenance :8006]
+    Gateway -- signed messages --> Hub[M3 Communication Hub :8002]
     M1 --> Hub
-    Hub --> M2[M2 Operations :8005]
+    M1 -- operations questions --> M2
+    Hub --> M2
     Hub --> Booking[M3 Booking :8003]
     Hub --> Security[Security :8004]
-    Hub --> Maintenance[M4 Maintenance :8006]
+    Hub --> M4
     M1 --> Chroma[(ChromaDB FAQ)]
     M2 --> Supabase[(Supabase PostgreSQL + pgvector)]
     Booking --> Supabase
-    Maintenance --> Supabase
     Hub --> Audit[(Audit logs)]
+    M2 -. delay alerts .-> Upstash[(Upstash Redis)]
+    M4 -. maintenance alerts .-> Upstash
 ```
 
-The Supabase `trains` table is the canonical train registry. M4 can mark a train `OUT_OF_SERVICE`; M3 rejects new bookings with `TRAIN_UNDER_MAINTENANCE` until the flag is cleared. Seat availability and fares are deterministic booking-service decisions, and cancellation approval remains human-reviewed.
+- **Hub-mediated agent traffic.** A sender creates an `AgentMessage` envelope signed with a JWT; the
+  Hub validates the schema, sender and audience, checks the interaction allowlist, audits the event and
+  forwards it to the receiver. Agents announce themselves at start-up (`POST /register`, read-only).
+- **One train registry.** The Supabase `trains` table is canonical. M4 can mark a train
+  `OUT_OF_SERVICE`; M3 then rejects new bookings with `TRAIN_UNDER_MAINTENANCE` until the flag clears.
+- **Deterministic money and seats.** Availability and fares are computed by the booking service,
+  never by an LLM; cancellations and flagged bookings are reviewed by humans.
+- **One clock.** Every "today", live position and map cut-off uses Asia/Colombo time.
 
-## Module Capabilities
+---
 
-### M1 Passenger Assistant
+## Modules
 
-- English, Sinhala, and Tamil script detection and responses.
-- Intent classification for schedules, fares, delays, bookings, complaints, and general questions.
-- Station, train, date, time, class, and passenger-count extraction.
-- ChromaDB FAQ retrieval with citations.
-- Hub dispatch for delay, booking, cancellation, complaint, and maintenance queries.
+### M1 · Passenger Assistant — Thisarani Kawya
 
-### M2 Operations and Delay Prediction
+- Sinhala / Tamil / English script detection and replies in the passenger's language.
+- Intent classification (schedules, fares, delays, train status, bookings, cancellations, policies,
+  complaints) and entity extraction (stations, train, date, time, class, passenger count).
+- ChromaDB FAQ retrieval with citations; LLM phrasing through OpenRouter (tries several free models
+  in turn), falling back to the raw FAQ text when no key is set.
+- Train operations questions ("any train to Polonnaruwa after 19:15?", "where is the Night Mail now?",
+  "when will DM-8055 reach Kurunegala?", "which trains are delayed?") are answered by M2 from the live
+  timetable (`/passenger/query`); fares, policies and bookings stay with M1.
+- React chat app (served at `/user/chat`) and the **Choo** floating assistant on the passenger portal.
+- Reads `backend/.env` first, then the root `.env`.
+
+### M2 · Operations & Delay Prediction — Pasindi Alawatta
 
 Full documentation: [`M2-operations-agent/README.md`](M2-operations-agent/README.md).
 
-- `GradientBoostingRegressor` delay prediction with exact historical lookup first (MAE 2.24 min, R2 0.87).
-- Sanitized incident classification and concise operator summaries.
-- Supabase `pgvector` incident retrieval with local TF-IDF fallback.
-- Grounded explanations containing prediction evidence, model version, retrieval method, and similar incidents.
-- Control Room with a live 3D banner (Loco the train robot + corridor delay skyline), network KPIs, route heatmap, hourly delay pressure, type-coloured incident mix, model metrics, and a verified-incident map.
-- Delay prediction form with route-driven train and station dropdowns; incident forms with a station dropdown and a searchable train picker (names such as "Podi Menike · 1005").
-- Passenger "Delay / Operations" popup answers (`POST /passenger/ask`): intent detection + template NLG, booking questions handed to M1.
-- **Incident approval workflow**: staff reports stay `pending`; only administrators can Approve/Reject. Approved incidents appear, with allowlisted public fields only, on the Control Room, Admin Console and passenger maps within 5 seconds, and only for the current day (cut-off 00:00 Asia/Colombo).
-- **Operations Assistant**: floating chatbot for administrators and operations engineers. Gemini function calling over seven fixed data tools filtered by role; a number check rejects any figure not in the tool results; restricted, not-enough-information, out-of-scope and unavailable cases get fixed messages; per-user history and audit logging.
+- **Delay model:** `GradientBoostingRegressor` with exact historical lookup first; retrained on the
+  refreshed corpus (3,900 records, 2026-03-01 → 2026-09-27): **MAE 2.25 min, R² 0.894**.
+- **Live journeys (`live_tracker.py`):** station-by-station timetable (intermediate times by track
+  distance), live position on the Asia/Colombo clock, correct overnight handling (a 19:15 → 04:30 train
+  is "not yet departed" at 18:52), and **verified map incidents on a train's path delay every later
+  stop**, each sized by retrieving similar past incidents (IR).
+- **Passenger popup (`/passenger/ask`)** and **free-text passenger queries (`/passenger/query`)**:
+  intent rules + TF-IDF fallback for typos, station/train/time NER, journey search ("trains to X after
+  19:15"), station ETAs, incident and network overviews.
+- **Incident pipeline:** sanitised reports → classification + summarisation → `pending` → admin
+  Approve/Reject → verified map on all three portals within 5 s, current day only.
+- **Operations Assistant:** Gemini function calling over seven role-filtered data tools, number guard,
+  fixed refusal messages, per-user history, and **technique badges** (LLM · NLP · IR · RAG · ML ·
+  Explainable AI · Security · Protocol · Responsible AI) computed from what actually ran.
+- **Control Room and Admin Console:** 3D banners, KPIs, heatmaps, model metrics, incident management,
+  officer RBAC (bcrypt, signed tokens, last-admin lock-out), retraining with archived versions and
+  rollback, audit explorer, live health (Supabase, Hub, Upstash).
+- **Corpus refresh:** `data/refresh_corpus.py` keeps every record, moves dates up to yesterday, adds
+  recent records, upserts Supabase and indexes new notes in pgvector (re-runnable).
 
-### M2 Admin Console
+### M3 · Communication Hub, Booking & Security — Navoda Dasun
 
-The M2 Admin Console uses bcrypt password hashes, signed expiring officer JWTs, and role-based permissions.
+- **Hub:** schema validation, JWT authentication, interaction authorisation, registry lookup,
+  deduplication, rate limiting, circuit breakers, SQLAlchemy audit, live monitor
+  (`/api/hub/dashboard`, `/api/hub/timeline`), start-up handshake `POST /register`.
+- **Booking:** schedules, first/second-class availability, deterministic fares, seat holds, idempotent
+  bookings, QR e-tickets and verification, cancellations with NLP-explained human review, waiting lists,
+  maintenance-aware booking blocks, admin booking copilot.
+- **Security & Fraud agent:** behavioural features (booking velocity, cancellation ratio, duplicate
+  seats, route switching, timing) → IsolationForest → `LOW/MEDIUM/HIGH` with `ALLOW/REVIEW/REJECT`;
+  reviewers label outcomes in the fraud queue.
 
-- Officer login, logout, profile, permissions, provisioning, role changes, password resets, activation, and audit history.
-- Roles for administrators, operations engineers, managers, dispatchers, analysts, and viewers.
-- Last-active-administrator lockout protection.
-- Incident create/read/update/delete workflows, plus admin-only Approve/Reject and the verified-incident map.
-- Live 3D governance banner (R2 gauge, pending-incident cards, today's approvals, audit stream).
-- Operations Assistant with administrator-only tools (model metrics, audit log, system health).
-- Delay-model retraining against Supabase or the CSV fallback.
-- Timestamped model archives, metrics sidecars, feature-importance refresh, and rollback without restart.
-- Read-only inter-agent audit search, filters, pagination, and Supabase-to-JSONL fallback.
-- Explicit online/offline data-source indicators.
+### M4 · Maintenance & Asset Intelligence — Primesh Marasingha
 
-### M3 Communication Hub and Booking
+- Asset-health scoring from service age, fault history and telemetry (per-type gradient boosting),
+  technician-note extraction, maintenance reports, manual search, maintenance flags that sync to the
+  train registry.
+- **Engineer assistant (`/chat`, `rag/ops_status.py`)** answers operational questions with
+  **NLP → IR → RAG → LLM**: intent + train NER (name, typo, M4 id `T-00x`, service number, shared id,
+  loco or asset id) → live flags, latest inspections and open reports → manual sections retrieved for the
+  specific fault or the fitness-to-run limits (relevance threshold + re-ranking) → Groq LLM answer that
+  is rejected if it contains any number or ID not in the evidence (template fallback). Examples: "What
+  trains are unavailable today due to maintenance issues?", "Is the Yal Devi running today? I have a
+  booking on it." Technical questions ("how do I diagnose an oil leak?") use the manual RAG as before.
+- Maintenance alerts published to Upstash Redis (`maintenance_alert`); LLM via Groq. Keys live in
+  `M4-maintenance-agent/.env` (git-ignored).
 
-The Hub provides schema validation, JWT authentication, interaction authorization, registry lookup, deduplication, rate limiting, circuit breakers, and SQLAlchemy audit persistence. The Booking Agent provides schedule lookup, first/second-class availability, deterministic fares, seat holds, idempotent booking mutations, ticket tokens, cancellations, waiting lists, and fraud-review states.
+### Unified gateway (`frontend/serve.py`)
 
-### Security and Fraud
+Serves both public sides, forwards pages to the correct side, publishes `/railsense-config.js` (the
+ports in effect), passes browser calls through to agents (`/svc/m1|m2|m4`), signs trusted Hub
+messages server-side, proxies booking and admin APIs, and never exposes database credentials or the
+inter-agent secret to browsers. One RailSense logo is used in every header (M1–M4, user and admin).
 
-Behavioral features cover booking velocity, cancellation ratios, duplicate seat attempts, route switching, and timing anomalies. The IsolationForest model returns `LOW`, `MEDIUM`, or `HIGH` risk with `ALLOW`, `REVIEW`, or `REJECT` decisions. Human reviewers can label confirmed fraud and false positives.
+---
 
-### M4 Maintenance
+## Quick start
 
-M4 scores asset health from service age, fault history, and sensor telemetry; extracts technician notes; searches equipment manuals; provides an engineer chatbot; persists maintenance flags; and reconciles flags with Supabase after restart.
+```bash
+git clone <repo> && cd RailSence-AI
+cp .env.example .env            # fill in the team's shared values (ask the team leader privately)
+python check_setup.py           # shows exactly what this laptop is missing
+python start.py                 # starts everything and prints the two URLs
+```
 
-### Unified Gateway
+Open `http://localhost:3000/user` (passengers) and `http://localhost:3001/admin` (officers).
 
-`frontend/serve.py` owns browser-facing orchestration. It serves the passenger and admin portals, extracts passenger intent, proxies schedule and availability requests, signs trusted Hub messages server-side, and never exposes database credentials or the inter-agent JWT secret to browsers.
+---
 
-## Evaluation Summary
+## Installation and configuration
 
-| Component | Current benchmark summary |
-| --- | --- |
-| M2 delay model | 3,000 records; MAE 2.239 min, RMSE 2.876 min, R2 0.8716 |
-| M2 incident NLP | 400 records; 100% classification accuracy |
-| M2 incident retrieval | P@1 1.000, P@3 1.000, P@5 0.9987 |
-| Security model | 600 records; 99.17% accuracy, 100% recall, 3.86 ms average latency |
-| M4 health model | 600 records; MAE 3.757 points, RMSE 5.305 points, R2 0.8814 |
-| M4 note NLP | 118 records; 89.83% accuracy |
-| M4 manual retrieval | P@1, P@3, and P@5 all 1.000 |
+Prerequisites: **Python 3.10+**, **Node.js 18+** (npm), Git. Everyone uses the same Supabase project.
 
-The committed JSON artifacts under the relevant `evaluation/` directories are the source of truth for exact runs. Retraining can change the displayed metrics.
+All agents run on **one Python** (per-module venvs differ between laptops, and Windows Smart App Control
+can block packages inside a venv). From the repository root:
 
-## Installation
-
-Prerequisites: Python 3.11+, Node.js 18+ and npm, Git, and a Supabase project with PostgreSQL and `pgvector` for the full online deployment.
-
-From the repository root:
-
-```powershell
+```bash
+python -m pip install -r M1-passenger_assistant/backend/requirements.txt
 python -m pip install -r M2-operations-agent/requirements.txt
 python -m pip install -r "M3-Comunication-Hub&Booking-Agent/agent-hub/requirements.txt"
 python -m pip install -r "M3-Comunication-Hub&Booking-Agent/booking-agent/requirements.txt"
 python -m pip install -r M4-maintenance-agent/requirements.txt
-python -m pip install -r M2-admin-dashboard/requirements-admin.txt
 python -m pip install psutil
 ```
 
-M1 uses a dedicated environment:
+If a pinned package has no build for your Python (for example old `pandas` on Python 3.13), install only
+the missing packages at current versions instead of downgrading working ones — `check_setup.py` lists
+them per agent.
 
-```powershell
-cd M1-passenger_assistant/backend
-python -m venv venv
-.\venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt
-python -m spacy download en_core_web_sm
-cd ../..
-```
+**`.env`** (git-ignored; template in `.env.example`, which explains every key):
 
-Install the optional React app:
+| Key | Needed for |
+| --- | --- |
+| `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `DATABASE_URL` | Shared database (required) |
+| `JWT_SECRET_KEY` | Gateway ↔ Hub signed messages (required, identical on every laptop) |
+| `NIC_HMAC_SECRET` | NIC hashing for bookings (required, **identical on every laptop** or duplicate/fraud checks disagree) |
+| `GEMINI_API_KEY` | M2 Operations Assistant LLM (optional — rule-based fallback) |
+| `OPENROUTER_API_KEY` | M1 LLM replies (optional, needs the `openai` package) |
+| `UPSTASH_REDIS_URL`, `UPSTASH_REDIS_TOKEN` | M2 delay-alert pub/sub (optional) |
 
-```powershell
-cd M1-passenger_assistant/frontend
-npm install
-cd ../..
-```
+`M4-maintenance-agent/.env` holds M4's own `UPSTASH_REDIS_URL/TOKEN` and `GROQ_API_KEY`. Don't put
+ports or agent URLs in `.env` — the launcher sets them.
 
-## Configuration
+---
 
-Create `.env` in the repository root and never commit real credentials:
-
-```dotenv
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_PUBLISHABLE_KEY=your-publishable-key
-SUPABASE_SECRET_KEY=your-server-side-key
-DATABASE_URL=postgresql://user:password@host:5432/postgres
-JWT_SECRET_KEY=replace-with-a-long-random-secret
-JWT_ALGORITHM=HS256
-LLM_PROVIDER=gemini
-GEMINI_API_KEY=your-gemini-key
-GEMINI_MODEL=gemini-3.5-flash-lite
-UPSTASH_REDIS_URL=https://your-instance.upstash.io
-UPSTASH_REDIS_TOKEN=your-upstash-token
-```
-
-M1 also checks `M1-passenger_assistant/backend/.env`:
-
-```powershell
-Copy-Item .env M1-passenger_assistant\backend\.env
-```
-
-The Hub requires `DATABASE_URL` for normal runtime. Automated tests use SQLite unless `USE_LIVE_DB=1`. M2 and M4 use local CSV/JSONL/model fallbacks where supported when Supabase is unavailable.
-
-## Running the Platform
-
-### Windows complete startup
-
-```powershell
-.\start_all.ps1
-```
-
-This launches M1, M2, the Hub, Booking, Security, M4, the unified gateway, and the React UI in separate windows. The batch equivalent is:
-
-```cmd
-start_all.bat
-```
-
-Managed launchers are also available:
-
-```powershell
-python run_backend.py
-python run_frontend.py
-```
-
-### Manual service commands
-
-Run each command from its service directory:
-
-```powershell
-python -m uvicorn main:app --host 127.0.0.1 --port 8001 --reload  # M1
-python -m uvicorn main:app --host 127.0.0.1 --port 8002 --reload  # Hub
-python -m uvicorn main:app --host 127.0.0.1 --port 8003 --reload  # Booking
-python -m uvicorn main:app --host 127.0.0.1 --port 8004 --reload  # Security
-python -m uvicorn main:app --host 127.0.0.1 --port 8005 --reload  # M2
-python -m uvicorn main:app --host 127.0.0.1 --port 8006 --reload  # M4
-python serve.py                                                        # Gateway, from frontend/
-npm run dev                                                            # React, from M1-passenger_assistant/frontend/
-```
-
-### Unix alternate-port launcher
-
-`start_all.sh` is a conflict-avoidance launcher for macOS/Linux. It uses M1, Hub, Booking, Security, and M2 ports `9001`-`9005`, gateway port `4000`, React port `5280`, and M4 login port `3002`:
+## Running the platform
 
 ```bash
-chmod +x start_all.sh
-./start_all.sh
+python start.py
 ```
 
-## API and Health Checks
+It checks the setup, chooses the ports, builds the M1 chat app when its sources changed, starts all six
+agents and both portal sides in one terminal (logs prefixed by service), waits until each is healthy and
+prints the two URLs. `Ctrl+C` stops everything.
 
-Every backend exposes `/health`. Important routes include:
-
-| Service | Routes |
+| Command | What it does |
 | --- | --- |
-| M1 | `POST /chat`, `GET /health` |
-| Hub | `POST /messages`, `/health`, `/ready`, `/api/hub/dashboard`, `/api/hub/timeline` |
-| Booking | `/internal/messages`, booking, cancellation, hold, waiting-list, and schedule routes |
-| Security | `POST /internal/fraud-score`, fraud-review routes, `/health` |
-| M2 | `POST /predict-delay`, `POST /passenger/ask`, `POST /incident-report`, `GET/PATCH/DELETE /incidents`, `POST /incidents/{id}/approve` and `/reject`, `GET /api/incidents/map-feed`, `/api/dashboard`, `/api/route-options`, `/api/trains`, `/api/stations`, `/api/ops-agent/ask`, `/api/ops-agent/history`, `/api/ops-agent/capabilities`, `/health` |
-| M2 admin | `POST /admin/api/login`, `/admin/api/me`, officer, model, audit, and health routes |
-| M4 | `POST /asset-health`, `POST /maintenance-report`, `POST /chat`, `GET /manual-search`, train-flag routes |
-| Gateway | `POST /api/chat`, `/api/booking-options`, booking/cancellation routes, `/api/admin/system-health` |
+| `python start.py --status` | Which ports are free / used by RailSense / used by other programs |
+| `python start.py --stop` | Stop everything this repository started (never other programs) |
+| `python start.py --no-build` / `--rebuild` | Skip / force the M1 chat build |
+| `python start.py --no-reload` | Run agents without auto-reload (lighter on older laptops) |
+| `python check_setup.py` | Packages per agent, `.env` keys (names only), Node.js, ports |
 
-Open `/docs` on a FastAPI service for its generated Swagger contract.
+`start_all.bat`, `start_all.ps1`, `start_all.sh`, `backend.bat`, `frontend.bat` and `stop_all.ps1` are
+one-line wrappers around `start.py`. `run_backend.py` / `run_frontend.py` (used by the startup tests)
+read the same `railsense_ports.json`. To run one agent by hand, use its port from that file, e.g. from
+`M2-operations-agent/`: `python -m uvicorn main:app --host 127.0.0.1 --port 8005 --reload`.
+
+---
+
+## APIs and health checks
+
+Every backend exposes `/health`; open `/docs` on a service for its Swagger contract.
+
+| Service | Key routes |
+| --- | --- |
+| Gateway | `/user…`, `/admin…`, `/login`, `/railsense-config.js`, `/svc/{m1\|m2\|m4}/…`, `POST /api/chat`, `/api/train-board`, `/api/booking-options`, booking/cancellation routes, `/api/admin/*`, `/api/admin/system-health`, `/api/hub/*` |
+| M1 | `POST /chat`, `GET /chat/{session}/history`, `/health` |
+| Hub | `POST /messages`, `POST /register`, `/health`, `/ready`, `/api/hub/dashboard`, `/api/hub/timeline` |
+| Booking | `/internal/messages`, booking, hold, cancellation, waiting-list, schedule, ticket-verification routes |
+| Security | `POST /internal/fraud-score`, fraud-review routes, `/health` |
+| M2 | `POST /predict-delay`, `POST /passenger/ask`, `POST /passenger/query`, `POST /incident-report`, `/incidents` (+ `approve` / `reject`), `/api/incidents/map-feed`, `/api/dashboard`, `/api/route-options`, `/api/trains`, `/api/stations`, `/api/ops-agent/ask`, `/history`, `/capabilities` |
+| M2 admin | `POST /admin/api/login`, `/admin/api/me`, officer, model, audit and health routes |
+| M4 | `POST /chat`, `POST /asset-health`, `POST /maintenance-report`, `GET /manual-search`, `POST/DELETE /api/flag-train`, `/api/train-status/{id}`, `/api/trains-under-maintenance`, `/api/dashboard`, `/hub/message` |
+
+---
+
+## Evaluation
+
+| Component | Result |
+| --- | --- |
+| M2 delay model | 3,900 records (3,120 train / 780 test); **MAE 2.254 min, RMSE 2.837 min, R² 0.894** |
+| M2 incident NLP | 400 records; 100% classification accuracy |
+| M2 incident retrieval | P@1 1.000, P@3 1.000, P@5 0.999 |
+| Security model | 600 records; 99.17% accuracy, 100% recall, 3.86 ms average latency |
+| M4 health model | 600 records; MAE 3.757, RMSE 5.305, R² 0.881 |
+| M4 note NLP | 118 records; 89.83% accuracy |
+| M4 manual retrieval | P@1, P@3 and P@5 all 1.000 |
+
+The committed JSON artifacts under each `evaluation/` directory are the source of truth; retraining
+updates them.
+
+---
 
 ## Testing
 
-Run checks from the repository root:
-
-```powershell
+```bash
+python -m pytest M2-operations-agent/tests -q          # 57 tests incl. live tracker and passenger query NLP
+python -m pytest "M3-Comunication-Hub&Booking-Agent/tests" -q
+python -m pytest M1-passenger_assistant/backend/tests -q
+python -m pytest test_m2_rbac.py -q
 python test_portals.py
+python test_startup_commands.py
 python test_full_system_integration.py
 python test_integration.py
 python scripts/test_m1_m2_integration.py
 python scripts/test_m3_booking_integration.py
 python scripts/test_m4_cross_agent_integration.py
-python scripts/test_maintenance_delay_integration.py
-python -m pytest test_m2_rbac.py -q
-python -m pytest M2-operations-agent/tests -q
-python test_startup_commands.py
 ```
 
-The portal shortcut is `npm run test:portals`.
+Model and retrieval evaluation:
 
-Model and retrieval evaluation commands:
-
-```powershell
+```bash
 python security-agent/evaluate_model.py
 python M2-operations-agent/ml/train_delay_model.py
 python M2-operations-agent/nlp/evaluate_nlp.py
@@ -274,43 +339,89 @@ python M4-maintenance-agent/nlp/evaluate_nlp.py
 python M4-maintenance-agent/evaluation/rag/evaluate_retrieval.py
 ```
 
-## Database Setup
+---
 
-Apply the SQL files for the services being deployed:
+## Database setup
 
-- `supabase_shared_trains.sql` for the canonical train registry.
-- `M1-passenger_assistant/backend/supabase_schema.sql` for M1.
-- `M3-Comunication-Hub&Booking-Agent/supabase_schema.sql` for Hub and Booking.
-- `M4-maintenance-agent/supabase_schema.sql` and `supabase_setup_all.sql` for M4.
-- `M2-operations-agent/supabase_phase5_schema.sql` and `admin/admin_schema.sql` for M2 operations, embeddings, audit, incident, model-run, and RBAC tables; `admin/incident_map_migration.sql` (`verified_at`) and `admin/ops_agent_migration.sql` (Operations Assistant history). M2 runs with local fallbacks until these are applied.
+- `supabase_shared_trains.sql` — canonical train registry (`scripts/seed_shared_trains.py`,
+  `scripts/validate_shared_train_links.py`).
+- `M1-passenger_assistant/backend/supabase_schema.sql` — M1.
+- `M3-Comunication-Hub&Booking-Agent/supabase_schema.sql` — Hub and Booking.
+- `M4-maintenance-agent/supabase_schema.sql`, `supabase_setup_all.sql` — M4.
+- `M2-operations-agent/supabase_phase5_schema.sql`, `admin/admin_schema.sql`,
+  `admin/incident_map_migration.sql`, `admin/ops_agent_migration.sql` (adds `answer_method`) — M2.
+  M2 runs on local fallbacks until these are applied.
 
-Use `scripts/seed_shared_trains.py` and `scripts/validate_shared_train_links.py` to seed and verify canonical train links.
+---
 
-## Repository Layout
+## Security, ethics and responsible AI
+
+- **Secrets:** `.env` files, Supabase server keys, JWT and HMAC secrets stay out of git and out of the
+  browser. Share team values privately; rotate any key that was pasted into a chat.
+- **Authentication and access:** bcrypt officer passwords, signed expiring tokens, role-based tools and
+  pages, last-admin lock-out, admin-only incident approval and model management.
+- **Input handling:** schema validation, bleach sanitisation, HTML rejection in incident text, rate
+  limits on public endpoints, signed and deduplicated Hub messages.
+- **Grounding and transparency:** answers cite their sources; LLM output with unsupported numbers or IDs
+  is replaced by a grounded template; predictions carry confidence and "estimate" wording; technique
+  badges show which AI techniques produced an answer.
+- **Human in the loop:** fraud reviews, cancellations and public incident alerts require a person.
+- **Data protection:** NICs are HMAC-hashed and masked; the public map exposes only verified incidents
+  and an allowlist of fields; audit logs are read-only in the UI.
+
+---
+
+## Repository layout
 
 ```text
 RailSence-AI/
-├── frontend/                         Unified gateway and passenger/admin portals
-├── M1-passenger_assistant/           Passenger backend and React frontend
-├── M2-operations-agent/              Delay, incident NLP/RAG, approval map, Operations Assistant, Control Room, RBAC admin
-├── M2-admin-dashboard/               Admin package and schema assets
-├── M3-Comunication-Hub&Booking-Agent/ Central Hub, Booking, schemas, and SQL
-├── M4-maintenance-agent/             Asset intelligence, manuals, flags, and engineer UI
-├── security-agent/                   Fraud scoring service
-├── shared/                           Cross-agent train helpers
-├── scripts/                          Cross-agent and validation scripts
-├── run_backend.py / run_frontend.py  Managed launchers
-├── start_all.ps1 / .bat / .sh        Platform launchers
-└── test_*.py                         Startup, portal, RBAC, and integration tests
+├── start.py · check_setup.py · railsense_ports.json   one launcher, setup check, port registry
+├── frontend/                          unified gateway (serve.py) and passenger / admin portals
+├── M0-homepage/                       project landing page (Next.js)
+├── M1-passenger_assistant/            passenger backend (FastAPI) and React chat app
+├── M2-operations-agent/               delay ML, live tracker, incident NLP/RAG, Control Room, RBAC admin, Operations Assistant
+├── M3-Comunication-Hub&Booking-Agent/ central Hub, Booking agent, shared schemas and SQL
+├── security-agent/                    fraud scoring service
+├── M4-maintenance-agent/              asset intelligence, manuals, flags, engineer assistant (rag/ops_status.py)
+├── shared/                            train registry helpers, ports.py
+├── scripts/                           seeding, validation and cross-agent tests
+├── start_all.* · backend.bat · frontend.bat · stop_all.ps1   wrappers around start.py
+└── test_*.py                          startup, portal, RBAC and integration tests
 ```
 
-## Security
+---
 
-Keep `.env`, Supabase server-side keys, JWT secrets, and local model/data state out of version control. Browser clients never receive database credentials or the inter-agent signing secret. The Hub rejects invalid or expired messages, free-text reports are sanitized, admin passwords are bcrypt-hashed, and the M2 audit explorer is read-only.
+## Known limitations
 
-## Project Information
+- **M4 is not connected to the shared database yet** (it reads only its own `.env`, which has no
+  Supabase keys). It works on local data, so the "flag a train → Booking stops selling seats" link does
+  not reach M3, and the invented-train-ID check is skipped. Loading the root `.env` in M4 is the fix
+  (owner decision).
+- **M4 uses its own train numbers** (e.g. Yal Devi #1001 / `T-003`) while the rest of RailSense uses
+  service numbers such as 4085; the M4 assistant accepts both.
+- **M1 routing:** "which trains are unavailable due to maintenance" and "is my booked train running"
+  are not yet routed to M4 from the passenger chat.
+- Intermediate station times are estimated from track distance between the published departure and
+  arrival, not from an official per-stop timetable.
+- `spacy` is listed in M1's requirements but not used by the code.
 
-- Course: IT3041 - Information Retrieval and Web Analytics
-- Institution: Sri Lanka Institute of Information Technology (SLIIT)
-- Project: RailSense AI
-- Package license metadata: MIT (see `package.json`)
+---
+
+## Troubleshooting
+
+| Symptom | Fix |
+| --- | --- |
+| A page works on one laptop but not another | `python check_setup.py`, then `python start.py` (never start agents with old per-port commands) |
+| "Port in use" / services on odd ports | `python start.py --status`; RailSense leftovers are stopped automatically, other programs are skipped |
+| Choo says "can't reach the assistant" | M1 is not running — check the `[M1 …]` lines in the `start.py` log |
+| M1 replies are raw FAQ text | Add `OPENROUTER_API_KEY` to `.env` and `pip install openai`, then restart |
+| Officer pages ask to log in again | The admin side moved to port 3001 — log in once there |
+
+---
+
+## Project information
+
+- **Course:** IT3041 – Information Retrieval and Web Analytics
+- **Institution:** Sri Lanka Institute of Information Technology (SLIIT)
+- **Project:** RailSense AI — Thisarani Kawya (M1), Pasindi Alawatta (M2, team leader), Navoda Dasun (M3), Primesh Marasingha (M4)
+- **Licence metadata:** MIT (see `package.json`)

@@ -37,3 +37,5 @@ node_modules/
 dist/
 out/
 *.node
+# start.py runtime (ports chosen on this laptop, process ids)
+.railsense/

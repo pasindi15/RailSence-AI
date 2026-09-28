@@ -1,8 +1,8 @@
-// Where the Passenger Assistant backend (M1) listens. start_all.ps1/.bat, docker-compose and
-// the Hub registry all use 8001, so that is the default. start_all.sh runs M1 on 9001 and
-// passes VITE_M1_URL to the dev server, so hard-coding one port here broke the other launcher
-// (every message then failed with "Something went wrong").
-const BASE_URL = import.meta.env.VITE_M1_URL || "http://localhost:8001";
+// The app is served by the RailSense gateway (user side), which passes /svc/m1/* through
+// to the M1 backend on whatever port start.py chose on this laptop — so no port is
+// hard-coded here. `npm run dev` proxies /svc and /api to the gateway (vite.config.js).
+// VITE_M1_URL still overrides this for a custom setup.
+const BASE_URL = import.meta.env.VITE_M1_URL || "/svc/m1";
 
 export async function sendMessage(sessionId, message) {
   const res = await fetch(`${BASE_URL}/chat`, {
@@ -64,7 +64,7 @@ export async function submitCancellationRequest(bookingRef, reason, userId = "pa
     console.warn("M1 cancellations endpoint fallback:", e);
   }
 
-  const gatewayRes = await fetch("http://localhost:3000/api/cancellations/confirm", {
+  const gatewayRes = await fetch("/api/cancellations/confirm", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({

@@ -952,6 +952,8 @@ async def chat(request: Request, payload: ChatRequest):
         message=enriched_message,
         asset_type=payload.asset_type or "",
         history=history,
+        flags=dict(_train_flags),              # live maintenance flags (same as Train Flags panel)
+        reports=list(_in_memory_reports),      # field reports, for open tickets on a train
     )
     client_ip = request.client.host if request.client else "unknown"
     _write_audit("engineer_chat", client_ip, {

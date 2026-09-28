@@ -54,6 +54,10 @@ from shared.train_repository import TrainRepositoryUnavailable, get_train, get_t
 # silently finds no .env, GEMINI_API_KEY stays None, and /chat falls back to
 # raw RAG chunk text with zero errors. Anchor it to this file instead.
 load_dotenv(Path(__file__).parent / ".env")
+# Then the repository-root .env for anything not set above. backend/.env is
+# git-ignored, so on a teammate's laptop it usually doesn't exist; without this
+# fallback M1 started with no Supabase/Gemini keys there while working here.
+load_dotenv(Path(__file__).resolve().parents[2] / ".env", override=False)
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_SECRET_KEY", os.getenv("SUPABASE_SERVICE_ROLE_KEY"))

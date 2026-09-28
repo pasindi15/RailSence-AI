@@ -34,7 +34,7 @@ import httpx
 import jwt
 from fastapi import FastAPI, HTTPException, Query, Request, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr, Field
 
@@ -87,6 +87,101 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# ---------------------------------------------------------------------------
+# Two public sides: user (passengers) and admin (officers)
+# ---------------------------------------------------------------------------
+# Browsers only use these two ports (railsense_ports.json -> "public"). Each
+# request's side comes from the port it arrived on, so this works both when
+# start.py runs one gateway process per side and when serve.py is run alone.
+# Agents stay on internal ports; pages reach M1/M2/M4 through /svc/<agent>/...
+if str(_WORKSPACE_ROOT) not in sys.path:
+    sys.path.insert(0, str(_WORKSPACE_ROOT))
+from shared import ports as _ports  # noqa: E402
+
+_PORTS = _ports.current()
+
+
+def _public_port(side: str) -> int:
+    return int(os.getenv(f"RAILSENSE_{side.upper()}_PORT") or _PORTS["public"][side])
+
+
+def _agent_port(key: str) -> int:
+    return int(os.getenv(f"RAILSENSE_{key.upper()}_PORT") or _PORTS["internal"][key])
+
+
+def _is_admin_page(path: str) -> bool:
+    return path in ("/admin", "/login") or path.startswith("/admin/")
+
+
+def _is_user_page(path: str) -> bool:
+    return path in ("/user", "/booking-demo") or path.startswith("/user/")
+
+
+@app.middleware("http")
+async def route_to_public_side(request: Request, call_next):
+    """Send page requests to the right side (e.g. /admin on the user port -> admin port)."""
+    if request.method in ("GET", "HEAD"):
+        server_port = (request.scope.get("server") or (None, None))[1]
+        side = ("admin" if server_port == _public_port("admin")
+                else "user" if server_port == _public_port("user") else None)
+        path, target = request.url.path, None
+        if side == "user" and _is_admin_page(path):
+            target = "admin"
+        elif side == "admin" and _is_user_page(path):
+            target = "user"
+        elif side == "admin" and path == "/":
+            return RedirectResponse(url="/admin", status_code=status.HTTP_302_FOUND)
+        if target:
+            query = f"?{request.url.query}" if request.url.query else ""
+            host = request.url.hostname or "localhost"
+            return RedirectResponse(url=f"{request.url.scheme}://{host}:{_public_port(target)}{path}{query}",
+                                    status_code=status.HTTP_307_TEMPORARY_REDIRECT)
+    return await call_next(request)
+
+
+@app.get("/railsense-config.js", include_in_schema=False)
+def railsense_config():
+    """Ports in effect on this laptop, for the pages (instead of hard-coded ports)."""
+    import json as _json
+    cfg = {
+        "ports": {"user": _public_port("user"), "admin": _public_port("admin"),
+                  **{k: _agent_port(k) for k in ("m1", "hub", "booking", "security", "m2", "m4")}},
+        "svc": "/svc",
+    }
+    js = (
+        f"window.RAILSENSE = {_json.dumps(cfg)};\n"
+        "window.RAILSENSE.url = function (key, path) {\n"
+        "  return location.protocol + '//' + location.hostname + ':' + this.ports[key] + (path || '');\n"
+        "};\n"
+    )
+    return Response(content=js, media_type="application/javascript", headers={"Cache-Control": "no-store"})
+
+
+_SVC_TARGETS = {"m1": PASSENGER_AGENT_URL, "m2": OPERATIONS_AGENT_URL, "m4": MAINTENANCE_AGENT_URL}
+_HOP_HEADERS = {"host", "content-length", "connection", "accept-encoding", "transfer-encoding", "keep-alive",
+                "content-encoding", "upgrade"}
+
+
+@app.api_route("/svc/{agent}/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
+               include_in_schema=False)
+async def svc_proxy(agent: str, path: str, request: Request):
+    """Pass browser calls through to an agent, so pages only use the gateway's port."""
+    base = _SVC_TARGETS.get(agent)
+    if base is None:
+        raise HTTPException(status_code=404, detail="unknown service")
+    headers = {k: v for k, v in request.headers.items() if k.lower() not in _HOP_HEADERS}
+    if request.client:
+        headers["x-forwarded-for"] = request.client.host
+    try:
+        async with httpx.AsyncClient(timeout=90.0) as client:
+            upstream = await client.request(request.method, f"{base}/{path}", params=request.query_params,
+                                            content=await request.body(), headers=headers)
+    except httpx.HTTPError:
+        return JSONResponse(status_code=503, content={"detail": f"{agent.upper()} service is not reachable"})
+    return Response(content=upstream.content, status_code=upstream.status_code,
+                    headers={k: v for k, v in upstream.headers.items() if k.lower() not in _HOP_HEADERS})
 
 
 # ---------------------------------------------------------------------------
@@ -2351,7 +2446,22 @@ async def proxy_admin_booking_chat(request: Request) -> JSONResponse:
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
     import uvicorn
-    port = int(os.getenv("PORT", 3000))
-    print(f"Starting RailSense Unified Frontend on http://localhost:{port}")
-    uvicorn.run("serve:app", host="0.0.0.0", port=port, reload=True)
+    side = os.getenv("RAILSENSE_SIDE", "").lower()
+    if side in ("user", "admin"):
+        # start.py runs one process per side (with auto-reload).
+        port = int(os.getenv("PORT") or _public_port(side))
+        print(f"Starting RailSense {side} side on http://localhost:{port}/{side}")
+        uvicorn.run("serve:app", host="0.0.0.0", port=port, reload=True)
+    else:
+        # Run on its own: both sides from one process (no auto-reload).
+        import asyncio
+
+        async def _both():
+            servers = [uvicorn.Server(uvicorn.Config(app, host="0.0.0.0", port=_public_port(s), log_level="info"))
+                       for s in ("user", "admin")]
+            print(f"RailSense user side:  http://localhost:{_public_port('user')}/user")
+            print(f"RailSense admin side: http://localhost:{_public_port('admin')}/admin")
+            await asyncio.gather(*(s.serve() for s in servers))
+
+        asyncio.run(_both())
 
