@@ -1687,277 +1687,218 @@ body::after {
 }
 
 /* =========================================================
-   RAILSENSE COPILOT — cx- DESIGN SYSTEM (full rebuild)
+   M4-STYLE POPUP CHATBOT — RAILSENSE COPILOT UI
    ========================================================= */
-.cx-panel{
-  position:fixed;right:24px;bottom:24px;z-index:950;
-  width:min(560px,calc(100vw - 40px));height:min(700px,calc(100vh - 56px));
-  display:flex;flex-direction:column;overflow:hidden;
-  background:linear-gradient(165deg,#0c1626 0%,#0a1120 55%,#080e1a 100%);
-  border:1px solid rgba(96,165,250,.22);
-  border-radius:20px;
-  box-shadow:0 24px 70px rgba(2,6,17,.6),0 0 0 1px rgba(59,130,246,.06),inset 0 1px 0 rgba(148,197,253,.06);
-  opacity:0;pointer-events:none;transform:translateY(14px) scale(.98);
-  transition:opacity .18s ease,transform .22s cubic-bezier(.22,1,.36,1);
+
+/* ── Keyframe Animations ── */
+@keyframes pulse-ring{0%{transform:scale(1);opacity:0.8}70%,100%{transform:scale(1.6);opacity:0}}
+@keyframes m4BotBreathe{0%,100%{transform:scale(1)}50%{transform:scale(1.035)}}
+@keyframes m4BotEye{0%,100%{opacity:.7;transform:scale(1)}50%{opacity:1;transform:scale(1.18)}}
+@keyframes m4BotLight{0%,100%{opacity:.45;transform:scale(.82)}50%{opacity:1;transform:scale(1.25)}}
+@keyframes m4BotScan{0%,100%{transform:translateX(-1.8px)}50%{transform:translateX(1.8px)}}
+@keyframes m4BotNod{0%{transform:translateY(-3px) rotate(-5deg)}55%{transform:translateY(1px) rotate(3deg)}100%{transform:translateY(0) rotate(0)}}
+@keyframes m4FabBob{0%,100%{transform:translateY(3px)}50%{transform:translateY(0)}}
+@keyframes m4FabRing{0%,100%{transform:scale(.92);opacity:.28}50%{transform:scale(1.22);opacity:0}}
+@keyframes m4FabOpen{0%{transform:scale(1)}55%{transform:scale(1.16)}100%{transform:scale(1)}}
+@keyframes m4Notice{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(251,191,36,.55)}55%{transform:scale(1.22);box-shadow:0 0 0 6px rgba(251,191,36,0)}}
+@keyframes m4PopupIn{0%{opacity:0;transform:translate3d(0,28px,0) scale(.9)}72%{opacity:1;transform:translate3d(0,-3px,0) scale(1.015)}100%{opacity:1;transform:translate3d(0,0,0) scale(1)}}
+@keyframes m4UserIn{0%{opacity:0;transform:translate3d(20px,5px,0) scale(.92)}72%{opacity:1;transform:translate3d(-2px,0,0) scale(1.02)}100%{opacity:1;transform:none}}
+@keyframes m4BotIn{0%{opacity:0;transform:translate3d(-20px,5px,0) scale(.92)}72%{opacity:1;transform:translate3d(2px,0,0) scale(1.02)}100%{opacity:1;transform:none}}
+@keyframes m4TypingWave{0%,100%{transform:translateY(1px) scale(.78);opacity:.38}45%{transform:translateY(-4px) scale(1.12);opacity:1}}
+@keyframes gradient-shift{from{transform:rotate(0deg) scale(1)}to{transform:rotate(360deg) scale(1)}}
+.animate-gradient{animation:gradient-shift 10s linear infinite;transform-origin:center;transform-box:fill-box}
+
+/* ── Robot SVG Icon Styles ── */
+.rs-bot{width:100%;height:100%;display:block;overflow:visible}
+.rs-bot-body,.rs-bot-eyes,.rs-bot-light{transform-box:fill-box;transform-origin:center}
+.rs-bot-body{animation:m4BotBreathe 3.4s ease-in-out infinite}
+.rs-bot-eye{fill:#dbeafe;filter:drop-shadow(0 0 2px rgba(96,165,250,.9));animation:m4BotEye 1.8s ease-in-out infinite}
+.rs-bot-light{fill:#fbbf24;filter:drop-shadow(0 0 2px rgba(251,191,36,.88));animation:m4BotLight 1.5s ease-in-out infinite}
+.rs-bot-head{fill:#2563eb;stroke:rgba(255,255,255,.48);stroke-width:1.5}
+.rs-bot-face{fill:#1d4ed8}
+.rs-bot-body-panel{fill:#60a5fa;stroke:rgba(255,255,255,.42);stroke-width:1.4}
+.rs-bot-antenna-line{stroke:#60a5fa;stroke-width:2.5;stroke-linecap:round}
+
+/* ── Chat FAB (Floating Action Button) ── */
+.chat-fab{
+  position:fixed;bottom:28px;right:28px;width:56px;height:56px;border-radius:50%;
+  background:#2563eb;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 6px 24px rgba(37,99,235,0.4);z-index:950;transition:all 0.2s;overflow:visible;
 }
-.cx-panel.is-open{opacity:1;pointer-events:auto;transform:translateY(0) scale(1)}
-.cx-panel.is-minimized{height:auto}
-.cx-panel.is-minimized .cx-body{display:none}
-/* Copilot is scoped to the Bookings & Revenue section only — hidden elsewhere */
-.cx-scope-hidden.cx-panel,.cx-scope-hidden.cx-launcher{display:none !important}
+.chat-fab:hover{transform:scale(1.08);box-shadow:0 8px 30px rgba(37,99,235,0.5)}
+.chat-fab::after{
+  content:'';position:absolute;inset:-6px;border:1px solid rgba(96,165,250,.64);
+  border-radius:50%;pointer-events:none;animation:m4FabRing 2.35s ease-out infinite;
+}
+.chat-fab.open, .chat-fab.is-open{background:#475569;animation:m4FabOpen .38s cubic-bezier(.34,1.56,.64,1)}
+.chat-fab.open::after, .chat-fab.is-open::after{display:none}
+.fab-pulse{position:absolute;width:56px;height:56px;border-radius:50%;background:rgba(37,99,235,0.22);animation:pulse-ring 2s ease-out infinite}
+.chat-fab.open .fab-pulse, .chat-fab.is-open .fab-pulse{display:none}
+#fab-chat{width:31px;height:35px;display:grid;place-items:center;transform:translateY(3px);animation:m4FabBob 2.6s ease-in-out infinite}
+#fab-chat .rs-bot{width:31px;height:35px}
+.m4-fab-notice{position:absolute;right:1px;top:1px;width:10px;height:10px;border:2px solid #ffffff;border-radius:50%;background:#fbbf24;opacity:0;pointer-events:none}
+.chat-fab.m4-has-notice .m4-fab-notice{opacity:1;animation:m4Notice 1.3s ease-in-out infinite}
+
+/* ── Chat Popup Window ── */
+.chat-popup{
+  position:fixed;bottom:96px;right:28px;width:385px;height:555px;
+  background:#ffffff;border:1px solid #e2e8f0;border-radius:20px;
+  box-shadow:0 20px 60px rgba(0,0,0,0.18),0 4px 16px rgba(0,0,0,0.08);
+  display:flex;flex-direction:column;overflow:hidden;z-index:949;
+  transform:scale(0.85) translateY(22px);opacity:0;pointer-events:none;
+  transform-origin:bottom right;
+  transition:transform 0.25s cubic-bezier(0.34,1.56,0.64,1),opacity 0.2s ease;
+  color:#0f172a;
+}
+.chat-popup.open, .chat-popup.is-open{
+  transform:scale(1) translateY(0);opacity:1;pointer-events:all;
+  animation:m4PopupIn .42s cubic-bezier(.16,1,.3,1) both;
+}
+
+/* Scoped visibility for Bookings & Revenue */
+.cx-scope-hidden.chat-popup, .cx-scope-hidden.chat-fab{display:none !important}
 
 /* ── Header ── */
-.cx-head{
-  flex-shrink:0;display:flex;align-items:center;justify-content:space-between;gap:12px;
-  padding:13px 16px;
-  background:linear-gradient(135deg,rgba(30,64,175,.55),rgba(15,40,90,.35));
-  border-bottom:1px solid rgba(96,165,250,.18);
+.cp-header{padding:13px 15px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;gap:10px;flex-shrink:0;background:#fafbfc}
+.cp-logo{width:28px;height:28px;flex-shrink:0}
+.cp-title{font-size:0.86rem;font-weight:700;color:#0f172a;letter-spacing:-0.2px}
+.cp-sub{font-size:0.67rem;color:#64748b}
+.cp-actions{margin-left:auto;display:flex;gap:5px}
+.cp-btn{
+  width:26px;height:26px;border-radius:7px;border:1px solid #e2e8f0;
+  background:#ffffff;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  color:#64748b;transition:all 0.12s;text-decoration:none;
 }
-.cx-head-brand{display:flex;align-items:center;gap:11px;min-width:0}
-.cx-avatar{
-  position:relative;display:grid;place-items:center;width:40px;height:40px;flex-shrink:0;
-  border-radius:12px;
-  background:linear-gradient(145deg,rgba(59,130,246,.35),rgba(29,78,216,.12));
-  border:1px solid rgba(147,197,253,.3);
-  box-shadow:0 0 18px rgba(59,130,246,.18);
-}
-.cx-avatar-glyph{font-size:20px;color:#dbeafe;text-shadow:0 0 14px rgba(147,197,253,.7)}
-.cx-avatar-dot{position:absolute;right:-3px;bottom:-3px;width:10px;height:10px;border-radius:50%;background:#34d399;border:2px solid #0d1730;box-shadow:0 0 8px rgba(52,211,153,.8)}
-.cx-head-text{min-width:0}
-.cx-head-title-row{display:flex;align-items:center;gap:8px}
-.cx-head-title{font-size:14.5px;font-weight:750;color:#f1f5fd;letter-spacing:.2px}
-.cx-head-badge{
-  padding:2px 7px;border-radius:6px;font-family:'Share Tech Mono',monospace;
-  font-size:8px;letter-spacing:1px;text-transform:uppercase;color:#bfdbfe;
-  background:rgba(59,130,246,.14);border:1px solid rgba(147,197,253,.25);
-}
-.cx-head-sub{display:flex;align-items:center;gap:6px;margin-top:2px;font-size:10.5px;color:#8fa8cc}
-.cx-live-dot{width:6px;height:6px;border-radius:50%;background:#34d399;box-shadow:0 0 8px rgba(52,211,153,.85);animation:cxPulse 2.2s infinite}
-@keyframes cxPulse{0%,100%{opacity:1}50%{opacity:.35}}
-.cx-head-actions{display:flex;gap:5px}
-.cx-icon-btn{
-  width:30px;height:30px;display:grid;place-items:center;padding:0;
-  color:#c7dbfa;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
-  border-radius:8px;cursor:pointer;font-size:14px;line-height:1;transition:.15s;
-}
-.cx-icon-btn:hover{background:rgba(255,255,255,.13);border-color:rgba(255,255,255,.26);transform:translateY(-1px)}
-.cx-icon-btn.cx-danger:hover{background:rgba(239,68,68,.18);border-color:rgba(248,113,113,.35);color:#fecaca}
+.cp-btn:hover{background:#f1f5f9;color:#0f172a}
 
-/* ── Body layout ── */
-.cx-body{display:flex;flex:1;min-height:0;flex-direction:column;padding:10px 14px 8px}
-.cx-log-wrap{flex:1;min-height:0;display:flex;flex-direction:column}
-.cx-log{
-  flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;
-  display:flex;flex-direction:column;gap:4px;padding:6px 4px 10px;scroll-behavior:smooth;
-}
-.cx-log::-webkit-scrollbar{width:5px}
-.cx-log::-webkit-scrollbar-thumb{background:rgba(96,165,250,.2);border-radius:10px}
-.cx-log::-webkit-scrollbar-track{background:transparent}
+/* ── Messages Container ── */
+.cp-messages{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:10px;scroll-behavior:smooth;background:#ffffff}
+.cp-messages::-webkit-scrollbar{width:3px}
+.cp-messages::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px}
 
-/* ── Welcome state ── */
-.cx-welcome{
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  flex:1;min-height:220px;padding:24px;text-align:center;
-  border:1px dashed rgba(96,165,250,.14);border-radius:16px;
-  background:radial-gradient(circle at 50% 35%,rgba(37,99,235,.09),transparent 60%);
+/* ── Welcome Panel ── */
+.cp-welcome{display:flex;flex-direction:column;align-items:center;text-align:center;padding:16px 8px 6px}
+.cp-wlogo{width:40px;height:40px;margin-bottom:10px}
+.cp-welcome h3{
+  font-size:0.93rem;font-weight:700;
+  background:linear-gradient(135deg,#1d4ed8,#60a5fa);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  margin-bottom:4px;
 }
-.cx-welcome-glow{margin-bottom:12px}
-.cx-welcome-orbit{position:relative;display:grid;place-items:center;width:60px;height:60px}
-.cx-welcome-ring{position:absolute;inset:0;border:1px solid rgba(96,165,250,.25);border-radius:50%;animation:cxOrbit 4s linear infinite}
-.cx-welcome-ring::after{content:"";position:absolute;width:6px;height:6px;top:2px;left:50%;border-radius:50%;background:#60a5fa;box-shadow:0 0 10px #60a5fa}
-@keyframes cxOrbit{to{transform:rotate(360deg)}}
-.cx-welcome-icon{
-  display:grid;place-items:center;width:42px;height:42px;border-radius:13px;
-  background:linear-gradient(145deg,rgba(59,130,246,.3),rgba(37,99,235,.08));
-  border:1px solid rgba(147,197,253,.28);color:#bfdbfe;font-size:20px;
-  box-shadow:0 0 22px rgba(59,130,246,.15);
+.cp-welcome p{font-size:0.76rem;color:#64748b;line-height:1.5;margin-bottom:12px}
+.cp-chips{display:flex;flex-wrap:wrap;gap:5px;justify-content:center}
+.cp-chip{
+  border:1px solid #e2e8f0;border-radius:20px;padding:4px 10px;font-size:0.71rem;
+  color:#64748b;cursor:pointer;font-family:inherit;font-weight:500;background:#f8fafc;
+  transition:all 0.12s;
 }
-.cx-welcome h3{margin:0;font-size:18px;font-weight:750;color:#f1f5fd;letter-spacing:-.2px}
-.cx-welcome p{max-width:340px;margin:7px 0 14px;font-size:11.5px;line-height:1.6;color:#7f95b5}
-.cx-welcome-try{display:flex;align-items:center;gap:7px;font-size:10.5px;color:#5d7191}
-.cx-welcome-try button{
-  padding:5px 10px;color:#93c5fd;background:rgba(59,130,246,.08);
-  border:1px solid rgba(96,165,250,.18);border-radius:999px;cursor:pointer;font-size:10.5px;transition:.15s;
-}
-.cx-welcome-try button:hover{background:rgba(59,130,246,.18);border-color:rgba(96,165,250,.4);transform:translateY(-1px)}
+.cp-chip:hover{background:#eff6ff;color:#2563eb;border-color:#bfdbfe}
 
-/* ── Quick actions ── */
-.cx-quick{flex-shrink:0;padding:8px 0 6px;border-top:1px solid rgba(96,165,250,.1)}
-.cx-quick-label{
-  display:flex;align-items:center;gap:8px;margin-bottom:7px;
-  font-family:'Share Tech Mono',monospace;font-size:8.5px;letter-spacing:1.2px;
-  text-transform:uppercase;color:#5d7191;
+/* ── Chat Messages ── */
+.cp-msg{display:flex;gap:7px;align-items:flex-end}
+.cp-msg.user{flex-direction:row-reverse;align-self:flex-end;animation:m4UserIn .34s cubic-bezier(.16,1,.3,1) both}
+.cp-msg.bot{align-self:flex-start;animation:m4BotIn .38s .07s cubic-bezier(.16,1,.3,1) both}
+.cp-av{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.75rem;flex-shrink:0;overflow:visible}
+.cp-av.u{background:#2563eb;color:white;font-weight:700}
+.cp-av.b{background:#ffffff;border:1.5px solid #e2e8f0}
+.cp-av.b .rs-bot{width:28px;height:28px}
+.cp-bubble{
+  padding:8px 12px;border-radius:15px;font-size:0.8rem;line-height:1.6;
+  max-width:280px;word-break:break-word;
 }
-.cx-quick-label::after{content:"";height:1px;flex:1;background:linear-gradient(90deg,rgba(96,165,250,.16),transparent)}
-.cx-quick-row{display:flex;gap:7px;overflow-x:auto;padding-bottom:2px;scrollbar-width:thin}
-.cx-quick-row::-webkit-scrollbar{height:3px}
-.cx-quick-row::-webkit-scrollbar-thumb{background:rgba(96,165,250,.18);border-radius:8px}
-.cx-chip{
-  display:inline-flex;align-items:center;gap:6px;flex:0 0 auto;
-  padding:7px 12px;border-radius:999px;cursor:pointer;white-space:nowrap;
-  color:#c9dcf9;font-size:11px;font-weight:600;
-  background:rgba(59,130,246,.07);border:1px solid rgba(96,165,250,.18);transition:.15s;
+.cp-msg.user .cp-bubble{background:#2563eb;color:white;border-bottom-right-radius:4px}
+.cp-msg.bot .cp-bubble{
+  background:#ffffff;color:#0f172a;border:1px solid #e2e8f0;
+  border-bottom-left-radius:4px;box-shadow:0 1px 3px rgba(0,0,0,0.06);
 }
-.cx-chip:hover{background:rgba(59,130,246,.16);border-color:rgba(96,165,250,.42);transform:translateY(-1px);color:#eff6ff}
-.cx-chip-ico{display:inline-grid;place-items:center;font-size:12px}
-.cx-ico-fraud{color:#fbbf24}.cx-ico-cancel{color:#fb7185}.cx-ico-seats{color:#22d3ee}.cx-ico-booking{color:#a78bfa}
-.cx-quick.is-hidden{display:none}
+.cp-msg.bot:not(#admin-chat-loading-indicator) .rs-bot{animation:m4BotNod .42s .1s cubic-bezier(.34,1.56,.64,1) both}
+.cp-bubble p{margin:0 0 6px 0}.cp-bubble p:last-child{margin-bottom:0}.cp-bubble strong{font-weight:700}
+.cp-bubble ul{padding-left:14px;margin:2px 0 6px 0}.cp-bubble li{margin-bottom:4px;line-height:1.45}
+.cp-bubble .cp-time{font-size:0.62rem;opacity:0.6;margin-top:4px;display:block;text-align:right}
 
-/* ── Messages ── */
-.cx-msg{display:flex;gap:8px;max-width:92%;animation:cxIn .18s ease}
-.cx-msg.user{align-self:flex-end;flex-direction:row-reverse}
-.cx-msg.bot{align-self:flex-start}
-@keyframes cxIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-.cx-msg-avatar{
-  width:26px;height:26px;flex-shrink:0;display:grid;place-items:center;margin-top:2px;
-  border-radius:9px;font-size:12px;
-  background:linear-gradient(145deg,rgba(59,130,246,.32),rgba(29,78,216,.1));
-  border:1px solid rgba(147,197,253,.26);color:#dbeafe;
-}
-.cx-msg.user .cx-msg-avatar{background:rgba(148,163,184,.14);border-color:rgba(203,213,225,.2);color:#cbd5e1}
-.cx-msg-col{display:flex;flex-direction:column;min-width:0;gap:3px}
-.cx-msg.user .cx-msg-col{align-items:flex-end}
-.cx-bubble{
-  padding:10px 13px;border-radius:14px;font-size:12.5px;line-height:1.6;
-  word-wrap:break-word;overflow-wrap:break-word;
-}
-.cx-msg.user .cx-bubble{
-  background:linear-gradient(145deg,#1d4ed8,#2563eb);
-  border:1px solid rgba(147,197,253,.28);color:#eff6ff;
-  border-bottom-right-radius:4px;
-}
-.cx-msg.bot .cx-bubble{
-  background:linear-gradient(165deg,rgba(17,30,52,.95),rgba(11,21,38,.95));
-  border:1px solid rgba(96,165,250,.15);color:#dbeafe;
-  border-bottom-left-radius:4px;
-}
-.cx-meta{font-size:9px;color:#55688a;padding:0 3px;font-family:'Share Tech Mono',monospace;letter-spacing:.4px}
+/* ── Result Cards inside Bot Bubble ── */
+.cp-card{background:rgba(37,99,235,0.05);border:1px solid #bfdbfe;border-radius:10px;padding:8px 10px;margin:7px 0 3px}
+.cp-card-head{display:flex;flex-direction:column;gap:1px;margin-bottom:6px}
+.cp-card-title{font-size:0.75rem;font-weight:700;color:#1e40af}
+.cp-card-sub{font-size:0.66rem;color:#64748b}
+.cp-card-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:4px 8px}
+.cp-card-item{display:flex;flex-direction:column}
+.cp-card-item-label{font-size:0.62rem;color:#64748b}
+.cp-card-item-value{font-size:0.72rem;font-weight:600;color:#0f172a}
+.cp-sources{margin-top:6px;padding-top:6px;border-top:1px solid #e2e8f0}
+.cp-sources-label{font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;color:#94a3b8;margin-bottom:3px;display:block}
+.cp-source-tag{display:inline-flex;align-items:center;gap:3px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:2px 7px;font-size:0.65rem;color:#1d4ed8;margin:2px 3px 2px 0}
 
-/* typing indicator */
-.cx-typing{display:inline-flex;align-items:center;gap:5px;padding:4px 2px}
-.cx-typing b{width:6px;height:6px;border-radius:50%;background:#60a5fa;animation:cxTyping 1.2s infinite}
-.cx-typing b:nth-child(2){animation-delay:.18s}
-.cx-typing b:nth-child(3){animation-delay:.36s}
-@keyframes cxTyping{0%,60%,100%{opacity:.25;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
-
-/* result card inside bot message */
-.cx-card{margin-top:10px;padding:11px 12px;background:rgba(4,11,22,.55);border:1px solid rgba(96,165,250,.14);border-radius:11px}
-.cx-card-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:7px}
-.cx-card-title{font-size:11.5px;font-weight:700;color:#93c5fd}
-.cx-card-sub{font-size:10px;color:#6c81a3}
-.cx-card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:6px}
-.cx-card-item{padding:6px 9px;background:rgba(148,197,253,.04);border:1px solid rgba(148,197,253,.08);border-radius:7px}
-.cx-card-item-label{font-size:9px;text-transform:uppercase;letter-spacing:.6px;color:#6c81a3}
-.cx-card-item-value{margin-top:2px;font-size:12.5px;font-weight:700;color:#e8f0fd;word-break:break-word}
-
-/* sources row */
-.cx-sources{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin-top:9px;padding-top:8px;border-top:1px solid rgba(148,163,184,.08)}
-.cx-sources-label{font-size:9px;text-transform:uppercase;letter-spacing:.8px;color:#55688a}
-.cx-source-tag{
-  display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:6px;
-  color:#7dd3fc;background:rgba(14,116,144,.1);border:1px solid rgba(56,189,248,.16);
-  font-family:'Share Tech Mono',monospace;font-size:8.5px;
+/* ── Typing Indicator ── */
+.cp-typing{display:flex;gap:3px;align-items:center;padding:4px 0}
+.cp-typing span{
+  width:6px;height:6px;border-radius:50%;background:#60a5fa;opacity:0.5;
+  animation:m4TypingWave 1.05s ease-in-out infinite;
 }
+.cp-typing span:nth-child(2){animation-delay:0.2s}
+.cp-typing span:nth-child(3){animation-delay:0.4s}
 
-/* error bubble accent */
-.cx-msg.bot.cx-error .cx-bubble{border-color:rgba(239,68,68,.4);background:linear-gradient(165deg,rgba(52,18,22,.5),rgba(30,10,14,.6))}
+/* ── Footer ── */
+.cp-footer{padding:3px 13px 6px;display:flex;justify-content:space-between;align-items:center;background:#fafbfc}
+.cp-method{font-size:0.63rem;color:#94a3b8;display:flex;align-items:center;gap:4px}
+.cp-mdot{width:5px;height:5px;border-radius:50%;background:#10b981}
+.cp-clr{font-size:0.63rem;color:#94a3b8;background:none;border:none;cursor:pointer;font-family:inherit;transition:color 0.12s}
+.cp-clr:hover{color:#ef4444}
 
-/* ── Composer ── */
-.cx-composer{flex-shrink:0;padding-top:8px}
-.cx-input-shell{
-  padding:9px 11px;background:linear-gradient(165deg,rgba(15,29,50,.95),rgba(9,18,32,.95));
-  border:1px solid rgba(96,165,250,.18);border-radius:14px;transition:border-color .2s,box-shadow .2s;
+/* ── Input Bar ── */
+.cp-input-bar{padding:8px 11px;border-top:1px solid #e2e8f0;display:flex;gap:8px;align-items:flex-end;flex-shrink:0;background:#fafbfc}
+.cp-input-wrap{flex:1;background:#ffffff;border:1.5px solid #e2e8f0;border-radius:13px;padding:7px 12px;transition:border-color 0.15s}
+.cp-input-wrap:focus-within{border-color:#3b82f6}
+#admin-chat-input{width:100%;border:none;outline:none;background:transparent;font-size:0.8rem;font-family:inherit;color:#0f172a;resize:none;line-height:1.4;max-height:80px;overflow-y:auto}
+#admin-chat-input::placeholder{color:#94a3b8}
+.cp-send{
+  width:31px;height:31px;border-radius:50%;background:#2563eb;border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.15s;
+  box-shadow:0 2px 6px rgba(37,99,235,0.3);
 }
-.cx-input-shell:focus-within{border-color:rgba(96,165,250,.42);box-shadow:0 0 0 3px rgba(59,130,246,.08)}
-.cx-input{
-  display:block;width:100%;box-sizing:border-box;min-height:24px;max-height:110px;
-  padding:2px 2px 6px;resize:none;border:0;outline:0;background:transparent;
-  color:#f1f5fd;font-size:12.5px;line-height:1.5;box-shadow:none;
-}
-.cx-input::placeholder{color:#52647c}
-.cx-input-row{display:flex;align-items:center;gap:8px;min-height:30px}
-.cx-hint{display:flex;align-items:center;gap:4px;flex:1;min-width:0;font-size:9px;color:#52647c;white-space:nowrap;overflow:hidden}
-.cx-kbd{padding:1px 5px;color:#748aa9;background:rgba(148,163,184,.07);border:1px solid rgba(148,163,184,.14);border-radius:4px;font-family:monospace;font-size:9px}
-.cx-counter{font-family:'Share Tech Mono',monospace;font-size:8.5px;color:#52647c}
-.cx-send{
-  display:inline-flex;align-items:center;justify-content:center;gap:5px;flex-shrink:0;
-  height:32px;padding:0 13px;border-radius:9px;cursor:pointer;
-  color:#fff;background:linear-gradient(135deg,#2563eb,#3b82f6);
-  border:1px solid rgba(147,197,253,.3);box-shadow:0 4px 14px rgba(37,99,235,.22);
-  font-family:inherit;transition:.15s;
-}
-.cx-send:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(37,99,235,.32)}
-.cx-send:disabled{opacity:.55;cursor:wait;transform:none}
-.cx-send-label{font-size:10.5px;font-weight:700}
-.cx-send-arrow{font-size:14px;line-height:1}
-.cx-foot{
-  flex-shrink:0;display:flex;justify-content:center;align-items:center;gap:5px;
-  padding-top:6px;color:#445571;font-family:'Share Tech Mono',monospace;font-size:7.5px;letter-spacing:.4px;
-}
+.cp-send:hover:not(:disabled){background:#1d4ed8;transform:scale(1.08)}
+.cp-send:disabled{opacity:0.35;cursor:not-allowed}
 
-/* ── Launcher ── */
-.cx-launcher{
-  position:fixed;right:24px;bottom:24px;z-index:951;
-  width:56px;height:56px;display:grid;place-items:center;padding:0;
-  border-radius:17px;cursor:pointer;
-  color:#fff;background:linear-gradient(145deg,#2563eb,#1d4ed8);
-  border:1px solid rgba(147,197,253,.45);
-  box-shadow:0 12px 32px rgba(15,23,42,.5),0 0 0 5px rgba(59,130,246,.08);
-  transition:.2s;
+/* ── Dark Theme Overrides (Default in Admin) ── */
+body:not([data-theme="light"]) .chat-popup{
+  background:#0f172a;border-color:rgba(96,165,250,0.22);color:#f1f5f9;
+  box-shadow:0 24px 70px rgba(0,0,0,0.65), 0 0 0 1px rgba(59,130,246,0.12);
 }
-.cx-launcher:hover{transform:translateY(-3px) scale(1.04);box-shadow:0 16px 40px rgba(15,23,42,.58),0 0 0 8px rgba(59,130,246,.1)}
-.cx-launcher.is-open{opacity:0;pointer-events:none;transform:scale(.8)}
-.cx-launcher-icon{font-size:24px;color:#eff6ff;text-shadow:0 0 14px rgba(255,255,255,.45)}
-.cx-launcher-dot{position:absolute;right:8px;bottom:8px;width:8px;height:8px;border-radius:50%;background:#34d399;border:2px solid #1d4ed8;box-shadow:0 0 8px rgba(52,211,153,.8)}
-.cx-launcher-pulse{position:absolute;inset:-1px;border-radius:17px;border:1px solid rgba(96,165,250,.5);animation:cxLauncherPulse 2.5s infinite;pointer-events:none}
-@keyframes cxLauncherPulse{0%{opacity:.7;transform:scale(1)}70%,100%{opacity:0;transform:scale(1.16)}}
+body:not([data-theme="light"]) .cp-header,
+body:not([data-theme="light"]) .cp-input-bar,
+body:not([data-theme="light"]) .cp-footer{
+  background:#162032;border-color:rgba(255,255,255,0.08);
+}
+body:not([data-theme="light"]) .cp-title{color:#f8fafc}
+body:not([data-theme="light"]) .cp-sub{color:#94a3b8}
+body:not([data-theme="light"]) .cp-btn{
+  background:#1e293b;border-color:rgba(255,255,255,0.1);color:#94a3b8;
+}
+body:not([data-theme="light"]) .cp-btn:hover{background:#334155;color:#ffffff}
+body:not([data-theme="light"]) .cp-messages{background:#0b1329}
+body:not([data-theme="light"]) .cp-chip{
+  background:#1e293b;border-color:rgba(255,255,255,0.1);color:#cbd5e1;
+}
+body:not([data-theme="light"]) .cp-chip:hover{background:#1d4ed8;color:#ffffff;border-color:#3b82f6}
+body:not([data-theme="light"]) .cp-av.b{background:#162032;border-color:rgba(255,255,255,0.12)}
+body:not([data-theme="light"]) .cp-msg.bot .cp-bubble{
+  background:#1e293b;color:#e2e8f0;border-color:#334155;
+  box-shadow:0 2px 8px rgba(0,0,0,0.3);
+}
+body:not([data-theme="light"]) .cp-card{background:rgba(30,58,138,0.25);border-color:rgba(96,165,250,0.3)}
+body:not([data-theme="light"]) .cp-card-title{color:#93c5fd}
+body:not([data-theme="light"]) .cp-card-item-value{color:#f1f5f9}
+body:not([data-theme="light"]) .cp-sources{border-top-color:rgba(255,255,255,0.08)}
+body:not([data-theme="light"]) .cp-source-tag{background:rgba(37,99,235,0.2);border-color:rgba(96,165,250,0.35);color:#93c5fd}
+body:not([data-theme="light"]) .cp-input-wrap{background:#1e293b;border-color:#334155}
+body:not([data-theme="light"]) #admin-chat-input{color:#f8fafc}
+body:not([data-theme="light"]) #admin-chat-input::placeholder{color:#64748b}
 
-/* ── Light theme ── */
-[data-theme="light"] .cx-panel{background:linear-gradient(165deg,#f8fbff,#eef4fd);border-color:rgba(37,99,235,.2);box-shadow:0 24px 60px rgba(15,23,42,.16)}
-[data-theme="light"] .cx-head{background:linear-gradient(135deg,rgba(37,99,235,.1),rgba(37,99,235,.04));border-bottom-color:rgba(37,99,235,.14)}
-[data-theme="light"] .cx-head-title{color:#0f172a}
-[data-theme="light"] .cx-head-badge{color:#1d4ed8;background:rgba(37,99,235,.08);border-color:rgba(37,99,235,.22)}
-[data-theme="light"] .cx-head-sub{color:#64748b}
-[data-theme="light"] .cx-icon-btn{color:#475569;background:rgba(15,23,42,.04);border-color:rgba(15,23,42,.1)}
-[data-theme="light"] .cx-icon-btn:hover{background:rgba(15,23,42,.08)}
-[data-theme="light"] .cx-log::-webkit-scrollbar-thumb{background:rgba(37,99,235,.2)}
-[data-theme="light"] .cx-welcome{border-color:rgba(37,99,235,.16);background:radial-gradient(circle at 50% 35%,rgba(37,99,235,.06),transparent 60%)}
-[data-theme="light"] .cx-welcome h3{color:#0f172a}
-[data-theme="light"] .cx-welcome p{color:#64748b}
-[data-theme="light"] .cx-welcome-try{color:#94a3b8}
-[data-theme="light"] .cx-welcome-try button{color:#1d4ed8;background:rgba(37,99,235,.06);border-color:rgba(37,99,235,.2)}
-[data-theme="light"] .cx-quick{border-top-color:rgba(37,99,235,.12)}
-[data-theme="light"] .cx-quick-label{color:#94a3b8}
-[data-theme="light"] .cx-chip{color:#1e3a8a;background:rgba(37,99,235,.05);border-color:rgba(37,99,235,.18)}
-[data-theme="light"] .cx-chip:hover{background:rgba(37,99,235,.12);color:#0f172a}
-[data-theme="light"] .cx-msg.user .cx-bubble{background:linear-gradient(145deg,#1d4ed8,#2563eb);color:#fff}
-[data-theme="light"] .cx-msg.bot .cx-bubble{background:#fff;border-color:rgba(37,99,235,.14);color:#1e293b;box-shadow:0 2px 8px rgba(15,23,42,.05)}
-[data-theme="light"] .cx-meta{color:#94a3b8}
-[data-theme="light"] .cx-card{background:rgba(37,99,235,.03);border-color:rgba(37,99,235,.12)}
-[data-theme="light"] .cx-card-title{color:#1d4ed8}
-[data-theme="light"] .cx-card-sub{color:#64748b}
-[data-theme="light"] .cx-card-item{background:rgba(15,23,42,.03);border-color:rgba(15,23,42,.07)}
-[data-theme="light"] .cx-card-item-label{color:#64748b}
-[data-theme="light"] .cx-card-item-value{color:#0f172a}
-[data-theme="light"] .cx-sources{border-top-color:rgba(15,23,42,.08)}
-[data-theme="light"] .cx-sources-label{color:#94a3b8}
-[data-theme="light"] .cx-source-tag{color:#0369a1;background:rgba(14,165,233,.07);border-color:rgba(14,165,233,.18)}
-[data-theme="light"] .cx-msg.bot.cx-error .cx-bubble{background:#fff5f5;border-color:rgba(239,68,68,.3)}
-[data-theme="light"] .cx-input-shell{background:#fff;border-color:rgba(37,99,235,.18)}
-[data-theme="light"] .cx-input{color:#0f172a}
-[data-theme="light"] .cx-input::placeholder{color:#94a3b8}
-[data-theme="light"] .cx-hint{color:#94a3b8}
-[data-theme="light"] .cx-kbd{color:#64748b;background:rgba(15,23,42,.04);border-color:rgba(15,23,42,.1)}
-[data-theme="light"] .cx-counter{color:#94a3b8}
-[data-theme="light"] .cx-foot{color:#94a3b8}
-
-/* ── Responsive ── */
+/* ── Mobile Responsive ── */
 @media(max-width:640px){
-  .cx-panel{left:10px;right:10px;bottom:84px;width:auto;height:calc(100vh - 96px);border-radius:18px}
-  .cx-launcher{right:14px;bottom:14px;width:52px;height:52px;border-radius:15px}
-  .cx-msg{max-width:96%}
-  .cx-quick-row{flex-wrap:nowrap}
-  .cx-hint,.cx-counter{display:none}
+  .chat-popup{left:12px;right:12px;bottom:84px;width:auto;height:calc(100vh - 100px);border-radius:18px}
+  .chat-fab{bottom:18px;right:18px;width:52px;height:52px}
+  .cp-bubble{max-width:85%}
 }
 /* ══════════ ADMIN COMMAND DECK HERO ══════════ */
 #admin-hero {
@@ -2303,6 +2244,306 @@ body::after {
 [data-theme="light"] .bk-kpi-rejected{--bk-value:#B91C1C}
 [data-theme="light"] .bk-empty{color:#64748B}
 [data-theme="light"] .bk-empty-title{color:#0F172A}
+
+/* =========================================================
+   BOOKING LIST — light workspace (bk-mira)
+   The Bookings & Revenue section renders as a self-contained
+   light page: left rail + table-first manifest. The dark app
+   chrome is hidden while this section is active.
+   ========================================================= */
+body.bk-mira{background:#F5F7FB}
+body.bk-mira::before,body.bk-mira::after{display:none}
+body.bk-mira .top-nav,
+body.bk-mira .admin-nav-bar,
+body.bk-mira .sidebar-backdrop{display:none !important}
+body.bk-mira .app-shell{max-width:none;padding:0}
+
+#view-bookings{
+  --mx-ink:#0F172A; --mx-body:#3D4759; --mx-mute:#8A94A6; --mx-line:#EAEDF4;
+  --mx-brand:#1A56DB; --mx-brand-2:#2563EB;
+}
+
+.mira-shell{display:grid;grid-template-columns:240px minmax(0,1fr);min-height:calc(100vh - 52px);background:#F8FAFC}
+
+/* Databricks Top Header */
+.db-top-header{
+  display:flex;align-items:center;justify-content:space-between;gap:14px;
+  height:52px;padding:0 18px 0 14px;background:#FFFFFF;border-bottom:1px solid #E5E7EB;
+  position:sticky;top:0;z-index:60;box-sizing:border-box;
+}
+.db-top-left{display:flex;align-items:center;width:224px;flex-shrink:0}
+.db-top-left .db-brand{border-bottom:0;margin-bottom:0;padding:0}
+
+.db-top-center{flex:1;max-width:540px;margin:0 auto}
+.db-top-search{
+  display:flex;align-items:center;gap:9px;width:100%;height:33px;padding:0 12px;
+  background:#FFFFFF;border:1px solid #D1D5DB;border-radius:8px;box-sizing:border-box;
+  transition:all .14s ease;color:#6B7280;cursor:text;
+}
+.db-top-search:focus-within{
+  border-color:#2563EB;box-shadow:0 0 0 3px rgba(37,99,235,0.12);
+}
+.db-top-search input{
+  flex:1;min-width:0;border:0;outline:0;background:transparent !important;
+  font-family:inherit;font-size:12.5px;color:#111827 !important;
+}
+.db-top-search input::placeholder{color:#9CA3AF}
+.db-search-kbd{
+  font-family:inherit;font-size:10.5px;font-weight:600;color:#94A3B8;
+  background:#F3F4F6;border:1px solid #E5E7EB;border-radius:4px;padding:1px 6px;
+  flex-shrink:0;user-select:none;line-height:1.3;
+}
+
+.db-top-right{display:flex;align-items:center;gap:10px;margin-left:auto;flex-shrink:0}
+.db-btn-trial{
+  display:inline-flex;align-items:center;padding:5px 12px;font-size:12px;font-weight:600;
+  border-radius:6px;background:#EFF6FF;color:#1D4ED8;border:1px solid #BFDBFE;
+  cursor:pointer;transition:all .12s;font-family:inherit;
+}
+.db-btn-trial:hover{background:#DBEAFE}
+.db-icon-btn{
+  display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;
+  border:0;background:transparent;border-radius:6px;cursor:pointer;color:#64748B;
+  transition:all .12s;
+}
+.db-icon-btn:hover{background:#F1F5F9;color:#0F172A}
+.db-avatar-circle{
+  width:28px;height:28px;border-radius:50%;background:#059669;color:#FFFFFF;
+  display:grid;place-items:center;font-size:12.5px;font-weight:700;cursor:pointer;
+  user-select:none;flex-shrink:0;box-shadow:0 1px 3px rgba(0,0,0,0.1);
+}
+
+.mira-side{
+  position:sticky;top:52px;height:calc(100vh - 52px);overflow-y:auto;overflow-x:hidden;
+  display:flex;flex-direction:column;
+  padding:14px 10px 16px 10px;background:#FFFFFF;border-right:1px solid #E5E7EB;
+  box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+.mira-side::-webkit-scrollbar{width:4px}
+.mira-side::-webkit-scrollbar-thumb{background:#E2E8F0;border-radius:4px}
+
+.db-brand{
+  display:flex;align-items:center;gap:10px;text-decoration:none;
+}
+.db-brand-img{
+  display:block;flex-shrink:0;height:32px;width:auto;max-width:44px;object-fit:contain;
+  background:#fff;border-radius:7px;padding:2px 4px;box-sizing:border-box;box-shadow:0 1px 4px rgba(15,23,42,0.1);
+}
+.db-brand-text{
+  font-size:15px;font-weight:700;color:#111827;letter-spacing:-0.3px;line-height:1.2;
+}
+
+.mira-nav{display:flex;flex-direction:column;gap:2px}
+.mira-nav-section-title{
+  font-size:11px;font-weight:700;color:#3B82F6;text-transform:uppercase;
+  letter-spacing:0.6px;padding:16px 10px 6px 10px;margin:0;user-select:none;
+}
+.mira-nav-foot{margin-top:auto;padding-top:10px;border-top:1px solid #F1F3F5;display:flex;flex-direction:column;gap:1px}
+
+.mira-nav-item{
+  display:flex;align-items:center;gap:11px;width:100%;padding:7px 10px;
+  border:1px solid transparent;border-radius:7px;background:transparent;color:#374151;
+  font-family:inherit;font-size:13.5px;font-weight:500;text-align:left;cursor:pointer;
+  transition:all .12s ease;line-height:1.4;box-sizing:border-box;margin-bottom:1px;
+}
+.mira-nav-item:hover{background:#F3F4F6;color:#111827}
+.mira-nav-item.active{
+  background:#E8F0FE;color:#1D4ED8;font-weight:600;border-color:rgba(29,78,216,0.15);
+}
+.mira-nav-ico{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:18px;height:18px;color:#6B7280;flex-shrink:0;
+}
+.mira-nav-item:hover .mira-nav-ico{color:#111827}
+.mira-nav-item.active .mira-nav-ico{color:#1D4ED8}
+
+[data-theme="dark"] body.bk-mira{background:#060911}
+[data-theme="dark"] body.bk-mira .db-top-header{
+  background:#0B101E;border-bottom-color:rgba(255,255,255,0.08);
+}
+[data-theme="dark"] body.bk-mira .db-top-search{
+  background:#111827;border-color:rgba(255,255,255,0.12);color:#94A3B8;
+}
+[data-theme="dark"] body.bk-mira .db-top-search input{
+  color:#F8FAFC !important;
+}
+[data-theme="dark"] body.bk-mira .db-top-search input::placeholder{
+  color:#64748B;
+}
+[data-theme="dark"] body.bk-mira .db-search-kbd{
+  background:#1E293B;border-color:rgba(255,255,255,0.1);color:#94A3B8;
+}
+[data-theme="dark"] body.bk-mira .db-btn-trial{
+  background:rgba(37,99,235,0.16);color:#93C5FD;border-color:rgba(59,130,246,0.35);
+}
+[data-theme="dark"] body.bk-mira .db-icon-btn{
+  color:#94A3B8;
+}
+[data-theme="dark"] body.bk-mira .db-icon-btn:hover{
+  background:rgba(255,255,255,0.08);color:#F8FAFC;
+}
+[data-theme="dark"] body.bk-mira .mira-side{background:#0B101E;border-right:1px solid rgba(255,255,255,0.07)}
+[data-theme="dark"] body.bk-mira .db-brand-text{color:#F8FAFC}
+[data-theme="dark"] body.bk-mira .db-brand-img{background:#FFFFFF;box-shadow:0 1px 4px rgba(0,0,0,0.3)}
+[data-theme="dark"] body.bk-mira .mira-nav-section-title{color:#60A5FA}
+[data-theme="dark"] body.bk-mira .mira-nav-item{color:#CBD5E1}
+[data-theme="dark"] body.bk-mira .mira-nav-ico{color:#94A3B8}
+[data-theme="dark"] body.bk-mira .mira-nav-item:hover{background:rgba(255,255,255,0.05);color:#F8FAFC}
+[data-theme="dark"] body.bk-mira .mira-nav-item:hover .mira-nav-ico{color:#F8FAFC}
+[data-theme="dark"] body.bk-mira .mira-nav-item.active{
+  background:#172554;border-color:rgba(59,130,246,0.3);color:#93C5FD;font-weight:600;
+}
+[data-theme="dark"] body.bk-mira .mira-nav-item.active .mira-nav-ico{color:#60A5FA}
+[data-theme="dark"] body.bk-mira .mira-nav-foot{border-top:1px solid rgba(255,255,255,0.07)}
+
+.mira-main{padding:22px 26px 96px;max-width:1180px}
+.mira-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;flex-wrap:wrap;margin-bottom:18px}
+.mira-title{font-size:20px;font-weight:800;color:var(--mx-ink);letter-spacing:-0.3px;margin:0}
+.mira-sub{font-size:12.5px;color:var(--mx-mute);margin:5px 0 0}
+.mira-head-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.mira-btn{
+  display:inline-flex;align-items:center;gap:8px;padding:9px 16px;border-radius:9px;
+  font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s ease;
+}
+.mira-btn.ghost{background:#fff;border:1px solid #E3E8F2;color:var(--mx-body)}
+.mira-btn.ghost:hover{border-color:#C9D2E4;color:var(--mx-ink);box-shadow:0 2px 8px rgba(15,23,42,.06)}
+.mira-btn.primary{background:linear-gradient(135deg,var(--mx-brand),var(--mx-brand-2));border:1px solid var(--mx-brand);color:#fff;box-shadow:0 6px 16px rgba(91,91,214,.28)}
+.mira-btn.primary:hover{filter:brightness(1.06)}
+.mira-btn-ico{display:grid;place-items:center}
+
+.mira-card{background:#fff;border:1px solid var(--mx-line);border-radius:14px;box-shadow:0 1px 2px rgba(16,24,40,.04);overflow:hidden}
+.mira-toolbar{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--mx-line);flex-wrap:wrap}
+.mira-search{display:flex;align-items:center;gap:9px;flex:1;max-width:340px;padding:8px 12px;border:1px solid #E3E8F2;border-radius:9px;background:#fff;color:#9AA3B2}
+.mira-search:focus-within{border-color:#B9C0F5;box-shadow:0 0 0 3px rgba(91,91,214,.10)}
+.mira-search input{flex:1;min-width:0;border:0;outline:0;background:transparent !important;font-family:inherit;font-size:12.5px;color:var(--mx-body)}
+.mira-search input::placeholder{color:#A9B1C1}
+.mira-tool-btn{
+  display:inline-flex;align-items:center;gap:7px;padding:8px 13px;border:1px solid #E3E8F2;border-radius:9px;
+  background:#fff;color:#4A5568;font-family:inherit;font-size:12.5px;font-weight:600;cursor:pointer;transition:all .14s ease;
+}
+.mira-tool-btn:hover{border-color:#C9D2E4;color:var(--mx-ink)}
+.mira-tool-btn.is-on{background:#EEF0FF;border-color:#D9DDFB;color:var(--mx-brand)}
+.mira-tool-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.mira-filters{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;padding:13px 16px;background:#FAFBFE;border-bottom:1px solid var(--mx-line)}
+.mira-field{display:flex;flex-direction:column;gap:5px}
+.mira-field label{font-size:10.5px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:#9AA3B2}
+.mira-field select,.mira-field input{padding:8px 11px;border:1px solid #E3E8F2;border-radius:8px;background:#fff;font-family:inherit;font-size:12.5px;color:var(--mx-body);outline:none;min-width:180px}
+
+.mira-table-wrap{overflow-x:auto}
+.mira-table{width:100%;border-collapse:collapse;font-size:12.5px}
+.mira-table thead th{
+  padding:12px 16px;text-align:left;font-size:10.5px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
+  color:#9AA3B2;background:#FCFDFF;border-bottom:1px solid var(--mx-line);white-space:nowrap;
+}
+.mira-table tbody td{padding:13px 16px;border-bottom:1px solid #F2F5FA;color:var(--mx-body);vertical-align:middle}
+.mira-table tbody tr:last-child td{border-bottom:0}
+.mira-table tbody tr:hover td{background:#FAFBFF}
+.mira-table tbody tr.is-selected td{background:#F6F7FF}
+.mira-col-check{width:40px}
+.mira-col-num{width:70px;text-align:center !important}
+.mira-col-act{width:60px;text-align:center !important}
+.mira-table input[type="checkbox"]{width:15px;height:15px;accent-color:#5B5BD6;cursor:pointer}
+
+.mira-cell{display:flex;align-items:center;gap:11px}
+.mira-avatar{
+  width:32px;height:32px;border-radius:50%;flex-shrink:0;display:grid;place-items:center;
+  font-size:11.5px;font-weight:700;color:#4C51BF;background:#EEF0FF;border:1px solid #E1E4FF;
+}
+.mira-name{font-size:12.5px;font-weight:700;color:var(--mx-ink);white-space:nowrap}
+.mira-name-sub{font-size:11px;color:#9AA3B2;margin-top:2px;font-family:'Share Tech Mono',monospace}
+.mira-strong{font-size:12.5px;font-weight:600;color:var(--mx-ink)}
+.mira-mini{font-size:11px;color:#9AA3B2;margin-top:2px}
+.mira-num{text-align:center;font-family:'Share Tech Mono',monospace;font-size:12.5px;color:var(--mx-body)}
+
+.mira-pill{display:inline-flex;align-items:center;padding:4px 11px;border-radius:999px;font-size:11.5px;font-weight:600;white-space:nowrap}
+.mira-pill.green{background:#E9F9F1;color:#0E9F6E;border:1px solid #CBEFDD}
+.mira-pill.amber{background:#FFF6E6;color:#C97A08;border:1px solid #FBE3B5}
+.mira-pill.red{background:#FEECEC;color:#E02424;border:1px solid #F9D2D2}
+.mira-pill.blue{background:#EAF3FF;color:#1A6EE0;border:1px solid #CFE2FD}
+.mira-pill.violet{background:#F1EEFE;color:#7C3AED;border:1px solid #E3DCFB}
+.mira-pill.gray{background:#F4F6FA;color:#7A8394;border:1px dashed #DCE2EC}
+.mira-word{font-size:12.5px;font-weight:600}
+
+.mira-row-btn{
+  width:30px;height:26px;border:1px solid transparent;border-radius:7px;background:transparent;
+  color:#9AA3B2;cursor:pointer;font-size:15px;line-height:1;font-family:inherit;
+}
+.mira-row-btn:hover{background:#F2F5FB;color:var(--mx-body);border-color:#E3E8F2}
+#bk-row-menu{
+  position:fixed;z-index:4000;display:none;min-width:200px;padding:6px;
+  background:#fff;border:1px solid var(--mx-line);border-radius:11px;box-shadow:0 12px 34px rgba(15,23,42,.16);
+}
+#bk-row-menu button{
+  display:block;width:100%;padding:8px 10px;border:0;border-radius:7px;background:transparent;
+  color:var(--mx-body);font-family:inherit;font-size:12.5px;font-weight:600;text-align:left;cursor:pointer;
+}
+#bk-row-menu button:hover{background:#F4F6FC;color:var(--mx-ink)}
+
+.mira-state{padding:46px 18px;text-align:center;color:var(--mx-mute);font-size:12.5px}
+.mira-state-title{font-size:14px;font-weight:700;color:var(--mx-ink);margin-bottom:5px}
+.mira-state-ico{font-size:28px;margin-bottom:10px}
+
+.mira-bulk{
+  position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:3000;
+  display:flex;align-items:center;gap:22px;padding:11px 12px 11px 20px;border-radius:11px;
+  background:#111827;box-shadow:0 14px 40px rgba(15,23,42,.35);color:#fff;
+}
+.mira-bulk-count{font-size:12.5px;font-weight:600;color:#E5E7EB;white-space:nowrap}
+.mira-bulk-btn{border:0;background:transparent;color:#fff;font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;padding:2px}
+.mira-bulk-btn:hover{text-decoration:underline}
+.mira-bulk-btn.danger{color:#F87171}
+
+@media (max-width:900px){
+  .mira-shell{grid-template-columns:1fr}
+  .mira-side{position:static;height:auto;border-right:0;border-bottom:1px solid var(--mx-line)}
+  .mira-main{padding:18px 16px 96px}
+}
+
+/* Keep the existing queues / schedule / manifest subviews legible on the
+   light background while they live inside the new workspace. */
+body.bk-mira #view-bookings .mira-main{
+  --panel-dark:#F8FAFC; --card:#FFFFFF; --card-hi:#FFFFFF;
+  --border:#E7EAF3; --border-hi:#C9D2E4;
+  --ink:#334155; --ink-bright:#0F172A; --muted:#9AA3B2; --muted-hi:#64748B;
+  --brand:#5B5BD6; --brand-light:#7C6CF3;
+  --shadow:0 1px 2px rgba(16,24,40,.05); --shadow-card:0 1px 3px rgba(16,24,40,.06);
+}
+body.bk-mira .bk-panel{background:#fff;border-color:#EAEDF4;box-shadow:0 1px 2px rgba(16,24,40,.04)}
+body.bk-mira .btn-refresh{background:#fff;border-color:#E3E8F2;color:#4A5568}
+body.bk-mira .btn-refresh:hover{border-color:#C9D2E4;color:var(--mx-ink);background:#F8FAFF}
+body.bk-mira .bk-panel-head{background:#FCFDFF;border-bottom-color:#EAEDF4}
+body.bk-mira .bk-panel-ico{background:#EEF0FF;border-color:#E1E4FF}
+body.bk-mira .bk-seg{background:#F4F6FA;border-color:#EAEDF4}
+body.bk-mira .bk-seg-btn{color:#64748B}
+body.bk-mira .bk-seg-btn:hover{color:#0F172A}
+body.bk-mira .bk-seg-btn.active{background:linear-gradient(135deg,#5B5BD6,#7C6CF3);color:#fff;box-shadow:0 2px 8px rgba(91,91,214,.3)}
+body.bk-mira .bk-case-card{background:#fff;border-color:#EAEDF4}
+body.bk-mira .bk-case-grid{background:#F7F9FC;border-color:#EAEDF4}
+body.bk-mira .bk-case-ref{color:#5B5BD6}
+body.bk-mira .bk-note{background:#F8FAFF;border-color:#E7EAF3}
+body.bk-mira .bk-note-label,
+body.bk-mira .bk-note-text{color:#475569}
+body.bk-mira .bk-flag-label{color:#C2410C}
+body.bk-mira .bk-flag-text{color:#475569}
+body.bk-mira .bk-ai{background:#F5F7FF;border-color:#E1E4FF}
+body.bk-mira .bk-ai-label{color:#5B5BD6}
+body.bk-mira .bk-ai-text{color:#334155}
+body.bk-mira .bk-decision{border-top-color:#EDF0F7;color:#8A94A6}
+body.bk-mira .bk-decision .bk-ticket-ref{color:#5B5BD6}
+body.bk-mira .bk-case-actions{border-top-color:#EDF0F7}
+body.bk-mira .bk-kpi-card{background:#fff;border-color:#EAEDF4;box-shadow:0 1px 2px rgba(16,24,40,.04)}
+body.bk-mira .mira-main input:not([type="checkbox"]),
+body.bk-mira .mira-main select,
+body.bk-mira .mira-main textarea{background:#fff !important;color:#334155 !important;border-color:#E3E8F2 !important}
+body.bk-mira #ticket-kpi-row > div{background:#fff !important;border-color:#EAEDF4 !important;box-shadow:0 1px 2px rgba(16,24,40,.05)}
+body.bk-mira #ticket-kpi-row > div > div:first-child{color:#8A94A6 !important}
+body.bk-mira #ticket-kpi-row #kpi-total{color:#1A6EE0 !important}
+body.bk-mira #ticket-kpi-row #kpi-passengers,
+body.bk-mira #ticket-kpi-row #kpi-confirmed{color:#0E9F6E !important}
+body.bk-mira #ticket-kpi-row #kpi-cancelled{color:#E02424 !important}
+body.bk-mira #ticket-manifest-table thead tr{background:#FCFDFF !important}
+body.bk-mira #ticket-manifest-table tbody tr{background:transparent !important}
+body.bk-mira #ticket-manifest-table tbody tr:hover{background:#FAFBFF !important}
 </style>
 <link rel="icon" type="image/png" href="/static/logo.png">
 <style>
@@ -2605,58 +2846,207 @@ body::after {
 
   <!-- ==================== SECTION 3: BOOKINGS ==================== -->
   <main id="view-bookings" class="view-panel">
-    <!-- Redesigned page header with live date/time -->
-    <div class="bk-page-header">
-      <div class="bk-header-left">
-        <div class="bk-header-icon">🛡️</div>
-        <div>
-          <div class="bk-header-title" id="bk-page-title">Security &amp; Fraud Review Queue</div>
-          <div class="bk-header-sub" id="bk-page-sub">IsolationForest anomaly-detected booking cases awaiting human administrator adjudication</div>
+    <!-- Databricks Top Header Bar -->
+    <header class="db-top-header">
+      <div class="db-top-left">
+        <a href="/admin" class="db-brand" title="RailSense AI Admin">
+          <img class="db-brand-img" src="/static/logo.png" alt="RailSense AI">
+          <span class="db-brand-text">RailSense AI</span>
+        </a>
+      </div>
+
+      <div class="db-top-center">
+        <label class="db-top-search" for="db-global-search">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.7-3.7"/></svg>
+          <input type="text" id="db-global-search" placeholder="Search data, notebooks, recents, and more..." autocomplete="off" oninput="syncDbSearch(this.value)">
+          <kbd class="db-search-kbd">⌘ + P</kbd>
+        </label>
+      </div>
+
+      <div class="db-top-right">
+        <button type="button" class="db-btn-trial" onclick="switchSubSection('bookings', 'fraud')">Manage Live</button>
+        <button type="button" class="db-icon-btn" onclick="toggleAdminChat()" title="AI Copilot">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A855F7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
+        </button>
+        <button type="button" class="db-icon-btn" onclick="toggleTheme()" title="Toggle Light / Dark theme">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        </button>
+        <div class="db-avatar-circle" onclick="toggleOfficerPopover()" title="Officer Account">
+          <span id="db-avatar-text">A</span>
         </div>
       </div>
-      <div class="bk-date-pill">
-        <span class="bk-date-pill-ico">📅</span>
-        <div>
-          <div class="bk-date-text" id="bk-date-line">—</div>
-          <div class="bk-date-time" id="bk-time-line">—</div>
+    </header>
+
+    <div class="mira-shell">
+
+      <!-- ── Left rail: Databricks-styled booking workspace navigation ──────────────────── -->
+      <aside class="mira-side" aria-label="Booking workspace navigation">
+        <!-- Navigation: Home, Bookings & Revenue, Audit & Queues -->
+        <nav class="mira-nav">
+          <button type="button" class="mira-nav-item" onclick="navigateTo('/admin')">
+            <span class="mira-nav-ico">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            </span>
+            Home
+          </button>
+
+          <!-- Section: BOOKINGS & REVENUE -->
+          <div class="mira-nav-section-title">BOOKINGS &amp; REVENUE</div>
+          <button type="button" class="mira-nav-item active" id="chip-book-list" onclick="switchSubSection('bookings', 'list')">
+            <span class="mira-nav-ico">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 9.5h18"/><path d="M10 9.5v10.5"/></svg>
+            </span>
+            Bookings
+          </button>
+          <button type="button" class="mira-nav-item" id="chip-book-tickets" onclick="switchSubSection('bookings', 'tickets')">
+            <span class="mira-nav-ico">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2M13 11v2M13 17v2"/></svg>
+            </span>
+            Ticket Manifest
+          </button>
+          <button type="button" class="mira-nav-item" id="chip-book-schedules" onclick="switchSubSection('bookings', 'schedules')">
+            <span class="mira-nav-ico">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2.5"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="9.5" x2="21" y2="9.5"/></svg>
+            </span>
+            Schedules &amp; Seats
+          </button>
+
+          <!-- Section: AUDIT & QUEUES -->
+          <div class="mira-nav-section-title">AUDIT &amp; QUEUES</div>
+          <button type="button" class="mira-nav-item" id="chip-book-fraud" onclick="switchSubSection('bookings', 'fraud')">
+            <span class="mira-nav-ico">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </span>
+            Fraud Review
+          </button>
+          <button type="button" class="mira-nav-item" id="chip-book-canc" onclick="switchSubSection('bookings', 'canc')">
+            <span class="mira-nav-ico">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+            </span>
+            Cancellations
+          </button>
+        </nav>
+      </aside>
+
+      <!-- ── Main column ─────────────────────────────────────────────── -->
+      <div class="mira-main">
+        <header class="mira-head">
+          <div>
+            <h1 class="mira-title" id="bk-page-title">Booking List</h1>
+            <p class="mira-sub" id="bk-page-sub">You can find all of your bookings here</p>
+          </div>
+          <div class="mira-head-actions" id="bk-head-actions">
+            <button type="button" class="mira-btn ghost" onclick="exportBookingListCsv(false)">
+              <span class="mira-btn-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 4.5-4.5M12 15l-4.5-4.5M4.5 20h15"/></svg></span>
+              Export Manifest
+            </button>
+          </div>
+        </header>
+
+        <!-- KPI strip — owned by the fraud / cancellation queues -->
+        <div class="bk-kpi-row" id="bk-kpi-row" style="display:none;">
+          <div class="bk-kpi-card bk-kpi-total">
+            <div class="bk-kpi-ico">🗂</div>
+            <div><div class="bk-kpi-num" id="bk-kpi-total">0</div><div class="bk-kpi-label">Total Cases</div></div>
+            <span class="bk-kpi-dot"></span>
+          </div>
+          <div class="bk-kpi-card bk-kpi-pending">
+            <div class="bk-kpi-ico">🕐</div>
+            <div><div class="bk-kpi-num" id="bk-kpi-pending">0</div><div class="bk-kpi-label">Pending Review</div></div>
+            <span class="bk-kpi-dot"></span>
+          </div>
+          <div class="bk-kpi-card bk-kpi-approved">
+            <div class="bk-kpi-ico">✅</div>
+            <div><div class="bk-kpi-num" id="bk-kpi-approved">0</div><div class="bk-kpi-label">Approved</div></div>
+            <span class="bk-kpi-dot"></span>
+          </div>
+          <div class="bk-kpi-card bk-kpi-rejected">
+            <div class="bk-kpi-ico">✖</div>
+            <div><div class="bk-kpi-num" id="bk-kpi-rejected">0</div><div class="bk-kpi-label">Rejected</div></div>
+            <span class="bk-kpi-dot"></span>
+          </div>
         </div>
-      </div>
-    </div>
 
-    <!-- KPI stat cards -->
-    <div class="bk-kpi-row">
-      <div class="bk-kpi-card bk-kpi-total">
-        <div class="bk-kpi-ico">🗂</div>
-        <div><div class="bk-kpi-num" id="bk-kpi-total">0</div><div class="bk-kpi-label">Total Cases</div></div>
-        <span class="bk-kpi-dot"></span>
-      </div>
-      <div class="bk-kpi-card bk-kpi-pending">
-        <div class="bk-kpi-ico">🕐</div>
-        <div><div class="bk-kpi-num" id="bk-kpi-pending">0</div><div class="bk-kpi-label">Pending Review</div></div>
-        <span class="bk-kpi-dot"></span>
-      </div>
-      <div class="bk-kpi-card bk-kpi-approved">
-        <div class="bk-kpi-ico">✅</div>
-        <div><div class="bk-kpi-num" id="bk-kpi-approved">0</div><div class="bk-kpi-label">Approved</div></div>
-        <span class="bk-kpi-dot"></span>
-      </div>
-      <div class="bk-kpi-card bk-kpi-rejected">
-        <div class="bk-kpi-ico">✖</div>
-        <div><div class="bk-kpi-num" id="bk-kpi-rejected">0</div><div class="bk-kpi-label">Rejected</div></div>
-        <span class="bk-kpi-dot"></span>
-      </div>
-    </div>
+        <!-- ── View 0: Booking List (default) ───────────────────────────── -->
+        <div id="subview-book-list">
+          <section class="mira-card">
+            <div class="mira-toolbar">
+              <label class="mira-search" for="bk-search-input">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.7-3.7"/></svg>
+                <input type="text" id="bk-search-input" placeholder="Search bookings..." autocomplete="off" oninput="renderBookingList()" />
+              </label>
+              <button type="button" class="mira-tool-btn" id="bk-filter-toggle" onclick="toggleBookingFilters()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                Filters
+              </button>
+              <div class="mira-tool-right">
+                <button type="button" class="mira-tool-btn" id="bk-sort-btn" onclick="cycleBookingSort()">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v16M4 17l3 3 3-3M17 20V4M14 7l3-3 3 3"/></svg>
+                  <span id="bk-sort-label">Sort</span>
+                </button>
+                <button type="button" class="mira-tool-btn" onclick="exportBookingListCsv(false)">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 4.5-4.5M12 15l-4.5-4.5M4.5 20h15"/></svg>
+                  Export
+                </button>
+              </div>
+            </div>
 
-    <!-- Pill tab navigation -->
-    <div class="bk-tab-row">
-      <button class="bk-tab active" id="chip-book-fraud" onclick="switchSubSection('bookings', 'fraud')"><span class="bk-tab-ico">🛡️</span> Fraud Review Queue (ML Flagged)</button>
-      <button class="bk-tab" id="chip-book-canc" onclick="switchSubSection('bookings', 'canc')"><span class="bk-tab-ico">🔄</span> Cancellation Queue (Human-in-the-Loop)</button>
-      <button class="bk-tab" id="chip-book-schedules" onclick="switchSubSection('bookings', 'schedules')"><span class="bk-tab-ico">📋</span> Schedules &amp; Seat Inventory</button>
-      <button class="bk-tab" id="chip-book-tickets" onclick="switchSubSection('bookings', 'tickets'); loadTicketManifestTrains();"><span class="bk-tab-ico">🎫</span> Booked Tickets (Manifest)</button>
-    </div>
+            <div class="mira-filters" id="bk-filter-row" style="display:none;">
+              <div class="mira-field">
+                <label for="bk-filter-train">Train</label>
+                <select id="bk-filter-train" onchange="loadBookingList()"><option value="">All trains</option></select>
+              </div>
+              <div class="mira-field">
+                <label for="bk-filter-date">Travel Date</label>
+                <input type="date" id="bk-filter-date" onchange="loadBookingList()" />
+              </div>
+              <div class="mira-field">
+                <label for="bk-filter-status">Booking Status</label>
+                <select id="bk-filter-status" onchange="loadBookingList()">
+                  <option value="">All statuses</option>
+                  <option value="CONFIRMED">Confirmed</option>
+                  <option value="PENDING_FRAUD_REVIEW">Pending fraud review</option>
+                  <option value="HELD">Held</option>
+                  <option value="CANCELLED">Cancelled</option>
+                  <option value="EXPIRED">Expired</option>
+                </select>
+              </div>
+              <button type="button" class="mira-tool-btn" onclick="resetBookingFilters()">Reset</button>
+            </div>
+
+            <div class="mira-table-wrap">
+              <table class="mira-table" id="bk-list-table">
+                <thead>
+                  <tr>
+                    <th class="mira-col-check"><input type="checkbox" id="bk-select-all" onchange="toggleSelectAllBookings(this.checked)" aria-label="Select all bookings" /></th>
+                    <th>Passenger Name</th>
+                    <th>Train &amp; Route</th>
+                    <th>Booking Status</th>
+                    <th>Travel Date</th>
+                    <th>Payment Status</th>
+                    <th class="mira-col-num">Pax</th>
+                    <th class="mira-col-act">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="bk-list-body"></tbody>
+              </table>
+              <div class="mira-state" id="bk-list-state">Loading bookings…</div>
+            </div>
+          </section>
+        </div>
+
+        <!-- Floating bulk-action bar for the booking list -->
+        <div class="mira-bulk" id="bk-bulk-bar" style="display:none;">
+          <span class="mira-bulk-count" id="bk-bulk-count">0 of 0 selected</span>
+          <button type="button" class="mira-bulk-btn" onclick="exportBookingListCsv(true)">Export</button>
+          <button type="button" class="mira-bulk-btn danger" onclick="clearBookingSelection()">Clear</button>
+        </div>
+
+        <!-- Row action popover -->
+        <div id="bk-row-menu" role="menu"></div>
 
     <!-- View A: Fraud Review Queue -->
-    <div id="subview-book-fraud">
+    <div id="subview-book-fraud" style="display:none;">
       <div class="bk-panel">
         <div class="bk-panel-head">
           <div class="bk-panel-head-left">
@@ -2857,7 +3247,9 @@ body::after {
         </div><!-- /ticket-manifest-container -->
         </div><!-- /bk-body -->
       </div><!-- /bk-panel -->
-    </div>
+    </div><!-- /subview-book-tickets -->
+      </div><!-- /.mira-main -->
+    </div><!-- /.mira-shell -->
   </main>
 
   <!-- ==================== SECTION 4: MAINTENANCE ==================== -->
@@ -3051,62 +3443,56 @@ body::after {
   </main>
 </div>
 
-<!-- Global floating Admin Booking Intelligence Assistant. -->
-<div class="cx-panel" id="admin-booking-chat-panel" role="dialog" aria-label="RailSense AI Admin Booking Assistant" aria-hidden="true">
-  <header class="cx-head">
-    <div class="cx-head-brand">
-      <div class="cx-avatar"><span class="cx-avatar-glyph">✦</span><span class="cx-avatar-dot"></span></div>
-      <div class="cx-head-text">
-        <div class="cx-head-title-row">
-          <span class="cx-head-title">RailSense AI</span>
-          <span class="cx-head-badge">Copilot</span>
-        </div>
-        <div class="cx-head-sub"><span class="cx-live-dot"></span>Live operations · Online</div>
-      </div>
-    </div>
-    <div class="cx-head-actions">
-      <button class="cx-icon-btn" type="button" onclick="clearAdminChat()" title="Clear conversation" aria-label="Clear conversation">⌫</button>
-      <button class="cx-icon-btn" id="btn-toggle-chat" type="button" onclick="toggleAdminChatCollapse()" title="Minimize assistant" aria-label="Minimize assistant">−</button>
-      <button class="cx-icon-btn cx-danger" type="button" onclick="closeAdminChat()" title="Close assistant" aria-label="Close assistant">×</button>
-    </div>
-  </header>
+<!-- ═══ M4 Chatbot Popup UI ═══ -->
+<button class="chat-fab" id="admin-chat-launcher" onclick="toggleAdminChat()" title="Booking Intelligence Copilot" aria-label="Open RailSense Copilot">
+  <span class="fab-pulse"></span><span class="m4-fab-notice" aria-hidden="true"></span>
+  <span id="fab-chat" aria-hidden="true"><svg class="rs-bot" viewBox="0 0 64 64"><g class="rs-bot-antenna"><path class="rs-bot-antenna-line" d="M32 14V7"/><circle class="rs-bot-light" cx="32" cy="5" r="3.5"/></g><g class="rs-bot-body"><rect class="rs-bot-body-panel" x="21" y="44" width="22" height="13" rx="6.5"/><rect class="rs-bot-head" x="12" y="16" width="40" height="31" rx="11"/><rect class="rs-bot-face" x="17" y="22" width="30" height="18" rx="7"/><g class="rs-bot-eyes"><circle class="rs-bot-eye" cx="25" cy="31" r="3.2"/><circle class="rs-bot-eye" cx="39" cy="31" r="3.2"/></g><path d="M27 39h10" stroke="rgba(255,255,255,.65)" stroke-width="1.6" stroke-linecap="round"/></g></svg></span>
+  <svg id="fab-x" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+</button>
 
-  <div id="admin-chat-body" class="cx-body">
-    <div class="cx-log-wrap">
-      <div class="cx-log" id="admin-chat-log">
-        <div class="cx-welcome" id="cx-welcome">
-          <div class="cx-welcome-glow"><div class="cx-welcome-orbit"><div class="cx-welcome-ring"></div><div class="cx-welcome-icon">✦</div></div></div>
-          <h3>How can I help you today?</h3>
-          <p>Ask about bookings, schedules, seats, cancellations, fraud reviews or passenger manifests — grounded in live operational data.</p>
-          <div class="cx-welcome-try"><span>Try</span><button type="button" onclick="sendSuggestedQuestion('Show today's booking count')">"Show today's booking count"</button></div>
-        </div>
+<div class="chat-popup" id="admin-booking-chat-panel" role="dialog" aria-label="RailSense Copilot" aria-hidden="true">
+  <div class="cp-header">
+    <svg class="cp-logo" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 200 200"><g clip-path="url(#cp_c)"><mask id="cp_m" style="mask-type:alpha" width="200" height="200" x="0" y="0" maskUnits="userSpaceOnUse"><path fill="#fff" fill-rule="evenodd" d="M100 150c27.614 0 50-22.386 50-50s-22.386-50-50-50-50 22.386-50 50 22.386 50 50 50zm0 50c55.228 0 100-44.772 100-100S155.228 0 100 0 0 44.772 0 100s44.772 100 100 100z" clip-rule="evenodd"/></mask><g mask="url(#cp_m)"><path fill="#fff" d="M200 0H0v200h200V0z"/><path fill="#2563eb" fill-opacity=".28" d="M200 0H0v200h200V0z"/><g filter="url(#cp_b)" class="animate-gradient"><path fill="#2563eb" d="M110 32H18v68h92V32z"/><path fill="#1d4ed8" d="M188-24H15v98h173v-98z"/><path fill="#3b82f6" d="M175 70H5v156h170V70z"/><path fill="#60a5fa" d="M230 51H100v103h130V51z"/></g></g></g><defs><filter id="cp_b" width="385" height="410" x="-75" y="-104" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="b"/><feBlend in="SourceGraphic" in2="b" result="s"/><feGaussianBlur result="e" stdDeviation="40"/></filter><clipPath id="cp_c"><path fill="#fff" d="M0 0H200V200H0z"/></clipPath></defs></svg>
+    <div>
+      <div class="cp-title">RailSense Copilot</div>
+      <div class="cp-sub">Booking & Operations Intelligence</div>
+    </div>
+    <div class="cp-actions">
+      <button class="cp-btn" onclick="clearAdminChat()" title="Clear conversation"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.27"/></svg></button>
+      <button class="cp-btn" onclick="closeAdminChat()" title="Close"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+  </div>
+
+  <div class="cp-messages" id="admin-chat-log">
+    <div class="cp-welcome" id="cp-welcome">
+      <svg class="cp-wlogo" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 200 200"><g clip-path="url(#cpw_c)"><mask id="cpw_m" style="mask-type:alpha" width="200" height="200" x="0" y="0" maskUnits="userSpaceOnUse"><path fill="#fff" fill-rule="evenodd" d="M100 150c27.614 0 50-22.386 50-50s-22.386-50-50-50-50 22.386-50 50 22.386 50 50 50zm0 50c55.228 0 100-44.772 100-100S155.228 0 100 0 0 44.772 0 100s44.772 100 100 100z" clip-rule="evenodd"/></mask><g mask="url(#cpw_m)"><path fill="#fff" d="M200 0H0v200h200V0z"/><path fill="#2563eb" fill-opacity=".28" d="M200 0H0v200h200V0z"/><g filter="url(#cpw_b)" class="animate-gradient"><path fill="#2563eb" d="M110 32H18v68h92V32z"/><path fill="#1d4ed8" d="M188-24H15v98h173v-98z"/><path fill="#3b82f6" d="M175 70H5v156h170V70z"/><path fill="#60a5fa" d="M230 51H100v103h130V51z"/></g></g></g><defs><filter id="cpw_b" width="385" height="410" x="-75" y="-104" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="b"/><feBlend in="SourceGraphic" in2="b" result="s"/><feGaussianBlur result="e" stdDeviation="40"/></filter><clipPath id="cpw_c"><path fill="#fff" d="M0 0H200V200H0z"/></clipPath></defs></svg>
+      <h3>How can I help you?</h3>
+      <p>Ask about bookings, schedules, seats, cancellations, fraud reviews or passenger manifests.</p>
+      <div class="cp-chips">
+        <button class="cp-chip" type="button" onclick="sendSuggestedQuestion('Show today\\'s booking count')">Today's Bookings</button>
+        <button class="cp-chip" type="button" onclick="sendSuggestedQuestion('Check today\\'s seat availability')">Seat Availability</button>
+        <button class="cp-chip" type="button" onclick="sendSuggestedQuestion('Show pending fraud reviews')">Fraud Reviews</button>
+        <button class="cp-chip" type="button" onclick="sendSuggestedQuestion('Show pending cancellations')">Cancellations</button>
       </div>
     </div>
+  </div>
 
-    <div class="cx-quick" id="cx-quick">
-      <div class="cx-quick-label">Quick actions</div>
-      <div class="cx-quick-row">
-        <button class="cx-chip" type="button" onclick="sendSuggestedQuestion('Show pending fraud reviews')"><span class="cx-chip-ico cx-ico-fraud">🛡</span>Fraud reviews</button>
-        <button class="cx-chip" type="button" onclick="sendSuggestedQuestion('Show pending cancellations')"><span class="cx-chip-ico cx-ico-cancel">↻</span>Cancellations</button>
-        <button class="cx-chip" type="button" onclick="sendSuggestedQuestion('Check today's seat availability')"><span class="cx-chip-ico cx-ico-seats">▦</span>Seat availability</button>
-        <button class="cx-chip" type="button" onclick="sendSuggestedQuestion('Show today's booking count')"><span class="cx-chip-ico cx-ico-booking">▣</span>Today's bookings</button>
-      </div>
+  <div class="cp-footer">
+    <div class="cp-method"><span class="cp-mdot" id="cp-mdot"></span><span id="cp-mlbl">Grounded in live operations</span></div>
+    <button class="cp-clr" type="button" onclick="clearAdminChat()">Clear</button>
+  </div>
+
+  <div class="cp-input-bar">
+    <div class="cp-input-wrap">
+      <textarea id="admin-chat-input" placeholder="Ask RailSense about bookings…" rows="1"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();handleAdminChatSubmit(event)}"
+        oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,80)+'px'"></textarea>
     </div>
-
-    <form class="cx-composer" id="admin-chat-form" onsubmit="handleAdminChatSubmit(event)">
-      <div class="cx-input-shell">
-        <textarea id="admin-chat-input" class="cx-input" placeholder="Ask RailSense about bookings…" autocomplete="off" maxlength="500" aria-label="Ask RailSense AI a question" rows="1"></textarea>
-        <div class="cx-input-row">
-          <span class="cx-hint"><span class="cx-kbd">↵</span> Send · <span class="cx-kbd">⇧↵</span> New line</span>
-          <span class="cx-counter" id="cx-char-counter">0/500</span>
-          <button type="submit" id="admin-chat-send-btn" class="cx-send" aria-label="Send message"><span class="cx-send-label">Send</span><span class="cx-send-arrow">↑</span></button>
-        </div>
-      </div>
-    </form>
-    <div class="cx-foot">RailSense Intelligence Engine · Grounded in live M3 data</div>
+    <button class="cp-send" id="admin-chat-send-btn" type="button" onclick="handleAdminChatSubmit(event)" title="Send">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+    </button>
   </div>
 </div>
-<button class="cx-launcher" id="admin-chat-launcher" type="button" onclick="toggleAdminChat()" aria-label="Open RailSense AI Assistant" aria-expanded="false" title="Open AI Assistant"><span class="cx-launcher-pulse"></span><span class="cx-launcher-icon">✦</span><span class="cx-launcher-dot"></span></button>
 
 <!-- Modal: Fraud Case Rejection -->
 <div id="modal-fraud-rejection" class="modal-backdrop" onclick="if(event.target===this) closeFraudRejectionModal()">
@@ -3239,11 +3625,10 @@ window.addEventListener('DOMContentLoaded', () => {
 
   const chatInput = $('admin-chat-input');
   if (chatInput) {
-    chatInput.addEventListener('input', () => { resizeAdminChatInput(); _cxUpdateCounter(); });
     chatInput.addEventListener('keydown', (event) => {
       if (event.key === 'Enter' && !event.shiftKey) {
         event.preventDefault();
-        $('admin-chat-form')?.requestSubmit();
+        handleAdminChatSubmit(event);
       }
     });
   }
@@ -3326,10 +3711,34 @@ function updateOfficerHeaderDisplay(officer) {
     $('pop-officer-role').style.background = isAdmin ? '#4C1D95' : '#1E3A8A';
     $('pop-officer-role').style.color = isAdmin ? '#DDD6FE' : '#93C5FD';
   }
+  const dbAv = $('db-avatar-text');
+  if (dbAv) {
+    const raw = (officer.name || officer.email || 'A').trim();
+    dbAv.textContent = raw.charAt(0).toUpperCase();
+  }
   if ($('pop-officer-login') && officer.last_login_at) {
     $('pop-officer-login').textContent = `Last Login: ${new Date(officer.last_login_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`;
   }
 }
+
+function syncDbSearch(val) {
+  const input = $('bk-search-input');
+  if (input) {
+    input.value = val;
+    renderBookingList();
+  }
+}
+
+document.addEventListener('keydown', (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'p') {
+    const s = $('db-global-search');
+    if (s && document.body.classList.contains('bk-mira')) {
+      e.preventDefault();
+      s.focus();
+      s.select();
+    }
+  }
+});
 
 function applyRBACToUI(officer) {
   const isAdmin = officer && officer.role === 'admin';
@@ -3468,6 +3877,10 @@ function switchSection(secName) {
   document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.admin-nav-tab').forEach(t => t.classList.remove('active'));
 
+  /* Bookings & Revenue is a self-contained light workspace, so the dark app
+     chrome (top header + drawer nav) is hidden while it is on screen. */
+  document.body.classList.toggle('bk-mira', secName === 'bookings');
+
   const viewEl = $(`view-${secName}`);
   const navEl = $(`nav-${secName}`);
   if (viewEl) viewEl.classList.add('active');
@@ -3493,6 +3906,8 @@ function switchSection(secName) {
   } else if (secName === 'bookings') {
     loadAdminFraudReviews();
     loadAdminCancellations();
+    loadTicketManifestTrains();
+    switchSubSection('bookings', _bkActiveSub || 'list');
   } else if (secName === 'hub') {
     loadAdminHubDashboard();
     if (!adminHubInterval) {
@@ -3549,18 +3964,39 @@ function switchSubSection(parent, sub) {
       if (linkAdmin) linkAdmin.href = `http://localhost:8005/admin${tokenParam}`;
     }
   } else if (parent === 'bookings') {
+    _bkActiveSub = sub;
+
+    const listEl = $('subview-book-list');
+    if (listEl) listEl.style.display = sub === 'list' ? 'block' : 'none';
     $('subview-book-fraud').style.display = sub === 'fraud' ? 'block' : 'none';
     $('subview-book-canc').style.display = sub === 'canc' ? 'block' : 'none';
     $('subview-book-schedules').style.display = sub === 'schedules' ? 'block' : 'none';
     $('subview-book-tickets').style.display = sub === 'tickets' ? 'block' : 'none';
 
-    $('chip-book-fraud').classList.toggle('active', sub === 'fraud');
-    $('chip-book-canc').classList.toggle('active', sub === 'canc');
-    $('chip-book-schedules').classList.toggle('active', sub === 'schedules');
-    $('chip-book-tickets').classList.toggle('active', sub === 'tickets');
+    /* The blue KPI strip belongs to the fraud / cancellation queues only. */
+    const kpiRow = $('bk-kpi-row');
+    if (kpiRow) kpiRow.style.display = (sub === 'fraud' || sub === 'canc') ? 'grid' : 'none';
+
+    /* The manifest toolbar actions only make sense on the booking list. */
+    const headActions = $('bk-head-actions');
+    if (headActions) headActions.style.display = sub === 'list' ? 'flex' : 'none';
+
+    const BK_LEFT_RAIL = {
+      list:      'chip-book-list',
+      fraud:     'chip-book-fraud',
+      canc:      'chip-book-canc',
+      schedules: 'chip-book-schedules',
+      tickets:   'chip-book-tickets',
+    };
+    Object.entries(BK_LEFT_RAIL).forEach(([name, id]) => {
+      const el = $(id);
+      if (el) el.classList.toggle('active', name === sub);
+    });
 
     updateBkPageHeader(sub);
+    bkSyncBulkBar();
 
+    if (sub === 'list') loadBookingList();
     if (sub === 'fraud') loadAdminFraudReviews();
     if (sub === 'canc') loadAdminCancellations();
     if (sub === 'tickets') loadTicketManifestTrains();
@@ -3659,6 +4095,7 @@ let currentFraudRejectionCase = null;
 
 /* Shared helpers for the redesigned Bookings & Revenue page */
 const BK_PAGE_META = {
+  list:      { icon: '', title: 'Booking List', sub: 'You can find all of your bookings here' },
   fraud:     { icon: '🛡️', title: 'Security & Fraud Review Queue', sub: 'IsolationForest anomaly-detected booking cases awaiting human administrator adjudication' },
   canc:      { icon: '🔄', title: 'Passenger Cancellation Adjudication Queue', sub: 'Human-in-the-Loop review for ticket refund and cancellation requests' },
   schedules: { icon: '📋', title: 'Live Schedule & Dynamic Seat Inventory', sub: 'Direct query through M3 Booking Agent (Port 8003)' },
@@ -4465,25 +4902,472 @@ function clearTicketFilters() {
 }
 
 // =========================================================================
+// Booking List — table-first manifest for the Bookings workspace
+// =========================================================================
+
+let _bkActiveSub = 'list';
+let _bkRows = [];
+let _bkSelection = new Set();
+let _bkSort = 'date_desc';
+let _bkTrainsLoaded = false;
+
+const BK_STATUS_META = {
+  CONFIRMED:            ['Confirmed', 'green'],
+  PENDING_FRAUD_REVIEW: ['Pending Review', 'amber'],
+  HELD:                 ['Held', 'amber'],
+  CANCELLED:            ['Cancelled', 'red'],
+  EXPIRED:              ['Expired', 'gray'],
+  REJECTED:             ['Rejected', 'red'],
+};
+
+const BK_PAY_META = {
+  PAID:     ['Paid',     '#0E9F6E'],
+  PENDING:  ['Pending',  '#C97A08'],
+  REFUNDED: ['Refunded', '#7C3AED'],
+  UNKNOWN:  ['Unknown',  '#8A94A6'],
+};
+
+const BK_SORT_MODES = [
+  ['date_desc', 'Newest journey'],
+  ['date_asc',  'Oldest journey'],
+  ['passenger', 'Passenger A-Z'],
+  ['status',    'Booking status'],
+];
+
+function openBookingDesk() {
+  window.open('/user/booking', '_blank');
+}
+
+function _bkEscape(value) {
+  return escapeHtml(String(value == null ? '' : value));
+}
+
+function bkInitials(name) {
+  const clean = String(name || '').trim();
+  if (!clean || /^unknown/i.test(clean)) return '?';
+  const parts = clean.split(/\s+/).filter(Boolean);
+  return (parts[0][0] + (parts[1] ? parts[1][0] : '')).toUpperCase();
+}
+
+function bkDisplayName(b) {
+  const p = (b.passengers || [])[0];
+  return ((p && p.full_name) || b.passenger_email || '').toLowerCase();
+}
+
+function bkPassengerCell(b) {
+  const pax = b.passengers || [];
+  const first = pax[0] || null;
+  const rawName = (first && first.full_name) || '';
+  const email = b.passenger_email || '';
+  const named = !!rawName && !/^unknown$/i.test(rawName.trim());
+  /* Guest checkouts only store an e-mail, so fall back to it rather than
+     printing "Unknown" for every row. */
+  const name = named ? rawName : (email || 'Unknown passenger');
+  const extra = pax.length > 1 ? ` · +${pax.length - 1} more` : '';
+  const nic = (first && first.nic_masked) || '';
+  const sub = (named ? (nic || email || '—') : (nic || 'no NIC on file')) + extra;
+  return `<div class="mira-cell">
+      <div class="mira-avatar">${_bkEscape(bkInitials(name))}</div>
+      <div style="min-width:0;">
+        <div class="mira-name">${_bkEscape(name)}</div>
+        <div class="mira-name-sub">${_bkEscape(sub)}</div>
+      </div>
+    </div>`;
+}
+
+function bkTrainCell(b) {
+  const title = b.train_name || b.train_id || '—';
+  const route = b.route || [b.from_station, b.to_station].filter(Boolean).join(' → ') || '—';
+  const id = (b.train_name && b.train_id) ? `${b.train_id} · ` : '';
+  return `<div>
+      <div class="mira-strong">${_bkEscape(title)}</div>
+      <div class="mira-mini">${_bkEscape(id + route)}</div>
+    </div>`;
+}
+
+function bkDateCell(b) {
+  const raw = b.travel_date || '';
+  let day = raw || '—';
+  if (raw) {
+    const d = new Date(`${raw}T00:00:00`);
+    if (!isNaN(d.getTime())) {
+      day = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+    }
+  }
+  const dep = b.departure_time ? `${b.departure_time} dep` : '';
+  return `<div>
+      <div class="mira-strong" title="${_bkEscape(raw)}">${_bkEscape(day)}</div>
+      ${dep ? `<div class="mira-mini">${_bkEscape(dep)}</div>` : ''}
+    </div>`;
+}
+
+function bkStatusPill(status) {
+  const known = BK_STATUS_META[status];
+  const label = known ? known[0] : String(status || 'Unknown').replace(/_/g, ' ');
+  const tone = known ? known[1] : 'gray';
+  return `<span class="mira-pill ${tone}">${_bkEscape(label)}</span>`;
+}
+
+function bkPayWord(status) {
+  const meta = BK_PAY_META[status] || [String(status || 'Unknown'), '#8A94A6'];
+  return `<span class="mira-word" style="color:${meta[1]};">${_bkEscape(meta[0])}</span>`;
+}
+
+function bkSortRows(rows) {
+  const out = rows.slice();
+  const key = (b) => `${b.travel_date || ''} ${b.departure_time || ''}`;
+  if (_bkSort === 'date_asc')       out.sort((a, b) => key(a).localeCompare(key(b)));
+  else if (_bkSort === 'passenger') out.sort((a, b) => {
+    // Rows without a usable name (guest checkouts) sink to the bottom.
+    const an = bkDisplayName(a) || '\uffff';
+    const bn = bkDisplayName(b) || '\uffff';
+    return an.localeCompare(bn);
+  });
+  else if (_bkSort === 'status')    out.sort((a, b) => String(a.status).localeCompare(String(b.status)));
+  else                              out.sort((a, b) => key(b).localeCompare(key(a)));
+  return out;
+}
+
+function bkSearchMatch(b, needle) {
+  if (!needle) return true;
+  const hay = [
+    b.booking_reference, b.ticket_token, b.train_id, b.train_name, b.route,
+    b.from_station, b.to_station, b.status, b.payment_status, b.seat_class,
+    b.passenger_email,
+  ].concat((b.passengers || []).map(p => `${p.full_name || ''} ${p.nic_masked || ''}`))
+   .join(' ').toLowerCase();
+  return hay.includes(needle);
+}
+
+function bkVisibleRows() {
+  const needle = ($('bk-search-input')?.value || '').trim().toLowerCase();
+  return bkSortRows(_bkRows.filter(b => bkSearchMatch(b, needle)));
+}
+
+function bkSetListState(state, message) {
+  const stateEl = $('bk-list-state');
+  const table = $('bk-list-table');
+  if (stateEl) {
+    stateEl.style.display = state === 'table' ? 'none' : 'block';
+    if (state === 'loading') {
+      stateEl.innerHTML = 'Loading bookings…';
+    } else if (state === 'error') {
+      stateEl.innerHTML = `<div class="mira-state-ico">⚠️</div>
+        <div class="mira-state-title">Could not load bookings</div>
+        ${_bkEscape(message || 'The booking agent did not respond.')}`;
+    } else if (state === 'empty') {
+      stateEl.innerHTML = `<div class="mira-state-ico">🎫</div>
+        <div class="mira-state-title">No bookings found</div>
+        Try clearing the search box or the filters.`;
+    }
+  }
+  if (table) table.style.display = state === 'table' ? 'table' : 'none';
+}
+
+async function loadBookingList() {
+  if (!$('bk-list-body')) return;
+  bkSetListState('loading');
+  bkLoadBookingFilterTrains();
+
+  const params = new URLSearchParams();
+  const train = $('bk-filter-train')?.value || '';
+  const date  = $('bk-filter-date')?.value || '';
+  const stat  = $('bk-filter-status')?.value || '';
+  if (train) params.set('train_id', train);
+  if (date)  params.set('travel_date', date);
+  if (stat)  params.set('booking_status', stat);
+  if (!train && !date) params.set('limit', '250');
+
+  try {
+    const res = await fetch('/api/admin/bookings?' + params.toString());
+    const data = await res.json();
+    if (!res.ok) {
+      bkSetListState('error', data.detail || data.error || `HTTP ${res.status}`);
+      return;
+    }
+    _bkRows = data.bookings || [];
+    _bkSelection.clear();
+    if (!_bkRows.length) {
+      $('bk-list-body').innerHTML = '';
+      bkSetListState('empty');
+      bkSyncBulkBar();
+      return;
+    }
+    renderBookingList();
+  } catch (e) {
+    console.error('[BookingList] load failed:', e);
+    bkSetListState('error', e.message || 'Unexpected error.');
+  }
+}
+
+async function bkLoadBookingFilterTrains() {
+  if (_bkTrainsLoaded) return;
+  const sel = $('bk-filter-train');
+  if (!sel) return;
+  try {
+    const res = await fetch('/api/admin/trains');
+    if (!res.ok) return;
+    const trains = await res.json();
+    trains.forEach(t => {
+      const opt = document.createElement('option');
+      opt.value = t.train_id;
+      opt.textContent = `${t.train_id} — ${t.train_name}`;
+      sel.appendChild(opt);
+    });
+    _bkTrainsLoaded = true;
+  } catch (e) {
+    console.warn('[BookingList] train filter unavailable:', e);
+  }
+}
+
+function renderBookingList() {
+  const body = $('bk-list-body');
+  if (!body) return;
+  const rows = bkVisibleRows();
+  if (!rows.length) {
+    body.innerHTML = '';
+    bkSetListState('empty');
+    bkSyncBulkBar();
+    return;
+  }
+  bkSetListState('table');
+  body.innerHTML = rows.map(b => {
+    const id = String(b.id);
+    const checked = _bkSelection.has(id) ? 'checked' : '';
+    const rowCls = _bkSelection.has(id) ? ' class="is-selected"' : '';
+    return `<tr${rowCls} data-booking-id="${id}">
+      <td class="mira-col-check"><input type="checkbox" ${checked} onchange="toggleBookingSelection('${id}', this.checked)" aria-label="Select ${_bkEscape(b.booking_reference)}" /></td>
+      <td>${bkPassengerCell(b)}</td>
+      <td>${bkTrainCell(b)}</td>
+      <td>${bkStatusPill(b.status)}</td>
+      <td>${bkDateCell(b)}</td>
+      <td>${bkPayWord(b.payment_status)}</td>
+      <td class="mira-num">${b.passenger_count || 1}</td>
+      <td class="mira-col-act"><button type="button" class="mira-row-btn" onclick="openBookingRowMenu(event, '${id}')" aria-label="Actions for ${_bkEscape(b.booking_reference)}">⋯</button></td>
+    </tr>`;
+  }).join('');
+  bkSyncSelectAll(rows);
+  bkSyncBulkBar();
+}
+
+function bkSyncSelectAll(rows) {
+  const all = $('bk-select-all');
+  if (!all) return;
+  const list = rows || bkVisibleRows();
+  all.checked = list.length > 0 && list.every(b => _bkSelection.has(String(b.id)));
+  all.indeterminate = !all.checked && list.some(b => _bkSelection.has(String(b.id)));
+}
+
+function toggleBookingSelection(id, on) {
+  const key = String(id);
+  if (on) _bkSelection.add(key); else _bkSelection.delete(key);
+  const row = document.querySelector(`#bk-list-body tr[data-booking-id="${key}"]`);
+  if (row) row.classList.toggle('is-selected', !!on);
+  bkSyncSelectAll();
+  bkSyncBulkBar();
+}
+
+function toggleSelectAllBookings(on) {
+  const rows = bkVisibleRows();
+  rows.forEach(b => {
+    const key = String(b.id);
+    if (on) _bkSelection.add(key); else _bkSelection.delete(key);
+  });
+  renderBookingList();
+}
+
+function clearBookingSelection() {
+  _bkSelection.clear();
+  renderBookingList();
+}
+
+function bkSyncBulkBar() {
+  const bar = $('bk-bulk-bar');
+  const label = $('bk-bulk-count');
+  if (!bar || !label) return;
+  const n = _bkSelection.size;
+  const show = n > 0 && _bkActiveSub === 'list';
+  bar.style.display = show ? 'flex' : 'none';
+  label.textContent = `${n} of ${_bkRows.length} selected`;
+}
+
+function toggleBookingFilters() {
+  const row = $('bk-filter-row');
+  const btn = $('bk-filter-toggle');
+  if (!row) return;
+  const open = row.style.display === 'none';
+  row.style.display = open ? 'flex' : 'none';
+  if (btn) btn.classList.toggle('is-on', open);
+}
+
+function resetBookingFilters() {
+  ['bk-filter-train', 'bk-filter-date', 'bk-filter-status'].forEach(id => {
+    const el = $(id);
+    if (el) el.value = '';
+  });
+  const search = $('bk-search-input');
+  if (search) search.value = '';
+  loadBookingList();
+}
+
+function cycleBookingSort() {
+  const idx = BK_SORT_MODES.findIndex(m => m[0] === _bkSort);
+  const next = BK_SORT_MODES[(idx + 1) % BK_SORT_MODES.length];
+  _bkSort = next[0];
+  const label = $('bk-sort-label');
+  if (label) label.textContent = next[1];
+  renderBookingList();
+}
+
+/* ── Per-row action popover ────────────────────────────────────────── */
+function openBookingRowMenu(ev, id) {
+  ev.stopPropagation();
+  const menu = $('bk-row-menu');
+  const b = _bkRows.find(x => String(x.id) === String(id));
+  if (!menu || !b) return;
+  menu.innerHTML = `
+    <button type="button" onclick="bkCopyReference('${String(id)}')">Copy booking reference</button>
+    <button type="button" onclick="bkShowTicketToken('${String(id)}')">Show ticket token</button>
+    <button type="button" onclick="bkOpenInManifest('${String(id)}')">Open in ticket manifest</button>`;
+  menu.style.display = 'block';
+  const rect = ev.currentTarget.getBoundingClientRect();
+  const w = menu.offsetWidth || 200;
+  const h = menu.offsetHeight || 120;
+  const left = Math.min(rect.right - w, window.innerWidth - w - 12);
+  const top = (rect.bottom + h + 12 > window.innerHeight) ? rect.top - h - 6 : rect.bottom + 6;
+  menu.style.left = `${Math.max(12, left)}px`;
+  menu.style.top = `${Math.max(12, top)}px`;
+}
+
+function closeBookingRowMenu() {
+  const menu = $('bk-row-menu');
+  if (menu) menu.style.display = 'none';
+}
+
+document.addEventListener('click', closeBookingRowMenu);
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeBookingRowMenu();
+});
+
+function bkCopyReference(id) {
+  closeBookingRowMenu();
+  const b = _bkRows.find(x => String(x.id) === String(id));
+  if (!b) return;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(b.booking_reference).catch(() => {});
+  } else {
+    window.prompt('Copy booking reference', b.booking_reference);
+  }
+}
+
+function bkShowTicketToken(id) {
+  closeBookingRowMenu();
+  const b = _bkRows.find(x => String(x.id) === String(id));
+  if (b) window.prompt(`Ticket token for ${b.booking_reference}`, b.ticket_token || '(none)');
+}
+
+function bkOpenInManifest(id) {
+  closeBookingRowMenu();
+  const b = _bkRows.find(x => String(x.id) === String(id));
+  if (!b) return;
+  switchSubSection('bookings', 'tickets');
+  const train = $('ticket-filter-train');
+  const date = $('ticket-filter-date');
+  const status = $('ticket-filter-status');
+  if (train) train.value = b.train_id || '';
+  if (date) date.value = b.travel_date || '';
+  if (status) status.value = '';
+  searchTicketManifest();
+}
+
+/* ── CSV export ────────────────────────────────────────────────────── */
+function _bkCsvCell(value) {
+  const s = String(value == null ? '' : value);
+  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+function exportBookingListCsv(selectedOnly) {
+  const rows = selectedOnly
+    ? bkVisibleRows().filter(b => _bkSelection.has(String(b.id)))
+    : bkVisibleRows();
+  if (!rows.length) {
+    alert(selectedOnly ? 'Select at least one booking to export.' : 'There are no bookings to export.');
+    return;
+  }
+  const lines = [[
+    'Reference', 'Passengers', 'Train', 'Route', 'Travel Date', 'Departure',
+    'Class', 'Pax', 'Fare (LKR)', 'Booking Status', 'Payment Status',
+  ].join(',')];
+  rows.forEach(b => {
+    lines.push([
+      b.booking_reference,
+      (b.passengers || []).map(p => p.full_name).join(' | '),
+      `${b.train_id || ''} ${b.train_name || ''}`.trim(),
+      b.route || [b.from_station, b.to_station].filter(Boolean).join(' -> '),
+      b.travel_date,
+      b.departure_time,
+      b.seat_class,
+      b.passenger_count || 1,
+      b.fare,
+      b.status,
+      b.payment_status,
+    ].map(_bkCsvCell).join(','));
+  });
+  const blob = new Blob([lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `railsense-bookings-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+// =========================================================================
 // Admin Booking Intelligence Assistant Controller
 // =========================================================================
 
+const CP_BOT_SVG = `<svg class="rs-bot" viewBox="0 0 64 64" aria-hidden="true"><g class="rs-bot-antenna"><path class="rs-bot-antenna-line" d="M32 14V7"/><circle class="rs-bot-light" cx="32" cy="5" r="3.5"/></g><g class="rs-bot-body"><rect class="rs-bot-body-panel" x="21" y="44" width="22" height="13" rx="6.5"/><rect class="rs-bot-head" x="12" y="16" width="40" height="31" rx="11"/><rect class="rs-bot-face" x="17" y="22" width="30" height="18" rx="7"/><g class="rs-bot-eyes"><circle class="rs-bot-eye" cx="25" cy="31" r="3.2"/><circle class="rs-bot-eye" cx="39" cy="31" r="3.2"/></g><path d="M27 39h10" stroke="rgba(255,255,255,.65)" stroke-width="1.6" stroke-linecap="round"/></g></svg>`;
+
 let _adminChatHistory = [];
-let _adminChatCollapsed = false;
+let cpNoticeTimer = null;
+
+function m4ScheduleFabNotice() {
+  clearTimeout(cpNoticeTimer);
+  cpNoticeTimer = setTimeout(() => {
+    const panel = $('admin-booking-chat-panel');
+    const fab = $('admin-chat-launcher');
+    if (fab && (!panel || !panel.classList.contains('open'))) {
+      fab.classList.add('m4-has-notice');
+    }
+  }, 8500);
+}
+m4ScheduleFabNotice();
 
 function toggleAdminChat() {
   const panel = $('admin-booking-chat-panel');
   const launcher = $('admin-chat-launcher');
   if (!panel || !launcher) return;
-  const open = panel.classList.toggle('is-open');
+  const open = panel.classList.toggle('open');
+  panel.classList.toggle('is-open', open);
   panel.setAttribute('aria-hidden', String(!open));
+  launcher.classList.toggle('open', open);
   launcher.classList.toggle('is-open', open);
-  launcher.style.opacity = open ? '0' : '1';
-  launcher.style.pointerEvents = open ? 'none' : 'auto';
   launcher.setAttribute('aria-expanded', String(open));
+
+  const fabChat = $('fab-chat');
+  const fabX = $('fab-x');
+  if (fabChat) fabChat.style.display = open ? 'none' : '';
+  if (fabX) fabX.style.display = open ? '' : 'none';
+
   if (open) {
+    clearTimeout(cpNoticeTimer);
+    launcher.classList.remove('m4-has-notice');
     const input = $('admin-chat-input');
-    if (input) input.focus();
+    if (input) setTimeout(() => input.focus(), 200);
+  } else {
+    m4ScheduleFabNotice();
   }
 }
 
@@ -4491,59 +5375,48 @@ function closeAdminChat() {
   const panel = $('admin-booking-chat-panel');
   const launcher = $('admin-chat-launcher');
   if (!panel || !launcher) return;
-  panel.classList.remove('is-open', 'is-minimized');
+  panel.classList.remove('open', 'is-open');
   panel.setAttribute('aria-hidden', 'true');
-  launcher.classList.remove('is-open');
-  launcher.style.opacity = '1';
-  launcher.style.pointerEvents = 'auto';
+  launcher.classList.remove('open', 'is-open');
   launcher.setAttribute('aria-expanded', 'false');
-  _adminChatCollapsed = false;
+  const fabChat = $('fab-chat');
+  const fabX = $('fab-x');
+  if (fabChat) fabChat.style.display = '';
+  if (fabX) fabX.style.display = 'none';
+  m4ScheduleFabNotice();
+}
+
+function toggleAdminChatCollapse() {
+  // Alias for compatibility
+  toggleAdminChat();
 }
 
 function resizeAdminChatInput() {
   const input = $('admin-chat-input');
-  if (!input) return;
-  input.style.height = 'auto';
-  input.style.height = `${Math.max(24, Math.min(input.scrollHeight, 110))}px`;
-}
-
-function setAdminQuickActionsVisible(visible) {
-  const actions = document.getElementById('cx-quick');
-  if (!actions) return;
-  actions.classList.toggle('is-hidden', !visible);
-}
-
-function updateAdminQuickActionsForInput() {
-  const input = $('admin-chat-input');
-  if (!input) return;
-  setAdminQuickActionsVisible(!input.value.trim() && _adminChatHistory.length === 0);
-}
-
-function toggleAdminChatCollapse() {
-  _adminChatCollapsed = !_adminChatCollapsed;
-  const panel = $('admin-booking-chat-panel');
-  const btn = $('btn-toggle-chat');
-  if (panel) panel.classList.toggle('is-minimized', _adminChatCollapsed);
-  if (btn) {
-    btn.setAttribute('aria-label', _adminChatCollapsed ? 'Expand assistant' : 'Minimize assistant');
-    btn.title = _adminChatCollapsed ? 'Expand assistant' : 'Minimize assistant';
-    btn.innerHTML = _adminChatCollapsed ? '<span class="sr-only">Expand assistant</span>' : '<span class="sr-only">Minimize assistant</span>';
+  if (input) {
+    input.style.height = 'auto';
+    input.style.height = Math.min(input.scrollHeight, 80) + 'px';
   }
 }
+function _cxUpdateCounter() {}
 
 function clearAdminChat() {
   _adminChatHistory = [];
-  setAdminQuickActionsVisible(true);
   const input = $('admin-chat-input');
-  if (input) { input.value = ''; resizeAdminChatInput(); }
+  if (input) { input.value = ''; input.style.height = 'auto'; }
   const log = $('admin-chat-log');
   if (log) {
     log.innerHTML = `
-      <div class="cx-welcome" id="cx-welcome">
-        <div class="cx-welcome-glow"><div class="cx-welcome-orbit"><div class="cx-welcome-ring"></div><div class="cx-welcome-icon">✦</div></div></div>
-        <h3>How can I help you today?</h3>
-        <p>Ask about bookings, schedules, seats, cancellations, fraud reviews or passenger manifests — grounded in live operational data.</p>
-        <div class="cx-welcome-try"><span>Try</span><button type="button" onclick="sendSuggestedQuestion('Show today’s booking count')">"Show today's booking count"</button></div>
+      <div class="cp-welcome" id="cp-welcome">
+        <svg class="cp-wlogo" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 200 200"><g clip-path="url(#cpw_c)"><mask id="cpw_m" style="mask-type:alpha" width="200" height="200" x="0" y="0" maskUnits="userSpaceOnUse"><path fill="#fff" fill-rule="evenodd" d="M100 150c27.614 0 50-22.386 50-50s-22.386-50-50-50-50 22.386-50 50 22.386 50 50 50zm0 50c55.228 0 100-44.772 100-100S155.228 0 100 0 0 44.772 0 100s44.772 100 100 100z" clip-rule="evenodd"/></mask><g mask="url(#cpw_m)"><path fill="#fff" d="M200 0H0v200h200V0z"/><path fill="#2563eb" fill-opacity=".28" d="M200 0H0v200h200V0z"/><g filter="url(#cpw_b)" class="animate-gradient"><path fill="#2563eb" d="M110 32H18v68h92V32z"/><path fill="#1d4ed8" d="M188-24H15v98h173v-98z"/><path fill="#3b82f6" d="M175 70H5v156h170V70z"/><path fill="#60a5fa" d="M230 51H100v103h130V51z"/></g></g></g><defs><filter id="cpw_b" width="385" height="410" x="-75" y="-104" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="b"/><feBlend in="SourceGraphic" in2="b" result="s"/><feGaussianBlur result="e" stdDeviation="40"/></filter><clipPath id="cpw_c"><path fill="#fff" d="M0 0H200V200H0z"/></clipPath></defs></svg>
+        <h3>How can I help you?</h3>
+        <p>Ask about bookings, schedules, seats, cancellations, fraud reviews or passenger manifests.</p>
+        <div class="cp-chips">
+          <button class="cp-chip" type="button" onclick="sendSuggestedQuestion('Show today\\'s booking count')">Today's Bookings</button>
+          <button class="cp-chip" type="button" onclick="sendSuggestedQuestion('Check today\\'s seat availability')">Seat Availability</button>
+          <button class="cp-chip" type="button" onclick="sendSuggestedQuestion('Show pending fraud reviews')">Fraud Reviews</button>
+          <button class="cp-chip" type="button" onclick="sendSuggestedQuestion('Show pending cancellations')">Cancellations</button>
+        </div>
       </div>
     `;
   }
@@ -4552,20 +5425,9 @@ function clearAdminChat() {
 function sendSuggestedQuestion(text) {
   const input = $('admin-chat-input');
   if (input) {
-    // Strip leading icon if present for cleaner search
     input.value = text.replace(/^[^\w\s]+\s*/, '');
-    setAdminQuickActionsVisible(false);
-    handleAdminChatSubmit(new Event('submit'));
+    handleAdminChatSubmit();
   }
-}
-
-const _adminChatInputEl = $('admin-chat-input');
-if (_adminChatInputEl) {
-  _adminChatInputEl.addEventListener('input', function () {
-    resizeAdminChatInput();
-    updateAdminQuickActionsForInput();
-    _cxUpdateCounter();
-  });
 }
 
 function _cxNow() {
@@ -4575,41 +5437,41 @@ function _cxNow() {
 
 function _cxBuildBotError(title, subtitle) {
   const el = document.createElement('div');
-  el.className = 'cx-msg bot cx-error';
+  el.className = 'cp-msg bot';
   el.innerHTML = `
-    <div class="cx-msg-avatar">⚠️</div>
-    <div class="cx-msg-col">
-      <div class="cx-bubble"><span style="color:#F87171;font-weight:600;">${escapeHtml(title)}</span>${subtitle ? `<div style="margin-top:3px;font-size:11px;opacity:.75;">${escapeHtml(subtitle)}</div>` : ''}</div>
-      <span class="cx-meta">${_cxNow()}</span>
+    <div class="cp-av b">${CP_BOT_SVG}</div>
+    <div class="cp-bubble" style="border-color:#ef4444;background:rgba(239,68,68,0.08);">
+      <strong style="color:#ef4444;">${escapeHtml(title)}</strong>
+      ${subtitle ? `<p style="margin-top:4px;font-size:0.75rem;margin-bottom:0;">${escapeHtml(subtitle)}</p>` : ''}
     </div>`;
   return el;
 }
 
 function _cxBuildBotMessage(data) {
   const el = document.createElement('div');
-  el.className = 'cx-msg bot';
+  el.className = 'cp-msg bot';
 
   const formattedAnswer = escapeHtml(data.answer || '').replace(/\n/g, '<br>');
-  let html = `<div class="cx-msg-avatar">✦</div><div class="cx-msg-col"><div class="cx-bubble"><div>${formattedAnswer}</div>`;
+  let html = `<div class="cp-av b">${CP_BOT_SVG}</div><div class="cp-bubble"><div>${formattedAnswer}</div>`;
 
-  // Optional structured result card
+  // Structured result card if present
   if (data.card && data.card.items && data.card.items.length) {
     const c = data.card;
     html += `
-      <div class="cx-card">
-        <div class="cx-card-head">
-          <span class="cx-card-title">${escapeHtml(c.title || '')}</span>
-          ${c.subtitle ? `<span class="cx-card-sub">${escapeHtml(c.subtitle)}</span>` : ''}
+      <div class="cp-card">
+        <div class="cp-card-head">
+          <span class="cp-card-title">${escapeHtml(c.title || '')}</span>
+          ${c.subtitle ? `<span class="cp-card-sub">${escapeHtml(c.subtitle)}</span>` : ''}
         </div>
-        <div class="cx-card-grid">
+        <div class="cp-card-grid">
           ${c.items.map(it => {
             const isStr = typeof it === 'string';
             const label = isStr ? it.split(':')[0].trim() : (it.label || it.ref || it.case_reference || '');
             const val = isStr ? (it.includes(':') ? it.split(':').slice(1).join(':').trim() : '') : (it.available ?? it.value ?? it.score ?? it.refund ?? '');
             return `
-            <div class="cx-card-item">
-              <div class="cx-card-item-label">${escapeHtml(label)}</div>
-              <div class="cx-card-item-value">${escapeHtml(String(val))}</div>
+            <div class="cp-card-item">
+              <div class="cp-card-item-label">${escapeHtml(label)}</div>
+              <div class="cp-card-item-value">${escapeHtml(String(val))}</div>
             </div>`;
           }).join('')}
         </div>
@@ -4619,11 +5481,11 @@ function _cxBuildBotMessage(data) {
   // Evidence sources
   if ((data.sources && data.sources.length) || data.data_source) {
     html += `
-      <div class="cx-sources">
-        <span class="cx-sources-label">Sources</span>
-        ${data.data_source ? `<span class="cx-source-tag" title="Database used for this answer">🗄️ ${data.data_source === 'supabase' ? 'Supabase' : data.data_source === 'sqlite_test' ? 'SQLite test database' : 'M3 database'}</span>` : ''}
+      <div class="cp-sources">
+        <span class="cp-sources-label">Sources</span>
+        ${data.data_source ? `<span class="cp-source-tag" title="Database used for this answer">🗄️ ${data.data_source === 'supabase' ? 'Supabase' : data.data_source === 'sqlite_test' ? 'SQLite test database' : 'M3 database'}</span>` : ''}
         ${(data.sources || []).map(s => `
-          <span class="cx-source-tag" title="Type: ${escapeHtml(s.type)}">
+          <span class="cp-source-tag" title="Type: ${escapeHtml(s.type)}">
             ${s.type === 'schedule' ? '📋' : s.type === 'seat_inventory' ? '🪑' : s.type === 'policy' ? '📜' : s.type === 'fraud_review' ? '🛡️' : s.type === 'cancellation' ? '🔄' : '🎫'}
             ${escapeHtml(s.label || s.id)}
           </span>
@@ -4631,15 +5493,9 @@ function _cxBuildBotMessage(data) {
       </div>`;
   }
 
-  html += `</div><span class="cx-meta">${_cxNow()}</span></div>`;
+  html += `<span class="cp-time">${_cxNow()}</span></div>`;
   el.innerHTML = html;
   return el;
-}
-
-function _cxUpdateCounter() {
-  const input = $('admin-chat-input');
-  const counter = $('cx-char-counter');
-  if (input && counter) counter.textContent = `${input.value.length}/500`;
 }
 
 async function handleAdminChatSubmit(e) {
@@ -4652,37 +5508,28 @@ async function handleAdminChatSubmit(e) {
   const msg = input.value.trim();
   if (!msg) return;
 
-  // Once the admin starts a real conversation, give the chat full space.
-  setAdminQuickActionsVisible(false);
-
-  // Remove the welcome panel once a conversation starts.
-  const welcome = document.getElementById('cx-welcome');
+  // Remove welcome card if present
+  const welcome = document.getElementById('cp-welcome');
   if (welcome) welcome.remove();
 
-  // Append Admin Message (avatar + bubble + timestamp)
-  const adminMsg = document.createElement('div');
-  adminMsg.className = 'cx-msg user';
-  adminMsg.innerHTML = `
-    <div class="cx-msg-avatar">🧑‍💼</div>
-    <div class="cx-msg-col">
-      <div class="cx-bubble"></div>
-      <span class="cx-meta">${_cxNow()}</span>
-    </div>`;
-  adminMsg.querySelector('.cx-bubble').textContent = msg;
-  log.appendChild(adminMsg);
+  // Append User Message
+  const userMsg = document.createElement('div');
+  userMsg.className = 'cp-msg user';
+  userMsg.innerHTML = `
+    <div class="cp-av u">🧑‍💼</div>
+    <div class="cp-bubble"></div>`;
+  userMsg.querySelector('.cp-bubble').textContent = msg;
+  log.appendChild(userMsg);
   input.value = '';
-  resizeAdminChatInput();
-  _cxUpdateCounter();
+  input.style.height = 'auto';
 
-  // Append animated typing indicator
+  // Append animated typing indicator with robot avatar
   const loadingBubble = document.createElement('div');
-  loadingBubble.className = 'cx-msg bot';
+  loadingBubble.className = 'cp-msg bot';
   loadingBubble.id = 'admin-chat-loading-indicator';
   loadingBubble.innerHTML = `
-    <div class="cx-msg-avatar">✦</div>
-    <div class="cx-msg-col">
-      <div class="cx-bubble"><span class="cx-typing"><b></b><b></b><b></b></span></div>
-    </div>`;
+    <div class="cp-av b">${CP_BOT_SVG}</div>
+    <div class="cp-bubble"><div class="cp-typing"><span></span><span></span><span></span></div></div>`;
   log.appendChild(loadingBubble);
   log.scrollTop = log.scrollHeight;
 
@@ -4715,7 +5562,7 @@ async function handleAdminChatSubmit(e) {
       _adminChatHistory.push({ role: 'user', content: msg });
       _adminChatHistory.push({ role: 'assistant', content: data.answer || '' });
 
-      // Build Assistant Message (avatar + bubble + card + sources + timestamp)
+      // Build Assistant Message
       log.appendChild(_cxBuildBotMessage(data));
     }
   } catch (err) {

@@ -1616,12 +1616,21 @@ async def list_admin_bookings_proxy(
     train_id: str | None = None,
     travel_date: str | None = None,
     booking_status: str | None = None,
+    limit: int | None = None,
 ) -> JSONResponse:
     """
     Proxy to booking-agent /admin/bookings — returns ticket manifest filtered
     by train_id (string) and travel_date (YYYY-MM-DD journey date).
     Falls back to direct DB query if booking-agent is offline.
+
+    With neither train_id nor travel_date the upstream agent rejects the call
+    (it requires one of them), so the request is served by the local read path
+    below as a "most recent journeys" listing capped by ``limit``. That keeps
+    the admin Booking List page able to render the full manifest.
     """
+    unfiltered = not (train_id or travel_date)
+    max_rows = max(1, min(limit or 250, 1000)) if unfiltered else None
+
     params: dict[str, str] = {}
     if train_id:
         params["train_id"] = train_id
@@ -1630,23 +1639,26 @@ async def list_admin_bookings_proxy(
     if booking_status:
         params["booking_status"] = booking_status
 
-    try:
-        async with httpx.AsyncClient(timeout=15.0) as client:
-            resp = await client.get(
-                f"{BOOKING_AGENT_URL}/admin/bookings",
-                params=params,
-            )
-            if resp.status_code in (200, 400, 404):
-                return JSONResponse(status_code=resp.status_code, content=resp.json())
-    except Exception:
-        pass
+    if not unfiltered:
+        try:
+            async with httpx.AsyncClient(timeout=15.0) as client:
+                resp = await client.get(
+                    f"{BOOKING_AGENT_URL}/admin/bookings",
+                    params=params,
+                )
+                if resp.status_code in (200, 400, 404):
+                    return JSONResponse(status_code=resp.status_code, content=resp.json())
+        except Exception:
+            pass
 
     # Direct DB fallback
     try:
         from datetime import date as _date
         sys.path.insert(0, str(_M3_ROOT / "booking-agent"))
+        from sqlalchemy.orm import joinedload, selectinload
+
         from database.database import SessionLocal
-        from database.models import Booking, Train, TrainSchedule
+        from database.models import Booking, BookingPassenger, Train, TrainSchedule
 
         parsed_date = None
         if travel_date:
@@ -1658,17 +1670,25 @@ async def list_admin_bookings_proxy(
                     content={"error": "Invalid travel_date format. Expected YYYY-MM-DD."},
                 )
 
-        if not train_id and not parsed_date:
-            return JSONResponse(
-                status_code=400,
-                content={"error": "At least one filter (train_id or travel_date) is required."},
-            )
-
+        # Unlike the upstream booking agent a bare request is allowed here: the
+        # admin Booking List renders the whole manifest, bounded by the `limit`
+        # query parameter (default 250 rows).
         with SessionLocal() as db:
+            # Eager-load everything the manifest serializer touches — without
+            # this each row costs several extra round-trips to the database,
+            # which makes an unfiltered listing take tens of seconds.
             query = (
                 db.query(Booking)
                 .join(Train, Booking.train_id == Train.id)
                 .join(TrainSchedule, Booking.schedule_id == TrainSchedule.id)
+                .options(
+                    joinedload(Booking.train),
+                    joinedload(Booking.schedule),
+                    joinedload(Booking.cancellation_request),
+                    selectinload(Booking.booking_passengers).selectinload(
+                        BookingPassenger.passenger
+                    ),
+                )
             )
             if train_id:
                 train_row = db.query(Train).filter(Train.train_id == train_id.strip()).first()
@@ -1683,7 +1703,14 @@ async def list_admin_bookings_proxy(
             if booking_status:
                 query = query.filter(Booking.status == booking_status.upper())
 
-            bookings = query.order_by(Booking.travel_date, Booking.created_at).all()
+            if max_rows is not None:
+                query = query.order_by(
+                    Booking.travel_date.desc(), Booking.created_at.desc()
+                ).limit(max_rows)
+            else:
+                query = query.order_by(Booking.travel_date, Booking.created_at)
+
+            bookings = query.all()
             results = []
             for b in bookings:
                 t = b.train
