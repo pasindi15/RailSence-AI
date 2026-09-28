@@ -1,0 +1,323 @@
+.rail-scene {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  z-index: 0;
+  pointer-events: none;
+
+  --speed-far: 70s;
+  --speed-mid: 38s;
+  --speed-track: 9s;
+
+  --rs-sky-top: #050a16;
+  --rs-sky-mid: #0b1730;
+  --rs-sky-horizon: #123049;
+  --rs-far-fill: #0d1c30;
+  --rs-mid-fill: #142943;
+  --rs-sleeper-fill: #1b2c40;
+  --rs-rail-fill: #6b7d94;
+  --rs-pole-fill: #2a3c52;
+  --rs-star-color: #ffffff;
+  --rs-cloud-color: rgba(255, 255, 255, 0.05);
+
+  --rs-train-body: #2563eb;
+  --rs-train-nose: #60a5fa;
+  --rs-train-stripe: #facc15;
+  --rs-train-roof: #1e3a8a;
+  --rs-train-window: #fde68a;
+  --rs-train-band: #1d4ed8;
+  --rs-train-wheel: #0f172a;
+  --rs-train-hubcap: #64748b;
+  --rs-headlight-core: #fff7cc;
+  --rs-signal-color: #ef4444;
+}
+
+.rail-scene--boost {
+  --rs-signal-color: #22c55e;
+}
+
+:root[data-theme='light'] .rail-scene {
+  --rs-sky-top: #bfe3ff;
+  --rs-sky-mid: #d9f0ff;
+  --rs-sky-horizon: #fde8c8;
+  --rs-far-fill: #a9c9e6;
+  --rs-mid-fill: #8fb9d6;
+  --rs-sleeper-fill: #6b7c8f;
+  --rs-rail-fill: #4b5d70;
+  --rs-pole-fill: #56687a;
+  --rs-star-color: transparent;
+  --rs-cloud-color: rgba(255, 255, 255, 0.65);
+
+  --rs-train-window: #fff3c4;
+}
+
+.rs-sky {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    var(--rs-sky-top) 0%,
+    var(--rs-sky-mid) 55%,
+    var(--rs-sky-horizon) 100%
+  );
+}
+
+.rs-sun-glow {
+  position: absolute;
+  left: 50%;
+  bottom: 28%;
+  width: 480px;
+  height: 480px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(125, 240, 255, 0.18) 0%, transparent 70%);
+}
+
+:root[data-theme='light'] .rs-sun-glow {
+  background: radial-gradient(circle, rgba(255, 214, 130, 0.55) 0%, transparent 70%);
+}
+
+.rs-stars {
+  position: absolute;
+  inset: 0;
+}
+
+.rs-star {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--rs-star-color);
+  animation: rs-twinkle 3s ease-in-out infinite;
+}
+
+@keyframes rs-twinkle {
+  0%, 100% { opacity: 0.15; }
+  50% { opacity: 0.95; }
+}
+
+.rs-cloud {
+  position: absolute;
+  border-radius: 999px;
+  background: var(--rs-cloud-color);
+  filter: blur(6px);
+  animation: rs-drift 60s linear infinite;
+}
+
+.rs-cloud-1 { width: 180px; height: 40px; top: 12%; left: -10%; animation-duration: 75s; }
+.rs-cloud-2 { width: 130px; height: 30px; top: 22%; left: -30%; animation-duration: 95s; animation-delay: -20s; }
+.rs-cloud-3 { width: 220px; height: 46px; top: 8%; left: -50%; animation-duration: 120s; animation-delay: -40s; }
+
+@keyframes rs-drift {
+  from { transform: translateX(0); }
+  to { transform: translateX(140vw); }
+}
+
+.rs-layer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  overflow: hidden;
+}
+
+.rs-far { bottom: 30%; height: 22%; opacity: 0.9; }
+.rs-mid { bottom: 20%; height: 26%; opacity: 0.95; }
+.rs-track-layer { bottom: 0; height: 9%; }
+
+.rs-scroll-track {
+  display: flex;
+  height: 100%;
+  width: 200%;
+  animation: rs-scroll-x var(--speed-far) linear infinite;
+}
+
+.rs-mid .rs-scroll-track { animation-duration: var(--speed-mid); }
+.rs-scroll-track--fast { width: 300%; animation-duration: var(--speed-track); }
+
+.rs-scroll-track > * {
+  width: 50%;
+  height: 100%;
+  flex-shrink: 0;
+  display: block;
+}
+
+.rs-scroll-track--fast > * {
+  width: calc(100% / 3);
+}
+
+@keyframes rs-scroll-x {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.rs-scroll-track--fast {
+  animation-name: rs-scroll-x-third;
+}
+
+@keyframes rs-scroll-x-third {
+  from { transform: translateX(0); }
+  to { transform: translateX(-33.333%); }
+}
+
+.rs-skyline-svg,
+.rs-track-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.rs-train {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 8%;
+  width: 100%;
+  animation: rs-train-bob 0.42s ease-in-out infinite;
+}
+
+.rail-scene--boost .rs-train {
+  animation-duration: 0.22s;
+}
+
+@keyframes rs-train-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-1.5px); }
+}
+
+.rs-train-fx {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 18%;
+  height: 100%;
+}
+
+.rs-train-svg { width: 100%; height: auto; display: block; }
+
+.rs-window {
+  animation: rs-window-glow 2.6s ease-in-out infinite;
+}
+
+@keyframes rs-window-glow {
+  0%, 100% { opacity: 0.75; }
+  50% { opacity: 1; }
+}
+
+.rs-wheel {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: rs-wheel-spin 0.6s linear infinite;
+}
+
+.rail-scene--boost .rs-wheel { animation-duration: 0.25s; }
+
+@keyframes rs-wheel-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.rs-signal-lamp {
+  fill: var(--rs-signal-color);
+  filter: drop-shadow(0 0 5px var(--rs-signal-color));
+  transition: fill 0.3s ease;
+  animation: rs-signal-glow 1.6s ease-in-out infinite;
+}
+
+@keyframes rs-signal-glow {
+  0%, 100% { opacity: 0.75; }
+  50% { opacity: 1; }
+}
+
+.rs-headlight-beam {
+  position: absolute;
+  right: -6%;
+  top: 42%;
+  width: 22%;
+  height: 30%;
+  background: radial-gradient(ellipse at left center, rgba(255, 247, 204, 0.5) 0%, transparent 70%);
+  animation: rs-headlight-pulse 2.2s ease-in-out infinite;
+}
+
+@keyframes rs-headlight-pulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 0.9; }
+}
+
+.rs-speedlines {
+  position: absolute;
+  right: 100%;
+  top: 30%;
+  width: 90px;
+  height: 40%;
+}
+
+.rs-speedlines span {
+  position: absolute;
+  right: 0;
+  height: 2px;
+  width: 40px;
+  background: linear-gradient(to left, rgba(255, 255, 255, 0.5), transparent);
+  animation: rs-speedline 0.5s linear infinite;
+  opacity: 0;
+}
+
+.rs-speedlines span:nth-child(1) { top: 10%; animation-delay: 0s; }
+.rs-speedlines span:nth-child(2) { top: 40%; animation-delay: 0.12s; }
+.rs-speedlines span:nth-child(3) { top: 65%; animation-delay: 0.24s; }
+.rs-speedlines span:nth-child(4) { top: 90%; animation-delay: 0.36s; }
+
+@keyframes rs-speedline {
+  0% { opacity: 0; transform: translateX(0) scaleX(1); }
+  30% { opacity: 0.8; }
+  100% { opacity: 0; transform: translateX(-40px) scaleX(1.6); }
+}
+
+.rail-scene--boost .rs-speedlines span {
+  animation-duration: 0.22s;
+  width: 70px;
+}
+
+.rs-steam {
+  position: absolute;
+  right: 78%;
+  top: -6%;
+  width: 10px;
+  height: 10px;
+}
+
+.rs-steam span {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.35);
+  animation: rs-steam-puff 3.2s ease-out infinite;
+  opacity: 0;
+}
+
+.rs-steam span:nth-child(2) { animation-delay: 1.05s; }
+.rs-steam span:nth-child(3) { animation-delay: 2.1s; }
+
+@keyframes rs-steam-puff {
+  0% { opacity: 0; transform: translate(0, 0) scale(0.6); }
+  20% { opacity: 0.5; }
+  100% { opacity: 0; transform: translate(-30px, -36px) scale(1.8); }
+}
+
+@media (max-width: 768px) {
+  .rs-far,
+  .rs-mid {
+    display: none;
+  }
+
+  .rs-track-layer { height: 7%; }
+  .rs-train { bottom: 6%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rail-scene * {
+    animation: none !important;
+  }
+
+  .rs-scroll-track {
+    transform: translateX(0) !important;
+  }
+}
