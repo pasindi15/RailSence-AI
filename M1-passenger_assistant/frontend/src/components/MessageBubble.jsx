@@ -68,7 +68,7 @@ export default function MessageBubble({
       );
     }
 
-    const targetUrl = action?.url || `http://localhost:3000/user/booking${query}`;
+    const targetUrl = action?.url || `/user/booking${query}`;
     if (window.parent === window) {
       window.open(targetUrl, "_blank", "noopener,noreferrer");
     }

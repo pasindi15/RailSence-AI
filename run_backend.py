@@ -106,6 +106,21 @@ SERVICES = [
     },
 ]
 
+# Ports come from railsense_ports.json (same registry as start.py), so this runner,
+# start.py and every agent agree. Kept for the startup tests; prefer `python start.py`.
+sys.path.insert(0, str(ROOT_DIR))
+from shared import ports as _ports  # noqa: E402
+
+_PORTS = _ports.defaults()
+_KEY = {"m3_hub": "hub", "security_agent": "security", "m3_booking": "booking",
+        "m2_operations": "m2", "m4_maintenance": "m4", "m1_passenger": "m1"}
+for _svc in SERVICES:
+    _p = _PORTS["internal"][_KEY[_svc["id"]]]
+    _svc["port"] = _p
+    _svc["cmd"] = [sys.executable, "-m", "uvicorn", "main:app", "--host", "127.0.0.1", "--port", str(_p)]
+    _svc["health_url"] = f"http://127.0.0.1:{_p}/health"
+SERVICE_ENV = {**os.environ, **_ports.service_env(_PORTS)}
+
 processes: list[tuple[dict[str, Any], subprocess.Popen]] = []
 running = True
 
@@ -199,12 +214,12 @@ def check_liveness():
     print(f"\n{GREEN}{BOLD}===================================================================={RESET}")
     print(f"{GREEN}{BOLD} RailSense AI Multi-Agent Backend is RUNNING ({len(verified)}/{len(SERVICES)} verified){RESET}")
     print(f"{GREEN}{BOLD}===================================================================={RESET}")
-    print(f"  M1 Passenger Assistant: http://127.0.0.1:8001/health")
-    print(f"  M3 Communication Hub:   http://127.0.0.1:8002/health")
-    print(f"  M3 Booking Agent:       http://127.0.0.1:8003/health")
-    print(f"  Security & Fraud Agent: http://127.0.0.1:8004/health")
-    print(f"  M2 Operations Agent:    http://127.0.0.1:8005/health")
-    print(f"  M4 Maintenance Agent:   http://127.0.0.1:8006/health")
+    print(f"  M1 Passenger Assistant: http://127.0.0.1:{_PORTS['internal']['m1']}/health")
+    print(f"  M3 Communication Hub:   http://127.0.0.1:{_PORTS['internal']['hub']}/health")
+    print(f"  M3 Booking Agent:       http://127.0.0.1:{_PORTS['internal']['booking']}/health")
+    print(f"  Security & Fraud Agent: http://127.0.0.1:{_PORTS['internal']['security']}/health")
+    print(f"  M2 Operations Agent:    http://127.0.0.1:{_PORTS['internal']['m2']}/health")
+    print(f"  M4 Maintenance Agent:   http://127.0.0.1:{_PORTS['internal']['m4']}/health")
     print(f"{GRAY}Press Ctrl+C to terminate all backend services.{RESET}\n")
 
 
@@ -224,6 +239,7 @@ def main():
         proc = subprocess.Popen(
             svc["cmd"],
             cwd=str(svc["cwd"]),
+            env={**SERVICE_ENV, "PORT": str(svc["port"]), "APP_PORT": str(svc["port"])},
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,

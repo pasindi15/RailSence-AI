@@ -7,8 +7,8 @@
     "role": "admin",
     "status": "active",
     "created_at": "2026-09-28T07:54:45.6218+00:00",
-    "updated_at": "2026-09-28T07:54:45.6218+00:00",
-    "last_login_at": null,
+    "updated_at": "2026-09-28T10:57:39.360339+00:00",
+    "last_login_at": "2026-09-28T10:57:39.360296+00:00",
     "created_by": "admin1@gmail.com"
   },
   {
@@ -31,8 +31,8 @@
     "role": "admin",
     "status": "active",
     "created_at": "2026-09-21T19:31:10.754231+00:00",
-    "updated_at": "2026-09-28T07:52:57.350854+00:00",
-    "last_login_at": "2026-09-28T07:52:57.350797+00:00",
+    "updated_at": "2026-09-28T09:21:16.353074+00:00",
+    "last_login_at": "2026-09-28T09:21:16.353043+00:00",
     "created_by": "operations@gmail.com"
   },
   {

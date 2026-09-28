@@ -122,11 +122,6 @@
 {"ts": "2026-09-21T18:06:29.253550+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "4085", "sender": "passenger-agent"}
 {"ts": "2026-09-21T18:06:38.674158+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "4085", "sender": "passenger-agent"}
 {"ts": "2026-09-23T06:30:07.528634+00:00", "action": "engineer_login_success", "agent": "maintenance-agent", "client": "127.0.0.1", "engineer_id": "ENG-001", "username": "admin"}
-<<<<<<< HEAD
-{"ts": "2026-09-24T10:27:27.726811+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "T-002", "sender": "passenger-agent"}
-{"ts": "2026-09-24T10:27:32.183172+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "T-002", "sender": "passenger-agent"}
-{"ts": "2026-09-24T10:28:41.753358+00:00", "action": "hub_issue_report", "agent": "maintenance-agent", "client": "127.0.0.1", "ticket_id": "MT-DF65DA", "sender": "passenger-agent", "description": "The AC is broken in my compartment"}
-=======
 {"ts": "2026-09-27T10:37:06.774563+00:00", "action": "engineer_chat", "agent": "maintenance-agent", "client": "127.0.0.1", "detected_asset_type": "", "answer_method": "llm_grounded", "retrieval_method": "none"}
 {"ts": "2026-09-27T10:37:22.681657+00:00", "action": "engineer_chat", "agent": "maintenance-agent", "client": "127.0.0.1", "detected_asset_type": "", "answer_method": "template_grounded", "retrieval_method": "local_tfidf"}
 {"ts": "2026-09-27T10:37:47.935877+00:00", "action": "engineer_chat", "agent": "maintenance-agent", "client": "127.0.0.1", "detected_asset_type": "", "answer_method": "template_grounded", "retrieval_method": "local_tfidf"}
@@ -139,4 +134,18 @@
 {"ts": "2026-09-27T18:23:02.375331+00:00", "action": "engineer_login_success", "agent": "maintenance-agent", "client": "127.0.0.1", "engineer_id": "ENG-001", "username": "admin"}
 {"ts": "2026-09-27T18:50:17.543535+00:00", "action": "engineer_chat", "agent": "maintenance-agent", "client": "127.0.0.1", "detected_asset_type": "", "answer_method": "llm_grounded", "retrieval_method": "local_tfidf"}
 {"ts": "2026-09-27T18:56:03.437109+00:00", "action": "engineer_chat", "agent": "maintenance-agent", "client": "127.0.0.1", "detected_asset_type": "diesel_engine", "answer_method": "llm_grounded", "retrieval_method": "local_tfidf"}
->>>>>>> origin/Dev-3
+{"ts": "2026-09-28T10:13:18.278214+00:00", "action": "engineer_chat", "agent": "maintenance-agent", "client": "127.0.0.1", "detected_asset_type": "", "answer_method": "registry", "retrieval_method": "registry"}
+{"ts": "2026-09-28T10:13:21.255643+00:00", "action": "engineer_chat", "agent": "maintenance-agent", "client": "127.0.0.1", "detected_asset_type": "", "answer_method": "llm_grounded", "retrieval_method": "local_tfidf"}
+{"ts": "2026-09-28T10:20:20.105674+00:00", "action": "engineer_chat", "agent": "maintenance-agent", "client": "127.0.0.1", "detected_asset_type": "", "answer_method": "registry", "retrieval_method": "registry"}
+{"ts": "2026-09-28T10:24:39.919347+00:00", "action": "engineer_chat", "agent": "maintenance-agent", "client": "127.0.0.1", "detected_asset_type": "", "answer_method": "ops_status", "retrieval_method": "local_tfidf"}
+{"ts": "2026-09-28T10:26:06.751573+00:00", "action": "engineer_chat", "agent": "maintenance-agent", "client": "127.0.0.1", "detected_asset_type": "", "answer_method": "ops_status", "retrieval_method": "local_tfidf"}
+{"ts": "2026-09-28T10:27:04.168749+00:00", "action": "engineer_chat", "agent": "maintenance-agent", "client": "127.0.0.1", "detected_asset_type": "", "answer_method": "ops_status", "retrieval_method": "local_tfidf"}
+{"ts": "2026-09-28T10:28:32.736256+00:00", "action": "engineer_chat", "agent": "maintenance-agent", "client": "127.0.0.1", "detected_asset_type": "brake_system", "answer_method": "llm_grounded", "retrieval_method": "local_tfidf"}
+{"ts": "2026-09-28T10:43:15.053790+00:00", "action": "engineer_chat", "agent": "maintenance-agent", "client": "127.0.0.1", "detected_asset_type": "", "answer_method": "llm_grounded", "retrieval_method": "live_ir_rag"}
+{"ts": "2026-09-28T10:43:17.057384+00:00", "action": "engineer_chat", "agent": "maintenance-agent", "client": "127.0.0.1", "detected_asset_type": "", "answer_method": "llm_grounded", "retrieval_method": "live_ir_rag"}
+{"ts": "2026-09-28T10:45:15.526811+00:00", "action": "engineer_chat", "agent": "maintenance-agent", "client": "127.0.0.1", "detected_asset_type": "", "answer_method": "llm_grounded", "retrieval_method": "live_ir_rag"}
+{"ts": "2026-09-28T10:46:53.145986+00:00", "action": "engineer_chat", "agent": "maintenance-agent", "client": "127.0.0.1", "detected_asset_type": "diesel_engine", "answer_method": "llm_grounded", "retrieval_method": "local_tfidf"}
+{"ts": "2026-09-28T10:49:00.804941+00:00", "action": "engineer_chat_predict", "agent": "maintenance-agent", "client": "127.0.0.1", "asset_id": "DE-1001", "answer_method": "prediction_form"}
+{"ts": "2026-09-28T10:49:03.886367+00:00", "action": "asset_health_prediction", "agent": "maintenance-agent", "client": "127.0.0.1", "asset_id": "DE-1001", "asset_type": "diesel_engine", "health_status": "GREEN"}
+{"ts": "2026-09-28T10:50:10.783029+00:00", "action": "engineer_chat", "agent": "maintenance-agent", "client": "127.0.0.1", "detected_asset_type": "", "answer_method": "llm_grounded", "retrieval_method": "live_ir_rag"}
+{"ts": "2026-09-28T10:50:55.929847+00:00", "action": "engineer_chat", "agent": "maintenance-agent", "client": "127.0.0.1", "detected_asset_type": "", "answer_method": "llm_grounded", "retrieval_method": "live_ir_rag"}

@@ -645,9 +645,9 @@ export function RobotHero({
   navItemsLeft = [
     { label: "Overview",    href: "#overview" },
     { label: "Fleet",       href: "#trains" },
-    { label: "Passenger",   href: "http://localhost:5280", target: "_blank" },
-    { label: "Operations",  href: "http://localhost:9005", target: "_blank" },
-    { label: "Maintenance", href: "http://localhost:8006", target: "_blank" },
+    { label: "Passenger",   href: "http://localhost:3000/user", target: "_blank" },
+    { label: "Operations",  href: "http://localhost:3001/admin/operations", target: "_blank" },
+    { label: "Maintenance", href: "http://localhost:3001/admin/maintenance", target: "_blank" },
   ],
   contactText = "GitHub",
   contactHref = "#",

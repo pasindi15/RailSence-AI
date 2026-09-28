@@ -3931,7 +3931,7 @@ function cpBot(data){
   m.appendChild(d);m.scrollTop=m.scrollHeight;
   const isPred=data.answer_method==='health_prediction';const l=data.answer_method==='llm_grounded';
   document.getElementById('cp-mdot').style.background=isPred?'var(--amber)':l?'var(--primary-light)':'var(--green)';
-  document.getElementById('cp-mlbl').textContent=isPred?'ML Prediction · HGBR':`${l?'LLM':'Template'} · ${data.retrieval_method==='supabase_pgvector'?'pgvector':'TF-IDF'}`;
+  document.getElementById('cp-mlbl').textContent=isPred?'ML Prediction · HGBR':`${l?'LLM':'Template'} · ${data.retrieval_method==='live_ir_rag'?'IR + RAG':data.retrieval_method==='supabase_pgvector'?'pgvector':'TF-IDF'}`;
 }
 
 async function cpRunPredict(uid, assetId, assetType){

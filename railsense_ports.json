@@ -1,0 +1,15 @@
+{
+  "_comment": "Single source of truth for RailSense AI ports, used by start.py, run_backend.py, run_frontend.py and the gateway. Browsers only use the two public ports; internal agent ports are chosen automatically at start-up (a busy port is freed if RailSense left it behind, otherwise the next free port is used) and written to .railsense/ports.runtime.json.",
+  "public": {
+    "user": 3000,
+    "admin": 3001
+  },
+  "internal": {
+    "m1": 8001,
+    "hub": 8002,
+    "booking": 8003,
+    "security": 8004,
+    "m2": 8005,
+    "m4": 8006
+  }
+}

@@ -1,33 +1,7 @@
 @echo off
-title RailSense AI Multi-Agent Ecosystem Launcher
-echo Starting RailSense AI Multi-Agent Ecosystem...
-
-start "M1 Passenger Assistant (Port 8001)" cmd /k "cd /d "%~dp0M1-passenger_assistant\backend" && python -m uvicorn main:app --host 127.0.0.1 --port 8001 --reload"
-
-start "M2 Operations Agent (Port 8005)" cmd /k "cd /d "%~dp0M2-operations-agent" && python -m uvicorn main:app --host 127.0.0.1 --port 8005 --reload"
-
-start "M3 Communication Hub (Port 8002)" cmd /k "cd /d "%~dp0M3-Comunication-Hub&Booking-Agent\agent-hub" && python -m uvicorn main:app --host 127.0.0.1 --port 8002 --reload"
-
-start "M3 Booking Agent (Port 8003)" cmd /k "cd /d "%~dp0M3-Comunication-Hub&Booking-Agent\booking-agent" && python -m uvicorn main:app --host 127.0.0.1 --port 8003 --reload"
-
-start "Security Agent (Port 8004)" cmd /k "cd /d "%~dp0security-agent" && python -m uvicorn main:app --host 127.0.0.1 --port 8004 --reload"
-
-start "M4 Maintenance Agent (Port 8006)" cmd /k "cd /d "%~dp0M4-maintenance-agent" && python -m uvicorn main:app --host 127.0.0.1 --port 8006 --reload"
-
-echo Building M1 chat app for the gateway...
-pushd "%~dp0M1-passenger_assistant\frontend"
-call npm.cmd run build
-popd
-
-start "Frontend Gateway (Port 3000)" cmd /k "cd /d "%~dp0frontend" && python serve.py"
-
-
-start "M4 Maintenance Login (Port 3002)" cmd /k "cd /d "%~dp0M4-maintenance-agent\frontend" && npm.cmd run dev"
-
-echo All RailSense services launched!
-echo User Portal:       http://localhost:3000/user
-echo Admin Portal:      http://localhost:3000/admin
-echo M1 Chat App:       http://localhost:3000/user/chat
-echo M4 Login Portal:   http://localhost:3002
+title RailSense AI
+rem One launcher for every laptop: see start.py (ports come from railsense_ports.json).
+rem   User side:  http://localhost:3000/user     Admin side: http://localhost:3001/admin
+cd /d "%~dp0"
+where python >nul 2>nul && (python start.py %*) || (py -3 start.py %*)
 pause
-

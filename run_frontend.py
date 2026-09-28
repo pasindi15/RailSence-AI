@@ -112,7 +112,7 @@ def check_liveness():
         print(f"{GREEN}{BOLD} RailSense AI Unified Portals are ONLINE on Port 3000{RESET}")
         print(f"{GREEN}{BOLD}===================================================================={RESET}")
         print(f"  {CYAN}{BOLD}User Portal:{RESET}  http://localhost:3000/user")
-        print(f"  {YELLOW}{BOLD}Admin Portal:{RESET} http://localhost:3000/admin")
+        print(f"  {YELLOW}{BOLD}Admin Portal:{RESET} http://localhost:3001/admin")
         print(f"  {GRAY}Health API:   http://localhost:3000/api/admin/system-health{RESET}")
         print(f"{GREEN}{BOLD}===================================================================={RESET}")
         print(f"{GRAY}Press Ctrl+C to terminate frontend server.{RESET}\n")
@@ -132,10 +132,15 @@ def main():
     print(f"{BOLD}{CYAN} Starting User Portal + Admin Portal on port 3000...{RESET}")
     print(f"{BOLD}{CYAN}===================================================================={RESET}\n")
 
+    # serve.py without RAILSENSE_SIDE serves the user side (3000) and the admin side
+    # (3001) from one process; ports and agent URLs come from railsense_ports.json.
+    sys.path.insert(0, str(ROOT_DIR))
+    from shared import ports as _ports
     cmd = [sys.executable, "serve.py"]
     proc = subprocess.Popen(
         cmd,
         cwd=str(FRONTEND_DIR),
+        env={**os.environ, **_ports.service_env(_ports.defaults())},
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,

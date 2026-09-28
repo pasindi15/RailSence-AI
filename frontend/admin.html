@@ -1,6 +1,15 @@
 <!doctype html>
 <html lang="en" data-theme="dark">
 <head>
+<script src="/railsense-config.js"></script>
+<script>/* fallback if the gateway config is unavailable: RailSense default ports */
+window.RAILSENSE = window.RAILSENSE || {ports: {user: 3000, admin: 3001, m1: 8001, hub: 8002, booking: 8003, security: 8004, m2: 8005, m4: 8006}, svc: "/svc", url: function (k, p) { return location.protocol + "//" + location.hostname + ":" + this.ports[k] + (p || ""); }};
+/* Dates are Sri Lanka dates (Asia/Colombo), not the UTC date toISOString() gives -
+   before 05:30 in Colombo that is still yesterday. */
+window.slDate = function (d) { return new Intl.DateTimeFormat('en-CA', {timeZone: 'Asia/Colombo', year: 'numeric', month: '2-digit', day: '2-digit'}).format(d || new Date()); };
+window.slToday = function () { return window.slDate(new Date()); };
+</script>
+
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>RailSense AI — Operations & Administrative Portal</title>
@@ -2782,8 +2791,8 @@ body.bk-mira #ticket-manifest-table tbody tr:hover{background:#FAFBFF !important
     <div id="subview-ops-control">
       <div class="embedded-frame-container">
         <div class="frame-top-bar">
-          <span>Connected to: <code>http://localhost:8005/</code> (M2 Operations Control Room)</span>
-          <a href="http://localhost:8005" target="_blank" class="btn-portal-switch" style="font-size:11px;padding:3px 8px;">Open Standalone ↗</a>
+          <span>Connected to: <code>M2 Operations Agent</code> (M2 Operations Control Room)</span>
+          <a href="#" id="link-ops-control" target="_blank" class="btn-portal-switch" style="font-size:11px;padding:3px 8px;">Open Standalone ↗</a>
         </div>
         <iframe class="embedded-frame" id="frame-ops-control" src="about:blank"></iframe>
       </div>
@@ -2793,8 +2802,8 @@ body.bk-mira #ticket-manifest-table tbody tr:hover{background:#FAFBFF !important
     <div id="subview-ops-admin" style="display:none;">
       <div class="embedded-frame-container">
         <div class="frame-top-bar">
-          <span>Connected to: <code>http://localhost:8005/admin</code> (M2 Operations Admin Suite)</span>
-          <a href="http://localhost:8005/admin" target="_blank" class="btn-portal-switch" style="font-size:11px;padding:3px 8px;" id="link-ops-admin">Open Standalone ↗</a>
+          <span>Connected to: <code>M2 Operations Agent · /admin</code> (M2 Operations Admin Suite)</span>
+          <a href="#" target="_blank" class="btn-portal-switch" style="font-size:11px;padding:3px 8px;" id="link-ops-admin">Open Standalone ↗</a>
         </div>
         <iframe class="embedded-frame" id="frame-ops-admin" src="about:blank"></iframe>
       </div>
@@ -3266,7 +3275,7 @@ body.bk-mira #ticket-manifest-table tbody tr:hover{background:#FAFBFF !important
             <div style="width:44px;height:44px;border-radius:12px;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);display:flex;align-items:center;justify-content:center;font-size:22px;">🔧</div>
             <div>
               <div style="font-weight:700;font-size:14px;color:#6EE7B7;">Asset Intelligence Dashboard</div>
-              <div style="font-size:11px;color:var(--muted);margin-top:2px;">M4 · localhost:8006</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px;">M4 · Maintenance Agent</div>
             </div>
           </div>
           <p style="font-size:12px;color:var(--muted-hi);line-height:1.6;margin:0;">Fleet health scores, predictive fault detection, maintenance reports, train flags, and engineer chat — all in one dashboard.</p>
@@ -3286,7 +3295,7 @@ body.bk-mira #ticket-manifest-table tbody tr:hover{background:#FAFBFF !important
             <div style="width:44px;height:44px;border-radius:12px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);display:flex;align-items:center;justify-content:center;font-size:22px;">💬</div>
             <div>
               <div style="font-weight:700;font-size:14px;color:#93C5FD;">Maintenance Engineer Chatbot</div>
-              <div style="font-size:11px;color:var(--muted);margin-top:2px;">M4 · localhost:8006/chat-ui</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px;">M4 · Engineer chat</div>
             </div>
           </div>
           <p style="font-size:12px;color:var(--muted-hi);line-height:1.6;margin:0;">AI-powered engineer assistant for asset health queries, fault diagnosis, predict commands, and equipment manual lookups.</p>
@@ -3340,7 +3349,7 @@ body.bk-mira #ticket-manifest-table tbody tr:hover{background:#FAFBFF !important
       <div class="card-title">Agent Communication Hub (Port 8002) &amp; Audit Trail</div>
       <div style="font-size:12.5px;color:var(--muted);margin:4px 0 16px;">Central MCP-style message router, JWT verification, and audit ledger</div>
       <div class="hub-audit-details" style="padding:16px 18px;background:linear-gradient(135deg,rgba(245,158,11,0.07) 0%,rgba(8,12,24,0.88) 100%);border:1px solid rgba(245,158,11,0.18);border-left:3px solid #F59E0B;border-radius:10px;font-family:'Share Tech Mono',monospace;font-size:12px;line-height:1.9;color:var(--ink);">
-        <span style="color:#FDE68A;">•</span> Central Routing Target: <code style="color:#93C5FD;">http://localhost:8002/messages</code><br>
+        <span style="color:#FDE68A;">•</span> Central Routing Target: <code style="color:#93C5FD;">Hub · /messages</code><br>
         <span style="color:#FDE68A;">•</span> Database Store: <code style="color:#6EE7B7;">railsense_hub_audit.db</code> (SQLite) / Supabase <code style="color:#6EE7B7;">audit_logs</code><br>
         <span style="color:#FDE68A;">•</span> Message Lifecycle: <code style="color:#34D399;">AUTHENTICATED</code> ➔ <code style="color:#60A5FA;">ROUTED</code> ➔ <code style="color:#F87171;">FAILED</code> ➔ <code style="color:#F87171;">REJECTED</code><br>
         <span style="color:#FDE68A;">•</span> Rate Limiting: Per-agent token bucket flood protection active
@@ -3610,7 +3619,7 @@ function updateThemeIcon(isLight) {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-  const today = new Date().toISOString().split('T')[0];
+  const today = slToday();
   if ($('insp-date')) $('insp-date').value = today;
 
   const saved = localStorage.getItem('railsense-admin-theme') || 'dark';
@@ -3897,10 +3906,10 @@ function switchSection(secName) {
   if (secName === 'operations') {
     const f = $('frame-ops-control');
     if (f && f.src === 'about:blank') {
-      f.src = `http://localhost:8005/${tokenParam}`;
+      f.src = RAILSENSE.url('m2', `/${tokenParam}`);
     }
     const linkCtrl = $('link-ops-control');
-    if (linkCtrl) linkCtrl.href = `http://localhost:8005/${tokenParam}`;
+    if (linkCtrl) linkCtrl.href = RAILSENSE.url('m2', `/${tokenParam}`);
   } else if (secName === 'maintenance') {
     checkM4Status();
   } else if (secName === 'bookings') {
@@ -3956,12 +3965,12 @@ function switchSubSection(parent, sub) {
 
     if (sub === 'control-room') {
       const f = $('frame-ops-control');
-      if (f.src === 'about:blank') f.src = `http://localhost:8005/${tokenParam}`;
+      if (f.src === 'about:blank') f.src = RAILSENSE.url('m2', `/${tokenParam}`);
     } else if (sub === 'admin-console') {
       const f = $('frame-ops-admin');
-      if (f.src === 'about:blank') f.src = `http://localhost:8005/admin${tokenParam}`;
+      if (f.src === 'about:blank') f.src = RAILSENSE.url('m2', `/admin${tokenParam}`);
       const linkAdmin = $('link-ops-admin');
-      if (linkAdmin) linkAdmin.href = `http://localhost:8005/admin${tokenParam}`;
+      if (linkAdmin) linkAdmin.href = RAILSENSE.url('m2', `/admin${tokenParam}`);
     }
   } else if (parent === 'bookings') {
     _bkActiveSub = sub;
@@ -4008,7 +4017,7 @@ function switchSubSection(parent, sub) {
 // ── M4 full-page launcher ─────────────────────────────────────────────
 function openM4Page(page) {
   var tok = localStorage.getItem('m4_eng_token') || '';
-  var base = page === 'chat' ? 'http://localhost:8006/chat-ui' : 'http://localhost:8006';
+  var base = page === 'chat' ? RAILSENSE.url('m4', '/chat-ui') : RAILSENSE.url('m4');
   var url = (tok && page !== 'chat') ? base + '?token=' + encodeURIComponent(tok) : base;
   window.open(url, '_blank');
 }
@@ -4019,11 +4028,11 @@ async function checkM4Status() {
   if (!dot || !txt) return;
   txt.textContent = 'Checking…';
   try {
-    var r = await fetch('http://localhost:8006/api/dashboard', { signal: AbortSignal.timeout(3000) });
+    var r = await fetch('/svc/m4/api/dashboard', { signal: AbortSignal.timeout(3000) });
     if (r.ok) {
       dot.style.background = '#10B981';
       dot.style.boxShadow = '0 0 6px #10B981';
-      txt.textContent = 'M4 agent online — localhost:8006';
+      txt.textContent = 'M4 agent online';
     } else {
       dot.style.background = '#F59E0B'; dot.style.boxShadow = '';
       txt.textContent = 'M4 agent responded with status ' + r.status;
@@ -4564,14 +4573,14 @@ async function testDelayPrediction() {
   const resEl = $('test-pred-result');
 
   resEl.style.display = 'block';
-  resEl.textContent = 'Calling M2 Operations Agent at http://localhost:8005/predict-delay...';
+  resEl.textContent = 'Calling M2 Operations Agent (predict-delay)...';
 
   const token = getOfficerToken();
   const headers = { 'Content-Type': 'application/json' };
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
   try {
-    const resp = await fetch('http://localhost:8005/predict-delay', {
+    const resp = await fetch('/svc/m2/predict-delay', {
       method: 'POST',
       headers: headers,
       body: JSON.stringify({
@@ -5589,7 +5598,7 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.167.1/build/three.m
 const hero = document.getElementById('admin-hero');
 const mount = document.getElementById('ah-3d');
 if (hero && mount) {
-  const OPS = `${location.protocol}//${location.hostname}:8005`;
+  const OPS = '/svc/m2';  // via the gateway (no fixed port)
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const labelsEl = document.getElementById('ah-labels');
   const $ = (id) => document.getElementById(id);

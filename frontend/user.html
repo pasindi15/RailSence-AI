@@ -1,6 +1,15 @@
 <!doctype html>
 <html lang="en">
 <head>
+<script src="/railsense-config.js"></script>
+<script>/* fallback if the gateway config is unavailable: RailSense default ports */
+window.RAILSENSE = window.RAILSENSE || {ports: {user: 3000, admin: 3001, m1: 8001, hub: 8002, booking: 8003, security: 8004, m2: 8005, m4: 8006}, svc: "/svc", url: function (k, p) { return location.protocol + "//" + location.hostname + ":" + this.ports[k] + (p || ""); }};
+/* Dates are Sri Lanka dates (Asia/Colombo), not the UTC date toISOString() gives -
+   before 05:30 in Colombo that is still yesterday. */
+window.slDate = function (d) { return new Intl.DateTimeFormat('en-CA', {timeZone: 'Asia/Colombo', year: 'numeric', month: '2-digit', day: '2-digit'}).format(d || new Date()); };
+window.slToday = function () { return window.slDate(new Date()); };
+</script>
+
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>RailSense AI — Train Ticket Reservation & Passenger Portal</title>
@@ -2696,7 +2705,7 @@ const QUOTES = [
           <!-- Yal Devi -->
           <div class="fleet-card">
             <div class="fleet-card-img-wrap">
-              <img src="http://localhost:8006/trains/yal-devi.jpg" alt="Yal Devi" loading="lazy"/>
+              <img src="/svc/m4/trains/yal-devi.jpg" alt="Yal Devi" loading="lazy"/>
               <span class="fleet-card-type-badge" style="background:rgba(0,198,255,0.18);color:#00c6ff;border:1px solid rgba(0,198,255,0.35)">Intercity Express</span>
               <span class="fleet-card-line-label">Northern Line</span>
             </div>
@@ -2716,7 +2725,7 @@ const QUOTES = [
           <!-- Udarata Menike -->
           <div class="fleet-card">
             <div class="fleet-card-img-wrap">
-              <img src="http://localhost:8006/trains/udarata-menike.png" alt="Udarata Menike" loading="lazy"/>
+              <img src="/svc/m4/trains/udarata-menike.png" alt="Udarata Menike" loading="lazy"/>
               <span class="fleet-card-type-badge" style="background:rgba(16,185,129,0.18);color:#10b981;border:1px solid rgba(16,185,129,0.35)">Intercity</span>
               <span class="fleet-card-line-label">Main Line</span>
             </div>
@@ -2736,7 +2745,7 @@ const QUOTES = [
           <!-- Denuwara Menike -->
           <div class="fleet-card">
             <div class="fleet-card-img-wrap">
-              <img src="http://localhost:8006/trains/denuwara-menike.jpg" alt="Denuwara Menike" loading="lazy"/>
+              <img src="/svc/m4/trains/denuwara-menike.jpg" alt="Denuwara Menike" loading="lazy"/>
               <span class="fleet-card-type-badge" style="background:rgba(99,102,241,0.18);color:#6366f1;border:1px solid rgba(99,102,241,0.35)">Intercity Express</span>
               <span class="fleet-card-line-label">Main Line</span>
             </div>
@@ -2756,7 +2765,7 @@ const QUOTES = [
           <!-- Podi Menike -->
           <div class="fleet-card">
             <div class="fleet-card-img-wrap">
-              <img src="http://localhost:8006/trains/podi-menike.png" alt="Podi Menike" loading="lazy"/>
+              <img src="/svc/m4/trains/podi-menike.png" alt="Podi Menike" loading="lazy"/>
               <span class="fleet-card-type-badge" style="background:rgba(245,158,11,0.18);color:#f59e0b;border:1px solid rgba(245,158,11,0.35)">Intercity</span>
               <span class="fleet-card-line-label">Main Line</span>
             </div>
@@ -2776,7 +2785,7 @@ const QUOTES = [
           <!-- Ruhunu Kumari -->
           <div class="fleet-card">
             <div class="fleet-card-img-wrap">
-              <img src="http://localhost:8006/trains/ruhunu-kumari.png" alt="Ruhunu Kumari" loading="lazy"/>
+              <img src="/svc/m4/trains/ruhunu-kumari.png" alt="Ruhunu Kumari" loading="lazy"/>
               <span class="fleet-card-type-badge" style="background:rgba(236,72,153,0.18);color:#ec4899;border:1px solid rgba(236,72,153,0.35)">Intercity Express</span>
               <span class="fleet-card-line-label">Southern Line</span>
             </div>
@@ -2796,7 +2805,7 @@ const QUOTES = [
           <!-- Galu Kumari -->
           <div class="fleet-card">
             <div class="fleet-card-img-wrap">
-              <img src="http://localhost:8006/trains/galu-kumari.jpg" alt="Galu Kumari" loading="lazy"/>
+              <img src="/svc/m4/trains/galu-kumari.jpg" alt="Galu Kumari" loading="lazy"/>
               <span class="fleet-card-type-badge" style="background:rgba(249,115,22,0.18);color:#f97316;border:1px solid rgba(249,115,22,0.35)">Intercity</span>
               <span class="fleet-card-line-label">Southern Line</span>
             </div>
@@ -2816,7 +2825,7 @@ const QUOTES = [
           <!-- Intercity Express -->
           <div class="fleet-card">
             <div class="fleet-card-img-wrap">
-              <img src="http://localhost:8006/trains/intercity-express.png" alt="Intercity Express" loading="lazy"/>
+              <img src="/svc/m4/trains/intercity-express.png" alt="Intercity Express" loading="lazy"/>
               <span class="fleet-card-type-badge" style="background:rgba(14,165,233,0.18);color:#0ea5e9;border:1px solid rgba(14,165,233,0.35)">Intercity Express</span>
               <span class="fleet-card-line-label">Main Line</span>
             </div>
@@ -2836,7 +2845,7 @@ const QUOTES = [
           <!-- Night Mail -->
           <div class="fleet-card">
             <div class="fleet-card-img-wrap">
-              <img src="http://localhost:8006/trains/night-mail.jpg" alt="Night Mail" loading="lazy"/>
+              <img src="/svc/m4/trains/night-mail.jpg" alt="Night Mail" loading="lazy"/>
               <span class="fleet-card-type-badge" style="background:rgba(139,92,246,0.18);color:#8b5cf6;border:1px solid rgba(139,92,246,0.35)">Night Express</span>
               <span class="fleet-card-line-label">Batticaloa Line</span>
             </div>
@@ -3422,10 +3431,10 @@ let passengerData = [
 ];
 
 window.addEventListener('DOMContentLoaded', () => {
-  const today = new Date().toISOString().split('T')[0];
+  const today = slToday();
   const maxDate = new Date();
   maxDate.setDate(maxDate.getDate() + 365);
-  const maxDateStr = maxDate.toISOString().split('T')[0];
+  const maxDateStr = slDate(maxDate);
   if ($('travel-date')) {
     $('travel-date').min = today;
     $('travel-date').max = maxDateStr;
@@ -3712,7 +3721,14 @@ let dashboardRefreshTimer = null;
 async function loadPassengerDashboard() {
   const dateInput = $('dashboard-date');
   if (!dateInput) return;
-  if (!dateInput.value) dateInput.value = new Date().toISOString().split('T')[0];
+  // Default to today, and roll over at midnight on the auto-refresh - unless the
+  // passenger picked a date themselves (a tab left open overnight showed yesterday's board).
+  const today = slToday();
+  if (!dateInput.value || (dateInput.dataset.autoDate && dateInput.value === dateInput.dataset.autoDate
+                           && dateInput.dataset.autoDate !== today)) {
+    dateInput.value = today;
+  }
+  if (dateInput.value === today) dateInput.dataset.autoDate = today;
   const selectedDate = dateInput.value;
 
   // 1. Instant Render: Check local cache first; otherwise render canonical baseline immediately (0ms latency)
@@ -3983,7 +3999,7 @@ function validateStep1() {
     return false;
   }
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = slToday();
   if (travelDate < today) {
     markInvalid(dateInput, "Travel date cannot be in the past. Please select today or a future date.");
     return false;
@@ -4059,7 +4075,7 @@ function switchStepView(step) {
 function selectPopularRoute(from, to) {
   $('from-station').value = from;
   $('to-station').value = to;
-  const today = new Date().toISOString().split('T')[0];
+  const today = slToday();
   if (!$('travel-date').value) {
     $('travel-date').value = today;
   }
@@ -4709,7 +4725,7 @@ async function lookupBookingRef() {
     booking_reference: ref,
     from_station: 'Colombo Fort',
     to_station: 'Kandy',
-    travel_date: new Date().toISOString().split('T')[0],
+    travel_date: slToday(),
     train_id: '1005 — Podi Menike Express',
     seat_class: 'Second Class',
     passenger_count: 1,
@@ -4772,7 +4788,7 @@ function escapeHtml(text) {
      (type, station, train, short summary, time). No controls beyond pan/zoom. -->
 <script>
 (function () {
-  const OPS = `${location.protocol}//${location.hostname}:8005`;
+  const OPS = '/svc/m2';  // via the gateway (no fixed port)
   function start() {
     const el = document.getElementById('incident-overview-map');
     if (!el || !window.RailSenseIncidentMap) return;
@@ -5014,7 +5030,7 @@ function escapeHtml(text) {
 
 <script>
 (function () {
-  const OPS_AGENT_URL = `${location.protocol}//${location.hostname}:8005`;
+  const OPS_AGENT_URL = '/svc/m2';  // via the gateway
   const CONTEXT_FIELDS = ['train_id','train_name','route','from_station','to_station','departure_time','arrival_time',
     'service_status','maintenance_status','live_status','current_station','next_station','progress_percent','stops'];
   const GAUGE_COLORS = { on_time: '#10B981', minor: '#22C55E', moderate: '#F59E0B', major: '#EF4444' };
@@ -5369,7 +5385,7 @@ function escapeHtml(text) {
      drawer, and nothing else is anchored bottom-right on this page). -->
 <script>
   window.CHOO_CONFIG = {
-    endpoint: 'http://127.0.0.1:8001/chat',
+    endpoint: '/svc/m1/chat',  // M1 via the gateway
     right: 20,
     bottom: 20,
     size: 64,

@@ -4,7 +4,7 @@
  *
  * Optional config (set BEFORE this script loads):
  *   window.CHOO_CONFIG = {
- *     endpoint: 'http://127.0.0.1:8001/chat',   // your chat backend
+ *     endpoint: '/svc/m1/chat',                 // your chat backend (via the gateway)
  *     left: 20, bottom: 20,                     // px from the viewport edge
  *     buildBody: function (text, sessionId) { return { message: text, session_id: sessionId }; },
  *     parseReply: function (data) { return data.reply; }
@@ -17,7 +17,7 @@
   if (window.Choo) return;
 
   var cfg = Object.assign({
-    endpoint: 'http://127.0.0.1:8001/chat',
+    endpoint: '/svc/m1/chat',
     left: 20,
     right: null,  // set this (instead of/alongside left) to dock the widget to the right edge
     bottom: 20,
