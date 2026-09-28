@@ -135,8 +135,8 @@ const trains = [
 
 const stats = [
   { value: "1,500+", label: "Route km" },
-  { value: "8", label: "Main Lines" },
-  { value: "182", label: "Stations" },
+  { value: "9", label: "Rail Lines" },
+  { value: "3", label: "Languages" },
   { value: "4", label: "AI Agents" },
 ];
 
