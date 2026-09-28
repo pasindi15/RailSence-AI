@@ -12,6 +12,11 @@ This single dataset is used for:
 
 Run:
     python generate_dataset.py
+
+This produced the original 3,000 records (2025-01-01 .. 2025-07-30). Their
+record ids are random uuid4s, so re-running it creates a different corpus; to
+move the existing one up to date, use data/refresh_corpus.py instead (keeps
+every record, shifts dates to end yesterday and adds recent records).
 """
 
 import random

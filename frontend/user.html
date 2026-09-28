@@ -2187,6 +2187,14 @@ body:not(.bkvid-on) .bk-video-bg { display: none !important; }
    hero above the train board, and navigateTo() auto-scrolls to it. */
 body.view-away #rs-hero { display: none !important; }
 </style>
+<link rel="icon" type="image/png" href="/static/logo.png">
+<style>
+/* RailSense AI brand logo - the one logo used in every header across M1-M4.
+   White tile so the navy artwork stays legible on dark and light headers. */
+.rs-brand-logo{display:block;flex-shrink:0;height:46px;width:auto;object-fit:contain;
+  background:#fff;border-radius:10px;padding:3px 6px;box-sizing:content-box;
+  box-shadow:0 2px 10px rgba(15,23,42,.18)}
+</style>
 </head>
 <body>
 
@@ -2607,7 +2615,7 @@ const QUOTES = [
   <header class="top-nav">
     <div class="brand-area">
       <button class="sidebar-toggle-btn" id="sidebarToggleBtn" onclick="toggleSidebar()" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="sidebarNav" title="Menu">☰</button>
-      <div class="brand-emblem">🚆</div>
+      <img class="rs-brand-logo" src="/static/logo.png" alt="RailSense AI">
       <div>
         <div class="brand-title">RailSense AI</div>
         <div class="brand-subtitle">Train Ticket Reservation Desk</div>
@@ -4925,6 +4933,18 @@ function escapeHtml(text) {
 .ops-fact small { display: block; font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--text-sub); }
 .ops-fact b { font-size: 13.5px; font-weight: 800; }
 .ops-fact.good b { color: #059669; } .ops-fact.warn b { color: #D97706; } .ops-fact.bad b { color: #DC2626; } .ops-fact.neutral b { color: #111827; }
+.ops-timeline { list-style: none; margin: 8px 0 4px; padding: 0 0 0 4px; }
+.ops-timeline li { position: relative; display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; padding: 5px 0 5px 20px; font-size: 12.5px; color: #374151; }
+.ops-timeline li::before { content: ''; position: absolute; left: 4px; top: 0; bottom: 0; width: 2px; background: #D1FAE5; }
+.ops-timeline li::after { content: ''; position: absolute; left: 0; top: 10px; width: 10px; height: 10px; border-radius: 50%; background: #fff; border: 2px solid #A7F3D0; }
+.ops-timeline li.passed { color: #9CA3AF; } .ops-timeline li.passed::after { background: #A7F3D0; }
+.ops-timeline li.current, .ops-timeline li.next { font-weight: 800; color: #065F46; }
+.ops-timeline li.current::after { background: #10B981; border-color: #10B981; box-shadow: 0 0 0 4px rgba(16,185,129,.2); }
+.ops-timeline li.next::after { border-color: #10B981; }
+.ops-timeline .t { text-align: right; font-variant-numeric: tabular-nums; }
+.ops-timeline .t s { color: #9CA3AF; font-weight: 500; margin-right: 4px; }
+.ops-timeline .t.late b { color: #D97706; }
+.ops-timeline .why { grid-column: 1 / -1; font-size: 11px; font-weight: 600; color: #B45309; }
 .ops-sources { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
 .ops-sources span { font-size: 10px; font-weight: 700; color: #0E7490; background: #ECFEFF; border: 1px solid #A5F3FC; border-radius: 99px; padding: 2px 8px; }
 
@@ -5132,6 +5152,7 @@ function escapeHtml(text) {
     typing.remove();
     if (current !== svc) { busy = false; el('ops-send').disabled = false; return; }  // popup closed/reopened meanwhile
     addBot(answer, false);
+    applyLive(answer.live);
     renderSuggestions(answer.suggestions || []);
     busy = false;
     el('ops-send').disabled = false;
@@ -5201,6 +5222,7 @@ function escapeHtml(text) {
           `<div class="ops-fact ${esc(f.tone)}" style="animation-delay:${.15 + i * .08}s"><small>${esc(f.label)}</small><b>${esc(f.value)}</b></div>`).join('')}</div></div>`;
     }
     html += (a.paragraphs || []).map(p => `<p class="ops-para">${rich(p)}</p>`).join('');
+    if (!compact && Array.isArray(a.timeline) && a.timeline.length) html += timelineHtml(a.timeline, a.live);
     if (!compact && a.sources && a.sources.length) {
       html += `<div class="ops-sources">${a.sources.map(s => `<span>${esc(s)}</span>`).join('')}</div>`;
     }
@@ -5210,6 +5232,31 @@ function escapeHtml(text) {
     animateGauge(m);
     // Bring the start of the answer (headline + gauge) into view, not its end.
     el('ops-thread').scrollTop = Math.max(0, m.offsetTop - 12);
+  }
+
+  // Station-by-station timetable from M2's live journey (expected times include
+  // today's verified delays; the reason is shown under the affected stops).
+  function timelineHtml(rows, live) {
+    const next = live && live.next_station;
+    return `<ol class="ops-timeline">${rows.map(r => {
+      const cls = r.state === 'upcoming' && r.station === next ? 'next' : r.state;
+      const late = r.delay > 2 && r.expected !== r.scheduled;
+      const time = late ? `<s>${esc(r.scheduled)}</s><b>${esc(r.expected)}</b>` : `<b>${esc(r.scheduled)}</b>`;
+      return `<li class="${esc(cls)}"><span>${esc(r.station)}</span><span class="t${late ? ' late' : ''}">${time}</span>${
+        r.why ? `<span class="why">+${Math.round(r.delay)} min · ${esc(r.why)}</span>` : ''}</li>`;
+    }).join('')}</ol>`;
+  }
+
+  // The header track follows M2's server-side position, not the board's snapshot.
+  function applyLive(live) {
+    if (!live) return;
+    const label = { SCHEDULED: 'NOT YET DEPARTED', ARRIVED: 'ARRIVED' }[live.status]
+      || (live.status === 'AT_STATION' ? `AT ${live.at_station}` : `${live.last_station || ''} → ${live.next_station || ''}`);
+    el('ops-pos').textContent = label.toUpperCase();
+    const p = Math.max(0, Math.min(100, Number(live.progress_percent) || 0));
+    el('ops-rail-fill').style.width = `${p}%`;
+    el('ops-train').style.left = `${p}%`;
+    if (live.delay_minutes > 2 && live.expected_arrival) el('ops-arr').textContent = `ARR ${live.expected_arrival}`;
   }
 
   // Reveal the answer word by word; markup (bold) is preserved.

@@ -17,8 +17,21 @@ AGENT_NAME = "operations-agent"
 DELAY_ALERT_THRESHOLD_MINUTES = 5.0
 HUB_AUTH_TOKEN = os.getenv("HUB_AUTH_TOKEN", os.getenv("JWT_TOKEN", ""))
 HUB_MESSAGE_PATH = os.getenv("HUB_MESSAGE_PATH", "/messages")
-UPSTASH_REDIS_URL = os.getenv("UPSTASH_REDIS_URL", "").rstrip("/")
-UPSTASH_REDIS_TOKEN = os.getenv("UPSTASH_REDIS_TOKEN", "")
+
+
+def _upstash_config() -> tuple[str, str]:
+  """Upstash REST URL and token, read when used rather than at import.
+
+  This module is imported before the root .env is loaded (supabase_store and
+  admin_db load it), so import-time constants stayed empty even with the keys
+  set, while the health check (which reads the env on request) said "configured".
+  """
+  try:
+    import supabase_store
+    supabase_store._load_root_env()
+  except Exception:
+    pass
+  return os.getenv("UPSTASH_REDIS_URL", "").strip().rstrip("/"), os.getenv("UPSTASH_REDIS_TOKEN", "").strip()
 
 
 async def _post_hub(path: str, payload: dict[str, Any]) -> dict:
@@ -67,10 +80,13 @@ async def publish_delay_alert(route: str, train_id: str, predicted_delay_minutes
     return {"published": False, "reason": "below_threshold"}
   event = {"event_type": "delay_alert", "sender_agent": AGENT_NAME, "route": route, "train_id": train_id, "predicted_delay_minutes": predicted_delay_minutes, "threshold_minutes": DELAY_ALERT_THRESHOLD_MINUTES, "timestamp": datetime.now(timezone.utc).isoformat()}
   destinations, errors = [], []
-  if UPSTASH_REDIS_URL and UPSTASH_REDIS_TOKEN:
+  upstash_url, upstash_token = _upstash_config()
+  if upstash_url and upstash_token:
     try:
       async with httpx.AsyncClient(timeout=3.0) as client:
-        response = await client.post(f"{UPSTASH_REDIS_URL}/publish/delay_alert", headers={"Authorization": f"Bearer {UPSTASH_REDIS_TOKEN}"}, json=[json.dumps(event)])
+        # Upstash REST: a Redis command as a JSON array POSTed to the base URL.
+        response = await client.post(upstash_url, headers={"Authorization": f"Bearer {upstash_token}"},
+                                     json=["PUBLISH", "delay_alert", json.dumps(event)])
         response.raise_for_status()
         destinations.append("upstash_redis")
     except Exception as exc:

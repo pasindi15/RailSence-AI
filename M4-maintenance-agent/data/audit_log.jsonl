@@ -125,3 +125,15 @@
 {"ts": "2026-09-24T10:27:27.726811+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "T-002", "sender": "passenger-agent"}
 {"ts": "2026-09-24T10:27:32.183172+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "T-002", "sender": "passenger-agent"}
 {"ts": "2026-09-24T10:28:41.753358+00:00", "action": "hub_issue_report", "agent": "maintenance-agent", "client": "127.0.0.1", "ticket_id": "MT-DF65DA", "sender": "passenger-agent", "description": "The AC is broken in my compartment"}
+{"ts": "2026-09-27T10:37:06.774563+00:00", "action": "engineer_chat", "agent": "maintenance-agent", "client": "127.0.0.1", "detected_asset_type": "", "answer_method": "llm_grounded", "retrieval_method": "none"}
+{"ts": "2026-09-27T10:37:22.681657+00:00", "action": "engineer_chat", "agent": "maintenance-agent", "client": "127.0.0.1", "detected_asset_type": "", "answer_method": "template_grounded", "retrieval_method": "local_tfidf"}
+{"ts": "2026-09-27T10:37:47.935877+00:00", "action": "engineer_chat", "agent": "maintenance-agent", "client": "127.0.0.1", "detected_asset_type": "", "answer_method": "template_grounded", "retrieval_method": "local_tfidf"}
+{"ts": "2026-09-27T10:37:57.585581+00:00", "action": "engineer_chat", "agent": "maintenance-agent", "client": "127.0.0.1", "detected_asset_type": "brake_system", "answer_method": "template_grounded", "retrieval_method": "local_tfidf"}
+{"ts": "2026-09-27T14:20:53.627432+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "IC-1001", "sender": "passenger-agent"}
+{"ts": "2026-09-27T14:21:04.444634+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "IC-1001", "sender": "passenger-agent"}
+{"ts": "2026-09-27T14:39:43.058144+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "IC-1001", "sender": "passenger-agent"}
+{"ts": "2026-09-27T14:39:59.100189+00:00", "action": "hub_train_status_query", "agent": "maintenance-agent", "client": "127.0.0.1", "train_id": "IC-1001", "sender": "passenger-agent"}
+{"ts": "2026-09-27T18:16:49.153006+00:00", "action": "hub_issue_report", "agent": "maintenance-agent", "client": "127.0.0.1", "ticket_id": "MT-5FDE4D", "sender": "passenger-agent", "description": "The AC is broken in my compartment"}
+{"ts": "2026-09-27T18:23:02.375331+00:00", "action": "engineer_login_success", "agent": "maintenance-agent", "client": "127.0.0.1", "engineer_id": "ENG-001", "username": "admin"}
+{"ts": "2026-09-27T18:50:17.543535+00:00", "action": "engineer_chat", "agent": "maintenance-agent", "client": "127.0.0.1", "detected_asset_type": "", "answer_method": "llm_grounded", "retrieval_method": "local_tfidf"}
+{"ts": "2026-09-27T18:56:03.437109+00:00", "action": "engineer_chat", "agent": "maintenance-agent", "client": "127.0.0.1", "detected_asset_type": "diesel_engine", "answer_method": "llm_grounded", "retrieval_method": "local_tfidf"}

@@ -1,10 +1,10 @@
 {
   "model": "GradientBoostingRegressor",
   "data_source": "supabase",
-  "n_train": 2399,
-  "n_test": 600,
-  "mae_minutes": 2.315,
-  "rmse_minutes": 2.934,
-  "r2": 0.8551,
-  "trained_at": 1789941203
+  "n_train": 3120,
+  "n_test": 780,
+  "mae_minutes": 2.254,
+  "rmse_minutes": 2.837,
+  "r2": 0.8941,
+  "trained_at": 1790535519
 }

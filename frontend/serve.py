@@ -505,7 +505,10 @@ def _compute_live_position(
     if arr_dt <= dep_dt:
         # Overnight service (e.g. departs 20:15, arrives 04:10 the next day).
         arr_dt += timedelta(days=1)
-        if now_ref < dep_dt:
+        # Only while last night's run is still before its arrival; after that
+        # (e.g. 18:52 for a 19:15 -> 04:30 train) tonight's run is next and the
+        # train must show "not yet departed", not "arrived".
+        if now_ref < arr_dt - timedelta(days=1):
             # Viewed after local midnight but before this evening's departure:
             # the run actually on the rails is the one that left yesterday
             # evening and lands this morning, so measure against yesterday's

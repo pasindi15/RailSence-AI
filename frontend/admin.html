@@ -539,9 +539,17 @@ body::after {
 .badge-yellow { background: rgba(245, 158, 11, 0.12); color: #FBBF24; border: 1px solid rgba(245, 158, 11, 0.30); }
 
 /* ── Embedded Frame Views ──────────────────────────────────────────── */
+/* Column flex: the top bar takes its own height and the iframe gets exactly
+   what's left. With a plain height:100% iframe under the bar, the frame was
+   one bar-height taller than its box and the bottom of every embedded M2
+   page (sidebar user row, launcher, last rows) was clipped. */
 .embedded-frame-container {
+  display: flex;
+  flex-direction: column;
   width: 100%;
-  height: 820px;
+  height: calc(100vh - 150px);
+  height: calc(100dvh - 150px);
+  min-height: 620px;
   border-radius: var(--r);
   border: 1px solid var(--border);
   overflow: hidden;
@@ -551,10 +559,14 @@ body::after {
 }
 
 .embedded-frame {
+  flex: 1 1 auto;
+  min-height: 0;
   width: 100%;
-  height: 100%;
   border: none;
+  display: block;
 }
+
+.frame-top-bar { flex: 0 0 auto; }
 
 .frame-top-bar {
   display: flex;
@@ -2282,7 +2294,13 @@ body::after {
 [data-theme="light"] .bk-case-grid{background:#eef4fd;border-color:rgba(37,99,235,0.1)}
 [data-theme="light"] .bk-cell-val{color:#0F172A}
 [data-theme="light"] .bk-cell-label{color:#64748B}
-[data-theme="light"] .bk-kpi-card{box-shadow:0 6px 20px rgba(15,23,42,0.08)}
+[data-theme="light"] .bk-kpi-card{box-shadow:0 6px 20px rgba(15,23,42,0.08);
+  background:linear-gradient(135deg,var(--bk-accent,rgba(37,99,235,0.16)) 0%,#ffffff 70%)}
+[data-theme="light"] .bk-kpi-label{color:#475569}
+[data-theme="light"] .bk-kpi-total{--bk-value:#1D4ED8}
+[data-theme="light"] .bk-kpi-pending{--bk-value:#B45309}
+[data-theme="light"] .bk-kpi-approved{--bk-value:#047857}
+[data-theme="light"] .bk-kpi-rejected{--bk-value:#B91C1C}
 [data-theme="light"] .bk-empty{color:#64748B}
 [data-theme="light"] .bk-empty-title{color:#0F172A}
 
@@ -2479,6 +2497,14 @@ body.bk-mira #ticket-manifest-table thead tr{background:#FCFDFF !important}
 body.bk-mira #ticket-manifest-table tbody tr{background:transparent !important}
 body.bk-mira #ticket-manifest-table tbody tr:hover{background:#FAFBFF !important}
 </style>
+<link rel="icon" type="image/png" href="/static/logo.png">
+<style>
+/* RailSense AI brand logo - the one logo used in every header across M1-M4.
+   White tile so the navy artwork stays legible on dark and light headers. */
+.rs-brand-logo{display:block;flex-shrink:0;height:46px;width:auto;object-fit:contain;
+  background:#fff;border-radius:10px;padding:3px 6px;box-sizing:content-box;
+  box-shadow:0 2px 10px rgba(15,23,42,.18)}
+</style>
 </head>
 <body>
 
@@ -2487,7 +2513,7 @@ body.bk-mira #ticket-manifest-table tbody tr:hover{background:#FAFBFF !important
   <header class="top-nav">
     <div class="brand-area">
       <button class="sidebar-toggle-btn" id="sidebarToggleBtn" onclick="toggleSidebar()" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="adminNavBar" title="Menu">☰</button>
-      <div class="brand-emblem">🛡️</div>
+      <img class="rs-brand-logo" src="/static/logo.png" alt="RailSense AI">
       <div>
         <div class="brand-title">RailSense AI</div>
         <div class="brand-subtitle">Central Operations &amp; Admin Suite</div>
@@ -3804,13 +3830,18 @@ function switchSection(secName) {
 
 /* Apply initial Copilot visibility based on the URL the officer landed on,
    before the first switchSection runs. */
-updateAdminChatVisibility((() => {
+// Deferred to DOMContentLoaded: run at parse time this reached closeAdminChat(),
+// which assigns _adminChatCollapsed (declared further down this script) and threw
+// a TDZ ReferenceError on every non-bookings page. That aborted the rest of the
+// script, leaving allFraudCases / allAdminCases / chat state uninitialised, so the
+// M3 queues and the Copilot failed after navigating from the dashboard.
+document.addEventListener('DOMContentLoaded', () => updateAdminChatVisibility((() => {
   const path = window.location.pathname;
   const hash = window.location.hash;
   const search = window.location.search;
   if (path.includes('/bookings') || hash === '#bookings' || search.includes('tab=bookings')) return 'bookings';
   return 'dashboard';
-})());
+})()));
 
 function switchSubSection(parent, sub) {
   const token = getOfficerToken();
@@ -4042,22 +4073,58 @@ function bkDecisionBlock(c) {
   `;
 }
 
+// Booking-admin requests go through the gateway to the M3 Booking Agent. A
+// gateway reload or a slow agent used to surface as a bare "Error loading…"
+// with no retry; this retries once on network errors / 5xx and turns error
+// payloads ({error}/{detail}) into a readable message.
+async function bkFetchJson(url, options = {}, retries = 1) {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      const resp = await fetch(url, options);
+      let data = null;
+      try { data = await resp.json(); } catch (_) { /* non-JSON body */ }
+      if (resp.ok) return data;
+      const reason = (data && (data.detail || data.error)) || `HTTP ${resp.status}`;
+      if (resp.status >= 500 && attempt < retries) throw new Error(reason);
+      const err = new Error(typeof reason === 'string' ? reason : JSON.stringify(reason));
+      err.final = true;
+      throw err;
+    } catch (err) {
+      if (err.final || attempt >= retries) {
+        throw err.final ? err : new Error(err.message === 'Failed to fetch'
+          ? 'The admin gateway is not reachable (is it restarting?).' : err.message);
+      }
+      await new Promise(r => setTimeout(r, 1500));
+    }
+  }
+}
+
+function bkLoadError(container, what, err, retryFn) {
+  container.innerHTML = `
+    <div class="bk-empty">
+      <div class="bk-empty-ico">⚠️</div>
+      <div class="bk-empty-title">Couldn't load ${escapeHtml(what)}</div>
+      <div class="bk-empty-sub">${escapeHtml(err && err.message ? err.message : 'Unknown error')}</div>
+      <button class="btn-refresh" style="margin-top:12px" onclick="${retryFn}()">⟳ Retry</button>
+    </div>`;
+}
+
 async function loadAdminFraudReviews() {
   const container = $('admin-fraud-cases-container');
   if (!container) return;
 
   try {
-    const resp = await fetch('/api/admin/fraud-reviews');
-    const cases = await resp.json();
-    if (Array.isArray(cases)) {
-      allFraudCases = cases;
-      const pendingCount = cases.filter(c => c.status === 'PENDING_REVIEW').length;
-      $('kpi-fraud-pending').textContent = pendingCount;
-      updateBkKpis(cases, 'PENDING_REVIEW');
-      renderFraudCases();
-    }
+    const cases = await bkFetchJson('/api/admin/fraud-reviews');
+    if (!Array.isArray(cases)) throw new Error('Unexpected response from the Booking Agent.');
+    allFraudCases = cases;
+    const pendingCount = cases.filter(c => c.status === 'PENDING_REVIEW').length;
+    const kpi = $('kpi-fraud-pending');
+    if (kpi) kpi.textContent = pendingCount;
+    updateBkKpis(cases, 'PENDING_REVIEW');
+    renderFraudCases();
   } catch (err) {
-    container.innerHTML = '<div style="padding:16px;color:#F87171">Error loading fraud reviews.</div>';
+    console.warn('[admin] fraud reviews failed:', err);
+    bkLoadError(container, 'fraud reviews', err, 'loadAdminFraudReviews');
   }
 }
 
@@ -4214,17 +4281,17 @@ async function loadAdminCancellations() {
   if (!container) return;
 
   try {
-    const resp = await fetch('/api/admin/cancellations');
-    const cases = await resp.json();
-    if (Array.isArray(cases)) {
-      allAdminCases = cases;
-      const pending = cases.filter(c => c.status === 'PENDING_ADMIN_REVIEW').length;
-      $('kpi-canc-pending').textContent = pending;
-      updateBkKpis(cases, 'PENDING_ADMIN_REVIEW');
-      renderAdminCases();
-    }
+    const cases = await bkFetchJson('/api/admin/cancellations');
+    if (!Array.isArray(cases)) throw new Error('Unexpected response from the Booking Agent.');
+    allAdminCases = cases;
+    const pending = cases.filter(c => c.status === 'PENDING_ADMIN_REVIEW').length;
+    const kpi = $('kpi-canc-pending');
+    if (kpi) kpi.textContent = pending;
+    updateBkKpis(cases, 'PENDING_ADMIN_REVIEW');
+    renderAdminCases();
   } catch (err) {
-    container.innerHTML = '<div style="padding:16px;color:#F87171">Error loading cancellations.</div>';
+    console.warn('[admin] cancellations failed:', err);
+    bkLoadError(container, 'cancellation requests', err, 'loadAdminCancellations');
   }
 }
 
@@ -4594,9 +4661,8 @@ async function loadTicketManifestTrains() {
   const sel = $('ticket-filter-train');
   if (!sel) return;
   try {
-    const res = await fetch('/api/admin/trains');
-    if (!res.ok) return;
-    const trains = await res.json();
+    const trains = await bkFetchJson('/api/admin/trains');
+    if (!Array.isArray(trains)) return;
     trains.forEach(t => {
       const opt = document.createElement('option');
       opt.value = t.train_id;

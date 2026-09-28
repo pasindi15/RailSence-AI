@@ -152,6 +152,35 @@ async def readiness_check() -> dict:
     }
 
 
+@app.post("/register", tags=["registry"], summary="Agent start-up handshake (static registry)")
+async def register_agent(body: dict) -> JSONResponse:
+    """Acknowledge an agent announcing itself at start-up.
+
+    Operations (M2) and Maintenance (M4) post here when they boot. Routing uses
+    the static registry (registry.py, configured from .env), so this endpoint is
+    read-only: it confirms the agent is known and reports the URL the Hub will
+    route to. It never changes routing, so a caller can't redirect traffic.
+    """
+    name = str((body or {}).get("agent_name") or "").strip()
+    entry = next((a for a in list_agents() if a.name == name), None)
+    if entry is None:
+        return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={
+            "registered": False,
+            "detail": f"Unknown agent '{name}'. Agents are configured in the Hub's static registry.",
+            "known_agents": [a.name for a in list_agents()],
+        })
+    same_host = lambda u: u.rstrip("/").replace("://localhost", "://127.0.0.1")  # noqa: E731
+    callback = same_host(str((body or {}).get("callback_url") or ""))
+    return JSONResponse(status_code=status.HTTP_200_OK, content={
+        "registered": True,
+        "agent_name": entry.name,
+        "mode": "static_registry",
+        "routes_to": entry.base_url,
+        "callback_matches_registry": (callback == same_host(entry.base_url)) if callback else None,
+        "capabilities": (body or {}).get("capabilities") or [],
+    })
+
+
 @app.get("/api/hub/dashboard", tags=["monitoring"], summary="Hub Observability Dashboard Data")
 def get_hub_dashboard(db: Session = Depends(get_db)) -> JSONResponse:
     """Return agent health, request counts, circuit breakers, and system metrics."""

@@ -118,7 +118,9 @@ The popup calls **`POST /passenger/ask`** with the question and the clicked serv
 
 | Step | What happens |
 |---|---|
-| Intent detection | `nlp/passenger_answer.detect_intent()` classifies the question: delay, eta, departure, location, reason, maintenance, incidents, stops, greeting, status — or `handoff` for tickets/fares/refunds. |
+| Intent detection | `nlp/passenger_answer.detect_intent()` classifies the question: delay, eta, departure, location, reason, maintenance, incidents, stops, greeting, status — or `handoff` for tickets/fares/refunds. Keyword rules first; a TF-IDF character n-gram classifier over labelled example questions handles typos ("wher is it", "dealyed?"). A named station ("when will it reach Kandy?") is extracted as an entity (exact, then fuzzy match). |
+| Live journey | `live_tracker.compute_live()` builds a station-by-station timetable (intermediate times shared out by track distance between the published departure and arrival; the corridor's standard stations when the board lists no stops) and the train's position on the server's Asia/Colombo clock. Overnight runs are handled (a 19:15 → 04:30 train is "not yet departed" at 18:52). The board's own live fields are not trusted. |
+| Map disruptions | Verified incidents from the live map that lie on the train's path (a stop, a corridor station, or within 4 km of the line) delay every stop after them, if the train reaches that point after the incident began. The delay is the median of the most similar past incidents retrieved (TF-IDF IR) for that incident's text, corridor and type; the answer names the cause and location. |
 | Evidence | The board route is mapped to a model corridor; the delay comes from this train's recorded journeys or the delay model (no Hub alert); today's incident reports and, for "why" questions, retrieved precedents are added. |
 | NLG | `compose_answer()` builds a headline, friendly paragraphs ("Instead of the scheduled 08:35, you can expect it at Kandy around 08:42"), fact tiles, a gauge and suggested follow-ups — every figure traced to data. |
 | Hand-off | Booking/fare questions return `handoff: true` and the popup forwards them to the Passenger Assistant (`/api/chat`). |
@@ -258,7 +260,7 @@ question ─► Gemini (GEMINI_MODEL) with ONLY the tools this role may use
 |---|---|---|
 | `answer` | Grounded answer | "Across **2,999** trips the network averages **8.4 min**…" + stat chips + citations |
 | `restricted` 🔒 | An engineer asks about an admin topic | "🔒 **The audit log** is only available to administrators, so I can't share it with your Operations Engineer account…" |
-| `insufficient_data` ℹ | Missing details, unknown route, a date the data can't be broken down by, or an action (officers, passwords, retraining, approving) | "…The operations data covers 2025-01-01 to 2025-07-30 as a whole and can't be broken down by a specific date or month." |
+| `insufficient_data` ℹ | Missing details, unknown route, a date the data can't be broken down by, or an action (officers, passwords, retraining, approving) | "…The operations data covers 2026-03-01 to 2026-09-27 as a whole and can't be broken down by a specific date or month." |
 | `out_of_scope` ↪ | Not about railway operations | "That's outside what I can help with…" |
 | `unavailable` ⚠ | The data source can't be reached | "I can't reach the live operations data right now, so I won't guess." |
 
@@ -391,6 +393,7 @@ Raw Staff Input
 
 ### 11.2 Passenger Answers (`nlp/passenger_answer.py`)
 * **Intent detection** — weighted keyword rules over ten intents plus a `handoff` intent for booking/fare/refund questions (which always wins, even in "refund for a late train"). Explicit departure verbs win the "what time" tie.
+* **Station entity extraction + TF-IDF intent fallback** — see §3.2.
 * **Template NLG** — delay levels (on time ≤ 2, minor ≤ 5, moderate ≤ 15, major), expected-arrival arithmetic, live-position sentences, confidence phrasing and cause phrasing ("signal problems", "crew availability") — deterministic, so every sentence traces to data.
 
 ### 11.3 Operations Assistant Language Layer

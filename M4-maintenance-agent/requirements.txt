@@ -12,7 +12,7 @@ scikit-learn==1.5.1
 joblib==1.4.2
 
 # --- NLP / LLM (Phase 3 & 4) ---
-groq==0.11.0
+groq>=1.0  # 0.11 breaks with httpx 0.28 (proxies kwarg removed)
 python-dotenv==1.0.1
 sentence-transformers==3.0.1
 

@@ -409,5 +409,7 @@
 
 /* Sidebar header logo (SVG image + theme-coloured text) */
 .sidebar-brand { gap: 8px; }
-.sidebar-brand-logo { display: block; width: 28px; height: 28px; flex-shrink: 0; }
+/* The one RailSense AI logo used across M1-M4; white tile keeps it legible in dark mode. */
+.sidebar-brand-logo { display: block; height: 38px; width: auto; object-fit: contain; flex-shrink: 0;
+  background: #fff; border-radius: 9px; padding: 2px 5px; box-sizing: content-box; box-shadow: 0 2px 8px rgba(15,23,42,.18); }
 .sidebar-brand-name { font-size: 0.95rem; font-weight: 600; letter-spacing: 0.2px; line-height: 1; color: var(--text); }

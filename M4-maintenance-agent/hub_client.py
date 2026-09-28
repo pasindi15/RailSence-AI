@@ -82,10 +82,13 @@ async def publish_maintenance_alert(
     if UPSTASH_REDIS_URL and UPSTASH_REDIS_TOKEN:
         try:
             async with httpx.AsyncClient(timeout=3.0) as client:
+                # Upstash REST: a Redis command as a JSON array POSTed to the base
+                # URL. (POSTing ["<event>"] to /publish/<channel> published the
+                # array literal, so subscribers got '["{...}"]' instead of the event.)
                 response = await client.post(
-                    f"{UPSTASH_REDIS_URL}/publish/maintenance_alert",
+                    UPSTASH_REDIS_URL,
                     headers={"Authorization": f"Bearer {UPSTASH_REDIS_TOKEN}"},
-                    json=[json.dumps(event)],
+                    json=["PUBLISH", "maintenance_alert", json.dumps(event)],
                 )
                 response.raise_for_status()
                 destinations.append("upstash_redis")

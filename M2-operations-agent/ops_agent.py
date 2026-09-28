@@ -219,7 +219,7 @@ class OpsAgent:
                  coverage: Optional[Callable[[], dict]] = None):
         self.tools = {t.name: t for t in tools}
         self.known_routes = known_routes
-        self.coverage = coverage  # {"from": "2025-01-01", "to": "2025-07-30"} of the corpus
+        self.coverage = coverage  # {"from": "2026-03-01", "to": "2026-09-27"} of the corpus (see data/refresh_corpus.py)
 
     # -- role helpers ----------------------------------------------------
     def allowed_tools(self, permissions: set[str]) -> list[str]:
@@ -483,13 +483,19 @@ class QueryHistory:
             "tool_calls_made": response["tool_calls_made"],
             "sources": response["sources"],
             "highlights": response["highlights"],
+            "answer_method": response.get("answer_method"),
             "created_at": datetime.now(timezone.utc).isoformat(),
         }
         stored = "local"
         client = self.get_client()
         if client is not None:
             try:
-                client.table("ops_agent_queries").insert(row).execute()
+                try:
+                    client.table("ops_agent_queries").insert(row).execute()
+                except Exception:
+                    # answer_method column not migrated yet: keep history working without it
+                    client.table("ops_agent_queries").insert(
+                        {k: v for k, v in row.items() if k != "answer_method"}).execute()
                 stored = "supabase"
             except Exception as exc:
                 logger.info("ops_agent_queries not in Supabase yet, keeping local copy: %s", exc.__class__.__name__)
