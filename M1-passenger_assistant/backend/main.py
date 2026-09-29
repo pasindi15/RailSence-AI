@@ -12,8 +12,10 @@ Phase 1 scope:
 import os
 import re
 import sys
+import time
 import uuid
 import asyncio
+import contextvars
 from pathlib import Path
 from datetime import datetime, timezone
 from urllib.parse import urlencode
@@ -162,8 +164,54 @@ def validate_session_id(session_id: str) -> None:
         raise HTTPException(status_code=400, detail="Invalid session_id")
 
 
+# ── Quick chat (the "Choo" widget) ───────────────────────────────────
+# Choo is the ask-and-go assistant on the passenger pages. It runs this exact
+# same pipeline - language detection, intent, NER, RAG, the Hub agents and the
+# LLM - so its answers are the full Passenger Assistant's answers. The only
+# difference is that nothing is written to Supabase, so a quick question never
+# creates a chat_sessions row, never lands in chat_messages, and therefore
+# never shows up in the sidebar list (GET /chat) or in
+# GET /chat/{session_id}/history.
+#
+# POST /chat/quick sets this flag for the duration of one request; every
+# Supabase read/write helper below checks it and uses the in-process buffer
+# instead, so follow-ups ("...and for 3 passengers?") still work within a visit
+# without anything being stored.
+_quick_chat: contextvars.ContextVar[bool] = contextvars.ContextVar("quick_chat", default=False)
+
+# 4 turns - deliberately below SUMMARY_EVERY, so the rolling-summary path (which
+# would call the LLM again and write chat_summaries) never triggers for Choo.
+QUICK_MAX_MESSAGES = 8
+QUICK_TTL_SECONDS = 30 * 60
+QUICK_MAX_SESSIONS = 500
+# session_id -> {"messages": [{"role", "message"}, ...], "seen": monotonic seconds}
+_quick_messages: dict[str, dict] = {}
+
+
+def _quick_prune() -> None:
+    """Drop stale visitors so a public widget can't grow this dict forever."""
+    cutoff = time.monotonic() - QUICK_TTL_SECONDS
+    for sid in [s for s, v in _quick_messages.items() if v["seen"] < cutoff]:
+        _quick_messages.pop(sid, None)
+    while len(_quick_messages) > QUICK_MAX_SESSIONS:
+        _quick_messages.pop(min(_quick_messages, key=lambda s: _quick_messages[s]["seen"]), None)
+
+
+def _quick_remember(session_id: str, role: str, message: str) -> None:
+    _quick_prune()
+    entry = _quick_messages.setdefault(session_id, {"messages": [], "seen": 0.0})
+    entry["messages"] = (entry["messages"] + [{"role": role, "message": message}])[-QUICK_MAX_MESSAGES:]
+    entry["seen"] = time.monotonic()
+
+
+def _quick_history(session_id: str) -> list[dict]:
+    return list(_quick_messages.get(session_id, {}).get("messages", []))
+
+
 def get_recent_history(session_id: str, turns: int = 3) -> list[dict]:
     """Last `turns` conversation turns (user+assistant pairs) for this session, oldest first."""
+    if _quick_chat.get():
+        return _quick_history(session_id)[-turns * 2:]
     if not supabase:
         return []
     try:
@@ -193,6 +241,8 @@ _session_summaries: dict[str, dict] = {}  # session_id -> {"summary": str, "turn
 
 
 def _fetch_all_messages(session_id: str) -> list[dict]:
+    if _quick_chat.get():
+        return _quick_history(session_id)
     if not supabase:
         return []
     try:
@@ -212,6 +262,8 @@ def _fetch_all_messages(session_id: str) -> list[dict]:
 
 def _load_summary(session_id: str) -> dict | None:
     """Stored summary row for the session, or None."""
+    if _quick_chat.get():
+        return None
     if not supabase:
         return None
     try:
@@ -231,6 +283,8 @@ def _load_summary(session_id: str) -> dict | None:
 
 
 def _save_summary(session_id: str, state: dict) -> None:
+    if _quick_chat.get():
+        return
     if not supabase:
         return
     try:
@@ -284,6 +338,13 @@ def _summarize_turns(previous: str, turns: list[list[dict]]) -> str:
 
 def get_conversation_context(session_id: str) -> tuple[str, str]:
     """Return (summary, recent_verbatim_text) for the session's prior turns."""
+    if _quick_chat.get():
+        # Quick chat keeps at most QUICK_MAX_MESSAGES in memory, which is short
+        # enough to send verbatim - no summary to build, and nothing is cached in
+        # _session_summaries (that dict is keyed by session and would otherwise
+        # outlive the visit).
+        return "", _format_turns(_split_turns(_fetch_all_messages(session_id)))
+
     turns = _split_turns(_fetch_all_messages(session_id))
     total = len(turns)
     covered_target = (total // SUMMARY_EVERY) * SUMMARY_EVERY
@@ -1034,6 +1095,8 @@ def touch_session(session_id: str, title_candidate: str | None = None):
     No row is created until the first message actually sends (avoids empty-session
     clutter from a passenger opening "+ New chat" and never typing anything).
     """
+    if _quick_chat.get():
+        return  # Choo never creates a session row, so it never joins the sidebar list
     if not supabase:
         return
     try:
@@ -1059,6 +1122,11 @@ def touch_session(session_id: str, title_candidate: str | None = None):
 
 
 def save_message(session_id: str, role: str, message: str):
+    if _quick_chat.get():
+        # In-process only, so the turn is still available for follow-up questions
+        # in this visit but is never persisted anywhere.
+        _quick_remember(session_id, role, message)
+        return
     if not supabase:
         print("Warning: Supabase is not configured.")
         return
@@ -1664,6 +1732,30 @@ async def chat(req: ChatRequest):
         prefill=prefill,
         cancellation=cancellation,
     )
+
+
+@app.post("/chat/quick", response_model=ChatResponse)
+async def chat_quick(req: ChatRequest):
+    """Same answers as /chat, with nothing written to the database.
+
+    This is what the Choo widget on the passenger pages calls. The whole
+    pipeline runs unchanged - language detection, intent, NER, RAG retrieval,
+    the Hub agents (M2/M4), the shared train registry and the LLM - so a
+    question answered here gets the same grounded, LLM-composed reply the full
+    Passenger Assistant gives. What it skips is persistence: no chat_sessions,
+    chat_messages or chat_summaries row is written, so a quick question never
+    appears in the sidebar (GET /chat) or in GET /chat/{session_id}/history.
+
+    Follow-up questions still work while the visitor keeps the panel open - the
+    last few turns are held in memory (see _quick_messages) and expire on their
+    own.
+    """
+    validate_session_id(req.session_id)
+    token = _quick_chat.set(True)
+    try:
+        return await chat(req)
+    finally:
+        _quick_chat.reset(token)
 
 
 @app.get("/chat/{session_id}/history")

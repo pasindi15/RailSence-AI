@@ -149,3 +149,4 @@
 {"ts": "2026-09-28T10:49:03.886367+00:00", "action": "asset_health_prediction", "agent": "maintenance-agent", "client": "127.0.0.1", "asset_id": "DE-1001", "asset_type": "diesel_engine", "health_status": "GREEN"}
 {"ts": "2026-09-28T10:50:10.783029+00:00", "action": "engineer_chat", "agent": "maintenance-agent", "client": "127.0.0.1", "detected_asset_type": "", "answer_method": "llm_grounded", "retrieval_method": "live_ir_rag"}
 {"ts": "2026-09-28T10:50:55.929847+00:00", "action": "engineer_chat", "agent": "maintenance-agent", "client": "127.0.0.1", "detected_asset_type": "", "answer_method": "llm_grounded", "retrieval_method": "live_ir_rag"}
+{"ts": "2026-09-29T07:45:04.306478+00:00", "action": "hub_issue_report", "agent": "maintenance-agent", "client": "127.0.0.1", "ticket_id": "MT-5CC952", "sender": "passenger-agent", "description": "The brakes on my train are making a grinding noise."}
