@@ -34,6 +34,7 @@ body.dark {
 body.dark .sb-footer{background:#162032}
 body.dark .nav-item:hover{background:#334155}
 body.dark .fleet-search input{background:#1e293b}
+body.dark .rpt-search-wrap input{background:#1e293b}
 body.dark .form-input,body.dark .form-select{background:#1e293b}
 body.dark .filter-pill{background:#1e293b}
 body.dark thead{background:#162032}
@@ -240,6 +241,12 @@ body.dark .logout-btn:hover{background:#2d1515;color:#f87171;border-color:#7f1d1
 .fleet-search svg{position:absolute;left:9px;top:50%;transform:translateY(-50%);pointer-events:none}
 .fleet-search input{border:1.5px solid var(--border);border-radius:10px;padding:6px 12px 6px 30px;font-size:0.78rem;font-family:inherit;color:var(--text);background:var(--bg);outline:none;width:200px;transition:border-color 0.15s}
 .fleet-search input:focus{border-color:var(--border-focus);background:var(--white)}
+.rpt-controls-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border)}
+.rpt-search-wrap{position:relative;flex-shrink:0}
+.rpt-search-wrap svg{position:absolute;left:9px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--text-light)}
+.rpt-search-wrap input{border:1.5px solid var(--border);border-radius:10px;padding:6px 12px 6px 30px;font-size:0.78rem;font-family:inherit;color:var(--text);background:var(--bg);outline:none;width:220px;transition:border-color 0.15s}
+.rpt-search-wrap input:focus{border-color:var(--border-focus);background:var(--white)}
+.rpt-filter-group{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .fleet-train-sel{border:1.5px solid var(--border);border-radius:10px;padding:6px 10px;font-size:0.78rem;font-family:inherit;color:var(--text);background:var(--bg);outline:none;appearance:none;cursor:pointer;transition:border-color 0.15s}
 .fleet-train-sel:focus{border-color:var(--border-focus);background:var(--white)}
 .fleet-count{font-size:0.72rem;color:var(--text-muted);margin-left:auto;white-space:nowrap}
@@ -1556,7 +1563,7 @@ button:not(:disabled):active,.chat-btn:active,.cp-btn:active,.quick-btn:active{t
 
       <!-- Recent Technician Reports -->
       <div class="card">
-        <div class="card-hdr" style="margin-bottom:14px">
+        <div class="card-hdr" style="margin-bottom:12px">
           <div>
             <div class="card-title">Field Observation Log</div>
             <div class="card-sub">Latest submitted reports · <span id="rpt-feed-count">persisted across restarts</span></div>
@@ -1565,6 +1572,23 @@ button:not(:disabled):active,.chat-btn:active,.cp-btn:active,.quick-btn:active{t
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             Log Observation
           </button>
+        </div>
+        <!-- Search + filter controls -->
+        <div class="rpt-controls-row">
+          <div class="rpt-search-wrap">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="rpt-search" placeholder="Search asset, station, fault…" oninput="filterAndRenderReports()"/>
+          </div>
+          <div class="rpt-filter-group">
+            <button class="filter-pill active" id="rptf-all" onclick="setRptFilter('status','ALL',this)">All</button>
+            <button class="filter-pill" id="rptf-open" onclick="setRptFilter('status','OPEN',this)">Open</button>
+            <button class="filter-pill g" id="rptf-resolved" onclick="setRptFilter('status','RESOLVED',this)">Resolved</button>
+          </div>
+          <div class="rpt-filter-group">
+            <button class="filter-pill tp active" id="rptf-src-all" onclick="setRptFilter('source','ALL',this)">All Sources</button>
+            <button class="filter-pill tp" id="rptf-src-eng" onclick="setRptFilter('source','ENGINEER',this)">Engineer</button>
+            <button class="filter-pill tp" id="rptf-src-pass" onclick="setRptFilter('source','PASSENGER',this)">Passenger</button>
+          </div>
         </div>
         <div id="reports-list"><div class="empty-state"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:5px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>No reports yet</div></div>
       </div>
@@ -2779,7 +2803,8 @@ async function loadDashboard() {
     renderNLPMetrics(dr.nlp_metrics||{});
     renderRAGMetrics(dr.rag_metrics||{});
     renderAlerts(dr.recent_events||[]);
-    renderReports(dr.recent_reports||[]);
+    _allReports=dr.recent_reports||[];
+    filterAndRenderReports();
 
     fleetAll=ar.assets||[];
     initFleetTrainSel();
@@ -2827,20 +2852,47 @@ function _timeAgo(iso){
   if(h<24) return h+'h ago';
   return Math.floor(h/24)+'d ago';
 }
+let _allReports=[];
+let _rptFilter={status:'ALL',source:'ALL'};
+function setRptFilter(key,val,btn){
+  _rptFilter[key]=val;
+  const group=btn.closest('.rpt-filter-group');
+  group.querySelectorAll('.filter-pill').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  filterAndRenderReports();
+}
+function filterAndRenderReports(){
+  const q=(document.getElementById('rpt-search')||{value:''}).value.trim().toLowerCase();
+  let list=_allReports;
+  if(_rptFilter.status==='OPEN') list=list.filter(r=>!r.resolved);
+  else if(_rptFilter.status==='RESOLVED') list=list.filter(r=>r.resolved);
+  if(_rptFilter.source==='ENGINEER') list=list.filter(r=>r.source!=='passenger');
+  else if(_rptFilter.source==='PASSENGER') list=list.filter(r=>r.source==='passenger');
+  if(q){
+    list=list.filter(r=>{
+      const haystack=[r.asset_id,r.station,r.summary,r.detected_fault_type,r.asset_type].join(' ').toLowerCase();
+      return haystack.includes(q);
+    });
+  }
+  renderReports(list);
+}
 function renderReports(reports){
   const el=document.getElementById('reports-list');
   if(!reports||!reports.length){
-    el.innerHTML='<div class="empty-state"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:5px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2"/><polyline points="14 2 14 8 20 8"/></svg>No reports yet — submit one with Log Observation</div>';
+    const isFiltered=_rptFilter.status!=='ALL'||_rptFilter.source!=='ALL'||(document.getElementById('rpt-search')||{value:''}).value.trim();
+    el.innerHTML=isFiltered
+      ?'<div class="empty-state"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:5px"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>No reports match the current filters</div>'
+      :'<div class="empty-state"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:5px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2"/><polyline points="14 2 14 8 20 8"/></svg>No reports yet — submit one with Log Observation</div>';
     return;
   }
   const open=reports.filter(r=>!r.resolved).length;
   const total=reports.length;
   const cntEl=document.getElementById('rpt-feed-count');
-  if(cntEl) cntEl.textContent=`${total} total · ${open} open · showing latest 10`;
+  if(cntEl) cntEl.textContent=`${total} total · ${open} open`;
   const sorted=[...reports].sort((a,b)=>{
     if(!!a.resolved!==!!b.resolved) return a.resolved?1:-1;
     return new Date(b.received_at)-new Date(a.received_at);
-  }).slice(0,10);
+  });
   el.innerHTML=sorted.map(r=>{
     const resolved=!!r.resolved;
     const isPassenger=r.source==='passenger';
@@ -3090,7 +3142,7 @@ async function submitReport(){
     if(!res.ok) throw new Error(data.detail||'Server error');
     showRptResult(data, asset_id, asset_type);
     // Silently refresh recent reports in background
-    fetch('/api/dashboard').then(r=>r.json()).then(dr=>renderReports(dr.recent_reports||[])).catch(()=>{});
+    fetch('/api/dashboard').then(r=>r.json()).then(dr=>{_allReports=dr.recent_reports||[];filterAndRenderReports();}).catch(()=>{});
   }catch(e){
     btn.disabled=false;
     btn.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg> Analyse &amp; Log';
