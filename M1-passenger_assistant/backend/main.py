@@ -61,7 +61,7 @@ except ImportError as _e:
 
 import httpx
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from supabase import create_client, Client
@@ -69,6 +69,13 @@ from supabase import create_client, Client
 from nlu.lang_detect import detect_language
 from nlu.intent_classifier import classify_intent, is_greeting
 from nlu.ner_extractor import STATION_ALIASES, extract_entities
+from auth import (
+    create_passenger_token,
+    current_user_id,
+    optional_passenger,
+    require_passenger,
+    verify_password,
+)
 from hub_client import build_envelope, send_to_hub, USE_MOCK_HUB
 from i18n import t
 from llm_client import build_model
@@ -152,6 +159,20 @@ class PinRequest(BaseModel):
     pinned: bool
 
 
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+
+class LoginResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user_id: str
+    username: str
+    full_name: str
+    nic: str | None = None
+
+
 class TitleRequest(BaseModel):
     title: str
 
@@ -181,6 +202,18 @@ def validate_session_id(session_id: str) -> None:
 # instead, so follow-ups ("...and for 3 passengers?") still work within a visit
 # without anything being stored.
 _quick_chat: contextvars.ContextVar[bool] = contextvars.ContextVar("quick_chat", default=False)
+
+# ── Chat ownership ───────────────────────────────────────────────────
+# The user_id of the signed-in passenger making the current request, or None
+# for an anonymous caller (the public homepage, the passenger portal, M2's
+# hand-off, the integration scripts). Set once per request from the verified
+# JWT and read by touch_session/save_message, which sit several calls deep
+# inside the answer pipeline - the same ContextVar approach already used for
+# quick chat, so no parameter has to be threaded through the RAG/NLU/LLM code.
+#
+# This is only ever written from a token this process has verified. Nothing a
+# browser sends can reach it.
+_current_user: contextvars.ContextVar[str | None] = contextvars.ContextVar("current_user", default=None)
 
 # 4 turns - deliberately below SUMMARY_EVERY, so the rolling-summary path (which
 # would call the LLM again and write chat_summaries) never triggers for Choo.
@@ -1115,10 +1148,14 @@ def touch_session(session_id: str, title_candidate: str | None = None):
             supabase.table("chat_sessions").update({"updated_at": now}).eq("session_id", session_id).execute()
         else:
             title = (title_candidate or "New conversation").strip()[:60] or "New conversation"
+            # The owner is stamped once, when the session row is created, from the
+            # verified token. An anonymous caller stores NULL, which keeps the row
+            # out of every signed-in passenger's sidebar.
             supabase.table("chat_sessions").insert({
                 "session_id": session_id,
                 "title": title,
                 "updated_at": now,
+                "user_id": _current_user.get(),
             }).execute()
     except Exception as e:
         print(f"Supabase session upsert failed: {e}")
@@ -1141,6 +1178,7 @@ def save_message(session_id: str, role: str, message: str):
             "session_id": session_id,
             "role": role,
             "message": message,
+            "user_id": _current_user.get(),
         }).execute()
     except Exception as e:
         print(f"Supabase save failed: {e}")
@@ -1165,6 +1203,67 @@ def _extract_train_id(text: str) -> str:
 @app.get("/health")
 def health():
     return {"status": "ok", "time": datetime.now(timezone.utc).isoformat()}
+
+
+# ---------------------------------------------------------------------------
+# Passenger authentication
+# ---------------------------------------------------------------------------
+# The passenger list used to live in the frontend bundle as a plain array with
+# plaintext passwords, checked in the browser - so the "logged-in user" was
+# whatever the browser said it was, and the backend never learned who was
+# asking. Credentials now live in `passenger_accounts` as bcrypt hashes and are
+# verified here; the browser only ever receives a signed token.
+#
+# Deliberately NOT the `passengers` table: that one belongs to M3's booking
+# agent. It is keyed by a SERIAL id, identifies travellers by NIC hash rather
+# than by login, holds real booking records and is the target of a foreign key
+# from booking_passengers. Login accounts are a separate concern and live in
+# their own table, so M1 never alters M3's schema or rows.
+@app.post("/auth/login", response_model=LoginResponse)
+def login(req: LoginRequest):
+    if not supabase:
+        raise HTTPException(status_code=503, detail="Supabase is not configured")
+    username = req.username.strip().lower()
+    try:
+        result = (
+            supabase.table("passenger_accounts")
+            .select("user_id,username,password_hash,full_name,nic")
+            .eq("username", username)
+            .limit(1)
+            .execute()
+        )
+    except Exception as e:
+        print(f"[auth] passenger_accounts lookup failed: {e}")
+        raise HTTPException(
+            status_code=503,
+            detail="Passenger accounts aren't set up yet - run backend/supabase_schema.sql against this Supabase project.",
+        )
+
+    row = result.data[0] if result.data else None
+    # Same message and no early return for "unknown user" vs "wrong password",
+    # so the response can't be used to enumerate valid usernames.
+    if not row or not verify_password(req.password, row.get("password_hash", "")):
+        print(f"[auth] failed login for username={username!r}")
+        raise HTTPException(status_code=401, detail="Invalid username or password.")
+
+    print(f"[auth] login ok user_id={row['user_id']}")
+    return LoginResponse(
+        access_token=create_passenger_token(row),
+        user_id=row["user_id"],
+        username=row["username"],
+        full_name=row.get("full_name") or row["username"],
+        nic=row.get("nic"),
+    )
+
+
+@app.get("/auth/me")
+def whoami(passenger: dict = Depends(require_passenger)):
+    """Lets the frontend check on load whether a stored token is still valid."""
+    return {
+        "user_id": current_user_id(passenger),
+        "username": passenger.get("username", ""),
+        "full_name": passenger.get("name", ""),
+    }
 
 
 @app.get("/trains/{train_id}/details")
@@ -1207,7 +1306,30 @@ async def ask_operations_agent(text: str) -> dict | None:
 
 
 @app.post("/chat", response_model=ChatResponse)
+async def chat_route(req: ChatRequest, passenger: dict | None = Depends(optional_passenger)):
+    """Signed-in and anonymous callers both land here.
+
+    Optional auth on purpose: besides the M1 chat app, POST /chat is called
+    without a token by the public homepage, the passenger portal (both via the
+    gateway's /api/chat), M2's booking/fare hand-off and the integration
+    scripts. Requiring a token here would break all of them, so an anonymous
+    conversation is simply stored with user_id = NULL.
+    """
+    token = _current_user.set(current_user_id(passenger))
+    try:
+        return await chat(req)
+    finally:
+        _current_user.reset(token)
+
+
 async def chat(req: ChatRequest):
+    """The answer pipeline itself - NLU, RAG, the Hub agents and the LLM.
+
+    Kept as a plain function rather than the route handler so that /chat/quick
+    (Choo) can call it directly. A FastAPI Depends(...) in this signature would
+    be passed as a literal Depends object on that internal call instead of
+    being resolved, so the dependency lives on chat_route above.
+    """
     text = req.message.strip()
     print(f"[chat] received message={text!r} session_id={req.session_id}")
 
@@ -1797,10 +1919,14 @@ async def chat_quick(req: ChatRequest):
 
 
 @app.get("/chat/{session_id}/history")
-def history(session_id: str):
+def history(session_id: str, passenger: dict = Depends(require_passenger)):
     validate_session_id(session_id)
     if not supabase:
         return {"session_id": session_id, "messages": [], "error": "Supabase is not configured"}
+
+    # Ownership first: without this, knowing (or guessing) a session_id was
+    # enough to read someone else's whole conversation.
+    get_session_or_404(session_id, current_user_id(passenger))
 
     try:
         result = (
@@ -1818,14 +1944,23 @@ def history(session_id: str):
 
 
 @app.get("/chat", response_model=list[SessionSummary])
-def list_sessions():
-    """Sidebar chat list: pinned sessions first, then most-recently-active."""
+def list_sessions(passenger: dict = Depends(require_passenger)):
+    """Sidebar chat list for the signed-in passenger only.
+
+    The .eq("user_id", ...) is the fix for the original bug: this used to be an
+    unfiltered select, so every passenger's sidebar listed every conversation
+    in the database.
+    """
     if not supabase:
+        return []
+    user_id = current_user_id(passenger)
+    if not user_id:
         return []
     try:
         result = (
             supabase.table("chat_sessions")
             .select("*")
+            .eq("user_id", user_id)
             .order("is_pinned", desc=True)
             .order("updated_at", desc=True)
             .execute()
@@ -1836,17 +1971,26 @@ def list_sessions():
         return []
 
 
-def get_session_or_404(session_id: str):
-    """Look up a chat_sessions row, or raise a clean HTTP error.
+def get_session_or_404(session_id: str, user_id: str | None):
+    """Look up a chat_sessions row the caller actually owns, or raise.
 
     Wraps the query itself (not just the later mutation) - if the chat_sessions
     table hasn't been created yet (see supabase_schema.sql), Supabase raises on
     the SELECT itself, which would otherwise surface as an opaque 500 instead
     of a message that tells the caller what to actually go fix.
+
+    Not-yours is reported as 404, deliberately, not 403: a 403 would confirm
+    that the session exists and belongs to somebody else, which is exactly the
+    fact an attacker enumerating session ids is trying to learn. A 404 is
+    indistinguishable from an id that was never real.
     """
     try:
         existing = (
-            supabase.table("chat_sessions").select("session_id").eq("session_id", session_id).limit(1).execute()
+            supabase.table("chat_sessions")
+            .select("session_id,user_id")
+            .eq("session_id", session_id)
+            .limit(1)
+            .execute()
         )
     except Exception as e:
         print(f"Supabase session lookup failed: {e}")
@@ -1856,15 +2000,22 @@ def get_session_or_404(session_id: str):
         )
     if not existing.data:
         raise HTTPException(status_code=404, detail="Session not found")
+    owner = existing.data[0].get("user_id")
+    if owner != user_id:
+        # Covers both directions: another passenger's session, and a legacy or
+        # anonymous session (user_id NULL) that belongs to nobody.
+        print(f"[authz] denied session={session_id} owner={owner!r} caller={user_id!r}")
+        raise HTTPException(status_code=404, detail="Session not found")
+    return existing.data[0]
 
 
 @app.delete("/chat/{session_id}", status_code=204)
-def delete_chat(session_id: str):
+def delete_chat(session_id: str, passenger: dict = Depends(require_passenger)):
     validate_session_id(session_id)
     if not supabase:
         raise HTTPException(status_code=503, detail="Supabase is not configured")
 
-    get_session_or_404(session_id)
+    get_session_or_404(session_id, current_user_id(passenger))
 
     try:
         # Explicit two-step hard delete rather than relying on the FK's ON
@@ -1884,14 +2035,14 @@ def delete_chat(session_id: str):
 
 
 @app.patch("/chat/{session_id}/title", response_model=SessionSummary)
-def rename_chat(session_id: str, req: TitleRequest):
+def rename_chat(session_id: str, req: TitleRequest, passenger: dict = Depends(require_passenger)):
     validate_session_id(session_id)
     title = req.title.strip()[:80]
     if not title:
         raise HTTPException(status_code=400, detail="Title cannot be empty")
     if not supabase:
         raise HTTPException(status_code=503, detail="Supabase is not configured")
-    get_session_or_404(session_id)
+    get_session_or_404(session_id, current_user_id(passenger))
 
     try:
         result = (
@@ -1907,12 +2058,12 @@ def rename_chat(session_id: str, req: TitleRequest):
 
 
 @app.patch("/chat/{session_id}/pin", response_model=SessionSummary)
-def pin_chat(session_id: str, req: PinRequest):
+def pin_chat(session_id: str, req: PinRequest, passenger: dict = Depends(require_passenger)):
     validate_session_id(session_id)
     if not supabase:
         raise HTTPException(status_code=503, detail="Supabase is not configured")
 
-    get_session_or_404(session_id)
+    get_session_or_404(session_id, current_user_id(passenger))
 
     try:
         result = (

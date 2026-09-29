@@ -5,7 +5,7 @@ import LoginPage from "./components/LoginPage.jsx";
 import ConfirmDialog from "./components/ConfirmDialog.jsx";
 import Toast from "./components/Toast.jsx";
 import TrainDetailsPanel from "./components/TrainDetailsPanel.jsx";
-import { sendMessage, getHistory, listChats, deleteChat, pinChat, renameChat } from "./api.js";
+import { sendMessage, getHistory, listChats, deleteChat, pinChat, renameChat, logout as apiLogout } from "./api.js";
 
 const CHATS_KEY = "railsense_chats";
 const ACTIVE_KEY = "railsense_active_chat";
@@ -26,6 +26,15 @@ function networkErrorText(userText) {
   if (/[඀-෿]/.test(userText || "")) return "යම් දෝෂයක් සිදු විය. කරුණාකර නැවත උත්සාහ කරන්න.";
   if (/[஀-௿]/.test(userText || "")) return "ஏதோ தவறு ஏற்பட்டது. மீண்டும் முயற்சிக்கவும்.";
   return "Something went wrong. Please try again.";
+}
+
+// Everything about the previous passenger's chats that lives in this browser.
+// The token is cleared separately by api.js logout().
+function clearLocalChatState() {
+  try {
+    localStorage.removeItem(CHATS_KEY);
+    localStorage.removeItem(ACTIVE_KEY);
+  } catch {}
 }
 
 function newChatId() {
@@ -108,6 +117,11 @@ export default function App() {
   // hasn't had a first message sent yet isn't in the backend list (sessions
   // are created lazily on first send), so it's kept alongside untouched.
   useEffect(() => {
+    // Runs once a passenger is signed in, not on bare mount: the list is now
+    // per-user and GET /chat needs their token, so fetching before login would
+    // just 401. Re-runs on passenger change so a second sign-in on this browser
+    // loads that passenger's chats, never the previous one's.
+    if (!passenger) return undefined;
     let cancelled = false;
     listChats()
       .then((sessions) => {
@@ -144,7 +158,7 @@ export default function App() {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [passenger]);
 
   // Safety net: if activeChatId ever points at a chat that no longer exists
   // (deleted elsewhere, or dropped by a state update), fall back to the first
@@ -157,8 +171,9 @@ export default function App() {
   }, [chats, activeChatId]);
 
   // Rehydrate messages for the active chat from the backend (survives refresh).
+  // Needs the passenger's token, so it waits for sign-in like the list above.
   useEffect(() => {
-    if (!activeChat || activeChat.loaded) return;
+    if (!passenger || !activeChat || activeChat.loaded) return;
     let cancelled = false;
 
     getHistory(activeChatId)
@@ -362,6 +377,16 @@ export default function App() {
   };
 
   const handleLogin = (p) => {
+    // A different passenger than last time must not inherit the previous one's
+    // sidebar. The chat list is rebuilt from the backend for whoever just
+    // signed in; the token itself was already stored by api.js login().
+    const previous = loadStoredPassenger();
+    if (previous && previous.id !== p.id) {
+      clearLocalChatState();
+      const fresh = emptyChat();
+      setChats([fresh]);
+      setActiveChatId(fresh.id);
+    }
     setPassenger(p);
     try {
       localStorage.setItem(PASSENGER_KEY, JSON.stringify(p));
@@ -369,7 +394,15 @@ export default function App() {
   };
 
   const handleLogout = () => {
+    // Clear the token and every trace of this passenger's chats. Previously
+    // only PASSENGER_KEY was removed, so the next person to sign in on this
+    // browser inherited the last one's conversation list from localStorage.
+    apiLogout();
+    clearLocalChatState();
     setPassenger(null);
+    const fresh = emptyChat();
+    setChats([fresh]);
+    setActiveChatId(fresh.id);
     try {
       localStorage.removeItem(PASSENGER_KEY);
     } catch {}
