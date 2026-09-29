@@ -90,7 +90,10 @@ SUPABASE_KEY = os.getenv("SUPABASE_SECRET_KEY", os.getenv("SUPABASE_SERVICE_ROLE
 
 supabase: Client | None = None
 if SUPABASE_URL and SUPABASE_KEY:
-    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    try:
+        supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    except Exception as e:
+        print(f"[startup] WARNING: Supabase init failed ({e}) — chat history disabled")
 
 SYSTEM_PROMPT = (Path(__file__).parent / "prompts" / "system_prompt.md").read_text(encoding="utf-8")
 
@@ -1182,6 +1185,8 @@ def train_details(train_id: str):
 
 
 OPERATIONS_AGENT_URL = os.getenv("OPERATIONS_AGENT_URL", "http://127.0.0.1:8005")
+_m4_port = os.getenv("MAINTENANCE_AGENT_PORT", "8006")
+MAINTENANCE_AGENT_URL = os.getenv("MAINTENANCE_AGENT_URL", f"http://127.0.0.1:{_m4_port}")
 _OPERATIONS_INTENTS = {"delay_check", "train_status", "train_info", "schedule_query", "unknown"}
 
 
@@ -1235,6 +1240,39 @@ async def chat(req: ChatRequest):
     if language == "en" and intent in _OPERATIONS_INTENTS:
         ops = await ask_operations_agent(text)
         if ops:
+            # M4 maintenance flags override M2's operational data for delay/status intents.
+            # A train flagged by an engineer is not in service regardless of the schedule.
+            _m4_train_id = entities.get("train_id")
+            if _m4_train_id and intent in ("delay_check", "train_status"):
+                try:
+                    async with httpx.AsyncClient(timeout=8) as _m4_client:
+                        _m4_resp = await _m4_client.get(
+                            f"{MAINTENANCE_AGENT_URL.rstrip('/')}/api/train-status/{_m4_train_id}"
+                        )
+                    if _m4_resp.status_code == 200:
+                        _mp = _m4_resp.json()
+                        if _mp.get("under_maintenance") and _mp.get("found") is not False:
+                            try:
+                                _tr_row = await asyncio.to_thread(get_train, _m4_train_id)
+                                _train_name = (_tr_row or {}).get("train_name") or _m4_train_id
+                            except Exception:
+                                _train_name = _m4_train_id
+                            _reason = _mp.get("reason", "Technical issue under investigation")
+                            _delay_mins = _mp.get("delay_minutes")
+                            _eta = _mp.get("estimated_clear")
+                            _maint_str = t("delay_maint", language, reason=_reason)
+                            _delay_str = f" Expected delay: {_delay_mins} minutes." if _delay_mins is not None else ""
+                            _eta_str = t("delay_maint_eta", language, eta=_eta) if _eta else ""
+                            _maint_reply = f"{_train_name} is currently under maintenance. {_maint_str}{_delay_str}{_eta_str}"
+                            save_message(req.session_id, "user", text)
+                            save_message(req.session_id, "assistant", _maint_reply)
+                            return ChatResponse(
+                                session_id=req.session_id, reply=_maint_reply, intent=intent,
+                                language=language, entities=entities,
+                                source="via Maintenance Agent (Hub)",
+                            )
+                except Exception:
+                    pass  # M4 unreachable — return M2's answer unchanged
             save_message(req.session_id, "user", text)
             save_message(req.session_id, "assistant", ops["reply"])
             return ChatResponse(

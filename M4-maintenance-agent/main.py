@@ -803,6 +803,27 @@ async def resolve_report(
     return {"status": "resolved", "report": target}
 
 
+@app.delete("/api/reports/{report_id}")
+@limiter.limit("20/minute")
+async def delete_report(request: Request, report_id: str, _: None = Depends(_require_token)):
+    """Permanently delete a field report."""
+    global _in_memory_reports
+    idx = next((i for i, r in enumerate(_in_memory_reports) if r.get("report_id") == report_id), None)
+    if idx is None:
+        raise HTTPException(status_code=404, detail=f"Report '{report_id}' not found.")
+    _in_memory_reports.pop(idx)
+    try:
+        REPORTS_PATH.parent.mkdir(parents=True, exist_ok=True)
+        with open(REPORTS_PATH, "w", encoding="utf-8") as f:
+            for rec in _in_memory_reports:
+                f.write(json.dumps(rec) + "\n")
+    except Exception as exc:
+        logger.warning("Could not persist after delete: %s", exc)
+    client_ip = request.client.host if request.client else "unknown"
+    _write_audit("report_deleted", client_ip, {"report_id": report_id})
+    return {"status": "deleted", "report_id": report_id}
+
+
 @app.get("/manual-search")
 @limiter.limit("30/minute")
 async def manual_search(
@@ -952,8 +973,6 @@ async def chat(request: Request, payload: ChatRequest):
         message=enriched_message,
         asset_type=payload.asset_type or "",
         history=history,
-        flags=dict(_train_flags),              # live maintenance flags (same as Train Flags panel)
-        reports=list(_in_memory_reports),      # field reports, for open tickets on a train
     )
     client_ip = request.client.host if request.client else "unknown"
     _write_audit("engineer_chat", client_ip, {
