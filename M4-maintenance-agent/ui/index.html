@@ -378,6 +378,30 @@ body.dark .pred-info-cell{background:var(--surface);border-color:#334155}
 .btn-resolve:hover{border-color:var(--green);color:var(--green);background:rgba(16,185,129,0.06)}
 .btn-resolve:disabled{opacity:0.4;cursor:not-allowed}
 .resolve-badge{font-size:0.64rem;font-weight:600;padding:2px 7px;border-radius:20px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.25);color:var(--green)}
+.btn-delete-report{display:inline-flex;align-items:center;gap:4px;background:transparent;border:1px solid var(--border);border-radius:8px;padding:4px 10px;font-size:0.67rem;font-weight:600;font-family:inherit;color:var(--text-light);cursor:pointer;transition:all 0.15s;white-space:nowrap}
+.btn-delete-report:hover{border-color:#fca5a5;color:#dc2626;background:rgba(220,38,38,0.05)}
+.btn-delete-report:disabled{opacity:0.35;cursor:not-allowed}
+/* ── Passenger report card — full redesign ── */
+.pr-card{background:var(--white);border-radius:14px;border:1px solid var(--border);box-shadow:var(--shadow-sm);overflow:hidden;margin-bottom:10px;transition:box-shadow 0.18s,transform 0.18s}
+.pr-card:hover{box-shadow:var(--shadow-md);transform:translateY(-1px)}
+.pr-card.pr-resolved{opacity:0.68}
+.pr-card-hdr{display:flex;align-items:center;gap:9px;padding:10px 14px;border-bottom:1px solid var(--border);background:var(--surface)}
+.pr-card-icon{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 8px rgba(99,102,241,0.3)}
+.pr-card-title{font-size:0.78rem;font-weight:700;color:var(--text);flex:1}
+.pr-card-title span{display:block;font-size:0.63rem;font-weight:500;color:var(--text-light);margin-top:1px;font-style:normal}
+.pr-status-open{display:inline-flex;align-items:center;gap:4px;font-size:0.62rem;font-weight:700;padding:3px 9px;border-radius:20px;background:#fef3c7;color:#d97706;border:1px solid #fde68a;text-transform:uppercase;letter-spacing:0.3px}
+.pr-status-open::before{content:'';width:5px;height:5px;border-radius:50%;background:#f59e0b;flex-shrink:0}
+.pr-status-resolved{display:inline-flex;align-items:center;gap:4px;font-size:0.62rem;font-weight:700;padding:3px 9px;border-radius:20px;background:#d1fae5;color:#059669;border:1px solid #a7f3d0;text-transform:uppercase;letter-spacing:0.3px}
+.pr-card-time{font-size:0.65rem;color:var(--text-light);white-space:nowrap}
+.pr-card-tid{font-size:0.6rem;font-family:monospace;color:var(--text-light);background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:1px 6px;white-space:nowrap}
+.pr-card-body{padding:13px 16px 12px;position:relative}
+.pr-card-quote{font-size:0.83rem;line-height:1.62;color:var(--text);padding:10px 14px 10px 20px;background:linear-gradient(135deg,rgba(99,102,241,0.05) 0%,rgba(139,92,246,0.03) 100%);border-left:3px solid #6366f1;border-radius:0 10px 10px 0;position:relative;font-style:italic}
+.pr-card-quote::before{content:'"';position:absolute;top:-8px;left:8px;font-size:3rem;line-height:1;color:rgba(99,102,241,0.18);font-style:normal;font-family:Georgia,serif;pointer-events:none}
+.pr-card-ftr{display:flex;align-items:center;gap:8px;padding:9px 14px;border-top:1px solid var(--border);background:var(--surface)}
+.pr-card-via{font-size:0.65rem;color:var(--text-light);display:flex;align-items:center;gap:5px;flex:1}
+.pr-card-via svg{color:var(--text-light)}
+body.dark .pr-card-hdr,body.dark .pr-card-ftr{background:var(--surface-2)}
+body.dark .pr-card-quote{background:linear-gradient(135deg,rgba(99,102,241,0.08) 0%,rgba(139,92,246,0.05) 100%)}
 /* ── Resolution Modal ── */
 .res-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:500;display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;pointer-events:none;transition:opacity 0.2s ease}
 .res-backdrop.open{opacity:1;pointer-events:all}
@@ -2813,23 +2837,68 @@ function renderReports(reports){
   const total=reports.length;
   const cntEl=document.getElementById('rpt-feed-count');
   if(cntEl) cntEl.textContent=`${total} total · ${open} open · showing latest 10`;
-  const sorted=[...reports].reverse().slice(0,10);
+  const sorted=[...reports].sort((a,b)=>{
+    if(!!a.resolved!==!!b.resolved) return a.resolved?1:-1;
+    return new Date(b.received_at)-new Date(a.received_at);
+  }).slice(0,10);
   el.innerHTML=sorted.map(r=>{
     const resolved=!!r.resolved;
-    const hasFault=r.detected_fault_type&&r.detected_fault_type!=='none'&&!resolved;
+    const isPassenger=r.source==='passenger';
+    const hasFault=r.detected_fault_type&&r.detected_fault_type!=='none'&&r.detected_fault_type!=='passenger_report'&&!resolved;
+    const timeStr=_timeAgo(r.received_at);
+    const resolvedAt=r.resolved_at?_timeAgo(r.resolved_at):'';
+    const deleteBtn=`<button class="btn-delete-report" onclick="deleteReport('${r.report_id}')" title="Delete">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+      Delete
+    </button>`;
+
+    if(isPassenger){
+      const tid=esc(r.report_id||r.ticket_id||'');
+      const resArgs=`'${r.report_id}','—','passenger_report','','passenger_report','${esc((r.summary||'').slice(0,120).replace(/'/g,"\\'"))}'`;
+      const statusBadge=resolved
+        ?`<span class="pr-status-resolved">Resolved ${resolvedAt?'· '+resolvedAt:''}</span>`
+        :`<span class="pr-status-open">Open</span>`;
+      const resolveBtn=resolved
+        ?''
+        :`<button class="btn-resolve" onclick="openResolveModal(${resArgs})">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            Resolve
+          </button>`;
+      return `<div class="pr-card${resolved?' pr-resolved':''}" id="rcard-${r.report_id}">
+        <div class="pr-card-hdr">
+          <div class="pr-card-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+          <div class="pr-card-title">
+            Passenger Report
+            <span>via M1 Passenger Chat</span>
+          </div>
+          ${statusBadge}
+          <span class="pr-card-time">${esc(timeStr)}</span>
+          <span class="pr-card-tid">${tid}</span>
+        </div>
+        <div class="pr-card-body">
+          <div class="pr-card-quote">${esc(r.summary||'')}</div>
+        </div>
+        <div class="pr-card-ftr">
+          <span class="pr-card-via">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            Forwarded from passenger chat
+          </span>
+          ${resolveBtn}
+          ${deleteBtn}
+        </div>
+      </div>`;
+    }
+
     const dotColor=resolved?'var(--green)':hasFault?'var(--amber)':'var(--green)';
     const typeLbl=(r.asset_type||'').replace(/_/g,' ');
     const parts=(r.parts_mentioned||[]).length;
     const actions=(r.actions_taken||[]).length;
-    const timeStr=_timeAgo(r.received_at);
-    const resolvedAt=r.resolved_at?_timeAgo(r.resolved_at):'';
-    const sourceTag=r.source==='passenger'
-      ?'<span class="ov-report-pill" style="border-color:#6366f1;color:#6366f1">passenger</span>'
-      :'';
     const resArgs=`'${r.report_id}','${esc(r.asset_id||'')}','${esc(r.asset_type||'')}','${esc(r.station||'')}','${esc(r.detected_fault_type||'')}','${esc((r.summary||'').slice(0,120).replace(/'/g,"\\'"))}'`;
     const resolveBtn=resolved
       ?`<span class="resolve-badge">✓ Resolved ${resolvedAt?resolvedAt:''}</span>`
-      :`<button class="btn-resolve" onclick="openResolveModal(${resArgs})" title="Mark as resolved">
+      :`<button class="btn-resolve" onclick="openResolveModal(${resArgs})">
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
           Resolve
         </button>`;
@@ -2843,14 +2912,31 @@ function renderReports(reports){
         <div class="ov-report-sum">${esc(r.summary||'')}</div>
         <div class="ov-report-meta">
           <span class="badge ${resolved?'badge-green':hasFault?'badge-amber':'badge-green'}">${esc(r.detected_fault_type||'none')}</span>
-          ${sourceTag}
           ${parts>0?`<span class="ov-report-pill">${parts} part${parts>1?'s':''}</span>`:''}
           ${actions>0?`<span class="ov-report-pill">${actions} action${actions>1?'s':''}</span>`:''}
           ${resolveBtn}
+          ${deleteBtn}
         </div>
       </div>
     </div>`;
   }).join('');
+}
+
+async function deleteReport(reportId){
+  if(!confirm('Delete this report? This cannot be undone.'))return;
+  const btn=document.querySelector(`#rcard-${reportId} .btn-delete-report`);
+  if(btn){btn.disabled=true;btn.textContent='Deleting…';}
+  try{
+    const res=await fetch(`/api/reports/${encodeURIComponent(reportId)}`,{
+      method:'DELETE',
+      headers:{'X-Engineer-Token':localStorage.getItem('m4_eng_token')||''}
+    });
+    if(res.status===401){localStorage.removeItem('m4_eng_token');localStorage.removeItem('m4_eng_auth');_lgResetAndShow();toast('Session expired — please sign in again.');return;}
+    if(!res.ok){const d=await res.json().catch(()=>({}));toast(d.detail||'Delete failed.');if(btn){btn.disabled=false;btn.innerHTML='<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg> Delete';}return;}
+    const card=document.getElementById(`rcard-${reportId}`);
+    if(card){card.style.transition='opacity 0.25s,transform 0.25s';card.style.opacity='0';card.style.transform='translateX(12px)';setTimeout(()=>card.remove(),260);}
+    toast('Report deleted.');
+  }catch(e){toast('Network error — could not delete.');if(btn){btn.disabled=false;}}
 }
 
 
@@ -3931,7 +4017,7 @@ function cpBot(data){
   m.appendChild(d);m.scrollTop=m.scrollHeight;
   const isPred=data.answer_method==='health_prediction';const l=data.answer_method==='llm_grounded';
   document.getElementById('cp-mdot').style.background=isPred?'var(--amber)':l?'var(--primary-light)':'var(--green)';
-  document.getElementById('cp-mlbl').textContent=isPred?'ML Prediction · HGBR':`${l?'LLM':'Template'} · ${data.retrieval_method==='live_ir_rag'?'IR + RAG':data.retrieval_method==='supabase_pgvector'?'pgvector':'TF-IDF'}`;
+  document.getElementById('cp-mlbl').textContent=isPred?'ML Prediction · HGBR':`${l?'LLM':'Template'} · ${data.retrieval_method==='supabase_pgvector'?'pgvector':'TF-IDF'}`;
 }
 
 async function cpRunPredict(uid, assetId, assetType){
