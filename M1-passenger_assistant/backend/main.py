@@ -1329,34 +1329,49 @@ def touch_session(session_id: str, title_candidate: str | None = None):
             .execute()
         )
         now = datetime.now(timezone.utc).isoformat()
-        # Set (non-None) only when chat()'s language resolution decided this
-        # session's stored language needs to change - establishing it for the
-        # first time, an explicit "answer in Sinhala"-style request, or a
-        # legacy session with no language stored yet. The common case (an
-        # already-established language, unchanged) leaves this None and
-        # neither branch below touches the column.
-        pending_language = _current_session_language.get()
         if existing.data:
-            update_fields = {"updated_at": now}
-            if pending_language:
-                update_fields["language"] = pending_language
-            supabase.table("chat_sessions").update(update_fields).eq("session_id", session_id).execute()
+            supabase.table("chat_sessions").update({"updated_at": now}).eq("session_id", session_id).execute()
         else:
             title = (title_candidate or "New conversation").strip()[:60] or "New conversation"
             # The owner is stamped once, when the session row is created, from the
             # verified token. An anonymous caller stores NULL, which keeps the row
             # out of every signed-in passenger's sidebar.
-            insert_fields = {
+            supabase.table("chat_sessions").insert({
                 "session_id": session_id,
                 "title": title,
                 "updated_at": now,
                 "user_id": _current_user.get(),
-            }
-            if pending_language:
-                insert_fields["language"] = pending_language
-            supabase.table("chat_sessions").insert(insert_fields).execute()
+            }).execute()
     except Exception as e:
+        # This insert/update is what chat_messages' FK constraint depends on -
+        # if it fails, the session row doesn't exist and every save_message()
+        # call below (both "user" and "assistant") then fails too. Nothing
+        # below this except block runs on that path, on purpose: the language
+        # write below is a SEPARATE, independent statement precisely so it can
+        # never be the reason this one fails (see its own comment).
         print(f"Supabase session upsert failed: {e}")
+        return
+
+    # Deliberately its own statement, after (not merged into) the insert/update
+    # above: chat_sessions.language is a migration (supabase_schema.sql) that
+    # may not have been run against a given Supabase project yet, and
+    # PostgREST rejects an ENTIRE insert/update if any column it references
+    # doesn't exist - bundling "language" into the statement above meant a
+    # missing column silently failed the session row's creation altogether
+    # (session never exists -> every chat_messages insert then violates
+    # fk_chat_messages_session). Keeping it separate means a missing column
+    # only degrades language persistence (chat() falls back to per-message
+    # detect_language() every turn - see resolve_session_language()), never
+    # conversation history itself.
+    pending_language = _current_session_language.get()
+    if pending_language:
+        try:
+            supabase.table("chat_sessions").update({"language": pending_language}).eq("session_id", session_id).execute()
+        except Exception as e:
+            print(
+                f"[context] session language save failed - has the chat_sessions.language "
+                f"migration (supabase_schema.sql) been run against this Supabase project? {e}"
+            )
 
 
 def save_message(session_id: str, role: str, message: str):
