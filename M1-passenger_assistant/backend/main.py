@@ -69,6 +69,7 @@ from supabase import create_client, Client
 from nlu.lang_detect import detect_language
 from nlu.intent_classifier import classify_intent, is_greeting
 from nlu.ner_extractor import STATION_ALIASES, extract_entities
+from nlu.romanized import is_romanized_sinhala as _is_romanized_sinhala, mentions_railway as _romanized_mentions_railway
 from auth import (
     create_passenger_token,
     current_user_id,
@@ -494,7 +495,7 @@ def _disp(name: str | None, language: str) -> str | None:
     return _station_display(name, language)
 
 
-def _language_prompt_block(language: str) -> str:
+def _language_prompt_block(language: str, question: str | None = None) -> str:
     """The language instruction + factual-grounding rules placed at the top of EVERY
     Gemini prompt (RAG answers and agent-result answers alike), so the language
     detected once in /chat controls the language of whatever Gemini writes."""
@@ -505,6 +506,15 @@ def _language_prompt_block(language: str) -> str:
         f"{LANGUAGE_ANSWER_RULES.get(language, LANGUAGE_ANSWER_RULES['en'])} "
         f"Respond only in {language_name}."
     )
+    if question and language == "si" and _is_romanized_sinhala(question):
+        # The passenger typed Sinhala in Latin letters (no Sinhala script at
+        # all) - still reply in Sinhala script, since that's the only
+        # Sinhala wording this system's templates/UI actually have.
+        instruction += (
+            " The passenger wrote in romanized Sinhala (Sinhala words spelled "
+            "in Latin/English letters, not Sinhala script) - still write your "
+            "reply in Sinhala script."
+        )
     # Restated on every turn (the system prompt has the same rules) so the model
     # is directed to it for this specific question.
     rules = (
@@ -533,7 +543,7 @@ def present_agent_result(
         return None
     facts_text = "\n".join(f"- {k}: {v}" for k, v in facts.items() if v not in (None, ""))
     prompt = (
-        f"{_language_prompt_block(language)}\n\n"
+        f"{_language_prompt_block(language, question)}\n\n"
         "The facts below come from a railway system agent and are the ONLY source of "
         "facts for this reply. Report every number, ID and time exactly. Where a fact "
         "says it is historical or an estimate, say so plainly - never present it as a "
@@ -700,6 +710,13 @@ RAILWAY_VOCAB_SI_TA = (
 def _mentions_railway(text: str, language: str) -> bool:
     if language == "en":
         return bool(RAILWAY_VOCAB.search(text))
+    # RAILWAY_VOCAB_SI_TA is Sinhala/Tamil *script* substrings - a romanized
+    # Sinhala message ("mata ... ticket ekak ganna oni") is tagged
+    # language="si" (see nlu/lang_detect.py) but contains none of that script,
+    # so without this branch every such message would fail this check and be
+    # declared out of scope regardless of what it actually says.
+    if _is_romanized_sinhala(text):
+        return _romanized_mentions_railway(text)
     return any(term in text for term in RAILWAY_VOCAB_SI_TA)
 
 # Matches a fare doc line like "- 2nd Class Reserved: LKR 500".
@@ -1097,7 +1114,7 @@ def compose_rag_answer(
     # language requirement something the model is directed to do on this
     # specific turn, not just background metadata it might deprioritize.
     prompt = (
-        f"{_language_prompt_block(language)}\n\n"
+        f"{_language_prompt_block(language, text)}\n\n"
         f"language: {language}\n\n"
         f"Detected intent: {intent}\n"
         f"Extracted details from the passenger's message: {known_details}\n\n"

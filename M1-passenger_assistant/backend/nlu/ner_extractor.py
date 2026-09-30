@@ -14,6 +14,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 from llm_client import build_model
+from nlu.romanized import is_romanized_sinhala, match_stations as _match_romanized_stations
 
 # Anchor to backend/.env - see main.py for why load_dotenv() with no path is unsafe.
 load_dotenv(Path(__file__).parent.parent / ".env")
@@ -256,10 +257,45 @@ def extract_entities(text: str) -> dict:
         for canonical, aliases in STATION_ALIASES.items()
         if any(alias.lower() in lowered_text for alias in aliases)
     ]
-    if not found_stations:
-        found_stations = _llm_extract_stations(text)
 
-    route_origin, route_destination = resolve_route_roles(text, found_stations)
+    romanized_matches: list[tuple[str, str | None, int]] = []
+    if is_romanized_sinhala(text):
+        # e.g. "mata colomba idala badullata ..." - the script-based alias
+        # scan above only matches "colombo"/"badulla" as substrings, which
+        # misses "colomba" entirely and finds "badulla" with no role. Merge
+        # in whatever the romanized alias+case-suffix matcher found instead
+        # of re-running the English/Sinhala-script role logic below on text
+        # it can't parse.
+        romanized_matches = _match_romanized_stations(text)
+        for canonical, _role, _pos in romanized_matches:
+            if canonical not in found_stations:
+                found_stations.append(canonical)
+
+    # A single alias-scan hit is often a weak/incomplete read (e.g. only the
+    # destination named, or - as above - one of two stations missed entirely).
+    # Ask the LLM for whatever wasn't found rather than only when nothing was.
+    if len(found_stations) < 2:
+        for station in _llm_extract_stations(text):
+            if station not in found_stations:
+                found_stations.append(station)
+
+    if romanized_matches:
+        route_origin = next((c for c, r, _ in romanized_matches if r == "origin"), None)
+        route_destination = next(
+            (c for c, r, _ in romanized_matches if r == "dest" and c != route_origin), None
+        )
+        unmarked = [
+            c for c, r, _ in romanized_matches
+            if r is None and c not in (route_origin, route_destination)
+        ]
+        if route_origin is None and route_destination is None and len(romanized_matches) >= 2:
+            route_origin, route_destination = romanized_matches[0][0], romanized_matches[1][0]
+        elif route_origin is None and route_destination is not None and unmarked:
+            route_origin = unmarked[0]
+        elif route_destination is None and route_origin is not None and unmarked:
+            route_destination = unmarked[0]
+    else:
+        route_origin, route_destination = resolve_route_roles(text, found_stations)
 
     time_match = TIME_PATTERN.search(text)
     date_match = DATE_PATTERN.search(text)
