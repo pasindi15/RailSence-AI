@@ -266,6 +266,72 @@ def get_recent_history(session_id: str, turns: int = 3) -> list[dict]:
         return []
 
 
+# Previous-turn intents worth carrying forward onto an otherwise-"unknown"
+# follow-up (see _previous_turn_context and its call site in chat()).
+# delay_check/train_status/train_info/booking_request/... are deliberately
+# excluded - inheriting those would replay a Hub call or open a booking card
+# from a vague follow-up instead of just answering from the FAQ docs like the
+# turn it's continuing did.
+_FOLLOWUP_CARRY_INTENTS = {"fare_query", "schedule_query", "policy_query"}
+
+# An explicit continuation lead-in ("what about X", "how about X", "and X",
+# "what if X") - a strong, English-only signal (matching this codebase's other
+# English-only phrase heuristics, e.g. _INFO_FRAME_PATTERN) that a short
+# follow-up is modifying the previous question rather than asking a new one.
+_FOLLOWUP_PHRASE_PATTERN = re.compile(r"^\s*(?:what about|how about|what if|and)\b", re.IGNORECASE)
+
+# How many recent user turns _previous_turn_context() scans for carry-forward
+# fields. >1 so a chain of short follow-ups ("...for 2 people?" then "...and
+# tomorrow?") still resolves - the second follow-up's own raw text has no
+# station either, so looking only at the immediately preceding turn (itself
+# station-less) would lose the route again. Kept small: a long-settled topic
+# several turns back re-surfacing on every later "unknown" message would be
+# surprising, and get_conversation_context()'s own summary/verbatim window is
+# the mechanism for genuinely long-range context reaching the LLM.
+_FOLLOWUP_LOOKBACK_TURNS = 5
+
+
+def _previous_turn_context(session_id: str) -> dict | None:
+    """Re-derive recent-turn intent + entities from stored user messages in
+    THIS session, or None if there are none yet.
+
+    Nothing beyond role+message is persisted per chat_messages row, so a
+    context-free follow-up ("What about for 2 people?") has no station/train
+    of its own for extract_entities() to find. Rather than adding a new
+    column/table for this, the same classify_intent()/extract_entities()
+    already run on every message are simply re-run on recent user messages -
+    cheap, deterministic, and correctly isolated: get_recent_history() already
+    filters by session_id, so a brand-new session (or another passenger's
+    session) has no prior row to look up and this returns None.
+
+    Fields are folded oldest-to-newest so a later turn's own value always
+    wins, but an empty field (a follow-up that named no station of its own)
+    doesn't blank out an earlier turn's value - this is what lets a *chain*
+    of follow-ups ("...for 2 people?" -> "...and tomorrow?") keep resolving
+    to the station named several turns back, not just the immediately
+    preceding one. `intent` similarly carries forward through "unknown" turns
+    but resets once a turn asks something outside _FOLLOWUP_CARRY_INTENTS
+    (e.g. a booking/complaint in between) - that turn ends the old topic.
+    """
+    history = get_recent_history(session_id, turns=_FOLLOWUP_LOOKBACK_TURNS)
+    user_texts = [m["message"] for m in history if m["role"] == "user"]
+    if not user_texts:
+        return None
+
+    merged_entities: dict = {}
+    carry_intent: str | None = None
+    for prev_text in user_texts:  # oldest first
+        prev_intent = classify_intent(prev_text)
+        for key, value in extract_entities(prev_text).items():
+            if value not in (None, [], ""):
+                merged_entities[key] = value
+        if prev_intent in _FOLLOWUP_CARRY_INTENTS:
+            carry_intent = prev_intent
+        elif prev_intent != "unknown":
+            carry_intent = None
+    return {"intent": carry_intent, "entities": merged_entities}
+
+
 # ── Rolling conversation memory ──────────────────────────────────────
 # Every SUMMARY_EVERY completed turns (a turn = user message + reply) the older
 # part of the chat is folded into a running summary. The prompt then carries
@@ -1370,6 +1436,45 @@ async def chat(req: ChatRequest):
     entities = extract_entities(text)
     if entities.get("train_id") and intent == "schedule_query":
         intent = "train_info"
+
+    # Conversation-context carry-forward for follow-ups that name no station/
+    # train of their own ("What about for 2 people?", "What about tomorrow?")
+    # or classify as "unknown" despite clearly continuing the previous turn
+    # ("What about Kandy to Colombo?"). Only looked up when actually needed -
+    # a fully self-contained message (its own intent AND its own stations)
+    # never touches this, so most first messages pay no extra cost.
+    if intent == "unknown" or not (entities.get("stations") or entities.get("train_id")):
+        prev = _previous_turn_context(req.session_id)
+        if prev:
+            prev_entities = prev["entities"]
+            if not (entities.get("stations") or entities.get("train_id")):
+                if prev_entities.get("stations"):
+                    entities["stations"] = prev_entities["stations"]
+                    entities["from_station"] = prev_entities.get("from_station")
+                    entities["to_station"] = prev_entities.get("to_station")
+                if prev_entities.get("train_id"):
+                    entities["train_id"] = prev_entities["train_id"]
+            # Only take over the previous turn's intent when THIS message has
+            # none of its own (stayed "unknown") and looks like it's
+            # modifying the same question - a passenger count/fare class, or
+            # an explicit "what about .../and ..." continuation - rather than
+            # asking something genuinely new ("how long does it take?"). That
+            # is left "unknown" on purpose: compose_rag_answer then searches
+            # the whole knowledge base instead of being pinned to the
+            # previous topic's doc, and Gemini still has the full turn
+            # history to resolve it from context either way.
+            if (
+                intent == "unknown"
+                and prev["intent"] in _FOLLOWUP_CARRY_INTENTS
+                and entities.get("stations")
+                and (
+                    entities.get("passenger_count")
+                    or entities.get("fare_class_keywords")
+                    or _FOLLOWUP_PHRASE_PATTERN.match(text)
+                )
+            ):
+                intent = prev["intent"]
+                print(f"[chat] intent inherited from previous turn -> {intent}")
     print(f"[chat] language={language} intent={intent}")
 
     # Train operations questions (live position, delays, "any train to X after
