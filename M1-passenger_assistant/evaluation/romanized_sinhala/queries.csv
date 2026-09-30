@@ -1,0 +1,57 @@
+id,text,expected_language,expected_intent,expected_from,expected_to
+1,mata colomba idala badullata ticket ekak ganna oni,si,booking_request,Colombo Fort,Badulla
+2,mata kolamba idala mahanuwarata ticket ekak book karanna oni,si,booking_request,Colombo Fort,Kandy
+3,colombata ticket ekak oni,si,booking_request,,Colombo Fort
+4,mata kandy idala galleta ticket ekak wenkaranna oni,si,booking_request,Kandy,Galle
+5,mata mahanuwara idan gaallata ticket eka book karanna oni,si,booking_request,Kandy,Galle
+6,mata jaffna idala colombata ticket ekak ganna oni,si,booking_request,Jaffna,Colombo Fort
+7,mata anuradhapuraya idala matarata ticket ekak ganna oni,si,booking_request,Anuradhapura,Matara
+8,mata badulle idala kandyta ticket ekak wen karanna oni,si,booking_request,Badulla,Kandy
+9,mata yapanaya idala anuradhapurayata ticket ekak ganna oni,si,booking_request,Jaffna,Anuradhapura
+10,mata maathara idala colombata ticket ekak book karanna oni,si,booking_request,Matara,Colombo Fort
+11,colomba idala badullata gaasthuwa kiyada,si,fare_query,Colombo Fort,Badulla
+12,kandy idala colombata mila kiyada,si,fare_query,Kandy,Colombo Fort
+13,mahanuwarata gaasthuwa kiyada,si,fare_query,,Kandy
+14,galleta ticket eka kiyada,si,fare_query,,Galle
+15,colomba idala matarata gastuwa kiyada,si,fare_query,Colombo Fort,Matara
+16,jaffna idala anuradhapurayata mila kiyada,si,fare_query,Jaffna,Anuradhapura
+17,badullata gaasthuwa kiyada,si,fare_query,,Badulla
+18,mata anuradhapuraya idala colombata gaasthuwa kiyada,si,fare_query,Anuradhapura,Colombo Fort
+19,mahanuwara idan galleta gastuwa kiyada,si,fare_query,Kandy,Galle
+20,kolamba idala badulleta mila kiyada,si,fare_query,Colombo Fort,Badulla
+21,colomba idala kandyta welawa kiyada,si,schedule_query,Colombo Fort,Kandy
+22,mahanuwarata koi welawe kochchiya thiyenawada,si,schedule_query,,Kandy
+23,galleta yana kochchiya welawada,si,schedule_query,,Galle
+24,badullata welawada kochchiya thiyenne,si,schedule_query,,Badulla
+25,colomba idala matarata welawa kiyada,si,schedule_query,Colombo Fort,Matara
+26,anuradhapuraya idala jaffnata welawa kiyada,si,schedule_query,Anuradhapura,Jaffna
+27,kandy idala badullata koi welawe kochchiya,si,schedule_query,Kandy,Badulla
+28,mahanuwara idan colombata welawa kiyada,si,schedule_query,Kandy,Colombo Fort
+29,yapanaya idala matarata welawada,si,schedule_query,Jaffna,Matara
+30,gaallata welawa kiyada,si,schedule_query,,Galle
+31,kochchiya pramadai,si,delay_check,,
+32,kochchiya parakku,si,delay_check,,
+33,colomba idala kandyta kochchiya pramadaida,si,delay_check,Colombo Fort,Kandy
+34,mahanuwara idan galleta kochchiya parakkuda,si,delay_check,Kandy,Galle
+35,badullata yana kochchiya pramadaida,si,delay_check,,Badulla
+36,kochchiya leit,si,delay_check,,
+37,anuradhapuraya idala colombata kochchiya pramadai,si,delay_check,Anuradhapura,Colombo Fort
+38,jaffna idala matarata kochchiya parakkuda,si,delay_check,Jaffna,Matara
+39,colomba idala badullata kochchiya pramadaida,si,delay_check,Colombo Fort,Badulla
+40,mahanuwarata kochchiya parakku,si,delay_check,,Kandy
+41,mage booking eka cancel karanna oni,si,cancel_booking,,
+42,mage ticket eka cancel karanna oni,si,cancel_booking,,
+43,booking eka awalangu karanna oni,si,cancel_booking,,
+44,mage reservation eka cancel karanna,si,cancel_booking,,
+45,ticket eka awalanguda karanna oni,si,cancel_booking,,
+46,mage booking eka cancel karanna,si,cancel_booking,,
+47,mage baggage eka kadila,si,complaint,,
+48,compartment eke wada karanne na,si,complaint,,
+49,seat eka waradi,si,complaint,,
+50,mage bag eka kadila,si,complaint,,
+51,Is the 14:35 Colombo Fort to Kandy train delayed?,en,delay_check,Colombo Fort,Kandy
+52,What is the ticket fare from Colombo Fort to Kandy?,en,fare_query,Colombo Fort,Kandy
+53,What time does the next train to Galle leave?,en,schedule_query,,Galle
+54,I want to book a ticket from Colombo Fort to Badulla,en,booking_request,Colombo Fort,Badulla
+55,Cancel my booking please,en,cancel_booking,,
+56,The AC in my compartment is broken,en,complaint,,
