@@ -94,6 +94,15 @@ ON CONFLICT (user_id) DO NOTHING;
 ALTER TABLE chat_sessions ADD COLUMN IF NOT EXISTS user_id TEXT;
 ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS user_id TEXT;
 
+-- Persistent conversation language ("si"/"en"/"ta"), established from the
+-- session's first meaningful message and kept for every later reply
+-- regardless of what a short follow-up itself looks like (see
+-- resolve_session_language() in main.py). NULL is a real, expected value -
+-- every session that existed before this migration ran, and every new one
+-- until its first message arrives - and is handled as "detect and establish
+-- now", not as English or any other default.
+ALTER TABLE chat_sessions ADD COLUMN IF NOT EXISTS language TEXT;
+
 -- Matches the sidebar query exactly: filter by owner, pinned first, newest first.
 CREATE INDEX IF NOT EXISTS ix_chat_sessions_user_pinned_updated
     ON chat_sessions (user_id, is_pinned DESC, updated_at DESC);

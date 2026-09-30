@@ -216,6 +216,18 @@ _quick_chat: contextvars.ContextVar[bool] = contextvars.ContextVar("quick_chat",
 # browser sends can reach it.
 _current_user: contextvars.ContextVar[str | None] = contextvars.ContextVar("current_user", default=None)
 
+# ── Persistent conversation language ─────────────────────────────────
+# Set once per request, inside chat(), to the language chat_sessions.language
+# should be written as (or None when nothing needs to change - the common
+# case, once a session's language is already established). touch_session()
+# reads it several calls deep inside save_message(), the same ContextVar
+# approach as _current_user above, so the write happens through the one place
+# that already handles the chat_sessions insert-vs-update branching (and,
+# on insert, stamps the row's owner) instead of a second, racing write path.
+_current_session_language: contextvars.ContextVar[str | None] = contextvars.ContextVar(
+    "current_session_language", default=None
+)
+
 # 4 turns - deliberately below SUMMARY_EVERY, so the rolling-summary path (which
 # would call the LLM again and write chat_summaries) never triggers for Choo.
 QUICK_MAX_MESSAGES = 8
@@ -243,6 +255,96 @@ def _quick_remember(session_id: str, role: str, message: str) -> None:
 
 def _quick_history(session_id: str) -> list[dict]:
     return list(_quick_messages.get(session_id, {}).get("messages", []))
+
+
+# Matches the language's own name - in any of the 3 scripts, or the English
+# word - appearing anywhere in the message. A normal railway question has no
+# reason to mention "Sinhala"/"Tamil"/"English" by name (in any script), so
+# this is a low-false-positive-risk way to catch real phrasings like
+# "සිංහලෙන් කියන්න" ("say it in Sinhala") or "தமிழில் பதில் சொல்லுங்கள்"
+# ("answer in Tamil") without needing a rigid "switch to X" template that
+# would miss most of the ways a passenger might actually ask.
+# Word STEMS, not full dictionary forms - Sinhala/Tamil both inflect the noun
+# for "in Sinhala/Tamil/English" (a case suffix in Sinhala, a stem change before
+# the suffix in Tamil: "தமிழ்" -> "தமிழில்", "ஆங்கிலம்" -> "ஆங்கிலத்தில்" - the
+# trailing consonant+virama drops before the suffix attaches). Each stem here
+# is a verified prefix of both the bare noun and its "in X" inflected form.
+_LANGUAGE_NAME_PATTERNS = {
+    "si": re.compile(r"සිංහල|சிங்கள|\bsinhala(?:ese)?\b", re.IGNORECASE),
+    "ta": re.compile(r"தமிழ|දෙමළ|\btamil\b", re.IGNORECASE),
+    "en": re.compile(r"ඉංග්‍රීසි|ஆங்கில|\benglish\b", re.IGNORECASE),
+}
+
+
+def _detect_explicit_language_request(text: str) -> str | None:
+    """"si"/"en"/"ta" if the message names exactly one language by name
+    (an explicit request to switch to or answer in it), else None. Two or
+    more named in the same message is treated as ambiguous, not a request -
+    left to whatever the session's language already is.
+    """
+    matches = [code for code, pattern in _LANGUAGE_NAME_PATTERNS.items() if pattern.search(text)]
+    return matches[0] if len(matches) == 1 else None
+
+
+def _get_session_language(session_id: str) -> str | None:
+    """The language already established for this session, or None (a brand
+    new session, or a legacy session from before this feature existed)."""
+    if _quick_chat.get():
+        return _quick_messages.get(session_id, {}).get("language")
+    if not supabase:
+        return None
+    try:
+        result = (
+            supabase.table("chat_sessions")
+            .select("language")
+            .eq("session_id", session_id)
+            .limit(1)
+            .execute()
+        )
+        if result.data:
+            return result.data[0].get("language")
+    except Exception as e:
+        print(f"[context] session language lookup failed (does chat_sessions.language exist?): {e}")
+    return None
+
+
+def _set_session_language(session_id: str, language: str) -> None:
+    """Record `language` as this session's established language.
+
+    Quick chat (Choo) keeps this in the same in-process dict as its message
+    buffer - it never creates a chat_sessions row at all. Everywhere else,
+    the actual write happens inside touch_session() (via
+    _current_session_language) rather than here directly: touch_session()
+    already knows whether this is the row's first INSERT (and must also
+    stamp title/user_id) or a later UPDATE, and a second, independent write
+    path here would race it instead of going through that one place.
+    """
+    if _quick_chat.get():
+        entry = _quick_messages.setdefault(session_id, {"messages": [], "seen": 0.0})
+        entry["language"] = language
+        entry["seen"] = time.monotonic()
+        return
+    _current_session_language.set(language)
+
+
+def resolve_session_language(session_id: str, text: str) -> str:
+    """The language this reply must be written in, per the session's
+    established-language rule (see main.py module docstring reference /
+    the feature this implements): once a session's first meaningful message
+    establishes a language, later follow-ups keep it regardless of what
+    script/words they themselves use - UNLESS this message explicitly asks
+    for a different language, which becomes the new session language from
+    here on. A session with no stored language yet (new, or a legacy row
+    from before this feature existed) detects one from this message and
+    establishes it now.
+    """
+    stored = _get_session_language(session_id)
+    explicit = _detect_explicit_language_request(text)
+    language = explicit or stored or detect_language(text)
+    if language != stored:
+        print(f"[context] session={session_id} language {stored!r} -> {language!r}")
+        _set_session_language(session_id, language)
+    return language
 
 
 def get_recent_history(session_id: str, turns: int = 3) -> list[dict]:
@@ -1227,19 +1329,32 @@ def touch_session(session_id: str, title_candidate: str | None = None):
             .execute()
         )
         now = datetime.now(timezone.utc).isoformat()
+        # Set (non-None) only when chat()'s language resolution decided this
+        # session's stored language needs to change - establishing it for the
+        # first time, an explicit "answer in Sinhala"-style request, or a
+        # legacy session with no language stored yet. The common case (an
+        # already-established language, unchanged) leaves this None and
+        # neither branch below touches the column.
+        pending_language = _current_session_language.get()
         if existing.data:
-            supabase.table("chat_sessions").update({"updated_at": now}).eq("session_id", session_id).execute()
+            update_fields = {"updated_at": now}
+            if pending_language:
+                update_fields["language"] = pending_language
+            supabase.table("chat_sessions").update(update_fields).eq("session_id", session_id).execute()
         else:
             title = (title_candidate or "New conversation").strip()[:60] or "New conversation"
             # The owner is stamped once, when the session row is created, from the
             # verified token. An anonymous caller stores NULL, which keeps the row
             # out of every signed-in passenger's sidebar.
-            supabase.table("chat_sessions").insert({
+            insert_fields = {
                 "session_id": session_id,
                 "title": title,
                 "updated_at": now,
                 "user_id": _current_user.get(),
-            }).execute()
+            }
+            if pending_language:
+                insert_fields["language"] = pending_language
+            supabase.table("chat_sessions").insert(insert_fields).execute()
     except Exception as e:
         print(f"Supabase session upsert failed: {e}")
 
@@ -1416,7 +1531,13 @@ async def chat(req: ChatRequest):
     text = req.message.strip()
     print(f"[chat] received message={text!r} session_id={req.session_id}")
 
-    language = detect_language(text)
+    # Resolves to the session's already-established language unless this
+    # message explicitly asks to switch, or the session has none yet - see
+    # resolve_session_language(). Not per-message detect_language(text): a
+    # short Sinhala-established follow-up like "දෙන්නෙකුට?" (or an English one
+    # like "For 2 people?") must not flip languages just because it's short
+    # or happens to contain a station/number that reads ambiguously.
+    language = resolve_session_language(req.session_id, text)
 
     # FIX 1: short-circuits before intent classification/NER/RAG entirely -
     # a bare "hii" was previously falling through to classify_intent()'s
