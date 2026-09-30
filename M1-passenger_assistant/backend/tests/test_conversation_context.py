@@ -180,3 +180,32 @@ def test_topic_shift_followup_is_not_forced_into_previous_intent(_fake_llm):
     assert body["entities"]["from_station"] == "Colombo Fort"
     assert body["entities"]["to_station"] == "Kandy"
     assert body["source"] != ""  # reached compose_rag_answer, not the off-topic notice
+
+
+def test_bare_number_answers_the_assistants_own_passenger_count_question(_fake_llm):
+    """Regression: a passenger answering "how many passengers?" often just
+    types the bare number ("3"), naming no noun for PASSENGER_COUNT_PATTERN
+    to anchor on (unlike "for 3 people"). Without recognizing that shape,
+    entities.passenger_count stayed None, the intent-inherit condition in
+    chat() never saw a continuation signal, and this fell all the way to the
+    off-topic notice - the exact failure this test guards against."""
+    sid = "ctx-bare-count"
+    ask(sid, "How much is a Colombo to Kandy ticket?")
+    body = ask(sid, "3")
+
+    assert body["intent"] == "fare_query"
+    assert body["entities"]["from_station"] == "Colombo Fort"
+    assert body["entities"]["to_station"] == "Kandy"
+    assert body["entities"]["passenger_count"] == 3
+    assert body["source"] == "fares.md"
+
+
+def test_bare_number_group_total_is_precomputed_in_code(_fake_llm):
+    sid = "ctx-bare-count-total"
+    ask(sid, "How much is a Colombo to Kandy ticket?")
+    ask(sid, "3")
+
+    prompt = _fake_llm.prompts[-1]
+    assert "Pre-computed total fares for 3 passengers" in prompt
+    assert "LKR 7500" in prompt  # 2500 (First Class) x 3
+    assert "LKR 3600" in prompt  # 1200 (Second Class) x 3

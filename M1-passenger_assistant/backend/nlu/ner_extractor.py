@@ -139,6 +139,13 @@ PASSENGER_COUNT_PATTERN = re.compile(
 PASSENGER_COUNT_FOR_PATTERN = re.compile(
     r"\bfor\s+(\d+)\s*(?:passenger|passengers|person|persons|people)?\b", re.IGNORECASE
 )
+# A passenger answering the assistant's own "how many passengers?" with just
+# a bare number ("3") names no noun for PASSENGER_COUNT_PATTERN to anchor on -
+# that whole-message shape (nothing else, 1-2 digits) is specific enough on
+# its own. Capped at 2 digits so a 3+ digit number (a bare SLR service number
+# like "4085", answered instead of asked, or a year) is never misread as a
+# passenger count.
+BARE_PASSENGER_COUNT_PATTERN = re.compile(r"^\s*(\d{1,2})\s*[.?!]?\s*$")
 
 MONTH_MAP = {
     "january": 1, "february": 2, "march": 3, "april": 4, "may": 5, "june": 6,
@@ -303,7 +310,11 @@ def extract_entities(text: str) -> dict:
     bare_train_number = None if train_id_match else _extract_bare_train_number(text)
     name_based_train_id = None if (train_id_match or bare_train_number) else _extract_train_name_id(text)
     booking_ref_match = BOOKING_REF_PATTERN.search(text)
-    passenger_count_match = PASSENGER_COUNT_PATTERN.search(text) or PASSENGER_COUNT_FOR_PATTERN.search(text)
+    passenger_count_match = (
+        PASSENGER_COUNT_PATTERN.search(text)
+        or PASSENGER_COUNT_FOR_PATTERN.search(text)
+        or BARE_PASSENGER_COUNT_PATTERN.match(text)
+    )
     lowered = text.lower()
 
     # Determine travel date: ISO format first, then conversational formats
