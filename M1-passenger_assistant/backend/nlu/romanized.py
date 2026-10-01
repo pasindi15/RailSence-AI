@@ -92,13 +92,37 @@ def _norm_phrases(phrases) -> list[str]:
 # *detect* that a Latin-script message is Sinhala, not to extract meaning.
 FUNCTION_WORDS = _norm_set([
     "mata", "mage", "apita", "ohuta", "oyata",
-    "oni", "ona", "oyanne", "ekak", "eka", "eke",
+    "oni", "ona", "oyanne", "ekak", "eka", "eke", "ek",
     "karanna", "ganna", "denna", "kiyanna", "wada",
     "thiyenawa", "nathiwa", "puluwanda", "puluwan", "baa",
     "kiyada", "kiyala", "kiyanawada", "kohomada", "kawada", "koheda",
-    "idala", "indala", "sita", "patan",
+    "idala", "indala", "idan", "indan", "sita", "patan",
     "wage", "wagema", "neda", "newei", "haemma",
+    # "towards/to" (the standalone word form of the same dative case already
+    # modelled as a suffix on station tokens via DEST_SUFFIXES) and "does it
+    # come to/become" (a common colloquial quantity/cost question tag, e.g.
+    # "ticket eka kiyak wenawada" - "how much does the ticket come to?").
+    "walata", "wenawada",
 ])
+
+# Minimum token/candidate length for the fuzzy fallback below - short words
+# (2-3 letters) are too easily confused by chance at any useful ratio.
+_FUZZY_MIN_LEN = 4
+_FUZZY_RATIO = 0.72
+
+
+def _fuzzy_hit(token: str, candidates: frozenset[str]) -> bool:
+    """True if `token` is close enough (SequenceMatcher ratio) to one of
+    `candidates` to tolerate the vowel-dropping/SMS-style spelling common in
+    casual romanized Sinhala - "kiyd"/"kiyak" for "kiyada", "indn" for
+    "indan", "walat" for "walata". An exact match is checked separately by
+    the caller; this only covers near-misses."""
+    if len(token) < _FUZZY_MIN_LEN:
+        return False
+    return any(
+        len(cand) >= _FUZZY_MIN_LEN and SequenceMatcher(None, token, cand).ratio() >= _FUZZY_RATIO
+        for cand in candidates
+    )
 
 # Intent -> list of romanized phrases. Multi-word phrases are matched with
 # word boundaries against the *normalized, space-joined* text (never as bare
@@ -205,9 +229,13 @@ def is_romanized_sinhala(text: str) -> bool:
     toks = tokens(text)
     if not toks:
         return False
+    # Exact match only here, deliberately not fuzzy: this path trusts a
+    # SINGLE hit, and "colombo" (a plain English place name, kept OUT of
+    # this set on purpose - see its definition above) fuzzy-matches
+    # "colomba" closely enough to defeat that exclusion if allowed through.
     if any(tok in SINHALA_ONLY_DOMAIN_WORDS for tok in toks):
         return True
-    hits = sum(1 for tok in toks if tok in FUNCTION_WORDS)
+    hits = sum(1 for tok in toks if tok in FUNCTION_WORDS or _fuzzy_hit(tok, FUNCTION_WORDS))
     if hits >= 2:
         return True
     if hits >= 1 and len(toks) >= 3 and (hits / len(toks)) >= 0.34:
