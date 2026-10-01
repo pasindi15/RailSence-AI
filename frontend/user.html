@@ -5378,14 +5378,17 @@ function escapeHtml(text) {
 
 <!-- Choo chat widget: framework-free mascot + chat panel. Loaded only on this
      file (served for /user, /user/dashboard, /user/booking, /user/confirmation),
-     not on /admin or /login. Backend is M1's FastAPI /chat (port 8001), which
-     already accepts {message, session_id} and returns a "reply" field, so this
-     uses the widget's own defaults with no buildBody/parseReply override.
+     not on /admin or /login. Backend is M1's FastAPI /chat/quick (port 8001):
+     the same NLU + RAG + LLM pipeline as the full Passenger Assistant, but it
+     writes nothing to the database, so quick questions asked here never join
+     the assistant's saved chats or its history. It accepts {message,
+     session_id} and returns a "reply" field, so this uses the widget's own
+     defaults with no buildBody/parseReply override.
      Docked bottom-right at 64px (no left-side collision risk with the sidebar
      drawer, and nothing else is anchored bottom-right on this page). -->
 <script>
   window.CHOO_CONFIG = {
-    endpoint: '/svc/m1/chat',  // M1 via the gateway
+    endpoint: '/svc/m1/chat/quick',  // M1 via the gateway - answers saved nowhere
     right: 20,
     bottom: 20,
     size: 64,

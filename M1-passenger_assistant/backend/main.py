@@ -12,8 +12,10 @@ Phase 1 scope:
 import os
 import re
 import sys
+import time
 import uuid
 import asyncio
+import contextvars
 from pathlib import Path
 from datetime import datetime, timezone
 from urllib.parse import urlencode
@@ -59,7 +61,7 @@ except ImportError as _e:
 
 import httpx
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from supabase import create_client, Client
@@ -67,6 +69,14 @@ from supabase import create_client, Client
 from nlu.lang_detect import detect_language
 from nlu.intent_classifier import classify_intent, is_greeting
 from nlu.ner_extractor import STATION_ALIASES, extract_entities
+from nlu.romanized import is_romanized_sinhala as _is_romanized_sinhala, mentions_railway as _romanized_mentions_railway
+from auth import (
+    create_passenger_token,
+    current_user_id,
+    optional_passenger,
+    require_passenger,
+    verify_password,
+)
 from hub_client import build_envelope, send_to_hub, USE_MOCK_HUB
 from i18n import t
 from llm_client import build_model
@@ -150,6 +160,20 @@ class PinRequest(BaseModel):
     pinned: bool
 
 
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+
+class LoginResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user_id: str
+    username: str
+    full_name: str
+    nic: str | None = None
+
+
 class TitleRequest(BaseModel):
     title: str
 
@@ -165,8 +189,168 @@ def validate_session_id(session_id: str) -> None:
         raise HTTPException(status_code=400, detail="Invalid session_id")
 
 
+# ── Quick chat (the "Choo" widget) ───────────────────────────────────
+# Choo is the ask-and-go assistant on the passenger pages. It runs this exact
+# same pipeline - language detection, intent, NER, RAG, the Hub agents and the
+# LLM - so its answers are the full Passenger Assistant's answers. The only
+# difference is that nothing is written to Supabase, so a quick question never
+# creates a chat_sessions row, never lands in chat_messages, and therefore
+# never shows up in the sidebar list (GET /chat) or in
+# GET /chat/{session_id}/history.
+#
+# POST /chat/quick sets this flag for the duration of one request; every
+# Supabase read/write helper below checks it and uses the in-process buffer
+# instead, so follow-ups ("...and for 3 passengers?") still work within a visit
+# without anything being stored.
+_quick_chat: contextvars.ContextVar[bool] = contextvars.ContextVar("quick_chat", default=False)
+
+# ── Chat ownership ───────────────────────────────────────────────────
+# The user_id of the signed-in passenger making the current request, or None
+# for an anonymous caller (the public homepage, the passenger portal, M2's
+# hand-off, the integration scripts). Set once per request from the verified
+# JWT and read by touch_session/save_message, which sit several calls deep
+# inside the answer pipeline - the same ContextVar approach already used for
+# quick chat, so no parameter has to be threaded through the RAG/NLU/LLM code.
+#
+# This is only ever written from a token this process has verified. Nothing a
+# browser sends can reach it.
+_current_user: contextvars.ContextVar[str | None] = contextvars.ContextVar("current_user", default=None)
+
+# ── Persistent conversation language ─────────────────────────────────
+# Set once per request, inside chat(), to the language chat_sessions.language
+# should be written as (or None when nothing needs to change - the common
+# case, once a session's language is already established). touch_session()
+# reads it several calls deep inside save_message(), the same ContextVar
+# approach as _current_user above, so the write happens through the one place
+# that already handles the chat_sessions insert-vs-update branching (and,
+# on insert, stamps the row's owner) instead of a second, racing write path.
+_current_session_language: contextvars.ContextVar[str | None] = contextvars.ContextVar(
+    "current_session_language", default=None
+)
+
+# 4 turns - deliberately below SUMMARY_EVERY, so the rolling-summary path (which
+# would call the LLM again and write chat_summaries) never triggers for Choo.
+QUICK_MAX_MESSAGES = 8
+QUICK_TTL_SECONDS = 30 * 60
+QUICK_MAX_SESSIONS = 500
+# session_id -> {"messages": [{"role", "message"}, ...], "seen": monotonic seconds}
+_quick_messages: dict[str, dict] = {}
+
+
+def _quick_prune() -> None:
+    """Drop stale visitors so a public widget can't grow this dict forever."""
+    cutoff = time.monotonic() - QUICK_TTL_SECONDS
+    for sid in [s for s, v in _quick_messages.items() if v["seen"] < cutoff]:
+        _quick_messages.pop(sid, None)
+    while len(_quick_messages) > QUICK_MAX_SESSIONS:
+        _quick_messages.pop(min(_quick_messages, key=lambda s: _quick_messages[s]["seen"]), None)
+
+
+def _quick_remember(session_id: str, role: str, message: str) -> None:
+    _quick_prune()
+    entry = _quick_messages.setdefault(session_id, {"messages": [], "seen": 0.0})
+    entry["messages"] = (entry["messages"] + [{"role": role, "message": message}])[-QUICK_MAX_MESSAGES:]
+    entry["seen"] = time.monotonic()
+
+
+def _quick_history(session_id: str) -> list[dict]:
+    return list(_quick_messages.get(session_id, {}).get("messages", []))
+
+
+# Matches the language's own name - in any of the 3 scripts, or the English
+# word - appearing anywhere in the message. A normal railway question has no
+# reason to mention "Sinhala"/"Tamil"/"English" by name (in any script), so
+# this is a low-false-positive-risk way to catch real phrasings like
+# "සිංහලෙන් කියන්න" ("say it in Sinhala") or "தமிழில் பதில் சொல்லுங்கள்"
+# ("answer in Tamil") without needing a rigid "switch to X" template that
+# would miss most of the ways a passenger might actually ask.
+# Word STEMS, not full dictionary forms - Sinhala/Tamil both inflect the noun
+# for "in Sinhala/Tamil/English" (a case suffix in Sinhala, a stem change before
+# the suffix in Tamil: "தமிழ்" -> "தமிழில்", "ஆங்கிலம்" -> "ஆங்கிலத்தில்" - the
+# trailing consonant+virama drops before the suffix attaches). Each stem here
+# is a verified prefix of both the bare noun and its "in X" inflected form.
+_LANGUAGE_NAME_PATTERNS = {
+    "si": re.compile(r"සිංහල|சிங்கள|\bsinhala(?:ese)?\b", re.IGNORECASE),
+    "ta": re.compile(r"தமிழ|දෙමළ|\btamil\b", re.IGNORECASE),
+    "en": re.compile(r"ඉංග්‍රීසි|ஆங்கில|\benglish\b", re.IGNORECASE),
+}
+
+
+def _detect_explicit_language_request(text: str) -> str | None:
+    """"si"/"en"/"ta" if the message names exactly one language by name
+    (an explicit request to switch to or answer in it), else None. Two or
+    more named in the same message is treated as ambiguous, not a request -
+    left to whatever the session's language already is.
+    """
+    matches = [code for code, pattern in _LANGUAGE_NAME_PATTERNS.items() if pattern.search(text)]
+    return matches[0] if len(matches) == 1 else None
+
+
+def _get_session_language(session_id: str) -> str | None:
+    """The language already established for this session, or None (a brand
+    new session, or a legacy session from before this feature existed)."""
+    if _quick_chat.get():
+        return _quick_messages.get(session_id, {}).get("language")
+    if not supabase:
+        return None
+    try:
+        result = (
+            supabase.table("chat_sessions")
+            .select("language")
+            .eq("session_id", session_id)
+            .limit(1)
+            .execute()
+        )
+        if result.data:
+            return result.data[0].get("language")
+    except Exception as e:
+        print(f"[context] session language lookup failed (does chat_sessions.language exist?): {e}")
+    return None
+
+
+def _set_session_language(session_id: str, language: str) -> None:
+    """Record `language` as this session's established language.
+
+    Quick chat (Choo) keeps this in the same in-process dict as its message
+    buffer - it never creates a chat_sessions row at all. Everywhere else,
+    the actual write happens inside touch_session() (via
+    _current_session_language) rather than here directly: touch_session()
+    already knows whether this is the row's first INSERT (and must also
+    stamp title/user_id) or a later UPDATE, and a second, independent write
+    path here would race it instead of going through that one place.
+    """
+    if _quick_chat.get():
+        entry = _quick_messages.setdefault(session_id, {"messages": [], "seen": 0.0})
+        entry["language"] = language
+        entry["seen"] = time.monotonic()
+        return
+    _current_session_language.set(language)
+
+
+def resolve_session_language(session_id: str, text: str) -> str:
+    """The language this reply must be written in, per the session's
+    established-language rule (see main.py module docstring reference /
+    the feature this implements): once a session's first meaningful message
+    establishes a language, later follow-ups keep it regardless of what
+    script/words they themselves use - UNLESS this message explicitly asks
+    for a different language, which becomes the new session language from
+    here on. A session with no stored language yet (new, or a legacy row
+    from before this feature existed) detects one from this message and
+    establishes it now.
+    """
+    stored = _get_session_language(session_id)
+    explicit = _detect_explicit_language_request(text)
+    language = explicit or stored or detect_language(text)
+    if language != stored:
+        print(f"[context] session={session_id} language {stored!r} -> {language!r}")
+        _set_session_language(session_id, language)
+    return language
+
+
 def get_recent_history(session_id: str, turns: int = 3) -> list[dict]:
     """Last `turns` conversation turns (user+assistant pairs) for this session, oldest first."""
+    if _quick_chat.get():
+        return _quick_history(session_id)[-turns * 2:]
     if not supabase:
         return []
     try:
@@ -184,6 +368,72 @@ def get_recent_history(session_id: str, turns: int = 3) -> list[dict]:
         return []
 
 
+# Previous-turn intents worth carrying forward onto an otherwise-"unknown"
+# follow-up (see _previous_turn_context and its call site in chat()).
+# delay_check/train_status/train_info/booking_request/... are deliberately
+# excluded - inheriting those would replay a Hub call or open a booking card
+# from a vague follow-up instead of just answering from the FAQ docs like the
+# turn it's continuing did.
+_FOLLOWUP_CARRY_INTENTS = {"fare_query", "schedule_query", "policy_query"}
+
+# An explicit continuation lead-in ("what about X", "how about X", "and X",
+# "what if X") - a strong, English-only signal (matching this codebase's other
+# English-only phrase heuristics, e.g. _INFO_FRAME_PATTERN) that a short
+# follow-up is modifying the previous question rather than asking a new one.
+_FOLLOWUP_PHRASE_PATTERN = re.compile(r"^\s*(?:what about|how about|what if|and)\b", re.IGNORECASE)
+
+# How many recent user turns _previous_turn_context() scans for carry-forward
+# fields. >1 so a chain of short follow-ups ("...for 2 people?" then "...and
+# tomorrow?") still resolves - the second follow-up's own raw text has no
+# station either, so looking only at the immediately preceding turn (itself
+# station-less) would lose the route again. Kept small: a long-settled topic
+# several turns back re-surfacing on every later "unknown" message would be
+# surprising, and get_conversation_context()'s own summary/verbatim window is
+# the mechanism for genuinely long-range context reaching the LLM.
+_FOLLOWUP_LOOKBACK_TURNS = 5
+
+
+def _previous_turn_context(session_id: str) -> dict | None:
+    """Re-derive recent-turn intent + entities from stored user messages in
+    THIS session, or None if there are none yet.
+
+    Nothing beyond role+message is persisted per chat_messages row, so a
+    context-free follow-up ("What about for 2 people?") has no station/train
+    of its own for extract_entities() to find. Rather than adding a new
+    column/table for this, the same classify_intent()/extract_entities()
+    already run on every message are simply re-run on recent user messages -
+    cheap, deterministic, and correctly isolated: get_recent_history() already
+    filters by session_id, so a brand-new session (or another passenger's
+    session) has no prior row to look up and this returns None.
+
+    Fields are folded oldest-to-newest so a later turn's own value always
+    wins, but an empty field (a follow-up that named no station of its own)
+    doesn't blank out an earlier turn's value - this is what lets a *chain*
+    of follow-ups ("...for 2 people?" -> "...and tomorrow?") keep resolving
+    to the station named several turns back, not just the immediately
+    preceding one. `intent` similarly carries forward through "unknown" turns
+    but resets once a turn asks something outside _FOLLOWUP_CARRY_INTENTS
+    (e.g. a booking/complaint in between) - that turn ends the old topic.
+    """
+    history = get_recent_history(session_id, turns=_FOLLOWUP_LOOKBACK_TURNS)
+    user_texts = [m["message"] for m in history if m["role"] == "user"]
+    if not user_texts:
+        return None
+
+    merged_entities: dict = {}
+    carry_intent: str | None = None
+    for prev_text in user_texts:  # oldest first
+        prev_intent = classify_intent(prev_text)
+        for key, value in extract_entities(prev_text).items():
+            if value not in (None, [], ""):
+                merged_entities[key] = value
+        if prev_intent in _FOLLOWUP_CARRY_INTENTS:
+            carry_intent = prev_intent
+        elif prev_intent != "unknown":
+            carry_intent = None
+    return {"intent": carry_intent, "entities": merged_entities}
+
+
 # ── Rolling conversation memory ──────────────────────────────────────
 # Every SUMMARY_EVERY completed turns (a turn = user message + reply) the older
 # part of the chat is folded into a running summary. The prompt then carries
@@ -196,6 +446,8 @@ _session_summaries: dict[str, dict] = {}  # session_id -> {"summary": str, "turn
 
 
 def _fetch_all_messages(session_id: str) -> list[dict]:
+    if _quick_chat.get():
+        return _quick_history(session_id)
     if not supabase:
         return []
     try:
@@ -215,6 +467,8 @@ def _fetch_all_messages(session_id: str) -> list[dict]:
 
 def _load_summary(session_id: str) -> dict | None:
     """Stored summary row for the session, or None."""
+    if _quick_chat.get():
+        return None
     if not supabase:
         return None
     try:
@@ -234,6 +488,8 @@ def _load_summary(session_id: str) -> dict | None:
 
 
 def _save_summary(session_id: str, state: dict) -> None:
+    if _quick_chat.get():
+        return
     if not supabase:
         return
     try:
@@ -287,6 +543,13 @@ def _summarize_turns(previous: str, turns: list[list[dict]]) -> str:
 
 def get_conversation_context(session_id: str) -> tuple[str, str]:
     """Return (summary, recent_verbatim_text) for the session's prior turns."""
+    if _quick_chat.get():
+        # Quick chat keeps at most QUICK_MAX_MESSAGES in memory, which is short
+        # enough to send verbatim - no summary to build, and nothing is cached in
+        # _session_summaries (that dict is keyed by session and would otherwise
+        # outlive the visit).
+        return "", _format_turns(_split_turns(_fetch_all_messages(session_id)))
+
     turns = _split_turns(_fetch_all_messages(session_id))
     total = len(turns)
     covered_target = (total // SUMMARY_EVERY) * SUMMARY_EVERY
@@ -400,7 +663,7 @@ def _disp(name: str | None, language: str) -> str | None:
     return _station_display(name, language)
 
 
-def _language_prompt_block(language: str) -> str:
+def _language_prompt_block(language: str, question: str | None = None) -> str:
     """The language instruction + factual-grounding rules placed at the top of EVERY
     Gemini prompt (RAG answers and agent-result answers alike), so the language
     detected once in /chat controls the language of whatever Gemini writes."""
@@ -411,6 +674,15 @@ def _language_prompt_block(language: str) -> str:
         f"{LANGUAGE_ANSWER_RULES.get(language, LANGUAGE_ANSWER_RULES['en'])} "
         f"Respond only in {language_name}."
     )
+    if question and language == "si" and _is_romanized_sinhala(question):
+        # The passenger typed Sinhala in Latin letters (no Sinhala script at
+        # all) - still reply in Sinhala script, since that's the only
+        # Sinhala wording this system's templates/UI actually have.
+        instruction += (
+            " The passenger wrote in romanized Sinhala (Sinhala words spelled "
+            "in Latin/English letters, not Sinhala script) - still write your "
+            "reply in Sinhala script."
+        )
     # Restated on every turn (the system prompt has the same rules) so the model
     # is directed to it for this specific question.
     rules = (
@@ -439,7 +711,7 @@ def present_agent_result(
         return None
     facts_text = "\n".join(f"- {k}: {v}" for k, v in facts.items() if v not in (None, ""))
     prompt = (
-        f"{_language_prompt_block(language)}\n\n"
+        f"{_language_prompt_block(language, question)}\n\n"
         "The facts below come from a railway system agent and are the ONLY source of "
         "facts for this reply. Report every number, ID and time exactly. Where a fact "
         "says it is historical or an estimate, say so plainly - never present it as a "
@@ -606,6 +878,13 @@ RAILWAY_VOCAB_SI_TA = (
 def _mentions_railway(text: str, language: str) -> bool:
     if language == "en":
         return bool(RAILWAY_VOCAB.search(text))
+    # RAILWAY_VOCAB_SI_TA is Sinhala/Tamil *script* substrings - a romanized
+    # Sinhala message ("mata ... ticket ekak ganna oni") is tagged
+    # language="si" (see nlu/lang_detect.py) but contains none of that script,
+    # so without this branch every such message would fail this check and be
+    # declared out of scope regardless of what it actually says.
+    if _is_romanized_sinhala(text):
+        return _romanized_mentions_railway(text)
     return any(term in text for term in RAILWAY_VOCAB_SI_TA)
 
 # Matches a fare doc line like "- 2nd Class Reserved: LKR 500".
@@ -1003,7 +1282,7 @@ def compose_rag_answer(
     # language requirement something the model is directed to do on this
     # specific turn, not just background metadata it might deprioritize.
     prompt = (
-        f"{_language_prompt_block(language)}\n\n"
+        f"{_language_prompt_block(language, text)}\n\n"
         f"language: {language}\n\n"
         f"Detected intent: {intent}\n"
         f"Extracted details from the passenger's message: {known_details}\n\n"
@@ -1037,6 +1316,8 @@ def touch_session(session_id: str, title_candidate: str | None = None):
     No row is created until the first message actually sends (avoids empty-session
     clutter from a passenger opening "+ New chat" and never typing anything).
     """
+    if _quick_chat.get():
+        return  # Choo never creates a session row, so it never joins the sidebar list
     if not supabase:
         return
     try:
@@ -1052,16 +1333,53 @@ def touch_session(session_id: str, title_candidate: str | None = None):
             supabase.table("chat_sessions").update({"updated_at": now}).eq("session_id", session_id).execute()
         else:
             title = (title_candidate or "New conversation").strip()[:60] or "New conversation"
+            # The owner is stamped once, when the session row is created, from the
+            # verified token. An anonymous caller stores NULL, which keeps the row
+            # out of every signed-in passenger's sidebar.
             supabase.table("chat_sessions").insert({
                 "session_id": session_id,
                 "title": title,
                 "updated_at": now,
+                "user_id": _current_user.get(),
             }).execute()
     except Exception as e:
+        # This insert/update is what chat_messages' FK constraint depends on -
+        # if it fails, the session row doesn't exist and every save_message()
+        # call below (both "user" and "assistant") then fails too. Nothing
+        # below this except block runs on that path, on purpose: the language
+        # write below is a SEPARATE, independent statement precisely so it can
+        # never be the reason this one fails (see its own comment).
         print(f"Supabase session upsert failed: {e}")
+        return
+
+    # Deliberately its own statement, after (not merged into) the insert/update
+    # above: chat_sessions.language is a migration (supabase_schema.sql) that
+    # may not have been run against a given Supabase project yet, and
+    # PostgREST rejects an ENTIRE insert/update if any column it references
+    # doesn't exist - bundling "language" into the statement above meant a
+    # missing column silently failed the session row's creation altogether
+    # (session never exists -> every chat_messages insert then violates
+    # fk_chat_messages_session). Keeping it separate means a missing column
+    # only degrades language persistence (chat() falls back to per-message
+    # detect_language() every turn - see resolve_session_language()), never
+    # conversation history itself.
+    pending_language = _current_session_language.get()
+    if pending_language:
+        try:
+            supabase.table("chat_sessions").update({"language": pending_language}).eq("session_id", session_id).execute()
+        except Exception as e:
+            print(
+                f"[context] session language save failed - has the chat_sessions.language "
+                f"migration (supabase_schema.sql) been run against this Supabase project? {e}"
+            )
 
 
 def save_message(session_id: str, role: str, message: str):
+    if _quick_chat.get():
+        # In-process only, so the turn is still available for follow-up questions
+        # in this visit but is never persisted anywhere.
+        _quick_remember(session_id, role, message)
+        return
     if not supabase:
         print("Warning: Supabase is not configured.")
         return
@@ -1073,6 +1391,7 @@ def save_message(session_id: str, role: str, message: str):
             "session_id": session_id,
             "role": role,
             "message": message,
+            "user_id": _current_user.get(),
         }).execute()
     except Exception as e:
         print(f"Supabase save failed: {e}")
@@ -1097,6 +1416,67 @@ def _extract_train_id(text: str) -> str:
 @app.get("/health")
 def health():
     return {"status": "ok", "time": datetime.now(timezone.utc).isoformat()}
+
+
+# ---------------------------------------------------------------------------
+# Passenger authentication
+# ---------------------------------------------------------------------------
+# The passenger list used to live in the frontend bundle as a plain array with
+# plaintext passwords, checked in the browser - so the "logged-in user" was
+# whatever the browser said it was, and the backend never learned who was
+# asking. Credentials now live in `passenger_accounts` as bcrypt hashes and are
+# verified here; the browser only ever receives a signed token.
+#
+# Deliberately NOT the `passengers` table: that one belongs to M3's booking
+# agent. It is keyed by a SERIAL id, identifies travellers by NIC hash rather
+# than by login, holds real booking records and is the target of a foreign key
+# from booking_passengers. Login accounts are a separate concern and live in
+# their own table, so M1 never alters M3's schema or rows.
+@app.post("/auth/login", response_model=LoginResponse)
+def login(req: LoginRequest):
+    if not supabase:
+        raise HTTPException(status_code=503, detail="Supabase is not configured")
+    username = req.username.strip().lower()
+    try:
+        result = (
+            supabase.table("passenger_accounts")
+            .select("user_id,username,password_hash,full_name,nic")
+            .eq("username", username)
+            .limit(1)
+            .execute()
+        )
+    except Exception as e:
+        print(f"[auth] passenger_accounts lookup failed: {e}")
+        raise HTTPException(
+            status_code=503,
+            detail="Passenger accounts aren't set up yet - run backend/supabase_schema.sql against this Supabase project.",
+        )
+
+    row = result.data[0] if result.data else None
+    # Same message and no early return for "unknown user" vs "wrong password",
+    # so the response can't be used to enumerate valid usernames.
+    if not row or not verify_password(req.password, row.get("password_hash", "")):
+        print(f"[auth] failed login for username={username!r}")
+        raise HTTPException(status_code=401, detail="Invalid username or password.")
+
+    print(f"[auth] login ok user_id={row['user_id']}")
+    return LoginResponse(
+        access_token=create_passenger_token(row),
+        user_id=row["user_id"],
+        username=row["username"],
+        full_name=row.get("full_name") or row["username"],
+        nic=row.get("nic"),
+    )
+
+
+@app.get("/auth/me")
+def whoami(passenger: dict = Depends(require_passenger)):
+    """Lets the frontend check on load whether a stored token is still valid."""
+    return {
+        "user_id": current_user_id(passenger),
+        "username": passenger.get("username", ""),
+        "full_name": passenger.get("name", ""),
+    }
 
 
 @app.get("/trains/{train_id}/details")
@@ -1139,11 +1519,40 @@ async def ask_operations_agent(text: str) -> dict | None:
 
 
 @app.post("/chat", response_model=ChatResponse)
+async def chat_route(req: ChatRequest, passenger: dict | None = Depends(optional_passenger)):
+    """Signed-in and anonymous callers both land here.
+
+    Optional auth on purpose: besides the M1 chat app, POST /chat is called
+    without a token by the public homepage, the passenger portal (both via the
+    gateway's /api/chat), M2's booking/fare hand-off and the integration
+    scripts. Requiring a token here would break all of them, so an anonymous
+    conversation is simply stored with user_id = NULL.
+    """
+    token = _current_user.set(current_user_id(passenger))
+    try:
+        return await chat(req)
+    finally:
+        _current_user.reset(token)
+
+
 async def chat(req: ChatRequest):
+    """The answer pipeline itself - NLU, RAG, the Hub agents and the LLM.
+
+    Kept as a plain function rather than the route handler so that /chat/quick
+    (Choo) can call it directly. A FastAPI Depends(...) in this signature would
+    be passed as a literal Depends object on that internal call instead of
+    being resolved, so the dependency lives on chat_route above.
+    """
     text = req.message.strip()
     print(f"[chat] received message={text!r} session_id={req.session_id}")
 
-    language = detect_language(text)
+    # Resolves to the session's already-established language unless this
+    # message explicitly asks to switch, or the session has none yet - see
+    # resolve_session_language(). Not per-message detect_language(text): a
+    # short Sinhala-established follow-up like "දෙන්නෙකුට?" (or an English one
+    # like "For 2 people?") must not flip languages just because it's short
+    # or happens to contain a station/number that reads ambiguously.
+    language = resolve_session_language(req.session_id, text)
 
     # FIX 1: short-circuits before intent classification/NER/RAG entirely -
     # a bare "hii" was previously falling through to classify_intent()'s
@@ -1163,6 +1572,45 @@ async def chat(req: ChatRequest):
     entities = extract_entities(text)
     if entities.get("train_id") and intent == "schedule_query":
         intent = "train_info"
+
+    # Conversation-context carry-forward for follow-ups that name no station/
+    # train of their own ("What about for 2 people?", "What about tomorrow?")
+    # or classify as "unknown" despite clearly continuing the previous turn
+    # ("What about Kandy to Colombo?"). Only looked up when actually needed -
+    # a fully self-contained message (its own intent AND its own stations)
+    # never touches this, so most first messages pay no extra cost.
+    if intent == "unknown" or not (entities.get("stations") or entities.get("train_id")):
+        prev = _previous_turn_context(req.session_id)
+        if prev:
+            prev_entities = prev["entities"]
+            if not (entities.get("stations") or entities.get("train_id")):
+                if prev_entities.get("stations"):
+                    entities["stations"] = prev_entities["stations"]
+                    entities["from_station"] = prev_entities.get("from_station")
+                    entities["to_station"] = prev_entities.get("to_station")
+                if prev_entities.get("train_id"):
+                    entities["train_id"] = prev_entities["train_id"]
+            # Only take over the previous turn's intent when THIS message has
+            # none of its own (stayed "unknown") and looks like it's
+            # modifying the same question - a passenger count/fare class, or
+            # an explicit "what about .../and ..." continuation - rather than
+            # asking something genuinely new ("how long does it take?"). That
+            # is left "unknown" on purpose: compose_rag_answer then searches
+            # the whole knowledge base instead of being pinned to the
+            # previous topic's doc, and Gemini still has the full turn
+            # history to resolve it from context either way.
+            if (
+                intent == "unknown"
+                and prev["intent"] in _FOLLOWUP_CARRY_INTENTS
+                and entities.get("stations")
+                and (
+                    entities.get("passenger_count")
+                    or entities.get("fare_class_keywords")
+                    or _FOLLOWUP_PHRASE_PATTERN.match(text)
+                )
+            ):
+                intent = prev["intent"]
+                print(f"[chat] intent inherited from previous turn -> {intent}")
     print(f"[chat] language={language} intent={intent}")
 
     # Train operations questions (live position, delays, "any train to X after
@@ -1704,11 +2152,39 @@ async def chat(req: ChatRequest):
     )
 
 
+@app.post("/chat/quick", response_model=ChatResponse)
+async def chat_quick(req: ChatRequest):
+    """Same answers as /chat, with nothing written to the database.
+
+    This is what the Choo widget on the passenger pages calls. The whole
+    pipeline runs unchanged - language detection, intent, NER, RAG retrieval,
+    the Hub agents (M2/M4), the shared train registry and the LLM - so a
+    question answered here gets the same grounded, LLM-composed reply the full
+    Passenger Assistant gives. What it skips is persistence: no chat_sessions,
+    chat_messages or chat_summaries row is written, so a quick question never
+    appears in the sidebar (GET /chat) or in GET /chat/{session_id}/history.
+
+    Follow-up questions still work while the visitor keeps the panel open - the
+    last few turns are held in memory (see _quick_messages) and expire on their
+    own.
+    """
+    validate_session_id(req.session_id)
+    token = _quick_chat.set(True)
+    try:
+        return await chat(req)
+    finally:
+        _quick_chat.reset(token)
+
+
 @app.get("/chat/{session_id}/history")
-def history(session_id: str):
+def history(session_id: str, passenger: dict = Depends(require_passenger)):
     validate_session_id(session_id)
     if not supabase:
         return {"session_id": session_id, "messages": [], "error": "Supabase is not configured"}
+
+    # Ownership first: without this, knowing (or guessing) a session_id was
+    # enough to read someone else's whole conversation.
+    get_session_or_404(session_id, current_user_id(passenger))
 
     try:
         result = (
@@ -1726,14 +2202,23 @@ def history(session_id: str):
 
 
 @app.get("/chat", response_model=list[SessionSummary])
-def list_sessions():
-    """Sidebar chat list: pinned sessions first, then most-recently-active."""
+def list_sessions(passenger: dict = Depends(require_passenger)):
+    """Sidebar chat list for the signed-in passenger only.
+
+    The .eq("user_id", ...) is the fix for the original bug: this used to be an
+    unfiltered select, so every passenger's sidebar listed every conversation
+    in the database.
+    """
     if not supabase:
+        return []
+    user_id = current_user_id(passenger)
+    if not user_id:
         return []
     try:
         result = (
             supabase.table("chat_sessions")
             .select("*")
+            .eq("user_id", user_id)
             .order("is_pinned", desc=True)
             .order("updated_at", desc=True)
             .execute()
@@ -1744,17 +2229,26 @@ def list_sessions():
         return []
 
 
-def get_session_or_404(session_id: str):
-    """Look up a chat_sessions row, or raise a clean HTTP error.
+def get_session_or_404(session_id: str, user_id: str | None):
+    """Look up a chat_sessions row the caller actually owns, or raise.
 
     Wraps the query itself (not just the later mutation) - if the chat_sessions
     table hasn't been created yet (see supabase_schema.sql), Supabase raises on
     the SELECT itself, which would otherwise surface as an opaque 500 instead
     of a message that tells the caller what to actually go fix.
+
+    Not-yours is reported as 404, deliberately, not 403: a 403 would confirm
+    that the session exists and belongs to somebody else, which is exactly the
+    fact an attacker enumerating session ids is trying to learn. A 404 is
+    indistinguishable from an id that was never real.
     """
     try:
         existing = (
-            supabase.table("chat_sessions").select("session_id").eq("session_id", session_id).limit(1).execute()
+            supabase.table("chat_sessions")
+            .select("session_id,user_id")
+            .eq("session_id", session_id)
+            .limit(1)
+            .execute()
         )
     except Exception as e:
         print(f"Supabase session lookup failed: {e}")
@@ -1764,15 +2258,22 @@ def get_session_or_404(session_id: str):
         )
     if not existing.data:
         raise HTTPException(status_code=404, detail="Session not found")
+    owner = existing.data[0].get("user_id")
+    if owner != user_id:
+        # Covers both directions: another passenger's session, and a legacy or
+        # anonymous session (user_id NULL) that belongs to nobody.
+        print(f"[authz] denied session={session_id} owner={owner!r} caller={user_id!r}")
+        raise HTTPException(status_code=404, detail="Session not found")
+    return existing.data[0]
 
 
 @app.delete("/chat/{session_id}", status_code=204)
-def delete_chat(session_id: str):
+def delete_chat(session_id: str, passenger: dict = Depends(require_passenger)):
     validate_session_id(session_id)
     if not supabase:
         raise HTTPException(status_code=503, detail="Supabase is not configured")
 
-    get_session_or_404(session_id)
+    get_session_or_404(session_id, current_user_id(passenger))
 
     try:
         # Explicit two-step hard delete rather than relying on the FK's ON
@@ -1792,14 +2293,14 @@ def delete_chat(session_id: str):
 
 
 @app.patch("/chat/{session_id}/title", response_model=SessionSummary)
-def rename_chat(session_id: str, req: TitleRequest):
+def rename_chat(session_id: str, req: TitleRequest, passenger: dict = Depends(require_passenger)):
     validate_session_id(session_id)
     title = req.title.strip()[:80]
     if not title:
         raise HTTPException(status_code=400, detail="Title cannot be empty")
     if not supabase:
         raise HTTPException(status_code=503, detail="Supabase is not configured")
-    get_session_or_404(session_id)
+    get_session_or_404(session_id, current_user_id(passenger))
 
     try:
         result = (
@@ -1815,12 +2316,12 @@ def rename_chat(session_id: str, req: TitleRequest):
 
 
 @app.patch("/chat/{session_id}/pin", response_model=SessionSummary)
-def pin_chat(session_id: str, req: PinRequest):
+def pin_chat(session_id: str, req: PinRequest, passenger: dict = Depends(require_passenger)):
     validate_session_id(session_id)
     if not supabase:
         raise HTTPException(status_code=503, detail="Supabase is not configured")
 
-    get_session_or_404(session_id)
+    get_session_or_404(session_id, current_user_id(passenger))
 
     try:
         result = (

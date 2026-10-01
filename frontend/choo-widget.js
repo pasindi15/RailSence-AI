@@ -4,7 +4,7 @@
  *
  * Optional config (set BEFORE this script loads):
  *   window.CHOO_CONFIG = {
- *     endpoint: '/svc/m1/chat',                 // your chat backend (via the gateway)
+ *     endpoint: '/svc/m1/chat/quick',           // your chat backend (via the gateway)
  *     left: 20, bottom: 20,                     // px from the viewport edge
  *     buildBody: function (text, sessionId) { return { message: text, session_id: sessionId }; },
  *     parseReply: function (data) { return data.reply; }
@@ -17,7 +17,7 @@
   if (window.Choo) return;
 
   var cfg = Object.assign({
-    endpoint: '/svc/m1/chat',
+    endpoint: '/svc/m1/chat/quick',
     left: 20,
     right: null,  // set this (instead of/alongside left) to dock the widget to the right edge
     bottom: 20,
@@ -28,7 +28,13 @@
     helloStep: 2200,         // ms each language stays shown within one burst
     helloGap: 12000,         // ms fully hidden between bursts
     buildBody: null,
-    parseReply: null
+    parseReply: null,
+    /* M1's pipeline can legitimately take a while: RAG retrieval, then a Hub
+       round-trip to M2/M4 for operations questions, then the LLM (which retries
+       across models when one is rate-limited). The gateway already waits 90s,
+       so anything shorter here aborts a request that was still on its way and
+       shows "I can't reach the assistant" for what was really just a slow answer. */
+    timeout: 90000
   }, window.CHOO_CONFIG || {});
 
   var onRight = cfg.right != null;
@@ -233,13 +239,18 @@
   });
 
   /* ---------- chat ---------- */
+  /* sessionStorage, not localStorage: the id lets follow-up questions keep their
+     thread while the visitor moves between pages in this tab, and is gone the
+     moment the tab closes. Choo's backend (/chat/quick) stores nothing either,
+     so no transcript survives the visit on the server side. */
   var sessionId;
   try {
-    sessionId = localStorage.getItem('choo_session');
+    sessionId = sessionStorage.getItem('choo_session');
     if (!sessionId) {
       sessionId = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2);
-      localStorage.setItem('choo_session', sessionId);
+      sessionStorage.setItem('choo_session', sessionId);
     }
+    localStorage.removeItem('choo_session');  // clear ids left by earlier versions
   } catch (e) { sessionId = String(Date.now()); }
 
   function addMsg(text, kind) {
@@ -302,7 +313,8 @@
 
     var body = cfg.buildBody ? cfg.buildBody(text, sessionId) : { message: text, session_id: sessionId };
     var ctrl = new AbortController();
-    var to = setTimeout(function () { ctrl.abort(); }, 30000);
+    var timedOut = false;
+    var to = setTimeout(function () { timedOut = true; ctrl.abort(); }, cfg.timeout);
 
     fetch(cfg.endpoint, {
       method: 'POST',
@@ -320,9 +332,15 @@
         typing.remove();
         addMsg(reply || 'Sorry, I did not get a reply. Please try again.', reply ? 'bot' : 'err');
       })
-      .catch(function () {
+      .catch(function (err) {
+        /* One message per cause, so "it's broken" reports say which one it was.
+           The real reason also goes to the console - the bubble stays friendly,
+           but the status code is one keypress away when debugging. */
         typing.remove();
-        addMsg("Sorry, I can't reach the assistant right now. Please try again in a moment.", 'err');
+        if (window.console && console.warn) console.warn('[choo] request failed:', err);
+        addMsg(timedOut
+          ? "That one is taking longer than I can wait for. Please ask me again."
+          : "Sorry, I can't reach the assistant right now. Please try again in a moment.", 'err');
       })
       .then(function () {
         clearTimeout(to);

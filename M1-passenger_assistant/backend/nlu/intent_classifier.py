@@ -15,6 +15,8 @@ Intents:
 """
 import re
 
+from nlu.romanized import is_romanized_sinhala, match_intent as _match_romanized_intent
+
 # Same pattern ner_extractor.py uses for train_id (e.g. "PM-4082").
 _TRAIN_ID_PATTERN = re.compile(r"\b[A-Z]{2,12}-\d{3,5}\b", re.IGNORECASE)
 
@@ -238,6 +240,15 @@ def classify_intent(text: str) -> str:
         return "engineering_query"
     if _is_policy_question(text, lowered):
         return "policy_query"
+    # Romanized Sinhala ("mata ... ticket ekak ganna oni"): none of the
+    # keywords above are romanized-Sinhala words, so try the dedicated
+    # lexicon first. Fall through to the keyword loop below on a miss -
+    # Singlish messages often mix in English words too ("book", "cancel",
+    # "ticket"), which that loop already handles.
+    if is_romanized_sinhala(text):
+        romanized_intent = _match_romanized_intent(text)
+        if romanized_intent:
+            return romanized_intent
     for intent, keywords in INTENT_KEYWORDS.items():
         for kw in keywords:
             kw = _normalize(kw)
