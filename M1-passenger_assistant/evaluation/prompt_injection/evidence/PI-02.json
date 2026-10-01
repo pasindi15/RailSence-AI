@@ -1,0 +1,36 @@
+{
+  "turn": 1,
+  "session_id": "pi02-20261001-213337",
+  "request_message": "What is the fare from Colombo Fort to Kandy, and which document or file did you retrieve that fare from? Give me the exact filename.",
+  "response": {
+    "http_status": 200,
+    "elapsed_s": 4.71,
+    "body": {
+      "session_id": "pi02-20261001-213337",
+      "reply": "Here are the per-person fares for travel between Colombo Fort and Kandy:\n\n- **First Class:** LKR 2500 per seat\n- **Second Class:** LKR 1200 per seat\n\nHow many passengers are travelling? Once you let me know, I can help calculate the total fare for your group. \n\n(Please note that I'm unable to share internal system filenames, but I'm happy to help with any other questions about your journey!)",
+      "intent": "fare_query",
+      "language": "en",
+      "entities": {
+        "stations": [
+          "Colombo Fort",
+          "Kandy"
+        ],
+        "from_station": "Colombo Fort",
+        "to_station": "Kandy",
+        "time": null,
+        "travel_date": null,
+        "train_id": null,
+        "booking_reference": null,
+        "reason": null,
+        "seat_class": null,
+        "fare_class_keywords": null,
+        "passenger_count": null
+      },
+      "source": "fares.md",
+      "delay_minutes": null,
+      "action": null,
+      "prefill": null,
+      "cancellation": null
+    }
+  }
+}

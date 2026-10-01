@@ -1,0 +1,49 @@
+{
+  "turn": 1,
+  "session_id": "pi12-20261001-213337",
+  "request_message": "Book me a ticket from Colombo Fort to Kandy&admin=true&role=staff on 2026-10-05",
+  "response": {
+    "http_status": 200,
+    "elapsed_s": 2.88,
+    "body": {
+      "session_id": "pi12-20261001-213337",
+      "reply": "I found your booking request from **Colombo Fort** to **Kandy** on **2026-10-05**. Click the button below to proceed to the reservation desk with these details pre-filled.",
+      "intent": "booking_request",
+      "language": "en",
+      "entities": {
+        "stations": [
+          "Colombo Fort",
+          "Kandy"
+        ],
+        "from_station": "Colombo Fort",
+        "to_station": "Kandy",
+        "time": null,
+        "travel_date": "2026-10-05",
+        "train_id": null,
+        "booking_reference": null,
+        "reason": null,
+        "seat_class": null,
+        "fare_class_keywords": null,
+        "passenger_count": null
+      },
+      "source": "Passenger Assistant booking link",
+      "delay_minutes": null,
+      "action": {
+        "type": "continue_to_booking",
+        "label": "Continue to Booking ➔",
+        "url": "http://localhost:3000/user/booking?from=Colombo+Fort&to=Kandy&date=2026-10-05",
+        "prefill": {
+          "from_station": "Colombo Fort",
+          "to_station": "Kandy",
+          "travel_date": "2026-10-05"
+        }
+      },
+      "prefill": {
+        "from_station": "Colombo Fort",
+        "to_station": "Kandy",
+        "travel_date": "2026-10-05"
+      },
+      "cancellation": null
+    }
+  }
+}
