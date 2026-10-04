@@ -1,0 +1,31 @@
+{
+  "tested_at": "2026-09-28T18:04:26.841822+05:30",
+  "note": "CORS reflects arbitrary Origin + credentials=true",
+  "services": [
+    {
+      "svc": "m2",
+      "acao": "https://evil.example",
+      "acac": "true"
+    },
+    {
+      "svc": "m4",
+      "acao": "https://evil.example",
+      "acac": "true"
+    },
+    {
+      "svc": "security",
+      "acao": "https://evil.example",
+      "acac": "true"
+    },
+    {
+      "svc": "hub",
+      "acao": "https://evil.example",
+      "acac": "true"
+    },
+    {
+      "svc": "m1",
+      "acao": "*",
+      "acac": null
+    }
+  ]
+}

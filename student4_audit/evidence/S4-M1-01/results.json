@@ -1,0 +1,258 @@
+{
+  "note": "Ground truth = correct source doc (3 docs, baseline P@1=0.33). English MiniLM model on English corpus.",
+  "overall": {
+    "n": 24,
+    "P@1": 0.5417,
+    "P@3": 0.7917,
+    "MRR": 0.6667
+  },
+  "per_language_fairness": {
+    "en": {
+      "P@1": 1.0,
+      "n": 8,
+      "mean_top_distance": 0.8697
+    },
+    "si": {
+      "P@1": 0.375,
+      "n": 8,
+      "mean_top_distance": 1.8172
+    },
+    "ta": {
+      "P@1": 0.25,
+      "n": 8,
+      "mean_top_distance": 1.4692
+    }
+  },
+  "out_of_corpus": {
+    "n": 6,
+    "no_threshold_note": "retriever always returns top_k; no relevance cutoff",
+    "mean_top_distance_out_of_corpus": 1.6519,
+    "mean_top_distance_in_corpus": 1.3854,
+    "rows": [
+      {
+        "q": "best biryani in colombo",
+        "top_source": "schedules.md",
+        "top_distance": 1.1961
+      },
+      {
+        "q": "who won the cricket world cup",
+        "top_source": "policies.md",
+        "top_distance": 1.7173
+      },
+      {
+        "q": "how to bake a chocolate cake",
+        "top_source": "fares.md",
+        "top_distance": 1.8116
+      },
+      {
+        "q": "latest iphone price",
+        "top_source": "fares.md",
+        "top_distance": 1.7748
+      },
+      {
+        "q": "weather forecast for tomorrow",
+        "top_source": "schedules.md",
+        "top_distance": 1.5327
+      },
+      {
+        "q": "how do I learn python",
+        "top_source": "fares.md",
+        "top_distance": 1.8789
+      }
+    ]
+  },
+  "rows": [
+    {
+      "q": "How much is a ticket from Colombo Fort to Kandy?",
+      "lang": "en",
+      "expected": "fares.md",
+      "top_source": "fares.md",
+      "rank": 1,
+      "top_distance": 0.6956
+    },
+    {
+      "q": "What is the fare to Badulla?",
+      "lang": "en",
+      "expected": "fares.md",
+      "top_source": "fares.md",
+      "rank": 1,
+      "top_distance": 1.0496
+    },
+    {
+      "q": "How do I cancel my booking?",
+      "lang": "en",
+      "expected": "policies.md",
+      "top_source": "policies.md",
+      "rank": 1,
+      "top_distance": 0.8894
+    },
+    {
+      "q": "What is the refund policy?",
+      "lang": "en",
+      "expected": "policies.md",
+      "top_source": "policies.md",
+      "rank": 1,
+      "top_distance": 0.8234
+    },
+    {
+      "q": "How much luggage can I carry?",
+      "lang": "en",
+      "expected": "policies.md",
+      "top_source": "policies.md",
+      "rank": 1,
+      "top_distance": 0.9995
+    },
+    {
+      "q": "What time does the train to Galle leave?",
+      "lang": "en",
+      "expected": "schedules.md",
+      "top_source": "schedules.md",
+      "rank": 1,
+      "top_distance": 1.0331
+    },
+    {
+      "q": "Train schedule for the Jaffna line?",
+      "lang": "en",
+      "expected": "schedules.md",
+      "top_source": "schedules.md",
+      "rank": 1,
+      "top_distance": 0.7453
+    },
+    {
+      "q": "When is the next train to Badulla via Kandy?",
+      "lang": "en",
+      "expected": "schedules.md",
+      "top_source": "schedules.md",
+      "rank": 1,
+      "top_distance": 0.7217
+    },
+    {
+      "q": "\u0d9a\u0ddc\u0dc5\u0db9 \u0d9a\u0ddc\u0da7\u0dd4\u0dc0\u0dda \u0dc3\u0dd2\u0da7 \u0db8\u0dc4\u0db1\u0dd4\u0dc0\u0dbb\u0da7 \u0db4\u0dca\u200d\u0dbb\u0dc0\u0dda\u0dc1 \u0db4\u0dad\u0dca\u200d\u0dbb\u0dba\u0dda \u0d9c\u0dcf\u0dc3\u0dca\u0dad\u0dd4\u0dc0 \u0d9a\u0dd3\u0dba\u0daf?",
+      "lang": "si",
+      "expected": "fares.md",
+      "top_source": "schedules.md",
+      "rank": 2,
+      "top_distance": 1.7306
+    },
+    {
+      "q": "\u0db6\u0daf\u0dd4\u0dbd\u0dca\u0dbd\u0da7 \u0d9c\u0dcf\u0dc3\u0dca\u0dad\u0dd4\u0dc0 \u0d9a\u0dd3\u0dba\u0daf?",
+      "lang": "si",
+      "expected": "fares.md",
+      "top_source": "policies.md",
+      "rank": 0,
+      "top_distance": 1.9332
+    },
+    {
+      "q": "\u0db8\u0d9c\u0dda \u0dc0\u0dd9\u0db1\u0dca\u0d9a\u0dd2\u0dbb\u0dd3\u0db8 \u0d85\u0dc0\u0dbd\u0d82\u0d9c\u0dd4 \u0d9a\u0dbb\u0db1\u0dca\u0db1\u0dda \u0d9a\u0dd9\u0dc3\u0dda\u0daf?",
+      "lang": "si",
+      "expected": "policies.md",
+      "top_source": "schedules.md",
+      "rank": 0,
+      "top_distance": 1.8654
+    },
+    {
+      "q": "\u0db8\u0dd4\u0daf\u0dbd\u0dca \u0d86\u0db4\u0dc3\u0dd4 \u0d9c\u0dd9\u0dc0\u0dd3\u0db8\u0dda \u0db4\u0dca\u200d\u0dbb\u0dad\u0dd2\u0db4\u0dad\u0dca\u0dad\u0dd2\u0dba \u0d9a\u0dd4\u0db8\u0d9a\u0dca\u0daf?",
+      "lang": "si",
+      "expected": "policies.md",
+      "top_source": "schedules.md",
+      "rank": 0,
+      "top_distance": 1.8654
+    },
+    {
+      "q": "\u0db8\u0da7 \u0d9a\u0ddc\u0db4\u0db8\u0dab \u0db6\u0dd1\u0d9c\u0dca \u0dbb\u0dd0\u0d9c\u0dd9\u0db1 \u0dba\u0dcf \u0dc4\u0dd0\u0d9a\u0dd2\u0daf?",
+      "lang": "si",
+      "expected": "policies.md",
+      "top_source": "schedules.md",
+      "rank": 0,
+      "top_distance": 1.5964
+    },
+    {
+      "q": "\u0d9c\u0dcf\u0dbd\u0dca\u0dbd\u0da7 \u0daf\u0dd4\u0db8\u0dca\u0dbb\u0dd2\u0dba \u0db4\u0dd2\u0da7\u0dad\u0dca \u0dc0\u0db1\u0dca\u0db1\u0dda \u0d9a\u0dd3\u0dba\u0da7\u0daf?",
+      "lang": "si",
+      "expected": "schedules.md",
+      "top_source": "schedules.md",
+      "rank": 1,
+      "top_distance": 1.8654
+    },
+    {
+      "q": "\u0dba\u0dcf\u0db4\u0db1\u0dba \u0db8\u0dcf\u0dbb\u0dca\u0d9c\u0dba\u0dda \u0daf\u0dd4\u0db8\u0dca\u0dbb\u0dd2\u0dba \u0d9a\u0dcf\u0dbd\u0dc3\u0da7\u0dc4\u0db1 \u0d9a\u0dd4\u0db8\u0d9a\u0dca\u0daf?",
+      "lang": "si",
+      "expected": "schedules.md",
+      "top_source": "schedules.md",
+      "rank": 1,
+      "top_distance": 1.8654
+    },
+    {
+      "q": "\u0db8\u0dc4\u0db1\u0dd4\u0dc0\u0dbb \u0dc4\u0dbb\u0dc4\u0dcf \u0db6\u0daf\u0dd4\u0dbd\u0dca\u0dbd\u0da7 \u0d8a\u0dc5\u0d9f \u0daf\u0dd4\u0db8\u0dca\u0dbb\u0dd2\u0dba \u0d9a\u0dc0\u0daf\u0dcf\u0daf?",
+      "lang": "si",
+      "expected": "schedules.md",
+      "top_source": "schedules.md",
+      "rank": 1,
+      "top_distance": 1.8161
+    },
+    {
+      "q": "\u0b95\u0bca\u0bb4\u0bc1\u0bae\u0bcd\u0baa\u0bc1 \u0b95\u0bcb\u0b9f\u0bcd\u0b9f\u0bc8\u0baf\u0bbf\u0bb2\u0bbf\u0bb0\u0bc1\u0ba8\u0bcd\u0ba4\u0bc1 \u0b95\u0ba3\u0bcd\u0b9f\u0bbf\u0b95\u0bcd\u0b95\u0bc1 \u0b9f\u0bbf\u0b95\u0bcd\u0b95\u0bc6\u0b9f\u0bcd \u0bb5\u0bbf\u0bb2\u0bc8 \u0b8e\u0bb5\u0bcd\u0bb5\u0bb3\u0bb5\u0bc1?",
+      "lang": "ta",
+      "expected": "fares.md",
+      "top_source": "schedules.md",
+      "rank": 2,
+      "top_distance": 1.3864
+    },
+    {
+      "q": "\u0baa\u0ba4\u0bc1\u0bb3\u0bc8\u0b95\u0bcd\u0b95\u0bc1 \u0b95\u0b9f\u0bcd\u0b9f\u0ba3\u0bae\u0bcd \u0b8e\u0bb5\u0bcd\u0bb5\u0bb3\u0bb5\u0bc1?",
+      "lang": "ta",
+      "expected": "fares.md",
+      "top_source": "schedules.md",
+      "rank": 0,
+      "top_distance": 1.4104
+    },
+    {
+      "q": "\u0b8e\u0ba9\u0ba4\u0bc1 \u0bae\u0bc1\u0ba9\u0bcd\u0baa\u0ba4\u0bbf\u0bb5\u0bc8 \u0b8e\u0baa\u0bcd\u0baa\u0b9f\u0bbf \u0bb0\u0ba4\u0bcd\u0ba4\u0bc1 \u0b9a\u0bc6\u0baf\u0bcd\u0bb5\u0ba4\u0bc1?",
+      "lang": "ta",
+      "expected": "policies.md",
+      "top_source": "schedules.md",
+      "rank": 2,
+      "top_distance": 1.5931
+    },
+    {
+      "q": "\u0baa\u0ba3\u0ba4\u0bcd\u0ba4\u0bc8\u0ba4\u0bcd \u0ba4\u0bbf\u0bb0\u0bc1\u0bae\u0bcd\u0baa\u0baa\u0bcd \u0baa\u0bc6\u0bb1\u0bc1\u0bae\u0bcd \u0b95\u0bca\u0bb3\u0bcd\u0b95\u0bc8 \u0b8e\u0ba9\u0bcd\u0ba9?",
+      "lang": "ta",
+      "expected": "policies.md",
+      "top_source": "schedules.md",
+      "rank": 2,
+      "top_distance": 1.4906
+    },
+    {
+      "q": "\u0ba8\u0bbe\u0ba9\u0bcd \u0b8e\u0bb5\u0bcd\u0bb5\u0bb3\u0bb5\u0bc1 \u0b9a\u0bbe\u0bae\u0bbe\u0ba9\u0bcd\u0b95\u0bb3\u0bcd \u0b8e\u0b9f\u0bc1\u0ba4\u0bcd\u0ba4\u0bc1\u0b9a\u0bcd \u0b9a\u0bc6\u0bb2\u0bcd\u0bb2\u0bb2\u0bbe\u0bae\u0bcd?",
+      "lang": "ta",
+      "expected": "policies.md",
+      "top_source": "schedules.md",
+      "rank": 2,
+      "top_distance": 1.545
+    },
+    {
+      "q": "\u0b95\u0bbe\u0bb2\u0bbf\u0b95\u0bcd\u0b95\u0bc1 \u0bb0\u0baf\u0bbf\u0bb2\u0bcd \u0b8e\u0baa\u0bcd\u0baa\u0bcb\u0ba4\u0bc1 \u0baa\u0bc1\u0bb1\u0baa\u0bcd\u0baa\u0b9f\u0bc1\u0bae\u0bcd?",
+      "lang": "ta",
+      "expected": "schedules.md",
+      "top_source": "schedules.md",
+      "rank": 1,
+      "top_distance": 1.3986
+    },
+    {
+      "q": "\u0baf\u0bbe\u0bb4\u0bcd\u0baa\u0bcd\u0baa\u0bbe\u0ba3 \u0bb5\u0bb4\u0bbf\u0baf\u0bbf\u0bb2\u0bcd \u0bb0\u0baf\u0bbf\u0bb2\u0bcd \u0b85\u0b9f\u0bcd\u0b9f\u0bb5\u0ba3\u0bc8 \u0b8e\u0ba9\u0bcd\u0ba9?",
+      "lang": "ta",
+      "expected": "schedules.md",
+      "top_source": "policies.md",
+      "rank": 2,
+      "top_distance": 1.5208
+    },
+    {
+      "q": "\u0b95\u0ba3\u0bcd\u0b9f\u0bbf \u0bb5\u0bb4\u0bbf\u0baf\u0bbe\u0b95 \u0baa\u0ba4\u0bc1\u0bb3\u0bc8\u0b95\u0bcd\u0b95\u0bc1 \u0b85\u0b9f\u0bc1\u0ba4\u0bcd\u0ba4 \u0bb0\u0baf\u0bbf\u0bb2\u0bcd \u0b8e\u0baa\u0bcd\u0baa\u0bcb\u0ba4\u0bc1?",
+      "lang": "ta",
+      "expected": "schedules.md",
+      "top_source": "schedules.md",
+      "rank": 1,
+      "top_distance": 1.4083
+    }
+  ]
+}

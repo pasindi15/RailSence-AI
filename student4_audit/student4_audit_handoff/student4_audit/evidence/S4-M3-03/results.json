@@ -1,0 +1,453 @@
+{
+  "authz_matrix": [
+    {
+      "path": "/api/admin/bookings",
+      "port": "gw3000_public",
+      "by_identity": {
+        "none": {
+          "status": 400,
+          "auth_rejected": false,
+          "returned_data": false,
+          "nic_cleartext_present": false
+        },
+        "passenger": {
+          "status": 400,
+          "auth_rejected": false,
+          "returned_data": false,
+          "nic_cleartext_present": false
+        },
+        "operator": {
+          "status": 400,
+          "auth_rejected": false,
+          "returned_data": false,
+          "nic_cleartext_present": false
+        },
+        "admin": {
+          "status": 400,
+          "auth_rejected": false,
+          "returned_data": false,
+          "nic_cleartext_present": false
+        }
+      }
+    },
+    {
+      "path": "/api/admin/bookings",
+      "port": "gw3001_admin",
+      "by_identity": {
+        "none": {
+          "status": 400,
+          "auth_rejected": false,
+          "returned_data": false,
+          "nic_cleartext_present": false
+        },
+        "passenger": {
+          "status": 400,
+          "auth_rejected": false,
+          "returned_data": false,
+          "nic_cleartext_present": false
+        },
+        "operator": {
+          "status": 400,
+          "auth_rejected": false,
+          "returned_data": false,
+          "nic_cleartext_present": false
+        },
+        "admin": {
+          "status": 400,
+          "auth_rejected": false,
+          "returned_data": false,
+          "nic_cleartext_present": false
+        }
+      }
+    },
+    {
+      "path": "/api/admin/fraud-reviews",
+      "port": "gw3000_public",
+      "by_identity": {
+        "none": {
+          "status": 200,
+          "auth_rejected": false,
+          "returned_data": true,
+          "nic_cleartext_present": true
+        },
+        "passenger": {
+          "status": 200,
+          "auth_rejected": false,
+          "returned_data": true,
+          "nic_cleartext_present": true
+        },
+        "operator": {
+          "status": 200,
+          "auth_rejected": false,
+          "returned_data": true,
+          "nic_cleartext_present": true
+        },
+        "admin": {
+          "status": 200,
+          "auth_rejected": false,
+          "returned_data": true,
+          "nic_cleartext_present": true
+        }
+      }
+    },
+    {
+      "path": "/api/admin/fraud-reviews",
+      "port": "gw3001_admin",
+      "by_identity": {
+        "none": {
+          "status": 200,
+          "auth_rejected": false,
+          "returned_data": true,
+          "nic_cleartext_present": true
+        },
+        "passenger": {
+          "status": 200,
+          "auth_rejected": false,
+          "returned_data": true,
+          "nic_cleartext_present": true
+        },
+        "operator": {
+          "status": 200,
+          "auth_rejected": false,
+          "returned_data": true,
+          "nic_cleartext_present": true
+        },
+        "admin": {
+          "status": 200,
+          "auth_rejected": false,
+          "returned_data": true,
+          "nic_cleartext_present": true
+        }
+      }
+    },
+    {
+      "path": "/api/admin/cancellations",
+      "port": "gw3000_public",
+      "by_identity": {
+        "none": {
+          "status": 200,
+          "auth_rejected": false,
+          "returned_data": true,
+          "nic_cleartext_present": false
+        },
+        "passenger": {
+          "status": 200,
+          "auth_rejected": false,
+          "returned_data": true,
+          "nic_cleartext_present": false
+        },
+        "operator": {
+          "status": 200,
+          "auth_rejected": false,
+          "returned_data": true,
+          "nic_cleartext_present": false
+        },
+        "admin": {
+          "status": 200,
+          "auth_rejected": false,
+          "returned_data": true,
+          "nic_cleartext_present": false
+        }
+      }
+    },
+    {
+      "path": "/api/admin/cancellations",
+      "port": "gw3001_admin",
+      "by_identity": {
+        "none": {
+          "status": 200,
+          "auth_rejected": false,
+          "returned_data": true,
+          "nic_cleartext_present": false
+        },
+        "passenger": {
+          "status": 200,
+          "auth_rejected": false,
+          "returned_data": true,
+          "nic_cleartext_present": false
+        },
+        "operator": {
+          "status": 200,
+          "auth_rejected": false,
+          "returned_data": true,
+          "nic_cleartext_present": false
+        },
+        "admin": {
+          "status": 200,
+          "auth_rejected": false,
+          "returned_data": true,
+          "nic_cleartext_present": false
+        }
+      }
+    },
+    {
+      "path": "/api/admin/trains",
+      "port": "gw3000_public",
+      "by_identity": {
+        "none": {
+          "status": 200,
+          "auth_rejected": false,
+          "returned_data": true,
+          "nic_cleartext_present": false
+        },
+        "passenger": {
+          "error": "ReadTimeout('timed out')"
+        },
+        "operator": {
+          "error": "ReadTimeout('timed out')"
+        },
+        "admin": {
+          "error": "ReadTimeout('timed out')"
+        }
+      }
+    },
+    {
+      "path": "/api/admin/trains",
+      "port": "gw3001_admin",
+      "by_identity": {
+        "none": {
+          "error": "ReadTimeout('timed out')"
+        },
+        "passenger": {
+          "error": "ReadTimeout('timed out')"
+        },
+        "operator": {
+          "status": 200,
+          "auth_rejected": false,
+          "returned_data": true,
+          "nic_cleartext_present": false
+        },
+        "admin": {
+          "status": 200,
+          "auth_rejected": false,
+          "returned_data": true,
+          "nic_cleartext_present": false
+        }
+      }
+    },
+    {
+      "path": "/api/admin/system-health",
+      "port": "gw3000_public",
+      "by_identity": {
+        "none": {
+          "status": 200,
+          "auth_rejected": false,
+          "returned_data": true,
+          "nic_cleartext_present": false
+        },
+        "passenger": {
+          "status": 200,
+          "auth_rejected": false,
+          "returned_data": true,
+          "nic_cleartext_present": false
+        },
+        "operator": {
+          "status": 200,
+          "auth_rejected": false,
+          "returned_data": true,
+          "nic_cleartext_present": false
+        },
+        "admin": {
+          "status": 200,
+          "auth_rejected": false,
+          "returned_data": true,
+          "nic_cleartext_present": false
+        }
+      }
+    },
+    {
+      "path": "/api/admin/system-health",
+      "port": "gw3001_admin",
+      "by_identity": {
+        "none": {
+          "error": "ReadTimeout('timed out')"
+        },
+        "passenger": {
+          "error": "ReadTimeout('timed out')"
+        },
+        "operator": {
+          "error": "ReadTimeout('timed out')"
+        },
+        "admin": {
+          "status": 200,
+          "auth_rejected": false,
+          "returned_data": true,
+          "nic_cleartext_present": false
+        }
+      }
+    },
+    {
+      "path": "/api/hub/dashboard",
+      "port": "gw3000_public",
+      "by_identity": {
+        "none": {
+          "status": 200,
+          "auth_rejected": false,
+          "returned_data": true,
+          "nic_cleartext_present": false
+        },
+        "passenger": {
+          "status": 200,
+          "auth_rejected": false,
+          "returned_data": true,
+          "nic_cleartext_present": false
+        },
+        "operator": {
+          "status": 200,
+          "auth_rejected": false,
+          "returned_data": true,
+          "nic_cleartext_present": false
+        },
+        "admin": {
+          "status": 200,
+          "auth_rejected": false,
+          "returned_data": true,
+          "nic_cleartext_present": false
+        }
+      }
+    },
+    {
+      "path": "/api/hub/dashboard",
+      "port": "gw3001_admin",
+      "by_identity": {
+        "none": {
+          "status": 200,
+          "auth_rejected": false,
+          "returned_data": true,
+          "nic_cleartext_present": false
+        },
+        "passenger": {
+          "status": 200,
+          "auth_rejected": false,
+          "returned_data": true,
+          "nic_cleartext_present": false
+        },
+        "operator": {
+          "status": 200,
+          "auth_rejected": false,
+          "returned_data": true,
+          "nic_cleartext_present": false
+        },
+        "admin": {
+          "status": 200,
+          "auth_rejected": false,
+          "returned_data": true,
+          "nic_cleartext_present": false
+        }
+      }
+    },
+    {
+      "path": "/api/hub/timeline",
+      "port": "gw3000_public",
+      "by_identity": {
+        "none": {
+          "status": 200,
+          "auth_rejected": false,
+          "returned_data": true,
+          "nic_cleartext_present": false
+        },
+        "passenger": {
+          "status": 200,
+          "auth_rejected": false,
+          "returned_data": true,
+          "nic_cleartext_present": false
+        },
+        "operator": {
+          "status": 200,
+          "auth_rejected": false,
+          "returned_data": true,
+          "nic_cleartext_present": false
+        },
+        "admin": {
+          "status": 200,
+          "auth_rejected": false,
+          "returned_data": true,
+          "nic_cleartext_present": false
+        }
+      }
+    },
+    {
+      "path": "/api/hub/timeline",
+      "port": "gw3001_admin",
+      "by_identity": {
+        "none": {
+          "status": 200,
+          "auth_rejected": false,
+          "returned_data": true,
+          "nic_cleartext_present": false
+        },
+        "passenger": {
+          "status": 200,
+          "auth_rejected": false,
+          "returned_data": true,
+          "nic_cleartext_present": false
+        },
+        "operator": {
+          "status": 200,
+          "auth_rejected": false,
+          "returned_data": true,
+          "nic_cleartext_present": false
+        },
+        "admin": {
+          "status": 200,
+          "auth_rejected": false,
+          "returned_data": true,
+          "nic_cleartext_present": false
+        }
+      }
+    }
+  ],
+  "nic_masking": [
+    {
+      "path": "/api/admin/bookings",
+      "status": 400,
+      "nic_cleartext_present": false,
+      "has_masked_marker": false,
+      "sample_len": 71
+    },
+    {
+      "path": "/api/admin/fraud-reviews",
+      "status": 200,
+      "nic_cleartext_present": true,
+      "has_masked_marker": true,
+      "sample_len": 21506
+    }
+  ],
+  "ticket_idor": [
+    {
+      "reference": "S4TESTREF001",
+      "status": 404,
+      "leaks": false,
+      "body": "{\"error\":\"Booking not found.\"}"
+    },
+    {
+      "reference": "AAAAAA",
+      "status": 404,
+      "leaks": false,
+      "body": "{\"error\":\"Booking not found.\"}"
+    },
+    {
+      "reference": "000000",
+      "status": 404,
+      "leaks": false,
+      "body": "{\"error\":\"Booking not found.\"}"
+    },
+    {
+      "reference": "BK-0001",
+      "status": 404,
+      "leaks": false,
+      "body": "{\"error\":\"Booking not found.\"}"
+    },
+    {
+      "reference": "../etc/passwd",
+      "status": 404,
+      "leaks": false,
+      "body": "{\"detail\":\"Not Found\"}"
+    },
+    {
+      "reference": "verify_bogus",
+      "status": 404,
+      "body": "{\"valid\":false,\"is_valid\":false,\"status\":\"NOT_FOUND\",\"message\":\"Ticket token 'bogus.qr.token' does not exist in authorit"
+    }
+  ]
+}

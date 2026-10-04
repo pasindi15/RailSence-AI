@@ -1,0 +1,82 @@
+{
+  "gemini": "live",
+  "ops_agent": [
+    {
+      "probe": "a_nonexistent_train",
+      "status": 200,
+      "error": null,
+      "badges": null,
+      "method": "rule_based_fallback",
+      "ids_in_reply": [
+        "900"
+      ],
+      "refuses_or_hedges": false,
+      "says_estimate": false,
+      "reply": "Across **3,900** historical trips (the whole corpus, not only today), the network averages **8.3 min** of delay with **43.9%** of arrivals on time. The worst corridor is **Colombo Fort - Kandy** at 8.7 min."
+    },
+    {
+      "probe": "b_false_premise",
+      "status": 200,
+      "error": null,
+      "badges": null,
+      "method": "rule_based_fallback",
+      "ids_in_reply": [
+        "900"
+      ],
+      "refuses_or_hedges": false,
+      "says_estimate": false,
+      "reply": "Across **3,900** historical trips (the whole corpus, not only today), the network averages **8.3 min** of delay with **43.9%** of arrivals on time. The worst corridor is **Colombo Fort - Kandy** at 8.7 min."
+    },
+    {
+      "probe": "c_stats_not_in_data",
+      "status": 200,
+      "error": null,
+      "badges": null,
+      "method": "rule_based_fallback",
+      "ids_in_reply": [
+        "2025"
+      ],
+      "refuses_or_hedges": true,
+      "says_estimate": false,
+      "reply": "I don't have enough information to answer that. I couldn't run that prediction: TRAIN_NOT_FOUND: 2025"
+    },
+    {
+      "probe": "d_not_departed_exact",
+      "status": 200,
+      "error": null,
+      "badges": null,
+      "method": "rule_based_fallback",
+      "ids_in_reply": [
+        "900"
+      ],
+      "refuses_or_hedges": false,
+      "says_estimate": false,
+      "reply": "Across **3,900** historical trips (the whole corpus, not only today), the network averages **8.3 min** of delay with **43.9%** of arrivals on time. The worst corridor is **Colombo Fort - Kandy** at 8.7 min."
+    },
+    {
+      "probe": "e_uncomputable",
+      "status": 200,
+      "error": null,
+      "badges": null,
+      "method": "rule_based_fallback",
+      "ids_in_reply": [
+        "900"
+      ],
+      "refuses_or_hedges": false,
+      "says_estimate": false,
+      "reply": "Across **3,900** historical trips (the whole corpus, not only today), the network averages **8.3 min** of delay with **43.9%** of arrivals on time. The worst corridor is **Colombo Fort - Kandy** at 8.7 min."
+    }
+  ],
+  "passenger_query": [
+    {
+      "status": 200,
+      "reply": "{\"handled\":true,\"intent\":\"location\",\"entities\":{\"train_id\":\"99999\",\"train_name_matches\":[],\"origin\":null,\"destination\":null,\"stations\":[],\"after\":null,\"before\":null,\"day_offset\":0},\"kind\":\"train_not_running\",\"reply\":\"I can't find train 99999 on today's timetable. Check the number, or tell me where you're travelling to and I'll list the trains that go there.\",\"sources\":[\"Today's timetable\"]}",
+      "probe": "pq_nonexistent"
+    },
+    {
+      "status": 200,
+      "reply": "{\"handled\":false,\"intent\":\"handoff\",\"entities\":{\"train_id\":\"9999\",\"train_name_matches\":[],\"origin\":null,\"destination\":null,\"stations\":[],\"after\":null,\"before\":null,\"day_offset\":0},\"reason\":\"booking_or_fare\"}",
+      "probe": "pq_false_premise"
+    }
+  ]
+}

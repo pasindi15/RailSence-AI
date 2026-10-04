@@ -1,0 +1,82 @@
+{
+  "run_at": "2026-09-29T00:18:35.936025+05:30",
+  "endpoint": "GET http://127.0.0.1:3000/api/admin/fraud-reviews (no token)",
+  "records_total": 17,
+  "passenger_objects_with_raw_nic": 8,
+  "rows": [
+    {
+      "case_ref_prefix": "FR-74",
+      "status": "PENDING_REVIEW",
+      "created_at": "2026-09-19",
+      "nic_len": 12,
+      "has_nic_masked": true,
+      "has_nic_hash": true,
+      "last4_matches_masked": true
+    },
+    {
+      "case_ref_prefix": "FR-74",
+      "status": "PENDING_REVIEW",
+      "created_at": "2026-09-19",
+      "nic_len": 12,
+      "has_nic_masked": true,
+      "has_nic_hash": true,
+      "last4_matches_masked": true
+    },
+    {
+      "case_ref_prefix": "FR-74",
+      "status": "PENDING_REVIEW",
+      "created_at": "2026-09-19",
+      "nic_len": 12,
+      "has_nic_masked": true,
+      "has_nic_hash": true,
+      "last4_matches_masked": true
+    },
+    {
+      "case_ref_prefix": "FR-74",
+      "status": "PENDING_REVIEW",
+      "created_at": "2026-09-19",
+      "nic_len": 12,
+      "has_nic_masked": true,
+      "has_nic_hash": true,
+      "last4_matches_masked": true
+    },
+    {
+      "case_ref_prefix": "FR-37",
+      "status": "PENDING_REVIEW",
+      "created_at": "2026-09-19",
+      "nic_len": 12,
+      "has_nic_masked": true,
+      "has_nic_hash": true,
+      "last4_matches_masked": true
+    },
+    {
+      "case_ref_prefix": "FR-37",
+      "status": "PENDING_REVIEW",
+      "created_at": "2026-09-19",
+      "nic_len": 12,
+      "has_nic_masked": true,
+      "has_nic_hash": true,
+      "last4_matches_masked": true
+    },
+    {
+      "case_ref_prefix": "FR-96",
+      "status": "APPROVED",
+      "created_at": "2026-09-19",
+      "nic_len": 12,
+      "has_nic_masked": true,
+      "has_nic_hash": true,
+      "last4_matches_masked": true
+    },
+    {
+      "case_ref_prefix": "FR-84",
+      "status": "REJECTED",
+      "created_at": "2026-09-19",
+      "nic_len": 12,
+      "has_nic_masked": true,
+      "has_nic_hash": true,
+      "last4_matches_masked": true
+    }
+  ],
+  "root_cause": "fraud/review_service.py:99 copies caller payload (incl. passengers[].nic) into booking_payload; list_cases (review_service.py:40,62) returns it verbatim; gateway frontend/serve.py:1840 proxies it unauthenticated",
+  "values_printed": false
+}

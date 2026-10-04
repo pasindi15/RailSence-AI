@@ -1,0 +1,511 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "RailSense AI - Security & Fraud Agent",
+    "description": "Provides behavioral anomaly scoring and fraud risk assessment for railway operations.",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Health Check",
+        "operationId": "health_check_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Health Check Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/internal/fraud-score": {
+      "post": {
+        "tags": [
+          "fraud"
+        ],
+        "summary": "Evaluate passenger behavioral features for fraud risk",
+        "description": "Accepts derived behavioral features from Booking Agent.\nRuns scikit-learn IsolationForest model and returns advisory risk analysis.",
+        "operationId": "evaluate_fraud_score_internal_fraud_score_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FraudScoreRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FraudScoreResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/internal/messages": {
+      "post": {
+        "tags": [
+          "inter-agent"
+        ],
+        "summary": "Receive inter-agent message from Communication Hub",
+        "description": "Handles messages routed via Communication Hub for fraud scoring.",
+        "operationId": "handle_internal_message_internal_messages_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentMessagePayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/internal/grounded-summary": {
+      "post": {
+        "tags": [
+          "fraud"
+        ],
+        "summary": "Generate 4-section grounded LLM summary from raw evidence",
+        "description": "Generates 4-section grounded explanation with policy citations.",
+        "operationId": "evaluate_grounded_summary_internal_grounded_summary_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "type": "object",
+                "title": "Evidence"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/internal/investigation-feedback": {
+      "post": {
+        "tags": [
+          "fraud"
+        ],
+        "summary": "Record human adjudicator label for model evaluation",
+        "description": "Collects ground-truth labels (CONFIRMED_FRAUD / FALSE_POSITIVE) from human review.\nUsed for feedback telemetry and retraining evaluation.",
+        "operationId": "record_investigation_feedback_internal_investigation_feedback_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvestigationFeedbackRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "fraud"
+        ],
+        "summary": "Retrieve recorded investigation feedback history",
+        "description": "Returns the most recent investigation feedback records.",
+        "operationId": "get_investigation_feedback_internal_investigation_feedback_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AgentMessagePayload": {
+        "properties": {
+          "message_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message Id"
+          },
+          "sender": {
+            "type": "string",
+            "title": "Sender",
+            "default": "booking-agent"
+          },
+          "receiver": {
+            "type": "string",
+            "title": "Receiver",
+            "default": "security-agent"
+          },
+          "sender_agent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sender Agent"
+          },
+          "receiver_agent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Receiver Agent"
+          },
+          "intent": {
+            "type": "string",
+            "title": "Intent"
+          },
+          "body": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Body"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Payload"
+          },
+          "correlation_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Correlation Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "intent"
+        ],
+        "title": "AgentMessagePayload"
+      },
+      "FraudScoreRequest": {
+        "properties": {
+          "nic_key": {
+            "type": "string",
+            "title": "Nic Key",
+            "description": "Protected non-plain identifier",
+            "default": ""
+          },
+          "booking_reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Booking Reference",
+            "description": "Optional booking/case reference"
+          },
+          "features": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "type": "object",
+            "title": "Features",
+            "description": "Behavioral numerical features extracted by Booking Agent"
+          },
+          "travel_context": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Travel Context",
+            "description": "Sanitized contextual trip details (origin, dest, train, date)"
+          }
+        },
+        "type": "object",
+        "title": "FraudScoreRequest"
+      },
+      "FraudScoreResponse": {
+        "properties": {
+          "risk_score": {
+            "type": "number",
+            "title": "Risk Score",
+            "description": "Project-calibrated anomaly risk score between 0.0 and 1.0"
+          },
+          "risk_level": {
+            "type": "string",
+            "title": "Risk Level",
+            "description": "Risk category: LOW, MEDIUM, HIGH"
+          },
+          "recommended_action": {
+            "type": "string",
+            "title": "Recommended Action",
+            "description": "Recommended policy action: ALLOW, REVIEW, REJECT"
+          },
+          "reasons": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Reasons",
+            "description": "List of behavioral explanation codes"
+          },
+          "model": {
+            "type": "string",
+            "title": "Model",
+            "description": "Underlying ML model",
+            "default": "IsolationForest"
+          },
+          "grounded_summary": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grounded Summary",
+            "description": "4-section grounded LLM summary"
+          }
+        },
+        "type": "object",
+        "required": [
+          "risk_score",
+          "risk_level",
+          "recommended_action"
+        ],
+        "title": "FraudScoreResponse"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "InvestigationFeedbackRequest": {
+        "properties": {
+          "case_reference": {
+            "type": "string",
+            "title": "Case Reference",
+            "description": "Unique fraud review case reference (e.g. FR-...)"
+          },
+          "true_label": {
+            "type": "string",
+            "title": "True Label",
+            "description": "Adjudicated true label: CONFIRMED_FRAUD or FALSE_POSITIVE"
+          },
+          "reviewer_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewer Notes",
+            "description": "Adjudicator notes or rationale"
+          },
+          "admin_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Admin Id",
+            "description": "Reviewer administrator ID",
+            "default": "admin"
+          }
+        },
+        "type": "object",
+        "required": [
+          "case_reference",
+          "true_label"
+        ],
+        "title": "InvestigationFeedbackRequest"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}

@@ -174,6 +174,11 @@ def main() -> None:
     say("2/4 Choosing ports", "cyan")
     ports = P.resolve(log=lambda m: say(m, "yellow"))
     env = {**os.environ, **P.service_env(ports), "PYTHONUNBUFFERED": "1", "PYTHONIOENCODING": "utf-8"}
+    # M2/M4 load all-MiniLM-L6-v2; if it is already cached, skip huggingface.co so a slow
+    # network cannot stall their startup with retries.
+    hf_cache = Path(os.getenv("HF_HOME", Path.home() / ".cache" / "huggingface")) / "hub"
+    if (hf_cache / "models--sentence-transformers--all-MiniLM-L6-v2").exists():
+        env.setdefault("HF_HUB_OFFLINE", "1")
 
     say("3/4 M1 chat app", "cyan")
     if not args.no_build:

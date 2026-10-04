@@ -1,0 +1,178 @@
+{
+"F-01": {
+ "description": "M2 admin bootstrap falls back to a hard-coded default password for admin@railsense.lk when ADMIN_INITIAL_PASSWORD / ADMIN_PASSWORD are unset. On the tested deployment the default was still valid (one attempt, 200 + admin JWT).",
+ "evidence": "evidence/S4-M2-03/default_login_attempts.json",
+ "root_cause": "M2-operations-agent/admin/admin_db.py:444-445; no forced change on first login.",
+ "impact": "C/I/A High: full M2 admin scope (officer management, model retrain/rollback, incident approval, audit read). Accountability: actions would be attributed to the legitimate admin identity.",
+ "likelihood_just": "High: the value is in source and one request suffices.",
+ "severity_just": "High. A CVSS 3.1 base score for an Internet-facing system would be 9.8; rated High here because the console is LAN-only in this deployment and M2 admin has no path to safety state (train flags live in M4 behind separate auth). Would be Critical if Internet-exposed.",
+ "mitigation": {"immediate": "Rotate the admin password on the shared DB; set ADMIN_INITIAL_PASSWORD everywhere.", "long_term": "Remove the literal default (fail closed), one-time random bootstrap secret, forced first-login change, login lockout and alerting.", "location": "M2-operations-agent/admin/admin_db.py:440-450", "example_control": "os.environ['ADMIN_INITIAL_PASSWORD'] required at bootstrap + must_change_password flag", "effort": "S", "retest": "Documented default returns 401; bootstrap without env var refuses to start."},
+ "viva_sev": "Zero-skill full admin = High; not Critical only because LAN-only and no safety-state path.",
+ "viva_mit": "Fail-closed bootstrap secret + forced first-login change."
+},
+"F-02": {
+ "description": "M4 engineer accounts are a source-code dict with plaintext, weak passwords compared with ==. The documented admin account logged in (200, token issued); a wrong password returned 401.",
+ "evidence": "evidence/stage2_supplementary/results.json (G1); evidence/S4-M4-03/flag_revert.json",
+ "root_cause": "M4-maintenance-agent/main.py:74-79 (_ENGINEER_ACCOUNTS), main.py:846-847 (plaintext comparison).",
+ "impact": "Integrity/safety High: the engineer role controls train maintenance flags, which gate ticket sales in M3, and field reports.",
+ "likelihood_just": "High: credentials are in the repository and follow a guessable pattern.",
+ "severity_just": "High: grants the only safety-relevant write role. Not Critical because the authentication gate itself works (401 without token on all surfaces) and flag changes are visible and reversible.",
+ "mitigation": {"immediate": "Change all four passwords via env/DB; remove them from source.", "long_term": "Move engineers to the DB with bcrypt (reuse M2's officer model), per-user accounts, lockout, MFA for flagging.", "location": "M4-maintenance-agent/main.py:74-79, 840-850", "example_control": "bcrypt.checkpw against engineers table; secrets loaded from env", "effort": "M", "retest": "Source contains no passwords; documented credentials return 401."},
+ "viva_sev": "Public credentials for the safety-relevant role = High.",
+ "viva_mit": "Hashed DB-backed engineer accounts; no secrets in source."
+},
+"F-03": {
+ "description": "Gateway admin and monitor routes proxy to Booking/Hub with no session check. Without a token, on both :3000 (public) and :3001: fraud-reviews (17 cases incl. names, emails, risk scores), cancellations, hub dashboard/timeline; system-health and admin/trains on :3000. Booking /internal/fraud-reviews is also unauthenticated.",
+ "evidence": "evidence/S4-M3-03/results.json, fraud_queue_unauth.json; evidence/S4-M3-02/results.json; figures/fig_rbac_matrix.png",
+ "root_cause": "frontend/serve.py:1550, 1665, 1840, 1925, 1982, 2158 (no auth dependency); booking-agent/main.py:705-720.",
+ "impact": "Confidentiality High: passenger PII and AI fraud-risk labels disclosed; internal topology (base URLs) disclosed. RAI: exposes who was flagged as a fraud risk by an automated model.",
+ "likelihood_just": "High on the LAN: public port bound to 0.0.0.0, plain GET, no auth.",
+ "severity_just": "High: unauthenticated read of personal data plus automated risk judgements. Not Critical because the routes are read-only (review actions were not tested and M2's admin API behind the same gateway correctly returns 401).",
+ "mitigation": {"immediate": "Require an officer session on every /api/admin/* and /api/hub/* gateway route; stop serving admin routes on :3000.", "long_term": "Central auth middleware at the gateway plus independent auth in Booking/Security admin routes.", "location": "frontend/serve.py route handlers above; booking-agent/main.py:705-760", "example_control": "FastAPI dependency verifying the M2 officer JWT + role claim on an APIRouter prefix", "effort": "M", "retest": "All listed routes return 401 for none/passenger and 403 for operator where admin-only."},
+ "viva_sev": "Unauthenticated PII + fraud labels on a LAN-facing port = High.",
+ "viva_mit": "Gateway-level auth dependency on the admin/hub router prefix."
+},
+"F-16": {
+ "description": "In 4 of 17 fraud cases (8 of 21 passenger objects) booking_details.passengers[] contains a raw 12-digit nic next to nic_masked and nic_hash; last 4 digits match the mask in 8/8. Served unauthenticated via F-03. Corrects the Stage-1 conclusion that NIC masking fully held.",
+ "evidence": "evidence/stage2_supplementary/nic_raw_field_check.json (no values recorded); evidence/S4-M3-03/results.json (nic_cleartext_present true)",
+ "root_cause": "booking-agent/fraud/review_service.py:99 copies caller payload incl. passengers[].nic into booking_payload; list_cases (review_service.py:40-62) returns it verbatim. Current booking path (booking/service.py:283-291, 379) is sanitised, so the exposure is legacy rows / the helper path.",
+ "impact": "Confidentiality High: national identity numbers are a durable identifier used for identity verification. Data protection: contradicts the README's HMAC/mask claim. Whether values are synthetic could not be determined; treated as PII.",
+ "likelihood_just": "High: reachable through the unauthenticated F-03 route.",
+ "severity_just": "High on its own (national ID disclosure); combined with F-03 it is the most sensitive exposure found. Not Critical because it affects 4 historical cases, not every booking.",
+ "mitigation": {"immediate": "Scrub nic from stored booking_payload rows (one-off migration); fix F-03.", "long_term": "Strip raw identifiers in create_review_case and apply a response-side allowlist in list_cases; add a regression test that no response contains a raw NIC pattern.", "location": "booking-agent/fraud/review_service.py:95-115, 40-62", "example_control": "p.pop('nic', None) before persisting; serializer allowlist {name, nic_masked, nic_hash}", "effort": "S", "retest": "Scan of fraud-reviews finds 0 raw NIC values; unit test for create_review_case."},
+ "viva_sev": "National ID disclosure = High; limited to 4 legacy cases, so not Critical.",
+ "viva_mit": "Scrub at write, allowlist at read, migrate old rows."
+},
+"F-04": {
+ "description": "M2, M4, Security, Booking and Hub use allow_origins=['*'] with allow_credentials=True, so Starlette reflects any Origin with Access-Control-Allow-Credentials: true. M1 returns ACAO * without credentials.",
+ "evidence": "evidence/static/cors_check.json",
+ "root_cause": "M2 main.py:100-101; agent-hub/main.py:121-122; booking-agent/main.py:109-110; M4 main.py:254-255; security-agent/main.py:46-47.",
+ "impact": "Medium: tokens are Bearer headers from localStorage (not cookies), so credentialed CORS does not currently leak sessions. The permissive origin policy still lets any web page a staff member opens read unauthenticated loopback-only services from their browser, weakening the 127.0.0.1 bind. Becomes High if cookie auth is introduced.",
+ "likelihood_just": "Medium: requires a victim to visit an attacker page while on the host.",
+ "severity_just": "Medium: a real misconfiguration with a cross-origin read path, but session theft is not possible with the current token storage.",
+ "mitigation": {"immediate": "Replace '*' with the two gateway origins; drop allow_credentials where unused.", "long_term": "Shared CORS config module; internal services need no browser CORS at all.", "location": "the five main.py lines above", "example_control": "allow_origins=['http://localhost:3000','http://localhost:3001']", "effort": "S", "retest": "Preflight with Origin https://evil.example returns no ACAO header."},
+ "viva_sev": "Medium: reflection is real, but Bearer-in-header tokens are not sent automatically.",
+ "viva_mit": "Explicit origin allowlist; never * with credentials."
+},
+"F-05": {
+ "description": "Receivers do not verify the Hub delegation token. Security /internal/fraud-score answered 200 with no token; other internal endpoints reached schema validation (422) with no auth check; M4 /hub/message accepted no-token and wrong-key tokens (200).",
+ "evidence": "evidence/S4-M3-02/results.json; evidence/S4-M4-03/results.json (hub_message_signing)",
+ "root_cause": "security-agent/main.py:99-105 (no auth dependency); M4 main.py:120-122 (_verify_hub_token returns when JWT_SECRET_KEY unset = fail-open).",
+ "impact": "Integrity Medium: bypasses the Hub's signature, allowlist, rate limit and audit for anyone who can reach a receiver (localhost, gateway pass-through, or SSRF).",
+ "likelihood_just": "Medium: internal ports are loopback, but the gateway proxies /svc/* on 0.0.0.0.",
+ "severity_just": "Medium: a defence-in-depth failure that needs a network precondition; no direct PII or safety write was demonstrated through it.",
+ "mitigation": {"immediate": "Set JWT_SECRET_KEY in M4 and make verification fail closed.", "long_term": "Shared verify_agent_token dependency on every /internal/* and /hub/message route; mTLS or per-agent keys.", "location": "security-agent/main.py:99; M4 main.py:114-133; booking/M2 internal routes", "example_control": "Depends(require_hub_token(expected_audience=AGENT_NAME))", "effort": "M", "retest": "No-token and wrong-key calls to all receivers return 401."},
+ "viva_sev": "Medium: needs network reach; it removes a layer rather than exposing data by itself.",
+ "viva_mit": "Fail-closed token verification at every receiver."
+},
+"F-06": {
+ "description": "Both gateways listen on 0.0.0.0 (confirmed by netstat); internal agents listen on 127.0.0.1. The gateway re-exposes admin, hub and /svc/* routes to the LAN.",
+ "evidence": "evidence/stage2_supplementary/results.json (G5); evidence/S4-M3-02/results.json",
+ "root_cause": "frontend/serve.py:2454, 2460.",
+ "impact": "Medium: amplifier that makes F-03, F-05, F-11 reachable from any device on the network.",
+ "likelihood_just": "Medium: shared campus / Wi-Fi networks.",
+ "severity_just": "Medium: no data exposure on its own; it widens who can reach other weaknesses.",
+ "mitigation": {"immediate": "Bind to 127.0.0.1 for local use.", "long_term": "Authenticating reverse proxy/ingress; separate admin plane not exposed to passengers.", "location": "frontend/serve.py:2454, 2460", "example_control": "host=os.getenv('GATEWAY_HOST','127.0.0.1')", "effort": "S", "retest": "netstat shows 127.0.0.1:3000/3001."},
+ "viva_sev": "Amplifier, not a direct exposure = Medium.",
+ "viva_mit": "Loopback bind + authenticating ingress."
+},
+"F-07": {
+ "description": "Independent retrieval results are below README claims: M1 P@1 0.542 (EN 1.000 / SI 0.375 / TA 0.250), M2 0.875 vs claimed 1.000, M4 0.792 vs claimed 1.000. No retriever applies a relevance threshold (off-topic queries return chunks; M4 FP rate 0.5).",
+ "evidence": "evidence/S4-M1-01, S4-M2-01, S4-M4-01 results.json; figures/fig_retrieval_metrics.png, fig_language_gap.png",
+ "root_cause": "M1 rag/retriever.py:15-26, 38 (English-only MiniLM, unconditional top_k); M2 evaluation/rag/evaluate_retrieval.py:3-4 (corpus-derived queries); M4 manual_retriever.py:133 (TF-IDF, no cutoff) and shipped eval prefixing gold asset/fault type.",
+ "impact": "Medium: degraded answers for Sinhala/Tamil passengers (fairness); overstated public metrics (transparency); irrelevant 'authoritative' context for off-topic questions.",
+ "likelihood_just": "High: affects ordinary usage by every non-English user.",
+ "severity_just": "Medium: a quality/fairness defect, not a security breach; LLM declines in S4-M1-02 limited the harm observed. Risk is High because it occurs in normal use every day.",
+ "mitigation": {"immediate": "Publish the independent figures alongside the README numbers.", "long_term": "Multilingual embeddings (e.g. paraphrase-multilingual-MiniLM-L12-v2) or translate-then-retrieve; similarity threshold with an 'I don't know' path; held-out multilingual eval set in CI.", "location": "the three retriever modules and eval scripts", "example_control": "if top_distance > tau: return [] (tau tuned on held-out set)", "effort": "M", "retest": "Re-run the 24-query sets: SI/TA P@1 within 0.15 of EN; off-topic FP rate < 0.1."},
+ "viva_sev": "Quality/fairness, not a breach = Medium severity; High risk because it is constant.",
+ "viva_mit": "Multilingual embeddings + relevance threshold + honest held-out eval."
+},
+"F-12": {
+ "description": "One HS256 JWT_SECRET_KEY signs and verifies both officer/admin tokens and all inter-agent Hub tokens.",
+ "evidence": "Code review; gray-box token minting in scripts/_harness.py demonstrates that the secret suffices for both token types.",
+ "root_cause": "M2 admin/admin_auth.py:22, 154, 161; agent-hub/auth/jwt_utils.py:44-107.",
+ "impact": "High if leaked: any holder can mint an admin officer token and impersonate any agent; no separation of trust domains.",
+ "likelihood_just": "Low: requires disclosure of the secret (it is in several .env files).",
+ "severity_just": "Medium: design weakness with large blast radius but no direct exploit without a prior leak.",
+ "mitigation": {"immediate": "Separate secrets for officer tokens and agent tokens.", "long_term": "RS256/ES256 per-agent key pairs so a compromised agent cannot forge others; key rotation.", "location": "admin_auth.py; jwt_utils.py; .env templates", "example_control": "OFFICER_JWT_SECRET vs per-agent private keys with the Hub holding only public keys", "effort": "L", "retest": "An agent token is rejected by the admin API and vice versa."},
+ "viva_sev": "Large blast radius but needs a leak first = Medium.",
+ "viva_mit": "Per-domain keys; asymmetric agent tokens."
+},
+"F-08": {
+ "description": "Unauthenticated incident reports are held as pending and correctly kept off the public map, but the Operations Assistant's incident tool lists pending items with their raw summary text (labelled _pending_), so attacker-written text enters an LLM-facing tool unsanitised. Re-rated from Medium (Stage 1) to Low.",
+ "evidence": "evidence/S4-M2-02/leak_recheck.json (marker_leaked true), results.json",
+ "root_cause": "M2 ops_agent_tools.py:184-185 (excludes only rejected), summary copied from raw_text; no provenance sanitisation.",
+ "impact": "Low: officer-facing only, status label shown; potential indirect prompt-injection surface when the Gemini path is live (not exercised in this run).",
+ "likelihood_just": "Medium: submission is unauthenticated and trivial.",
+ "severity_just": "Low: listing the review queue is intended behaviour; the gap is unsanitised untrusted text, and no manipulated answer was observed.",
+ "mitigation": {"immediate": "Quote/escape pending text as data in tool output; never include pending rows in LLM context except in the explicit review view.", "long_term": "Provenance labels and trust tiers on every retrieved item; injection-pattern stripping.", "location": "M2 ops_agent_tools.py:180-200", "example_control": "{'trust':'unverified','text':<escaped>} with a system rule that unverified text is not instructions", "effort": "S", "retest": "Injection marker never appears unquoted in assistant answers."},
+ "viva_sev": "Intended queue view with visible label; residual injection surface = Low.",
+ "viva_mit": "Trust-tier labels and escaping for unverified text."
+},
+"F-09": {
+ "description": "No X-Content-Type-Options, X-Frame-Options, CSP or HSTS on any service; /docs and /openapi.json return 200 on all 8 services including both gateways.",
+ "evidence": "evidence/env/recon_summary.json",
+ "root_cause": "FastAPI defaults (docs enabled, no header middleware) in every main.py.",
+ "impact": "Low: clickjacking/MIME-sniffing hardening gap; full API map disclosed.",
+ "likelihood_just": "Medium.",
+ "severity_just": "Low: hardening/information-disclosure, no direct compromise.",
+ "mitigation": {"immediate": "docs_url=None, openapi_url=None in production.", "long_term": "Security-header middleware at the gateway.", "location": "all main.py / serve.py app constructors", "example_control": "middleware setting nosniff, DENY, default-src 'self'", "effort": "S", "retest": "/docs 404; headers present on responses."},
+ "viva_sev": "Hardening gap = Low.",
+ "viva_mit": "Disable docs in prod + header middleware."
+},
+"F-10": {
+ "description": "M1 /chat has no rate limiter (20/20 accepted); M2 /incident-report has no limiter (10/10 near-duplicates accepted). M2/M4 other routes and the Hub do limit.",
+ "evidence": "evidence/S4-M1-04/results.json (burst); evidence/S4-M2-02/results.json",
+ "root_cause": "No slowapi in M1 backend; M2 main.py:1469 lacks the @limiter decorator present on neighbouring routes.",
+ "impact": "Low: LLM cost amplification and review-queue spam.",
+ "likelihood_just": "Medium.",
+ "severity_just": "Low: availability/cost impact under bounded conditions; contradicts README claim.",
+ "mitigation": {"immediate": "@limiter.limit on both routes.", "long_term": "Gateway-wide per-IP limits; duplicate detection on incident text.", "location": "M1 backend/main.py /chat; M2 main.py:1469", "example_control": "@limiter.limit('10/minute')", "effort": "S", "retest": "Burst of 20 yields 429s."},
+ "viva_sev": "Cost/spam only = Low.",
+ "viva_mit": "Reuse the existing slowapi limiter."
+},
+"F-11": {
+ "description": "GET /chat/{session_id}/history returns another session's messages to any caller with the UUID, directly and via the public gateway.",
+ "evidence": "evidence/S4-M1-03/results.json",
+ "root_cause": "M1 main.py:1645 (no ownership check); main.py:136-138 validates format only.",
+ "impact": "Medium: conversation content (travel details) disclosed if an ID leaks.",
+ "likelihood_just": "Low: UUIDv4 is unguessable; requires leakage.",
+ "severity_just": "Low: real IDOR, but only exploitable with a leaked identifier.",
+ "mitigation": {"immediate": "Remove history route from the public pass-through.", "long_term": "Bind sessions to a signed cookie or authenticated principal and check ownership.", "location": "M1 main.py:1645; serve.py:167", "example_control": "HMAC-signed session cookie compared to path id", "effort": "M", "retest": "Reading session A's history from B's context returns 403."},
+ "viva_sev": "IDOR gated by an unguessable ID = Low.",
+ "viva_mit": "Ownership check via signed session binding."
+},
+"F-13": {
+ "description": "delay_alert and maintenance_alert are published to Upstash as plain JSON with no signature; subscribers cannot verify origin.",
+ "evidence": "Code; evidence/S4-M3-04/results.json",
+ "root_cause": "M2 hub_client.py:89; M4 hub_client.py:91.",
+ "impact": "Medium: forged alerts could mislead consumers.",
+ "likelihood_just": "Low: needs the Upstash token.",
+ "severity_just": "Low: design gap behind a credential; not exploited.",
+ "mitigation": {"immediate": "Add an HMAC field with a dedicated key.", "long_term": "Verify signature and schema on consume; reject unsigned.", "location": "both hub_client.py publish functions", "example_control": "event['sig']=hmac_sha256(EVENT_KEY, canonical_json)", "effort": "S", "retest": "Unsigned or tampered event is dropped by subscriber."},
+ "viva_sev": "Needs a credential first = Low.",
+ "viva_mit": "HMAC-signed events verified on consume."
+},
+"F-14": {
+ "description": "M1 accepted a 120 KB chat message; the Hub forwarded a 200 KB payload.",
+ "evidence": "evidence/S4-M1-04/results.json; evidence/S4-M3-01/results.json",
+ "root_cause": "M1 main.py:90-92 (message: str, no max_length); Hub payload is a free-form dict.",
+ "impact": "Low: memory and LLM-token cost amplification.",
+ "likelihood_just": "Medium.",
+ "severity_just": "Low: bounded resource impact.",
+ "mitigation": {"immediate": "max_length on message; payload size check in Hub.", "long_term": "Body-size limit at the gateway.", "location": "M1 main.py:90-92; agent-hub message schema", "example_control": "Field(..., max_length=2000); reject Content-Length > 64 KB", "effort": "S", "retest": "120 KB body returns 413/422."},
+ "viva_sev": "Resource amplification only = Low.",
+ "viva_mit": "Schema max_length + gateway body cap."
+},
+"F-15": {
+ "description": "The M4 engineer assistant answered a passenger-style question with internal asset IDs/health, and emitted numeric limits without a post-generation check against cited manual text (no fabrication was proven).",
+ "evidence": "evidence/S4-M4-02/results.json",
+ "root_cause": "No role/scope filter on M4 /chat; number guard not applied to safety figures; invented-ID check skipped when M4 is offline from the shared DB.",
+ "impact": "Informational: scope creep; residual over-trust risk for safety figures.",
+ "likelihood_just": "Medium.",
+ "severity_just": "Informational: no incorrect safety value was demonstrated; observed figures were consistent with the manual section returned in S4-M4-04.",
+ "mitigation": {"immediate": "Scope prompt/classifier to engineering questions.", "long_term": "Verify each emitted number appears in a cited chunk; show citations.", "location": "M4 /chat handler and recommendation layer", "example_control": "regex numbers in answer ⊆ numbers in retrieved chunks, else fall back to template", "effort": "M", "retest": "Passenger question is redirected; unsupported number triggers template."},
+ "viva_sev": "No wrong value shown = Informational.",
+ "viva_mit": "Numeric grounding check + role scoping."
+}
+}

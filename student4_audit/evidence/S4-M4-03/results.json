@@ -1,0 +1,113 @@
+{
+  "tested_at": "2026-09-28T17:58:03.301278+05:30",
+  "flag_train_auth_gate": [
+    {
+      "surface": "direct_8006",
+      "status": 401,
+      "auth_rejected": true,
+      "body": "{\"detail\":\"Engineer authentication required. Please log in via the dashboard.\"}"
+    },
+    {
+      "surface": "gateway3000_public",
+      "status": 401,
+      "auth_rejected": true,
+      "body": "{\"detail\":\"Engineer authentication required. Please log in via the dashboard.\"}"
+    },
+    {
+      "surface": "gateway3001_admin",
+      "status": 401,
+      "auth_rejected": true,
+      "body": "{\"detail\":\"Engineer authentication required. Please log in via the dashboard.\"}"
+    }
+  ],
+  "engineer_login": {
+    "status": 422,
+    "got_token": false,
+    "cred": "admin/<documented M4 password> (hard-coded in source)"
+  },
+  "telemetry_validation": [
+    {
+      "endpoint": "/asset-health",
+      "case": "negative",
+      "status": 422,
+      "is_500": false,
+      "body": "{\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"asset_type\"],\"msg\":\"Field required\",\"input\":{\"asset_id\":\"S4TEST\",\"service_ag"
+    },
+    {
+      "endpoint": "/asset-health",
+      "case": "nan",
+      "status": 422,
+      "is_500": false,
+      "body": "{\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"asset_type\"],\"msg\":\"Field required\",\"input\":{\"asset_id\":\"S4TEST\",\"service_ag"
+    },
+    {
+      "endpoint": "/asset-health",
+      "case": "inf",
+      "status": 422,
+      "is_500": false,
+      "body": "{\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"asset_type\"],\"msg\":\"Field required\",\"input\":{\"asset_id\":\"S4TEST\",\"service_ag"
+    },
+    {
+      "endpoint": "/asset-health",
+      "case": "string_for_number",
+      "status": 422,
+      "is_500": false,
+      "body": "{\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"asset_type\"],\"msg\":\"Field required\",\"input\":{\"asset_id\":\"S4TEST\",\"service_ag"
+    },
+    {
+      "endpoint": "/asset-health",
+      "case": "huge_array",
+      "status": 422,
+      "is_500": false,
+      "body": "{\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"asset_type\"],\"msg\":\"Field required\",\"input\":{\"asset_id\":\"S4TEST\",\"telemetry\""
+    },
+    {
+      "endpoint": "/asset-health",
+      "case": "html_note",
+      "status": 422,
+      "is_500": false,
+      "body": "{\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"asset_type\"],\"msg\":\"Field required\",\"input\":{\"asset_id\":\"S4TEST\",\"note\":\"<sc"
+    },
+    {
+      "endpoint": "/maintenance-report",
+      "case": "50kb_note",
+      "status": 401,
+      "is_500": false,
+      "body": "{\"detail\":\"Engineer authentication required. Please log in via the dashboard.\"}"
+    }
+  ],
+  "hub_message_signing": [
+    {
+      "case": "no_token",
+      "status": 200,
+      "accepted": true,
+      "body": "{\"message_id\":\"65297cda-f386-4b29-88ed-bc490b291787\",\"sender_agent\":\"maintenance-agent\",\"receiver_agent\":\"operations-agent\",\"intent\":\"issue_"
+    },
+    {
+      "case": "forged_wrong_secret",
+      "status": 200,
+      "accepted": true,
+      "body": "{\"message_id\":\"2533ddb2-3ae9-4194-828c-a4395f6f23fc\",\"sender_agent\":\"maintenance-agent\",\"receiver_agent\":\"operations-agent\",\"intent\":\"issue_"
+    }
+  ],
+  "unauth_reads": [
+    {
+      "path": "/api/dashboard",
+      "status": 200,
+      "leaks_data": true,
+      "snippet": "{\"generated_at\":\"2026-09-28T12:28:07.633836+00:00\",\"data_source\":\"local_csv\",\"aggregates\":{\"total_assets\":1440,\"avg_health_score\":73.3,\"asse"
+    },
+    {
+      "path": "/api/trains-under-maintenance",
+      "status": 200,
+      "leaks_data": false,
+      "snippet": "{\"count\":0,\"trains\":[]}"
+    },
+    {
+      "path": "/api/train-status/S4TEST-TRAIN-001",
+      "status": 200,
+      "leaks_data": true,
+      "snippet": "{\"train_id\":\"S4TEST-TRAIN-001\",\"under_maintenance\":false,\"found\":true,\"message\":\"Train S4TEST-TRAIN-001 has no active maintenance flags and "
+    }
+  ]
+}

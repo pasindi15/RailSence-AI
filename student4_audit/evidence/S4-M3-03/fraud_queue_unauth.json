@@ -1,0 +1,21 @@
+{
+  "endpoint": "/api/admin/fraud-reviews (port 3000, UNAUTH)",
+  "status": 200,
+  "record_count": 17,
+  "nic_masked_present": true,
+  "nic_hash_present": true,
+  "nic_cleartext": false,
+  "contains_email_addresses": true,
+  "notable_fields": [
+    "case_reference",
+    "name",
+    "nic_hash",
+    "nic_masked",
+    "passenger_count",
+    "passenger_email",
+    "passengers",
+    "request_reference",
+    "risk_level",
+    "risk_score"
+  ]
+}

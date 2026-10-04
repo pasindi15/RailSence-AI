@@ -1,0 +1,329 @@
+{
+  "retrieval_method": "supabase_pgvector",
+  "readme_claim": "P@1=1.000, P@3=1.000, P@5=0.999 (shipped eval queries = verbatim corpus notes)",
+  "independent_out_of_corpus": {
+    "n": 24,
+    "P@1": 0.875,
+    "P@3": 0.875,
+    "P@5": 0.875,
+    "MRR": 0.875,
+    "random_baseline_P@1": 0.2
+  },
+  "per_category": {
+    "paraphrase": {
+      "P@1": 0.9,
+      "n": 10
+    },
+    "keyword": {
+      "P@1": 1.0,
+      "n": 5
+    },
+    "typo": {
+      "P@1": 0.333,
+      "n": 3
+    },
+    "short": {
+      "P@1": 1.0,
+      "n": 3
+    },
+    "crosslingual": {
+      "P@1": 1.0,
+      "n": 3
+    }
+  },
+  "hard_negatives": {
+    "note": "5 categories always exist; retriever always returns SOME same-corpus incident (no 'no-match' option). Shows top scores.",
+    "rows": [
+      {
+        "q": "best hotel in kandy",
+        "returned": 3,
+        "top_score": 0.40284994823635,
+        "top_type": "weather"
+      },
+      {
+        "q": "how to make egg hoppers",
+        "returned": 3,
+        "top_score": 0.0939038395881653,
+        "top_type": "signal_fault"
+      },
+      {
+        "q": "stock market news today",
+        "returned": 3,
+        "top_score": 0.0702245384454732,
+        "top_type": "signal_fault"
+      },
+      {
+        "q": "football scores",
+        "returned": 3,
+        "top_score": 0.140541293653327,
+        "top_type": "mechanical"
+      }
+    ]
+  },
+  "rows": [
+    {
+      "q": "the light on the gantry would not change and trains queued up",
+      "cat": "paraphrase",
+      "expected": "signal_fault",
+      "top_types": [
+        "signal_fault",
+        "signal_fault",
+        "signal_fault"
+      ],
+      "rank": 1
+    },
+    {
+      "q": "points failed to switch so the route could not be set",
+      "cat": "paraphrase",
+      "expected": "signal_fault",
+      "top_types": [
+        "signal_fault",
+        "signal_fault",
+        "signal_fault"
+      ],
+      "rank": 1
+    },
+    {
+      "q": "the engine broke down and the loco was withdrawn for repair",
+      "cat": "paraphrase",
+      "expected": "mechanical",
+      "top_types": [
+        "mechanical",
+        "mechanical",
+        "mechanical"
+      ],
+      "rank": 1
+    },
+    {
+      "q": "a coach developed a fault with its brakes en route",
+      "cat": "paraphrase",
+      "expected": "mechanical",
+      "top_types": [
+        "mechanical",
+        "mechanical",
+        "mechanical"
+      ],
+      "rank": 1
+    },
+    {
+      "q": "heavy rain and poor visibility forced trains to crawl",
+      "cat": "paraphrase",
+      "expected": "weather",
+      "top_types": [
+        "weather",
+        "weather",
+        "weather"
+      ],
+      "rank": 1
+    },
+    {
+      "q": "flooding over the rails slowed everything down",
+      "cat": "paraphrase",
+      "expected": "weather",
+      "top_types": [
+        "weather",
+        "weather",
+        "weather"
+      ],
+      "rank": 1
+    },
+    {
+      "q": "a fallen tree lay across the line blocking the service",
+      "cat": "paraphrase",
+      "expected": "track_obstruction",
+      "top_types": [
+        "track_obstruction",
+        "track_obstruction",
+        "track_obstruction"
+      ],
+      "rank": 1
+    },
+    {
+      "q": "debris on the track had to be cleared before trains passed",
+      "cat": "paraphrase",
+      "expected": "track_obstruction",
+      "top_types": [
+        "track_obstruction",
+        "track_obstruction",
+        "track_obstruction"
+      ],
+      "rank": 1
+    },
+    {
+      "q": "the relief driver turned up late and dispatch was held",
+      "cat": "paraphrase",
+      "expected": "staffing",
+      "top_types": [
+        "staffing",
+        "staffing",
+        "staffing"
+      ],
+      "rank": 1
+    },
+    {
+      "q": "no guard available so the train waited at the platform",
+      "cat": "paraphrase",
+      "expected": "staffing",
+      "top_types": [
+        "signal_fault",
+        "signal_fault",
+        "signal_fault"
+      ],
+      "rank": 0
+    },
+    {
+      "q": "signal relay aspect failure",
+      "cat": "keyword",
+      "expected": "signal_fault",
+      "top_types": [
+        "signal_fault",
+        "signal_fault",
+        "signal_fault"
+      ],
+      "rank": 1
+    },
+    {
+      "q": "locomotive engine mechanical breakdown",
+      "cat": "keyword",
+      "expected": "mechanical",
+      "top_types": [
+        "mechanical",
+        "mechanical",
+        "mechanical"
+      ],
+      "rank": 1
+    },
+    {
+      "q": "rain flood weather delay",
+      "cat": "keyword",
+      "expected": "weather",
+      "top_types": [
+        "weather",
+        "weather",
+        "weather"
+      ],
+      "rank": 1
+    },
+    {
+      "q": "tree debris obstruction on track",
+      "cat": "keyword",
+      "expected": "track_obstruction",
+      "top_types": [
+        "track_obstruction",
+        "track_obstruction",
+        "track_obstruction"
+      ],
+      "rank": 1
+    },
+    {
+      "q": "driver guard crew shortage staffing",
+      "cat": "keyword",
+      "expected": "staffing",
+      "top_types": [
+        "staffing",
+        "staffing",
+        "staffing"
+      ],
+      "rank": 1
+    },
+    {
+      "q": "singal falut aspet did not chnage",
+      "cat": "typo",
+      "expected": "signal_fault",
+      "top_types": [
+        "track_obstruction",
+        "track_obstruction",
+        "track_obstruction"
+      ],
+      "rank": 0
+    },
+    {
+      "q": "mechnical brekdown of the enigne",
+      "cat": "typo",
+      "expected": "mechanical",
+      "top_types": [
+        "track_obstruction",
+        "track_obstruction",
+        "track_obstruction"
+      ],
+      "rank": 0
+    },
+    {
+      "q": "hevy raain and floodng on line",
+      "cat": "typo",
+      "expected": "weather",
+      "top_types": [
+        "weather",
+        "weather",
+        "weather"
+      ],
+      "rank": 1
+    },
+    {
+      "q": "red signal stuck",
+      "cat": "short",
+      "expected": "signal_fault",
+      "top_types": [
+        "signal_fault",
+        "signal_fault",
+        "signal_fault"
+      ],
+      "rank": 1
+    },
+    {
+      "q": "brake failure",
+      "cat": "short",
+      "expected": "mechanical",
+      "top_types": [
+        "mechanical",
+        "mechanical",
+        "mechanical"
+      ],
+      "rank": 1
+    },
+    {
+      "q": "landslip on track",
+      "cat": "short",
+      "expected": "track_obstruction",
+      "top_types": [
+        "track_obstruction",
+        "track_obstruction",
+        "track_obstruction"
+      ],
+      "rank": 1
+    },
+    {
+      "q": "signal eka weda na (signal not working)",
+      "cat": "crosslingual",
+      "expected": "signal_fault",
+      "top_types": [
+        "signal_fault",
+        "signal_fault",
+        "signal_fault"
+      ],
+      "rank": 1
+    },
+    {
+      "q": "wahe watura godai (heavy rain flooding)",
+      "cat": "crosslingual",
+      "expected": "weather",
+      "top_types": [
+        "weather",
+        "weather",
+        "weather"
+      ],
+      "rank": 1
+    },
+    {
+      "q": "enjima kadila (engine broken)",
+      "cat": "crosslingual",
+      "expected": "mechanical",
+      "top_types": [
+        "mechanical",
+        "mechanical",
+        "mechanical"
+      ],
+      "rank": 1
+    }
+  ]
+}

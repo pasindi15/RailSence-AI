@@ -1,0 +1,258 @@
+{
+  "tested_at": "2026-09-28T17:55:02.977085+05:30",
+  "internal_direct": [
+    {
+      "svc": "booking",
+      "path": "/internal/messages",
+      "by_identity": {
+        "none": {
+          "status": 422,
+          "auth_rejected": false,
+          "body": "{\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message_id\"],\"msg\":\"Field required\",\"input\":{\"S4TEST\":true}},{\"type\":\"missing\",\"loc\":[\"body\",\"se"
+        },
+        "passenger_forged": {
+          "status": 422,
+          "auth_rejected": false,
+          "body": "{\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message_id\"],\"msg\":\"Field required\",\"input\":{\"S4TEST\":true}},{\"type\":\"missing\",\"loc\":[\"body\",\"se"
+        },
+        "forged_service": {
+          "status": 422,
+          "auth_rejected": false,
+          "body": "{\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message_id\"],\"msg\":\"Field required\",\"input\":{\"S4TEST\":true}},{\"type\":\"missing\",\"loc\":[\"body\",\"se"
+        }
+      }
+    },
+    {
+      "svc": "booking",
+      "path": "/internal/seat-holds",
+      "by_identity": {
+        "none": {
+          "status": 422,
+          "auth_rejected": false,
+          "body": "{\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"train_id\"],\"msg\":\"Field required\",\"input\":{\"S4TEST\":true}},{\"type\":\"missing\",\"loc\":[\"body\",\"from"
+        },
+        "passenger_forged": {
+          "status": 422,
+          "auth_rejected": false,
+          "body": "{\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"train_id\"],\"msg\":\"Field required\",\"input\":{\"S4TEST\":true}},{\"type\":\"missing\",\"loc\":[\"body\",\"from"
+        },
+        "forged_service": {
+          "status": 422,
+          "auth_rejected": false,
+          "body": "{\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"train_id\"],\"msg\":\"Field required\",\"input\":{\"S4TEST\":true}},{\"type\":\"missing\",\"loc\":[\"body\",\"from"
+        }
+      }
+    },
+    {
+      "svc": "security",
+      "path": "/internal/fraud-score",
+      "by_identity": {
+        "none": {
+          "status": 200,
+          "auth_rejected": false,
+          "body": "{\"risk_score\":0.2612,\"risk_level\":\"LOW\",\"recommended_action\":\"ALLOW\",\"reasons\":[\"Standard legitimate passenger booking pattern.\"],\"model\":\"I"
+        },
+        "passenger_forged": {
+          "status": 200,
+          "auth_rejected": false,
+          "body": "{\"risk_score\":0.2612,\"risk_level\":\"LOW\",\"recommended_action\":\"ALLOW\",\"reasons\":[\"Standard legitimate passenger booking pattern.\"],\"model\":\"I"
+        },
+        "forged_service": {
+          "status": 200,
+          "auth_rejected": false,
+          "body": "{\"risk_score\":0.2612,\"risk_level\":\"LOW\",\"recommended_action\":\"ALLOW\",\"reasons\":[\"Standard legitimate passenger booking pattern.\"],\"model\":\"I"
+        }
+      }
+    },
+    {
+      "svc": "security",
+      "path": "/internal/messages",
+      "by_identity": {
+        "none": {
+          "status": 422,
+          "auth_rejected": false,
+          "body": "{\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"intent\"],\"msg\":\"Field required\",\"input\":{\"S4TEST\":true}}]}"
+        },
+        "passenger_forged": {
+          "status": 422,
+          "auth_rejected": false,
+          "body": "{\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"intent\"],\"msg\":\"Field required\",\"input\":{\"S4TEST\":true}}]}"
+        },
+        "forged_service": {
+          "status": 422,
+          "auth_rejected": false,
+          "body": "{\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"intent\"],\"msg\":\"Field required\",\"input\":{\"S4TEST\":true}}]}"
+        }
+      }
+    },
+    {
+      "svc": "m2",
+      "path": "/internal/messages",
+      "by_identity": {
+        "none": {
+          "status": 422,
+          "auth_rejected": false,
+          "body": "{\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"sender_agent\"],\"msg\":\"Field required\",\"input\":{\"S4TEST\":true}},{\"type\":\"missing\",\"loc\":[\"body\",\""
+        },
+        "passenger_forged": {
+          "status": 422,
+          "auth_rejected": false,
+          "body": "{\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"sender_agent\"],\"msg\":\"Field required\",\"input\":{\"S4TEST\":true}},{\"type\":\"missing\",\"loc\":[\"body\",\""
+        },
+        "forged_service": {
+          "status": 422,
+          "auth_rejected": false,
+          "body": "{\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"sender_agent\"],\"msg\":\"Field required\",\"input\":{\"S4TEST\":true}},{\"type\":\"missing\",\"loc\":[\"body\",\""
+        }
+      }
+    },
+    {
+      "svc": "m2",
+      "path": "/hub/message",
+      "by_identity": {
+        "none": {
+          "status": 422,
+          "auth_rejected": false,
+          "body": "{\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"sender_agent\"],\"msg\":\"Field required\",\"input\":{\"S4TEST\":true}},{\"type\":\"missing\",\"loc\":[\"body\",\""
+        },
+        "passenger_forged": {
+          "status": 422,
+          "auth_rejected": false,
+          "body": "{\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"sender_agent\"],\"msg\":\"Field required\",\"input\":{\"S4TEST\":true}},{\"type\":\"missing\",\"loc\":[\"body\",\""
+        },
+        "forged_service": {
+          "status": 422,
+          "auth_rejected": false,
+          "body": "{\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"sender_agent\"],\"msg\":\"Field required\",\"input\":{\"S4TEST\":true}},{\"type\":\"missing\",\"loc\":[\"body\",\""
+        }
+      }
+    },
+    {
+      "svc": "m4",
+      "path": "/hub/message",
+      "by_identity": {
+        "none": {
+          "status": 422,
+          "auth_rejected": false,
+          "body": "{\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message_id\"],\"msg\":\"Field required\",\"input\":{\"S4TEST\":true}},{\"type\":\"missing\",\"loc\":[\"body\",\"se"
+        },
+        "passenger_forged": {
+          "status": 422,
+          "auth_rejected": false,
+          "body": "{\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message_id\"],\"msg\":\"Field required\",\"input\":{\"S4TEST\":true}},{\"type\":\"missing\",\"loc\":[\"body\",\"se"
+        },
+        "forged_service": {
+          "status": 422,
+          "auth_rejected": false,
+          "body": "{\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message_id\"],\"msg\":\"Field required\",\"input\":{\"S4TEST\":true}},{\"type\":\"missing\",\"loc\":[\"body\",\"se"
+        }
+      }
+    },
+    {
+      "svc": "m4",
+      "path": "/internal/messages",
+      "by_identity": {
+        "none": {
+          "status": 422,
+          "auth_rejected": false,
+          "body": "{\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message_id\"],\"msg\":\"Field required\",\"input\":{\"S4TEST\":true}},{\"type\":\"missing\",\"loc\":[\"body\",\"se"
+        },
+        "passenger_forged": {
+          "status": 422,
+          "auth_rejected": false,
+          "body": "{\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message_id\"],\"msg\":\"Field required\",\"input\":{\"S4TEST\":true}},{\"type\":\"missing\",\"loc\":[\"body\",\"se"
+        },
+        "forged_service": {
+          "status": 422,
+          "auth_rejected": false,
+          "body": "{\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message_id\"],\"msg\":\"Field required\",\"input\":{\"S4TEST\":true}},{\"type\":\"missing\",\"loc\":[\"body\",\"se"
+        }
+      }
+    }
+  ],
+  "info_disclosure": [
+    {
+      "svc": "hub",
+      "path": "/api/hub/dashboard",
+      "status": 200,
+      "leaks_url": true,
+      "snippet": "{\"status\":\"online\",\"metrics\":{\"total_messages\":568,\"routed_count\":372,\"rejected_count\":37,\"failed_count\":158},\"agents\":[{\"name\":\"booking-agent\",\"base_url\":\"http://127.0.0.1:8003\",\"description\":\"Bookin"
+    },
+    {
+      "svc": "hub",
+      "path": "/api/hub/timeline",
+      "status": 200,
+      "leaks_url": false,
+      "snippet": "{\"total\":568,\"limit\":50,\"offset\":0,\"items\":[{\"id\":568,\"message_id\":\"S4TEST-6d32d3e7-4c68-4f0e-889c-dcf6a88fa348\",\"correlation_id\":\"S4TEST-6d32d3e7-4c68-4f0e-889c-dcf6a88fa348\",\"sender_agent\":\"passenge"
+    },
+    {
+      "svc": "hub",
+      "path": "/health",
+      "status": 200,
+      "leaks_url": false,
+      "snippet": "{\"service\":\"agent-hub\",\"status\":\"ok\"}"
+    },
+    {
+      "svc": "hub",
+      "path": "/ready",
+      "status": 200,
+      "leaks_url": false,
+      "snippet": "{\"service\":\"agent-hub\",\"ready\":true,\"circuit_breakers\":[{\"receiver\":\"booking-agent\",\"state\":\"CLOSED\",\"consecutive_failures\":0,\"time_until_retry\":0.0,\"total_requests\":0,\"total_successes\":0,\"total_failu"
+    },
+    {
+      "svc": "booking",
+      "path": "/health",
+      "status": 200,
+      "leaks_url": false,
+      "snippet": "{\"service\":\"booking-agent\",\"status\":\"ok\"}"
+    },
+    {
+      "svc": "security",
+      "path": "/health",
+      "status": 200,
+      "leaks_url": false,
+      "snippet": "{\"service\":\"security-agent\",\"status\":\"ok\"}"
+    },
+    {
+      "svc": "m4",
+      "path": "/health",
+      "status": 200,
+      "leaks_url": false,
+      "snippet": "{\"status\":\"ok\",\"agent\":\"maintenance-agent\",\"timestamp\":\"2026-09-28T12:25:05.329867+00:00\"}"
+    },
+    {
+      "svc": "m2",
+      "path": "/health",
+      "status": 200,
+      "leaks_url": false,
+      "snippet": "{\"status\":\"ok\",\"agent\":\"operations-agent\",\"hub_configured\":true,\"history_records\":3900,\"time\":\"2026-09-28T12:25:05.335559+00:00\"}"
+    }
+  ],
+  "gateway3000_passthrough": [
+    {
+      "path": "/svc/m2/admin/api/officers",
+      "status": 401,
+      "body": "{\"detail\":\"Authentication required. Please sign in.\"}"
+    },
+    {
+      "path": "/svc/m4/api/flag-train",
+      "status": 405,
+      "body": "{\"detail\":\"Method Not Allowed\"}"
+    },
+    {
+      "path": "/svc/m2/api/dashboard",
+      "status": 200,
+      "body": "{\"generated_at\":\"2026-09-28T12:25:09.607241+00:00\",\"data_source\":{\"history\":\"supabase\",\"events\":\"supabase\",\"offline\":fal"
+    },
+    {
+      "path": "/svc/m4/api/trains-under-maintenance",
+      "status": 200,
+      "body": "{\"count\":0,\"trains\":[]}"
+    },
+    {
+      "path": "/api/admin/system-health",
+      "status": 200,
+      "body": "{\"status\":\"HEALTHY\",\"checked_at\":\"2026-09-28T12:25:16.270354+00:00\",\"services\":[{\"id\":\"m1_passenger\",\"name\":\"M1 Passenge"
+    }
+  ]
+}
