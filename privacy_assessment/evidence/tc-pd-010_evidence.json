@@ -1,0 +1,30 @@
+{
+  "test_id": "TC-PD-010",
+  "test_category": "Unauthenticated access",
+  "objective": "Verify that internal fraud screening review queues require authentication before exposing flagged cases",
+  "attack_scenario": "Adversary queries GET /internal/fraud-reviews without authentication to extract flagged passenger cases and risk scores.",
+  "input_request": {
+    "method": "GET",
+    "endpoint": "/internal/fraud-reviews",
+    "headers": {
+      "Authorization": null
+    }
+  },
+  "expected_behaviour": "Internal fraud queue must strictly require authentication or administrative role (HTTP 401/403).",
+  "actual_behaviour": "HTTP 200. Anonymous access permitted: True.",
+  "status": "FAIL",
+  "evidence": {
+    "http_status": 200,
+    "content_length": 22296,
+    "body_preview": "[{\"id\":30,\"case_reference\":\"FR-48157\",\"request_reference\":null,\"risk_score\":0.5,\"risk_level\":\"MEDIUM\",\"recommended_action\":\"REVIEW\",\"reasons\":[\"SECURITY_AGENT_UNAVAILABLE: Communication Hub unreachable for fraud check.\"],\"status\":\"PENDING_REVIEW\",\"admin_decision\":null,\"admin_reason\":null,\"created_at"
+  },
+  "observation": "GET /internal/fraud-reviews returned HTTP 200 without authentication. Discloses 18 flagged passenger fraud cases.",
+  "conclusion": "MEDIUM DEFICIENCY CONFIRMED: Internal security and fraud adjudication records are accessible to anonymous callers.",
+  "potential_impact": "Exposes flagged traveler identities, risk evaluation metrics, and adjudication notes to unauthorized actors.",
+  "likelihood": "High",
+  "severity": "Medium",
+  "risk_level": "Medium",
+  "endpoint_tested": "/internal/fraud-reviews",
+  "timestamp": "2026-10-04T08:29:00.184661+00:00",
+  "technical_justification": "In booking-agent/main.py:704, list_fraud_reviews() does not declare an authentication dependency."
+}

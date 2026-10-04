@@ -2553,6 +2553,912 @@ body.bk-mira #ticket-kpi-row #kpi-cancelled{color:#E02424 !important}
 body.bk-mira #ticket-manifest-table thead tr{background:#FCFDFF !important}
 body.bk-mira #ticket-manifest-table tbody tr{background:transparent !important}
 body.bk-mira #ticket-manifest-table tbody tr:hover{background:#FAFBFF !important}
+
+/* =========================================================
+   SECURITY & FRAUD REVIEW QUEUE — MODERN REDESIGN
+   ========================================================= */
+
+/* Top Telemetry Instrument Bar (Unified Single Bar - No Separate Floating Boxes, No Boxy Pills) */
+.mira-kpi-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  background: #FFFFFF;
+  border: 1px solid var(--mx-line, #E2E8F0);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.04);
+  margin-bottom: 20px;
+  position: relative;
+  overflow: hidden;
+}
+@media (max-width: 900px) {
+  .mira-kpi-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 500px) {
+  .mira-kpi-strip { grid-template-columns: 1fr; }
+}
+
+.mira-kpi-item {
+  position: relative;
+  background: transparent;
+  border: 0;
+  border-right: 1px solid var(--mx-line, #F1F5F9);
+  border-radius: 0;
+  padding: 14px 18px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  box-shadow: none;
+}
+.mira-kpi-item:last-child {
+  border-right: 0;
+}
+.mira-kpi-item:hover {
+  background: #F8FAFC;
+  transform: none;
+  box-shadow: none;
+}
+.mira-kpi-item.active {
+  background: #F8FAFC;
+}
+.mira-kpi-item::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2.5px;
+  background: transparent;
+  transition: background 0.15s ease;
+}
+.mira-kpi-item.active::after {
+  background: var(--kpi-bar, #2563EB);
+}
+.mira-kpi-item.total { --kpi-bar: #2563EB; }
+.mira-kpi-item.pending { --kpi-bar: #D97706; }
+.mira-kpi-item.approved { --kpi-bar: #059669; }
+.mira-kpi-item.rejected { --kpi-bar: #DC2626; }
+
+.mira-kpi-header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 6px;
+}
+.mira-kpi-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.mira-kpi-dot.blue { background: #2563EB; }
+.mira-kpi-dot.amber { background: #D97706; box-shadow: 0 0 6px rgba(217, 119, 6, 0.4); }
+.mira-kpi-dot.green { background: #059669; }
+.mira-kpi-dot.red { background: #DC2626; }
+
+.mira-kpi-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #64748B;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.mira-kpi-body {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.mira-kpi-val {
+  font-size: 26px;
+  font-weight: 800;
+  font-family: 'Share Tech Mono', monospace;
+  color: #0F172A;
+  line-height: 1;
+}
+.mira-kpi-item.total .mira-kpi-val { color: #0F172A; }
+.mira-kpi-item.pending .mira-kpi-val { color: #D97706; }
+.mira-kpi-item.approved .mira-kpi-val { color: #059669; }
+.mira-kpi-item.rejected .mira-kpi-val { color: #DC2626; }
+
+.mira-kpi-sub {
+  font-size: 11px;
+  color: #64748B;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Subtle continuous distribution progress bar at the very bottom of the ribbon */
+.mira-ratio-bar {
+  grid-column: 1 / -1;
+  height: 3px;
+  display: flex;
+  background: #E2E8F0;
+  width: 100%;
+}
+.mira-ratio-seg {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+.mira-ratio-seg.pending { background: #F59E0B; }
+.mira-ratio-seg.approved { background: #10B981; }
+.mira-ratio-seg.rejected { background: #EF4444; }
+
+/* Dark mode overrides for unified bar */
+[data-theme="dark"] .mira-kpi-strip {
+  background: #0B101E;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+[data-theme="dark"] .mira-kpi-item {
+  border-right-color: rgba(255, 255, 255, 0.06);
+}
+[data-theme="dark"] .mira-kpi-item:hover,
+[data-theme="dark"] .mira-kpi-item.active {
+  background: #11192C;
+}
+[data-theme="dark"] .mira-kpi-label { color: #94A3B8; }
+[data-theme="dark"] .mira-kpi-item.total .mira-kpi-val { color: #F8FAFC; }
+[data-theme="dark"] .mira-kpi-item.pending .mira-kpi-val { color: #FCD34D; }
+[data-theme="dark"] .mira-kpi-item.approved .mira-kpi-val { color: #6EE7B7; }
+[data-theme="dark"] .mira-kpi-item.rejected .mira-kpi-val { color: #FCA5A5; }
+[data-theme="dark"] .mira-kpi-sub { color: #64748B; }
+[data-theme="dark"] .mira-ratio-bar { background: rgba(255, 255, 255, 0.08); }
+
+/* Fraud Console Card & Toolbar */
+.fraud-ledger-card {
+  background: #FFFFFF;
+  border: 1px solid var(--mx-line, #EAEDF4);
+  border-radius: 14px;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.05);
+  overflow: hidden;
+}
+[data-theme="dark"] .fraud-ledger-card {
+  background: #0B101E;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.fraud-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  background: #FFFFFF;
+  border-bottom: 1px solid var(--mx-line, #EAEDF4);
+  flex-wrap: wrap;
+}
+[data-theme="dark"] .fraud-toolbar {
+  background: #0B101E;
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.fraud-filter-chips {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #F1F5F9;
+  padding: 4px;
+  border-radius: 9px;
+  border: 1px solid #E2E8F0;
+}
+[data-theme="dark"] .fraud-filter-chips {
+  background: #111827;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.fraud-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #475569;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.14s ease;
+  white-space: nowrap;
+}
+[data-theme="dark"] .fraud-chip { color: #94A3B8; }
+.fraud-chip:hover { color: #0F172A; }
+[data-theme="dark"] .fraud-chip:hover { color: #F8FAFC; }
+.fraud-chip.active {
+  background: #FFFFFF;
+  color: #1D4ED8;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+}
+[data-theme="dark"] .fraud-chip.active {
+  background: #1E293B;
+  color: #93C5FD;
+}
+
+.fraud-chip-badge {
+  display: inline-block;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #E2E8F0;
+  color: #334155;
+}
+[data-theme="dark"] .fraud-chip-badge {
+  background: #334155;
+  color: #CBD5E1;
+}
+.fraud-chip-badge.amber { background: #FEF3C7; color: #B45309; }
+.fraud-chip-badge.green { background: #D1FAE5; color: #047857; }
+.fraud-chip-badge.red { background: #FEE2E2; color: #B91C1C; }
+[data-theme="dark"] .fraud-chip-badge.amber { background: rgba(245,158,11,0.25); color: #FDE68A; }
+[data-theme="dark"] .fraud-chip-badge.green { background: rgba(16,185,129,0.25); color: #A7F3D0; }
+[data-theme="dark"] .fraud-chip-badge.red { background: rgba(239,68,68,0.25); color: #FECACA; }
+
+.fraud-select {
+  padding: 7px 11px;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  background: #FFFFFF;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: #334155;
+  outline: none;
+  cursor: pointer;
+}
+[data-theme="dark"] .fraud-select {
+  background: #111827 !important;
+  color: #E2E8F0 !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* Modern Fraud & Cancellation Tables (Compact & Screen-Fitted) */
+.fraud-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 12px;
+}
+.fraud-table thead th {
+  padding: 9px 10px;
+  text-align: left;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: #64748B;
+  background: #F8FAFC;
+  border-bottom: 1px solid #E2E8F0;
+  white-space: nowrap;
+}
+[data-theme="dark"] .fraud-table thead th {
+  background: #0D1527;
+  color: #94A3B8;
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+.fraud-table tbody td {
+  padding: 9px 10px;
+  border-bottom: 1px solid #F1F5F9;
+  color: #334155;
+  vertical-align: middle;
+}
+[data-theme="dark"] .fraud-table tbody td {
+  border-bottom-color: rgba(255, 255, 255, 0.05);
+  color: #CBD5E1;
+}
+.fraud-table tbody tr {
+  transition: background-color 0.12s ease;
+}
+.fraud-table tbody tr:hover td {
+  background: #F8FAFF;
+}
+[data-theme="dark"] .fraud-table tbody tr:hover td {
+  background: #11192C;
+}
+
+/* Sticky Rightmost Action Column so it is always visible without scrolling */
+.fraud-table th:last-child,
+.fraud-table td:last-child {
+  position: sticky;
+  right: 0;
+  z-index: 4;
+  background: #FFFFFF;
+  box-shadow: -4px 0 8px -2px rgba(0, 0, 0, 0.07);
+}
+.fraud-table thead th:last-child {
+  background: #F8FAFC;
+  z-index: 5;
+}
+.fraud-table tbody tr:hover td:last-child {
+  background: #F8FAFF;
+}
+[data-theme="dark"] .fraud-table th:last-child,
+[data-theme="dark"] .fraud-table td:last-child {
+  background: #0D1424;
+  box-shadow: -4px 0 10px -2px rgba(0, 0, 0, 0.45);
+}
+[data-theme="dark"] .fraud-table thead th:last-child {
+  background: #0D1527;
+}
+[data-theme="dark"] .fraud-table tbody tr:hover td:last-child {
+  background: #11192C;
+}
+
+/* Table Cell Elements */
+.fraud-ref-badge {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1D4ED8;
+  letter-spacing: 0.3px;
+  display: block;
+}
+[data-theme="dark"] .fraud-ref-badge { color: #93C5FD; }
+.fraud-nic-sub {
+  font-size: 11px;
+  color: #64748B;
+  margin-top: 2px;
+  font-family: 'Share Tech Mono', monospace;
+}
+.fraud-nic-sub strong { color: #0F172A; }
+[data-theme="dark"] .fraud-nic-sub strong { color: #F1F5F9; }
+
+/* Risk score pills & progress */
+.fraud-risk-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.fraud-risk-pill.high {
+  background: #FEF2F2;
+  color: #991B1B;
+  border: 1px solid #FECACA;
+}
+.fraud-risk-pill.medium {
+  background: #FFFBEB;
+  color: #92400E;
+  border: 1px solid #FDE68A;
+}
+.fraud-risk-pill.low {
+  background: #ECFDF5;
+  color: #065F46;
+  border: 1px solid #A7F3D0;
+}
+[data-theme="dark"] .fraud-risk-pill.high { background: rgba(239,68,68,0.18); color: #FCA5A5; border-color: rgba(239,68,68,0.35); }
+[data-theme="dark"] .fraud-risk-pill.medium { background: rgba(245,158,11,0.18); color: #FDE68A; border-color: rgba(245,158,11,0.35); }
+[data-theme="dark"] .fraud-risk-pill.low { background: rgba(16,185,129,0.18); color: #6EE7B7; border-color: rgba(16,185,129,0.35); }
+
+.fraud-risk-bar-wrap {
+  width: 90px;
+  height: 4px;
+  background: #E2E8F0;
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+[data-theme="dark"] .fraud-risk-bar-wrap { background: #1E293B; }
+.fraud-risk-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+}
+.fraud-risk-bar-fill.high { background: #EF4444; }
+.fraud-risk-bar-fill.medium { background: #F59E0B; }
+.fraud-risk-bar-fill.low { background: #10B981; }
+
+/* Status pill with animated dot */
+.fraud-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.fraud-status-pill.pending {
+  background: #FEF3C7;
+  color: #92400E;
+  border: 1px solid #FCD34D;
+}
+.fraud-status-pill.approved {
+  background: #D1FAE5;
+  color: #065F46;
+  border: 1px solid #6EE7B7;
+}
+.fraud-status-pill.rejected {
+  background: #FEE2E2;
+  color: #991B1B;
+  border: 1px solid #FCA5A5;
+}
+[data-theme="dark"] .fraud-status-pill.pending { background: rgba(245,158,11,0.15); color: #FCD34D; border-color: rgba(245,158,11,0.3); }
+[data-theme="dark"] .fraud-status-pill.approved { background: rgba(16,185,129,0.15); color: #6EE7B7; border-color: rgba(16,185,129,0.3); }
+[data-theme="dark"] .fraud-status-pill.rejected { background: rgba(239,68,68,0.15); color: #FCA5A5; border-color: rgba(239,68,68,0.3); }
+
+.fraud-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.fraud-dot.pulse {
+  animation: fraudPulse 1.8s infinite;
+}
+@keyframes fraudPulse {
+  0% { transform: scale(0.95); opacity: 0.8; }
+  50% { transform: scale(1.4); opacity: 1; }
+  100% { transform: scale(0.95); opacity: 0.8; }
+}
+
+/* Cancellation Eligibility & Category Pills */
+.canc-elig-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.canc-elig-pill.eligible {
+  background: #ECFDF5;
+  color: #065F46;
+  border: 1px solid #A7F3D0;
+}
+.canc-elig-pill.ineligible {
+  background: #F1F5F9;
+  color: #475569;
+  border: 1px solid #CBD5E1;
+}
+.canc-elig-pill.partial {
+  background: #FFFBEB;
+  color: #92400E;
+  border: 1px solid #FDE68A;
+}
+[data-theme="dark"] .canc-elig-pill.eligible { background: rgba(16,185,129,0.18); color: #6EE7B7; border-color: rgba(16,185,129,0.35); }
+[data-theme="dark"] .canc-elig-pill.ineligible { background: rgba(148,163,184,0.15); color: #94A3B8; border-color: rgba(148,163,184,0.3); }
+[data-theme="dark"] .canc-elig-pill.partial { background: rgba(245,158,11,0.18); color: #FDE68A; border-color: rgba(245,158,11,0.35); }
+
+.canc-cat-chip {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  color: #2563EB;
+  background: #EFF6FF;
+  border: 1px solid #DBEAFE;
+  border-radius: 4px;
+  padding: 2px 6px;
+  margin-bottom: 2px;
+}
+[data-theme="dark"] .canc-cat-chip {
+  color: #93C5FD;
+  background: rgba(37,99,235,0.15);
+  border-color: rgba(37,99,235,0.3);
+}
+
+/* Action Buttons & Column (Super Compact & Clean) */
+.fraud-actions-col {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+.fraud-act-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 26px;
+  padding: 0 8px;
+  border-radius: 5px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.14s ease;
+  white-space: nowrap;
+  line-height: 1;
+  user-select: none;
+}
+.fraud-act-btn svg {
+  flex-shrink: 0;
+}
+.fraud-act-btn.approve {
+  background: #ECFDF5;
+  color: #047857;
+  border: 1px solid #A7F3D0;
+}
+.fraud-act-btn.approve:hover {
+  background: #059669;
+  color: #FFFFFF;
+  border-color: #059669;
+  box-shadow: 0 1px 4px rgba(5, 150, 105, 0.25);
+}
+.fraud-act-btn.reject {
+  background: #FEF2F2;
+  color: #991B1B;
+  border: 1px solid #FECACA;
+}
+.fraud-act-btn.reject:hover {
+  background: #DC2626;
+  color: #FFFFFF;
+  border-color: #DC2626;
+  box-shadow: 0 1px 4px rgba(220, 38, 38, 0.25);
+}
+.fraud-act-btn.inspect-icon {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  background: #F8FAFC;
+  color: #475569;
+  border: 1px solid #E2E8F0;
+  border-radius: 5px;
+}
+.fraud-act-btn.inspect-icon:hover {
+  background: #EEF2FF;
+  color: #2563EB;
+  border-color: #C7D2FE;
+}
+.fraud-act-btn.inspect-only {
+  height: 26px;
+  padding: 0 10px;
+  background: #F8FAFC;
+  color: #334155;
+  border: 1px solid #E2E8F0;
+  border-radius: 5px;
+  font-size: 11px;
+}
+.fraud-act-btn.inspect-only:hover {
+  background: #EEF2FF;
+  color: #1D4ED8;
+  border-color: #BFDBFE;
+  box-shadow: 0 1px 4px rgba(37, 99, 235, 0.12);
+}
+
+/* Dark mode overrides for compact action buttons */
+[data-theme="dark"] .fraud-act-btn.approve {
+  background: rgba(16, 185, 129, 0.15);
+  color: #6EE7B7;
+  border-color: rgba(16, 185, 129, 0.35);
+}
+[data-theme="dark"] .fraud-act-btn.approve:hover {
+  background: #059669;
+  color: #FFFFFF;
+  border-color: #059669;
+}
+[data-theme="dark"] .fraud-act-btn.reject {
+  background: rgba(239, 68, 68, 0.15);
+  color: #FCA5A5;
+  border-color: rgba(239, 68, 68, 0.35);
+}
+[data-theme="dark"] .fraud-act-btn.reject:hover {
+  background: #DC2626;
+  color: #FFFFFF;
+  border-color: #DC2626;
+}
+[data-theme="dark"] .fraud-act-btn.inspect-icon {
+  background: #1E293B;
+  color: #94A3B8;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+[data-theme="dark"] .fraud-act-btn.inspect-icon:hover {
+  background: #334155;
+  color: #F8FAFC;
+}
+[data-theme="dark"] .fraud-act-btn.inspect-only {
+  background: #1E293B;
+  color: #CBD5E1;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+[data-theme="dark"] .fraud-act-btn.inspect-only:hover {
+  background: #2563EB;
+  color: #FFFFFF;
+  border-color: #2563EB;
+}
+
+/* Slide-out Inspector Drawer */
+.fraud-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 5000;
+  display: none;
+  justify-content: flex-end;
+}
+.fraud-drawer-backdrop.active {
+  display: flex;
+}
+.fraud-drawer-card {
+  width: 100%;
+  max-width: 580px;
+  height: 100%;
+  background: #FFFFFF;
+  box-shadow: -8px 0 32px rgba(15, 23, 42, 0.2);
+  display: flex;
+  flex-direction: column;
+  animation: slideDrawerLeft 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+[data-theme="dark"] .fraud-drawer-card {
+  background: #0B101E;
+  border-left: 1px solid rgba(255, 255, 255, 0.09);
+  color: #E2E8F0;
+}
+@keyframes slideDrawerLeft {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.fraud-drawer-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 18px 22px;
+  border-bottom: 1px solid #E2E8F0;
+  background: #F8FAFC;
+}
+[data-theme="dark"] .fraud-drawer-header {
+  background: #0D1527;
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+.fraud-drawer-badge {
+  display: inline-block;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: #EEF2FF;
+  color: #4F46E5;
+  margin-bottom: 6px;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+[data-theme="dark"] .fraud-drawer-badge {
+  background: rgba(99, 102, 241, 0.2);
+  color: #A5B4FC;
+}
+.fraud-drawer-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: #0F172A;
+  margin: 0;
+  letter-spacing: -0.3px;
+}
+[data-theme="dark"] .fraud-drawer-title { color: #F8FAFC; }
+.fraud-drawer-sub {
+  font-size: 12px;
+  color: #64748B;
+  margin-top: 3px;
+}
+.fraud-drawer-close {
+  border: 0;
+  background: transparent;
+  color: #64748B;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+}
+.fraud-drawer-close:hover { background: #E2E8F0; color: #0F172A; }
+[data-theme="dark"] .fraud-drawer-close:hover { background: #1E293B; color: #FFFFFF; }
+
+.fraud-drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.fraud-drawer-footer {
+  padding: 14px 22px;
+  border-top: 1px solid #E2E8F0;
+  background: #F8FAFC;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+[data-theme="dark"] .fraud-drawer-footer {
+  background: #0D1527;
+  border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+.fraud-risk-banner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: #FFFBEB;
+  border: 1px solid #FDE68A;
+}
+.fraud-risk-banner.high { background: #FEF2F2; border-color: #FECACA; }
+.fraud-risk-banner.low { background: #ECFDF5; border-color: #A7F3D0; }
+[data-theme="dark"] .fraud-risk-banner { background: rgba(245,158,11,0.12); border-color: rgba(245,158,11,0.3); }
+[data-theme="dark"] .fraud-risk-banner.high { background: rgba(239,68,68,0.12); border-color: rgba(239,68,68,0.3); }
+[data-theme="dark"] .fraud-risk-banner.low { background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.3); }
+
+.fraud-risk-score-col {
+  text-align: center;
+  padding-right: 14px;
+  border-right: 1px solid rgba(0,0,0,0.08);
+  flex-shrink: 0;
+}
+[data-theme="dark"] .fraud-risk-score-col { border-right-color: rgba(255,255,255,0.1); }
+.fraud-risk-score-num {
+  font-size: 26px;
+  font-weight: 800;
+  font-family: 'Share Tech Mono', monospace;
+  color: #0F172A;
+  line-height: 1;
+}
+[data-theme="dark"] .fraud-risk-score-num { color: #F8FAFC; }
+.fraud-risk-score-lbl {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #64748B;
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+.fraud-risk-action {
+  font-size: 11px;
+  font-weight: 700;
+  color: #B45309;
+  letter-spacing: 0.4px;
+}
+.fraud-risk-banner.high .fraud-risk-action { color: #B91C1C; }
+.fraud-risk-banner.low .fraud-risk-action { color: #047857; }
+.fraud-risk-summary-text {
+  font-size: 12px;
+  color: #334155;
+  margin-top: 4px;
+  line-height: 1.45;
+}
+[data-theme="dark"] .fraud-risk-summary-text { color: #CBD5E1; }
+
+.fraud-section-title {
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #475569;
+  margin: 0 0 8px 0;
+}
+[data-theme="dark"] .fraud-section-title { color: #94A3B8; }
+
+.fraud-specs-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px 12px;
+  padding: 12px 14px;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  font-size: 12px;
+}
+[data-theme="dark"] .fraud-specs-grid {
+  background: #111827;
+  border-color: rgba(255,255,255,0.08);
+}
+.fraud-spec-item { display: flex; flex-direction: column; }
+.fraud-spec-label { font-size: 10.5px; color: #64748B; font-weight: 600; text-transform: uppercase; }
+.fraud-spec-val { font-size: 12.5px; font-weight: 700; color: #0F172A; margin-top: 2px; }
+[data-theme="dark"] .fraud-spec-val { color: #F8FAFC; }
+
+.fraud-bullets {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 12px;
+  color: #334155;
+  line-height: 1.6;
+}
+[data-theme="dark"] .fraud-bullets { color: #CBD5E1; }
+.fraud-bullets.red li { color: #B91C1C; }
+[data-theme="dark"] .fraud-bullets.red li { color: #FCA5A5; }
+
+.fraud-checklist {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.fraud-check-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 7px 10px;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #334155;
+}
+[data-theme="dark"] .fraud-check-item {
+  background: #111827;
+  border-color: rgba(255,255,255,0.08);
+  color: #CBD5E1;
+}
+
+.fraud-policy-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.fraud-policy-chip {
+  padding: 4px 9px;
+  border-radius: 6px;
+  background: #EFF6FF;
+  border: 1px solid #BFDBFE;
+  color: #1D4ED8;
+  font-size: 11px;
+  font-weight: 600;
+}
+[data-theme="dark"] .fraud-policy-chip {
+  background: rgba(37,99,235,0.18);
+  border-color: rgba(59,130,246,0.3);
+  color: #93C5FD;
+}
+
+.fraud-note-box {
+  padding: 10px 12px;
+  border-radius: 7px;
+  background: #F1F5F9;
+  border: 1px solid #E2E8F0;
+  font-size: 11.5px;
+  color: #64748B;
+  font-style: italic;
+  line-height: 1.45;
+}
+[data-theme="dark"] .fraud-note-box {
+  background: #111827;
+  border-color: rgba(255,255,255,0.08);
+  color: #94A3B8;
+}
+
+.fraud-quick-reasons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.fraud-tag-btn {
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid #E2E8F0;
+  background: #F8FAFC;
+  color: #334155;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+.fraud-tag-btn:hover {
+  background: #EEF2FF;
+  color: #4F46E5;
+  border-color: #C7D2FE;
+}
+[data-theme="dark"] .fraud-tag-btn {
+  background: #1E293B;
+  border-color: rgba(255,255,255,0.1);
+  color: #CBD5E1;
+}
+[data-theme="dark"] .fraud-tag-btn:hover {
+  background: rgba(99,102,241,0.2);
+  color: #A5B4FC;
+}
 </style>
 <link rel="icon" type="image/png" href="/static/logo.png">
 <style>
@@ -2952,27 +3858,52 @@ body.bk-mira #ticket-manifest-table tbody tr:hover{background:#FAFBFF !important
           </div>
         </header>
 
-        <!-- KPI strip — owned by the fraud / cancellation queues -->
-        <div class="bk-kpi-row" id="bk-kpi-row" style="display:none;">
-          <div class="bk-kpi-card bk-kpi-total">
-            <div class="bk-kpi-ico">🗂</div>
-            <div><div class="bk-kpi-num" id="bk-kpi-total">0</div><div class="bk-kpi-label">Total Cases</div></div>
-            <span class="bk-kpi-dot"></span>
+        <!-- Unified Telemetry Instrument Bar (No Separate Floating Boxes, No Boxy Pills) -->
+        <div class="mira-kpi-strip" id="bk-kpi-row" style="display:none;">
+          <div class="mira-kpi-item total active" id="stat-seg-total" onclick="handleKpiTileClick('ALL')" title="Show all cases">
+            <div class="mira-kpi-header">
+              <span class="mira-kpi-dot blue"></span>
+              <span class="mira-kpi-label" id="kpi-label-total">Total Flagged Cases</span>
+            </div>
+            <div class="mira-kpi-body">
+              <span class="mira-kpi-val" id="bk-kpi-total">0</span>
+              <span class="mira-kpi-sub" id="fraud-stat-total-sub">All Telemetry</span>
+            </div>
           </div>
-          <div class="bk-kpi-card bk-kpi-pending">
-            <div class="bk-kpi-ico">🕐</div>
-            <div><div class="bk-kpi-num" id="bk-kpi-pending">0</div><div class="bk-kpi-label">Pending Review</div></div>
-            <span class="bk-kpi-dot"></span>
+          <div class="mira-kpi-item pending" id="stat-seg-pending" onclick="handleKpiTileClick('PENDING')" title="Filter to pending review">
+            <div class="mira-kpi-header">
+              <span class="mira-kpi-dot amber"></span>
+              <span class="mira-kpi-label" id="kpi-label-pending">Pending Review</span>
+            </div>
+            <div class="mira-kpi-body">
+              <span class="mira-kpi-val" id="bk-kpi-pending">0</span>
+              <span class="mira-kpi-sub" id="fraud-stat-pending-sub">Action Required</span>
+            </div>
           </div>
-          <div class="bk-kpi-card bk-kpi-approved">
-            <div class="bk-kpi-ico">✅</div>
-            <div><div class="bk-kpi-num" id="bk-kpi-approved">0</div><div class="bk-kpi-label">Approved</div></div>
-            <span class="bk-kpi-dot"></span>
+          <div class="mira-kpi-item approved" id="stat-seg-approved" onclick="handleKpiTileClick('APPROVED')" title="Filter to approved cases">
+            <div class="mira-kpi-header">
+              <span class="mira-kpi-dot green"></span>
+              <span class="mira-kpi-label" id="kpi-label-approved">Approved &amp; Cleared</span>
+            </div>
+            <div class="mira-kpi-body">
+              <span class="mira-kpi-val" id="bk-kpi-approved">0</span>
+              <span class="mira-kpi-sub" id="fraud-stat-approved-sub">Tickets Issued</span>
+            </div>
           </div>
-          <div class="bk-kpi-card bk-kpi-rejected">
-            <div class="bk-kpi-ico">✖</div>
-            <div><div class="bk-kpi-num" id="bk-kpi-rejected">0</div><div class="bk-kpi-label">Rejected</div></div>
-            <span class="bk-kpi-dot"></span>
+          <div class="mira-kpi-item rejected" id="stat-seg-rejected" onclick="handleKpiTileClick('REJECTED')" title="Filter to rejected/blocked cases">
+            <div class="mira-kpi-header">
+              <span class="mira-kpi-dot red"></span>
+              <span class="mira-kpi-label" id="kpi-label-rejected">Rejected &amp; Blocked</span>
+            </div>
+            <div class="mira-kpi-body">
+              <span class="mira-kpi-val" id="bk-kpi-rejected">0</span>
+              <span class="mira-kpi-sub" id="fraud-stat-rejected-sub">Threats Stopped</span>
+            </div>
+          </div>
+          <div class="mira-ratio-bar">
+            <div id="ratio-pending" class="mira-ratio-seg pending" style="width:0%;"></div>
+            <div id="ratio-approved" class="mira-ratio-seg approved" style="width:0%;"></div>
+            <div id="ratio-rejected" class="mira-ratio-seg rejected" style="width:0%;"></div>
           </div>
         </div>
 
@@ -3054,62 +3985,148 @@ body.bk-mira #ticket-manifest-table tbody tr:hover{background:#FAFBFF !important
         <!-- Row action popover -->
         <div id="bk-row-menu" role="menu"></div>
 
-    <!-- View A: Fraud Review Queue -->
+    <!-- View A: Security & Fraud Review Queue (New Modern Table Design) -->
     <div id="subview-book-fraud" style="display:none;">
-      <div class="bk-panel">
-        <div class="bk-panel-head">
-          <div class="bk-panel-head-left">
-            <div class="bk-panel-ico">🗂</div>
-            <div>
-              <div class="bk-panel-title">Flagged Booking Cases</div>
-              <div class="bk-panel-sub">Review ML-flagged bookings and make a decision</div>
-            </div>
+      <section class="mira-card fraud-ledger-card">
+        <!-- Modern Control Toolbar -->
+        <div class="mira-toolbar fraud-toolbar">
+          <label class="mira-search" for="fraud-search-input">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.7-3.7"/></svg>
+            <input type="text" id="fraud-search-input" placeholder="Search case ref, masked NIC, train, route, reason..." autocomplete="off" oninput="renderFraudCases()" />
+          </label>
+
+          <!-- Status Segment Chips -->
+          <div class="fraud-filter-chips">
+            <button type="button" class="fraud-chip active" id="filter-fraud-all" onclick="filterFraudCases('ALL')">
+              All Cases <span class="fraud-chip-badge" id="badge-count-all">0</span>
+            </button>
+            <button type="button" class="fraud-chip" id="filter-fraud-pending" onclick="filterFraudCases('PENDING_REVIEW')">
+              Pending Review <span class="fraud-chip-badge amber" id="badge-count-pending">0</span>
+            </button>
+            <button type="button" class="fraud-chip" id="filter-fraud-approved" onclick="filterFraudCases('APPROVED')">
+              Approved <span class="fraud-chip-badge green" id="badge-count-approved">0</span>
+            </button>
+            <button type="button" class="fraud-chip" id="filter-fraud-rejected" onclick="filterFraudCases('REJECTED')">
+              Rejected <span class="fraud-chip-badge red" id="badge-count-rejected">0</span>
+            </button>
           </div>
-          <div class="bk-panel-tools">
-            <div class="bk-seg">
-              <button class="bk-seg-btn active" id="filter-fraud-all" onclick="filterFraudCases('ALL')">All</button>
-              <button class="bk-seg-btn" id="filter-fraud-pending" onclick="filterFraudCases('PENDING_REVIEW')">Pending Review</button>
-              <button class="bk-seg-btn" id="filter-fraud-approved" onclick="filterFraudCases('APPROVED')">Approved</button>
-              <button class="bk-seg-btn" id="filter-fraud-rejected" onclick="filterFraudCases('REJECTED')">Rejected</button>
-            </div>
-            <button class="btn-refresh" onclick="loadAdminFraudReviews()">⟳ Refresh</button>
+
+          <div class="mira-tool-right">
+            <!-- Risk Filter -->
+            <select id="fraud-risk-filter" class="fraud-select" onchange="renderFraudCases()" aria-label="Filter by Risk Level">
+              <option value="ALL">All Risk Levels</option>
+              <option value="HIGH">High Risk (≥80%)</option>
+              <option value="MEDIUM">Medium Risk (50-79%)</option>
+              <option value="LOW">Low Risk (&lt;50%)</option>
+            </select>
+
+            <button type="button" class="mira-tool-btn" onclick="loadAdminFraudReviews()" title="Reload cases from database">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+              Refresh
+            </button>
+            <button type="button" class="mira-tool-btn" onclick="exportFraudCasesCsv()" title="Export CSV Report">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 4.5-4.5M12 15l-4.5-4.5M4.5 20h15"/></svg>
+              Export CSV
+            </button>
           </div>
         </div>
-        <div class="bk-body">
-          <div id="admin-fraud-cases-container" class="admin-cases-grid">
-            <div style="padding:20px;text-align:center;color:var(--muted)">Loading fraud review cases...</div>
-          </div>
+
+        <!-- Table View (Removes boxes like lists) -->
+        <div class="mira-table-wrap">
+          <table class="mira-table fraud-table" id="fraud-cases-table">
+            <thead>
+              <tr>
+                <th style="width:105px;">Case Reference</th>
+                <th style="width:105px;">Risk &amp; Score</th>
+                <th style="width:130px;">Passenger / NIC</th>
+                <th style="width:145px;">Journey &amp; Service</th>
+                <th style="min-width:130px;">Anomaly &amp; Policies</th>
+                <th style="width:115px;text-align:center;">Review Status</th>
+                <th style="width:125px;text-align:center;">Adjudication</th>
+              </tr>
+            </thead>
+            <tbody id="admin-fraud-cases-tbody">
+              <!-- Dynamically populated rows -->
+            </tbody>
+          </table>
+          <div class="mira-state" id="admin-fraud-cases-state" style="padding:32px 18px;text-align:center;color:var(--mx-mute);">Loading fraud review cases...</div>
         </div>
-      </div>
+
+        <!-- Hidden backward-compatibility node -->
+        <div id="admin-fraud-cases-container" style="display:none;"></div>
+      </section>
     </div>
 
-    <!-- View B: Cancellation Review Queue -->
+    <!-- View B: Passenger Cancellation Adjudication Queue (Modern Ledger Table) -->
     <div id="subview-book-canc" style="display:none;">
-      <div class="bk-panel">
-        <div class="bk-panel-head">
-          <div class="bk-panel-head-left">
-            <div class="bk-panel-ico">🔄</div>
-            <div>
-              <div class="bk-panel-title">Cancellation Requests</div>
-              <div class="bk-panel-sub">Human-in-the-Loop review for ticket refund and cancellation requests</div>
-            </div>
+      <section class="mira-card fraud-ledger-card">
+        <!-- Modern Control Toolbar -->
+        <div class="mira-toolbar fraud-toolbar">
+          <label class="mira-search" for="canc-search-input">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.7-3.7"/></svg>
+            <input type="text" id="canc-search-input" placeholder="Search case ref, booking ref, route, passenger reason, email..." autocomplete="off" oninput="renderAdminCases()" />
+          </label>
+
+          <!-- Status Segment Chips -->
+          <div class="fraud-filter-chips">
+            <button type="button" class="fraud-chip active" id="filter-canc-all" onclick="filterAdminCases('all')">
+              All Cases <span class="fraud-chip-badge" id="badge-canc-all">0</span>
+            </button>
+            <button type="button" class="fraud-chip" id="filter-canc-pending" onclick="filterAdminCases('PENDING_ADMIN_REVIEW')">
+              Pending Review <span class="fraud-chip-badge amber" id="badge-canc-pending">0</span>
+            </button>
+            <button type="button" class="fraud-chip" id="filter-canc-approved" onclick="filterAdminCases('APPROVED')">
+              Approved <span class="fraud-chip-badge green" id="badge-canc-approved">0</span>
+            </button>
+            <button type="button" class="fraud-chip" id="filter-canc-rejected" onclick="filterAdminCases('REJECTED')">
+              Rejected <span class="fraud-chip-badge red" id="badge-canc-rejected">0</span>
+            </button>
           </div>
-          <div class="bk-panel-tools">
-            <div class="bk-seg">
-              <button class="bk-seg-btn active" id="filter-canc-all" onclick="filterAdminCases('all')">All</button>
-              <button class="bk-seg-btn" id="filter-canc-pending" onclick="filterAdminCases('PENDING_ADMIN_REVIEW')">Pending Review</button>
-              <button class="bk-seg-btn" id="filter-canc-approved" onclick="filterAdminCases('APPROVED')">Approved</button>
-              <button class="bk-seg-btn" id="filter-canc-rejected" onclick="filterAdminCases('REJECTED')">Rejected</button>
-            </div>
-            <button class="btn-refresh" onclick="loadAdminCancellations()">⟳ Refresh</button>
+
+          <div class="mira-tool-right">
+            <!-- Category / Eligibility Filter -->
+            <select id="canc-eligibility-filter" class="fraud-select" onchange="renderAdminCases()" aria-label="Filter by Eligibility">
+              <option value="ALL">All Categories</option>
+              <option value="ELIGIBLE">Eligible (Refund Granted)</option>
+              <option value="PARTIAL">Partial Refund</option>
+              <option value="INELIGIBLE">Ineligible / Retained</option>
+            </select>
+
+            <button type="button" class="mira-tool-btn" onclick="loadAdminCancellations()" title="Reload cancellation cases">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+              Refresh
+            </button>
+            <button type="button" class="mira-tool-btn" onclick="exportCancellationCasesCsv()" title="Export Cancellation Cases CSV">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 4.5-4.5M12 15l-4.5-4.5M4.5 20h15"/></svg>
+              Export CSV
+            </button>
           </div>
         </div>
-        <div class="bk-body">
-          <div id="admin-cases-container" class="admin-cases-grid">
-            <div style="padding:20px;text-align:center;color:var(--muted)">Loading cancellation cases...</div>
-          </div>
+
+        <!-- Table View -->
+        <div class="mira-table-wrap">
+          <table class="mira-table fraud-table" id="canc-cases-table">
+            <thead>
+              <tr>
+                <th style="width:105px;">Case &amp; Booking</th>
+                <th style="width:135px;">Passenger / Contact</th>
+                <th style="width:145px;">Journey &amp; Fare</th>
+                <th style="min-width:130px;">Reason &amp; Category</th>
+                <th style="width:105px;text-align:center;">Eligibility &amp; Refund</th>
+                <th style="width:120px;text-align:center;">Review Status</th>
+                <th style="width:125px;text-align:center;">Adjudication</th>
+              </tr>
+            </thead>
+            <tbody id="admin-canc-cases-tbody">
+              <!-- Dynamically populated rows -->
+            </tbody>
+          </table>
+          <div class="mira-state" id="admin-canc-cases-state" style="padding:32px 18px;text-align:center;color:var(--mx-mute);">Loading cancellation cases...</div>
         </div>
-      </div>
+
+        <!-- Hidden backward-compatibility node -->
+        <div id="admin-cases-container" style="display:none;"></div>
+      </section>
     </div>
 
     <!-- View C: Schedules & Seats Inspector -->
@@ -3503,25 +4520,179 @@ body.bk-mira #ticket-manifest-table tbody tr:hover{background:#FAFBFF !important
   </div>
 </div>
 
+<!-- Drawer: Fraud Case AI Telemetry & Policy Inspector -->
+<div id="drawer-fraud-detail" class="fraud-drawer-backdrop" onclick="if(event.target===this) closeFraudDetailDrawer()">
+  <div class="fraud-drawer-card">
+    <div class="fraud-drawer-header">
+      <div>
+        <span class="fraud-drawer-badge" id="fd-model-badge">IsolationForest ML + Grounded RAG</span>
+        <h2 class="fraud-drawer-title" id="fd-case-ref">Case Details</h2>
+        <div class="fraud-drawer-sub" id="fd-case-sub">Flagged Transaction Review</div>
+      </div>
+      <button type="button" class="fraud-drawer-close" onclick="closeFraudDetailDrawer()" aria-label="Close inspector">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="fraud-drawer-body">
+      <!-- Risk Score banner -->
+      <div class="fraud-risk-banner" id="fd-risk-banner">
+        <div class="fraud-risk-score-col">
+          <div class="fraud-risk-score-num" id="fd-risk-pct">0%</div>
+          <div class="fraud-risk-score-lbl" id="fd-risk-level">ANOMALY RISK</div>
+        </div>
+        <div class="fraud-risk-info-col" style="flex:1;">
+          <div class="fraud-risk-action" id="fd-risk-action">RECOMMENDED ACTION: REVIEW</div>
+          <div class="fraud-risk-summary-text" id="fd-summary-text">Loading analysis summary...</div>
+        </div>
+      </div>
+
+      <!-- Route & Reservation Telemetry -->
+      <div>
+        <h4 class="fraud-section-title">Reservation &amp; Service Telemetry</h4>
+        <div class="fraud-specs-grid" id="fd-specs-grid">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+
+      <!-- Passenger Manifest -->
+      <div id="fd-passengers-section">
+        <h4 class="fraud-section-title">Passenger Manifest Breakdown</h4>
+        <div id="fd-pax-list" style="display:flex;flex-direction:column;gap:6px;"></div>
+      </div>
+
+      <!-- Observed Facts -->
+      <div id="fd-facts-section">
+        <h4 class="fraud-section-title">Observed Telemetry Facts</h4>
+        <ul class="fraud-bullets" id="fd-facts-list"></ul>
+      </div>
+
+      <!-- Anomaly Flags -->
+      <div>
+        <h4 class="fraud-section-title">Anomaly Triggers &amp; Behavior Notes</h4>
+        <ul class="fraud-bullets red" id="fd-reasons-list"></ul>
+      </div>
+
+      <!-- Policy Citations -->
+      <div id="fd-policies-section">
+        <h4 class="fraud-section-title">Cited Security Policies</h4>
+        <div class="fraud-policy-chips" id="fd-policies-list"></div>
+      </div>
+
+      <!-- Adjudicator Checklist -->
+      <div id="fd-matters-section">
+        <h4 class="fraud-section-title">Human Adjudicator Verification Checklist</h4>
+        <div class="fraud-checklist" id="fd-matters-list"></div>
+      </div>
+
+      <!-- Model Uncertainty -->
+      <div id="fd-uncertainty-section">
+        <h4 class="fraud-section-title">Statistical Uncertainty &amp; Edge Cases</h4>
+        <div class="fraud-note-box" id="fd-uncertainty-text"></div>
+      </div>
+
+      <!-- Decision History if already reviewed -->
+      <div id="fd-decision-section" style="display:none;">
+        <h4 class="fraud-section-title">Administrative Decision Audit</h4>
+        <div class="fraud-note-box" id="fd-decision-content" style="background:#F0FDF4;border-color:#BBF7D0;color:#166534;"></div>
+      </div>
+    </div>
+
+    <div class="fraud-drawer-footer" id="fd-footer-actions">
+      <!-- Buttons dynamically populated -->
+    </div>
+  </div>
+</div>
+
+<!-- Drawer: Cancellation Case AI Advisory & Policy Inspector -->
+<div id="drawer-canc-detail" class="fraud-drawer-backdrop" onclick="if(event.target===this) closeCancDetailDrawer()">
+  <div class="fraud-drawer-card">
+    <div class="fraud-drawer-header">
+      <div>
+        <span class="fraud-drawer-badge" id="cd-model-badge">RAG Policy Engine + NLP Classifier</span>
+        <h2 class="fraud-drawer-title" id="cd-case-ref">Case Details</h2>
+        <div class="fraud-drawer-sub" id="cd-case-sub">Refund &amp; Cancellation Review</div>
+      </div>
+      <button type="button" class="fraud-drawer-close" onclick="closeCancDetailDrawer()" aria-label="Close inspector">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="fraud-drawer-body">
+      <!-- Refund Banner -->
+      <div class="fraud-risk-banner medium" id="cd-refund-banner">
+        <div class="fraud-risk-score-col">
+          <div class="fraud-risk-score-num" id="cd-refund-amount">Rs. 0.00</div>
+          <div class="fraud-risk-score-lbl" id="cd-eligibility-lbl">REFUND PROPOSAL</div>
+        </div>
+        <div class="fraud-risk-info-col" style="flex:1;">
+          <div class="fraud-risk-action" id="cd-recommended-action">RECOMMENDED ACTION: REVIEW</div>
+          <div class="fraud-risk-summary-text" id="cd-summary-text">Evaluating deterministic policy rules and schedule...</div>
+        </div>
+      </div>
+
+      <!-- Route & Reservation Specs -->
+      <div>
+        <h4 class="fraud-section-title">Reservation &amp; Service Telemetry</h4>
+        <div class="fraud-specs-grid" id="cd-specs-grid">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+
+      <!-- Passenger Reason & NLP Classification -->
+      <div>
+        <h4 class="fraud-section-title">Passenger Claim &amp; NLP Classification</h4>
+        <div class="fraud-note-box" id="cd-reason-box" style="margin-bottom:8px;"></div>
+      </div>
+
+      <!-- Full Grounded AI Advisory Briefing -->
+      <div id="cd-advisory-section">
+        <h4 class="fraud-section-title">Grounded AI Advisory &amp; Policy Evidence</h4>
+        <div class="fraud-note-box" id="cd-advisory-text" style="white-space:pre-line;line-height:1.5;"></div>
+      </div>
+
+      <!-- Decision History if already reviewed -->
+      <div id="cd-decision-section" style="display:none;">
+        <h4 class="fraud-section-title">Administrative Decision Audit</h4>
+        <div class="fraud-note-box" id="cd-decision-content" style="background:#F0FDF4;border-color:#BBF7D0;color:#166534;"></div>
+      </div>
+    </div>
+
+    <div class="fraud-drawer-footer" id="cd-footer-actions">
+      <!-- Buttons dynamically populated -->
+    </div>
+  </div>
+</div>
+
 <!-- Modal: Fraud Case Rejection -->
 <div id="modal-fraud-rejection" class="modal-backdrop" onclick="if(event.target===this) closeFraudRejectionModal()">
   <div class="modal-card">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;">
       <div>
-        <h2 style="font-size:17px;font-weight:700;color:#F87171;">Reject Flagged Booking Request</h2>
-        <div style="font-size:12px;color:var(--muted);margin-top:2px;">Case: <strong id="modal-fraud-reject-case-ref" style="color:#fff;"></strong> · Masked NIC: <strong id="modal-fraud-reject-nic" style="color:#60A5FA;"></strong></div>
+        <h2 style="font-size:17px;font-weight:700;color:#DC2626;margin:0;">Reject Flagged Booking Request</h2>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px;">Case: <strong id="modal-fraud-reject-case-ref" style="color:var(--ink-bright);"></strong> · Masked NIC: <strong id="modal-fraud-reject-nic" style="color:#2563EB;"></strong></div>
       </div>
       <button type="button" onclick="closeFraudRejectionModal()" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;">&times;</button>
     </div>
 
-    <div>
-      <label style="font-size:12px;font-weight:600;color:var(--ink-bright);display:block;margin-bottom:6px;">Official Administrative Reason *</label>
-      <textarea id="modal-fraud-reject-reason-input" class="modal-textarea" rows="3" placeholder="Enter reason for rejecting this flagged reservation (e.g. Inconsistent passenger credentials; automated request pattern detected)..."></textarea>
+    <div style="margin-top:14px;">
+      <label style="font-size:12px;font-weight:600;color:var(--ink-bright);display:block;margin-bottom:6px;">Quick Reason Presets</label>
+      <div class="fraud-quick-reasons">
+        <button type="button" class="fraud-tag-btn" onclick="addRejectReason('Automated bot reservation burst pattern')">🤖 Bot Burst Pattern</button>
+        <button type="button" class="fraud-tag-btn" onclick="addRejectReason('Inconsistent passenger credentials')">🆔 Identity Inconsistency</button>
+        <button type="button" class="fraud-tag-btn" onclick="addRejectReason('Blacklisted commercial proxy / VPN exit node')">🌐 Proxy / VPN Origin</button>
+        <button type="button" class="fraud-tag-btn" onclick="addRejectReason('Bulk ticket hoarding violation (Policy A 2.4)')">🎟️ Bulk Hoarding</button>
+      </div>
     </div>
 
-    <div style="display:flex;justify-content:flex-end;gap:10px;">
-      <button class="btn-refresh" onclick="closeFraudRejectionModal()">Cancel</button>
-      <button id="btn-modal-confirm-fraud-reject" class="btn-reject" onclick="submitFraudRejectionDecision()">Confirm Rejection &amp; Decline Ticket</button>
+    <div style="margin-top:14px;">
+      <label style="font-size:12px;font-weight:600;color:var(--ink-bright);display:block;margin-bottom:6px;">Official Administrative Reason *</label>
+      <textarea id="modal-fraud-reject-reason-input" class="modal-textarea" rows="3" placeholder="Enter official reason for rejecting this flagged reservation..."></textarea>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px;">
+      <button class="mira-tool-btn" onclick="closeFraudRejectionModal()">Cancel</button>
+      <button id="btn-modal-confirm-fraud-reject" class="fraud-btn reject" style="padding:8px 16px;font-size:12.5px;" onclick="submitFraudRejectionDecision()">Confirm Rejection &amp; Decline Ticket</button>
     </div>
   </div>
 </div>
@@ -3531,45 +4702,52 @@ body.bk-mira #ticket-manifest-table tbody tr:hover{background:#FAFBFF !important
   <div class="modal-card">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;">
       <div>
-        <h2 style="font-size:17px;font-weight:700;color:#F87171;">Reject Passenger Cancellation Request</h2>
-        <div style="font-size:12px;color:var(--muted);margin-top:2px;">Case: <strong id="modal-reject-case-ref" style="color:#fff;"></strong> · Booking: <strong id="modal-reject-book-ref" style="color:#60A5FA;"></strong></div>
+        <h2 style="font-size:17px;font-weight:700;color:#DC2626;margin:0;">Reject Cancellation &amp; Retain Fare</h2>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px;">Case: <strong id="modal-reject-case-ref" style="color:var(--ink-bright);"></strong> · Booking: <strong id="modal-reject-book-ref" style="color:#2563EB;"></strong></div>
       </div>
       <button type="button" onclick="closeRejectionModal()" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;">&times;</button>
     </div>
 
-    <div style="background:rgba(10,14,26,0.8);border-radius:6px;padding:10px 12px;font-size:12px;">
-      <span style="color:var(--muted);font-weight:600;">Original Passenger Reason:</span><br>
-      <span id="modal-reject-passenger-reason" style="color:#fff;font-style:italic"></span>
+    <div style="background:rgba(241,245,249,0.7);border-radius:6px;padding:10px 12px;font-size:12px;border:1px solid #E2E8F0;margin-top:12px;">
+      <span style="color:#64748B;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.4px;">Original Passenger Reason:</span><br>
+      <span id="modal-reject-passenger-reason" style="color:var(--mx-ink);font-style:italic;display:block;margin-top:3px;font-size:12.5px;"></span>
     </div>
 
-    <div>
+    <div style="margin-top:14px;">
+      <label style="font-size:12px;font-weight:600;color:var(--ink-bright);display:block;margin-bottom:6px;">Quick Grounds Presets</label>
+      <div class="fraud-quick-reasons">
+        <button type="button" class="fraud-tag-btn" onclick="applyQuickRejection('Cancellation requested within 24 hours of departure. Non-refundable per Section 4.2.')">⏰ Late Notice (&lt;24h)</button>
+        <button type="button" class="fraud-tag-btn" onclick="applyQuickRejection('Ticket purchased under non-refundable special promotional fare terms.')">🎟️ Promotional Fare</button>
+        <button type="button" class="fraud-tag-btn" onclick="applyQuickRejection('Medical emergency claim requires valid official medical certification.')">📋 Missing Medical Proof</button>
+        <button type="button" class="fraud-tag-btn" onclick="applyQuickRejection('Confirmed seat forfeiture applied under deterministic policy POL-REF-003.')">🚫 Forfeiture Policy</button>
+      </div>
+    </div>
+
+    <div style="margin-top:14px;">
       <label style="font-size:12px;font-weight:600;color:var(--ink-bright);display:block;margin-bottom:6px;">Official Rejection Explanation *</label>
       <textarea id="modal-reject-reason-input" class="modal-textarea" rows="3" placeholder="Enter policy grounds for rejection..."></textarea>
-      <div style="font-size:11px;color:var(--muted);margin-top:6px;">Quick Grounds:</div>
-      <div class="quick-chips-row" style="margin-top:4px;">
-        <button type="button" class="chip-btn" onclick="applyQuickRejection('Cancellation requested within 24 hours of departure. Non-refundable per Section 4.2.')">⏰ Late Notice (&lt;24h)</button>
-        <button type="button" class="chip-btn" onclick="applyQuickRejection('Ticket purchased under non-refundable special promotional fare terms.')">🎟️ Promotional Fare</button>
-        <button type="button" class="chip-btn" onclick="applyQuickRejection('Medical emergency claim requires valid official medical certification.')">📋 Missing Medical Proof</button>
-      </div>
     </div>
 
-    <div style="display:flex;gap:10px;align-items:center;">
-      <button type="button" class="btn-refresh" id="btn-nlp-analyze" onclick="analyzeRejectionWithNLP()">✨ Analyze &amp; Polish with NLP</button>
-      <span id="nlp-loading-indicator" style="display:none;font-size:12px;color:#60A5FA;">Analyzing...</span>
+    <div style="display:flex;gap:10px;align-items:center;margin-top:10px;">
+      <button type="button" class="mira-tool-btn" id="btn-nlp-analyze" onclick="analyzeRejectionWithNLP()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        Analyze &amp; Polish with NLP
+      </button>
+      <span id="nlp-loading-indicator" style="display:none;font-size:12px;color:#2563EB;">Analyzing tone &amp; compliance...</span>
     </div>
 
-    <div id="modal-nlp-preview-box" class="nlp-preview-card" style="display:none;">
+    <div id="modal-nlp-preview-box" class="nlp-preview-card" style="display:none;margin-top:10px;">
       <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-        <strong id="nlp-category-badge" style="color:#93C5FD;">Category</strong>
-        <span id="nlp-tone-badge" style="color:var(--muted-hi);font-size:11px;">Tone</span>
+        <strong id="nlp-category-badge" style="color:#1D4ED8;">Category</strong>
+        <span id="nlp-tone-badge" style="color:#64748B;font-size:11px;">Tone</span>
       </div>
-      <div id="nlp-polished-text" style="color:#fff;font-size:12px;margin-bottom:6px;line-height:1.4;"></div>
-      <button type="button" class="chip-btn" style="color:#93C5FD;" onclick="usePolishedExplanation()">✓ Use This Polished Phrasing</button>
+      <div id="nlp-polished-text" style="color:var(--mx-ink);font-size:12px;margin-bottom:6px;line-height:1.4;"></div>
+      <button type="button" class="fraud-tag-btn" style="color:#1D4ED8;font-weight:700;" onclick="usePolishedExplanation()">✓ Use This Polished Phrasing</button>
     </div>
 
-    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:8px;">
-      <button class="btn-refresh" onclick="closeRejectionModal()">Cancel</button>
-      <button id="btn-modal-confirm-reject" class="btn-reject" onclick="submitRejectionDecision()">Confirm Rejection &amp; Dispatch Notice</button>
+    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px;">
+      <button type="button" class="mira-tool-btn" onclick="closeRejectionModal()">Cancel</button>
+      <button id="btn-modal-confirm-reject" class="fraud-btn reject" style="padding:8px 16px;font-size:12.5px;" onclick="submitRejectionDecision()">Confirm Rejection &amp; Retain Fare</button>
     </div>
   </div>
 </div>
@@ -4207,111 +5385,517 @@ function bkLoadError(container, what, err, retryFn) {
 }
 
 async function loadAdminFraudReviews() {
-  const container = $('admin-fraud-cases-container');
-  if (!container) return;
+  const stateEl = $('admin-fraud-cases-state');
+  const tbody = $('admin-fraud-cases-tbody');
+  if (stateEl) {
+    stateEl.style.display = 'block';
+    stateEl.innerHTML = '<div style="padding:24px;text-align:center;color:var(--mx-mute);">Loading fraud review cases from database...</div>';
+  }
 
   try {
     const cases = await bkFetchJson('/api/admin/fraud-reviews');
     if (!Array.isArray(cases)) throw new Error('Unexpected response from the Booking Agent.');
     allFraudCases = cases;
+
     const pendingCount = cases.filter(c => c.status === 'PENDING_REVIEW').length;
-    const kpi = $('kpi-fraud-pending');
-    if (kpi) kpi.textContent = pendingCount;
-    updateBkKpis(cases, 'PENDING_REVIEW');
+    const approvedCount = cases.filter(c => c.status === 'APPROVED').length;
+    const rejectedCount = cases.filter(c => c.status === 'REJECTED').length;
+
+    // Update KPI strip (no emoji icons, clean metrics)
+    const kpiTotal = $('bk-kpi-total');
+    const kpiPending = $('bk-kpi-pending');
+    const kpiApproved = $('bk-kpi-approved');
+    const kpiRejected = $('bk-kpi-rejected');
+    if (kpiTotal) kpiTotal.textContent = cases.length;
+    if (kpiPending) kpiPending.textContent = pendingCount;
+    if (kpiApproved) kpiApproved.textContent = approvedCount;
+    if (kpiRejected) kpiRejected.textContent = rejectedCount;
+
+    // Dynamic ratio bar & sub-labels
+    const totalCount = cases.length;
+    const rPending = $('ratio-pending');
+    const rApproved = $('ratio-approved');
+    const rRejected = $('ratio-rejected');
+    if (totalCount > 0 && rPending && rApproved && rRejected) {
+      rPending.style.width = ((pendingCount / totalCount) * 100).toFixed(1) + '%';
+      rApproved.style.width = ((approvedCount / totalCount) * 100).toFixed(1) + '%';
+      rRejected.style.width = ((rejectedCount / totalCount) * 100).toFixed(1) + '%';
+    }
+    const sTot = $('fraud-stat-total-sub');
+    const sPend = $('fraud-stat-pending-sub');
+    const sApp = $('fraud-stat-approved-sub');
+    const sRej = $('fraud-stat-rejected-sub');
+    if (sTot) sTot.textContent = `${totalCount} Telemetry Records`;
+    if (sPend) sPend.textContent = totalCount > 0 ? `${Math.round((pendingCount/totalCount)*100)}% · Action Needed` : 'Action Needed';
+    if (sApp) sApp.textContent = totalCount > 0 ? `${Math.round((approvedCount/totalCount)*100)}% Cleared` : 'Cleared';
+    if (sRej) sRej.textContent = totalCount > 0 ? `${Math.round((rejectedCount/totalCount)*100)}% Blocked` : 'Blocked';
+
+    // Legacy sync
+    const kpiLegacy = $('kpi-fraud-pending');
+    if (kpiLegacy) kpiLegacy.textContent = pendingCount;
+
+    // Update filter chip count badges
+    const bAll = $('badge-count-all');
+    const bPend = $('badge-count-pending');
+    const bApp = $('badge-count-approved');
+    const bRej = $('badge-count-rejected');
+    if (bAll) bAll.textContent = cases.length;
+    if (bPend) bPend.textContent = pendingCount;
+    if (bApp) bApp.textContent = approvedCount;
+    if (bRej) bRej.textContent = rejectedCount;
+
     renderFraudCases();
   } catch (err) {
     console.warn('[admin] fraud reviews failed:', err);
-    bkLoadError(container, 'fraud reviews', err, 'loadAdminFraudReviews');
+    if (tbody) tbody.innerHTML = '';
+    if (stateEl) {
+      stateEl.style.display = 'block';
+      stateEl.innerHTML = `
+        <div style="padding:32px 18px;text-align:center;">
+          <div style="font-size:14px;font-weight:700;color:#DC2626;margin-bottom:6px;">Couldn't load fraud review queue</div>
+          <div style="font-size:12px;color:var(--mx-mute);margin-bottom:12px;">${escapeHtml(err && err.message ? err.message : 'Unknown network error')}</div>
+          <button type="button" class="mira-tool-btn" onclick="loadAdminFraudReviews()">⟳ Retry Connection</button>
+        </div>
+      `;
+    }
   }
 }
 
 function filterFraudCases(filter) {
   currentFraudFilter = filter;
-  const idMap = { ALL: 'filter-fraud-all', PENDING_REVIEW: 'filter-fraud-pending', APPROVED: 'filter-fraud-approved', REJECTED: 'filter-fraud-rejected' };
-  Object.entries(idMap).forEach(([val, id]) => { const el = $(id); if (el) el.classList.toggle('active', val === filter); });
+  const idMap = {
+    ALL: 'filter-fraud-all',
+    PENDING_REVIEW: 'filter-fraud-pending',
+    APPROVED: 'filter-fraud-approved',
+    REJECTED: 'filter-fraud-rejected'
+  };
+  Object.entries(idMap).forEach(([val, id]) => {
+    const el = $(id);
+    if (el) el.classList.toggle('active', val === filter);
+  });
+
+  const segMap = {
+    ALL: 'stat-seg-total',
+    PENDING_REVIEW: 'stat-seg-pending',
+    APPROVED: 'stat-seg-approved',
+    REJECTED: 'stat-seg-rejected'
+  };
+  Object.entries(segMap).forEach(([val, id]) => {
+    const el = $(id);
+    if (el) el.classList.toggle('active', val === filter);
+  });
+
   renderFraudCases();
 }
 
 function renderFraudCases() {
-  const container = $('admin-fraud-cases-container');
-  if (!container) return;
+  const tbody = $('admin-fraud-cases-tbody');
+  const stateEl = $('admin-fraud-cases-state');
+  if (!tbody) return;
+
+  const searchInput = $('fraud-search-input');
+  const searchQuery = (searchInput ? searchInput.value : '').trim().toLowerCase();
+
+  const riskFilterEl = $('fraud-risk-filter');
+  const riskFilter = riskFilterEl ? riskFilterEl.value : 'ALL';
 
   let filtered = allFraudCases;
+
+  // Filter by status
   if (currentFraudFilter !== 'ALL') {
-    filtered = allFraudCases.filter(c => c.status === currentFraudFilter);
+    filtered = filtered.filter(c => c.status === currentFraudFilter);
+  }
+
+  // Filter by risk score
+  if (riskFilter === 'HIGH') {
+    filtered = filtered.filter(c => Number(c.risk_score || 0) >= 0.8 || c.risk_level === 'HIGH');
+  } else if (riskFilter === 'MEDIUM') {
+    filtered = filtered.filter(c => {
+      const s = Number(c.risk_score || 0);
+      return (s >= 0.5 && s < 0.8) || c.risk_level === 'MEDIUM';
+    });
+  } else if (riskFilter === 'LOW') {
+    filtered = filtered.filter(c => Number(c.risk_score || 0) < 0.5 || c.risk_level === 'LOW');
+  }
+
+  // Filter by search query
+  if (searchQuery) {
+    filtered = filtered.filter(c => {
+      const details = c.booking_details || {};
+      const paxList = Array.isArray(details.passengers) ? details.passengers.map(p => `${p.name} ${p.nic || ''} ${p.nic_masked || ''}`).join(' ') : '';
+      const text = [
+        c.case_reference || '',
+        c.request_reference || '',
+        c.primary_nic_masked || '',
+        c.from_station || details.from_station || '',
+        c.to_station || details.to_station || '',
+        c.train_id || details.train_id || '',
+        c.seat_class || details.seat_class || '',
+        details.passenger_email || '',
+        details.user_id || '',
+        paxList,
+        Array.isArray(c.reasons) ? c.reasons.join(' ') : (c.reasons || ''),
+        c.status || ''
+      ].join(' ').toLowerCase();
+      return text.includes(searchQuery);
+    });
   }
 
   if (filtered.length === 0) {
-    container.innerHTML = `
-      <div class="bk-empty">
-        <div class="bk-empty-ico">🛡️</div>
-        <div class="bk-empty-title">No Fraud Cases Found</div>
-        <div class="bk-empty-sub">No fraud review cases match the current filter — the network looks clean.</div>
-      </div>
-    `;
+    tbody.innerHTML = '';
+    if (stateEl) {
+      stateEl.style.display = 'block';
+      stateEl.innerHTML = `
+        <div style="padding:46px 18px;text-align:center;">
+          <div style="font-size:15px;font-weight:700;color:var(--mx-ink);margin-bottom:5px;">No Fraud Cases Match Filter</div>
+          <div style="font-size:12.5px;color:var(--mx-mute);margin-bottom:14px;">The current queue contains no records matching your query or filter criteria.</div>
+          ${searchQuery ? `<button type="button" class="mira-tool-btn" onclick="$('fraud-search-input').value=''; renderFraudCases();">Clear Search Query</button>` : ''}
+        </div>
+      `;
+    }
     return;
   }
 
-  container.innerHTML = '';
+  if (stateEl) stateEl.style.display = 'none';
+  tbody.innerHTML = '';
+
   filtered.forEach(c => {
-    const card = document.createElement('div');
-    card.className = 'bk-case-card ' + bkStatusClass(c.status);
+    const tr = document.createElement('tr');
+    const details = c.booking_details || {};
+    const passengers = Array.isArray(details.passengers) ? details.passengers : [];
+    const leadPax = passengers[0] || {};
+    const leadName = leadPax.name || details.user_id || 'Lead Passenger';
+    const primaryNic = c.primary_nic_masked || leadPax.nic_masked || 'N/A';
 
+    const fromSt = c.from_station || details.from_station || 'Colombo';
+    const toSt = c.to_station || details.to_station || 'Kandy';
+    const trainId = c.train_id || details.train_id || '1005';
+    const seatClass = c.seat_class || details.seat_class || '2nd Class';
+    const travelDate = c.travel_date || details.travel_date || 'N/A';
+    const paxCount = c.passenger_count || details.passenger_count || (passengers.length > 0 ? passengers.length : 1);
+
+    const riskScore = Number(c.risk_score || 0);
+    const riskPct = Math.round(riskScore * 100);
+    const riskLevel = (c.risk_level || (riskScore >= 0.8 ? 'HIGH' : riskScore >= 0.5 ? 'MEDIUM' : 'LOW')).toUpperCase();
+    const riskClass = riskLevel === 'HIGH' ? 'high' : (riskLevel === 'MEDIUM' ? 'medium' : 'low');
+
+    const reasons = Array.isArray(c.reasons) ? c.reasons : (c.reasons ? [c.reasons] : ['Behavioral anomaly triggered']);
     const isPending = c.status === 'PENDING_REVIEW';
+    const isApproved = c.status === 'APPROVED';
+    const isRejected = c.status === 'REJECTED';
 
+    let statusPillClass = 'pending';
+    let statusLabel = 'Pending Review';
+    if (isApproved) {
+      statusPillClass = 'approved';
+      statusLabel = 'Approved';
+    } else if (isRejected) {
+      statusPillClass = 'rejected';
+      statusLabel = 'Rejected / Blocked';
+    }
+
+    // Action cell formatting - compact, clean, no redundant text
     let actionsHtml = '';
     if (isPending) {
       actionsHtml = `
-        <div class="bk-case-actions">
-          <button class="btn-reject" onclick="openFraudRejectionModal('${c.case_reference}')">Reject (Block)</button>
-          <button class="btn-approve" onclick="reviewFraudCase('${c.case_reference}', 'APPROVE')">Approve &amp; Issue Ticket</button>
+        <div class="fraud-actions-col">
+          <button type="button" class="fraud-act-btn approve" onclick="reviewFraudCase('${escapeHtml(c.case_reference)}', 'APPROVE')" title="Approve booking &amp; confirm ticket">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>Approve</span>
+          </button>
+          <button type="button" class="fraud-act-btn reject" onclick="openFraudRejectionModal('${escapeHtml(c.case_reference)}')" title="Reject reservation &amp; block">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            <span>Reject</span>
+          </button>
+          <button type="button" class="fraud-act-btn inspect-icon" onclick="inspectFraudCase('${escapeHtml(c.case_reference)}')" title="Inspect AI telemetry &amp; policies">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          </button>
         </div>
       `;
     } else {
-      actionsHtml = bkDecisionBlock(c);
+      actionsHtml = `
+        <div class="fraud-actions-col">
+          <button type="button" class="fraud-act-btn inspect-only" onclick="inspectFraudCase('${escapeHtml(c.case_reference)}')" title="View AI telemetry, facts &amp; audit trail">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <span>Inspect</span>
+          </button>
+        </div>
+      `;
     }
 
-    const reasonsList = Array.isArray(c.reasons) ? c.reasons.join(', ') : (c.reasons || 'Behavioral risk threshold triggered');
+    // Reason preview
+    const primaryReason = reasons[0] || 'Behavioral risk threshold';
+    const cleanPrimaryReason = primaryReason.replace(/_/g, ' ').replace(/:.*/, '');
+    const moreCount = reasons.length > 1 ? ` +${reasons.length - 1} more` : '';
 
-    card.innerHTML = `
-      <div class="bk-case-top">
-        <div class="bk-case-id-row">
-          <div class="bk-case-ico">⚠</div>
-          <div>
-            <div class="bk-case-ref">${escapeHtml(c.case_reference)}</div>
-            <div class="bk-case-nic">NIC: <strong>${escapeHtml(c.primary_nic_masked || 'N/A')}</strong></div>
-          </div>
+    tr.innerHTML = `
+      <td>
+        <span class="fraud-ref-badge">${escapeHtml(c.case_reference)}</span>
+        <span class="fraud-nic-sub">${escapeHtml(c.request_reference || 'REQ-AUTO')}</span>
+      </td>
+      <td>
+        <span class="fraud-risk-pill ${riskClass}">
+          ${riskPct}% ${riskLevel}
+        </span>
+        <div class="fraud-risk-bar-wrap">
+          <div class="fraud-risk-bar-fill ${riskClass}" style="width:${Math.max(riskPct, 12)}%;"></div>
         </div>
-        <div class="bk-case-badges">
-          <span class="bk-risk bk-risk-${escapeHtml(c.risk_level)}">${escapeHtml(c.risk_level)} (${(Number(c.risk_score || 0) * 100).toFixed(0)}%)</span>
-          ${bkStatusBadge(c.status)}
+      </td>
+      <td>
+        <div style="font-weight:700;color:var(--mx-ink);font-size:11.5px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(leadName)}">${escapeHtml(leadName)}</div>
+        <div class="fraud-nic-sub">NIC: <strong>${escapeHtml(primaryNic)}</strong></div>
+      </td>
+      <td>
+        <div style="font-weight:600;color:var(--mx-ink);white-space:nowrap;font-size:12px;">${escapeHtml(fromSt)} → ${escapeHtml(toSt)}</div>
+        <div class="fraud-nic-sub">Train #${escapeHtml(trainId)} · ${escapeHtml(seatClass)} (${paxCount} Pax)</div>
+        <div class="fraud-nic-sub" style="font-size:10px;">📅 ${escapeHtml(travelDate)}</div>
+      </td>
+      <td>
+        <div style="font-size:11.5px;font-weight:600;color:var(--mx-body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px;">${escapeHtml(cleanPrimaryReason)}<span style="color:#64748B;font-size:10.5px;">${escapeHtml(moreCount)}</span></div>
+        <div class="fraud-nic-sub" style="font-size:10px;color:#64748B;font-style:italic;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(reasons[0] || '')}">
+          "${escapeHtml(reasons[0] ? (reasons[0].length > 50 ? reasons[0].substring(0, 50) + '…' : reasons[0]) : '')}"
         </div>
-      </div>
-
-      <div class="bk-case-grid">
-        <div class="bk-cell"><div class="bk-cell-label"><span class="bk-cell-ico">📍</span>Route</div><div class="bk-cell-val">${escapeHtml(c.from_station)} → ${escapeHtml(c.to_station)}</div></div>
-        <div class="bk-cell"><div class="bk-cell-label"><span class="bk-cell-ico">📅</span>Date</div><div class="bk-cell-val">${escapeHtml(c.travel_date)}</div></div>
-        <div class="bk-cell"><div class="bk-cell-label"><span class="bk-cell-ico">🚆</span>Train / Class</div><div class="bk-cell-val">${escapeHtml(c.train_id)} · ${escapeHtml(c.seat_class)}</div></div>
-        <div class="bk-cell"><div class="bk-cell-label"><span class="bk-cell-ico">👥</span>Passengers</div><div class="bk-cell-val">${escapeHtml(c.passenger_count)}</div></div>
-      </div>
-
-      <div class="bk-flag">
-        <span class="bk-flag-label">Flag Reasons</span>
-        <span class="bk-flag-text">${escapeHtml(reasonsList)}</span>
-      </div>
-
-      ${actionsHtml}
+      </td>
+      <td style="text-align:center;">
+        <span class="fraud-status-pill ${statusPillClass}">
+          <span class="fraud-dot ${isPending ? 'pulse' : ''}"></span>
+          ${statusLabel}
+        </span>
+      </td>
+      <td style="text-align:center;white-space:nowrap;padding:8px 6px;">
+        ${actionsHtml}
+      </td>
     `;
-    container.appendChild(card);
+    tbody.appendChild(tr);
   });
+}
+
+function inspectFraudCase(caseRef) {
+  const caseData = allFraudCases.find(c => c.case_reference === caseRef);
+  if (!caseData) return;
+  currentFraudDetailCase = caseData;
+
+  const details = caseData.booking_details || {};
+  const gSum = caseData.grounded_summary || details.grounded_summary || {};
+  const passengers = Array.isArray(details.passengers) ? details.passengers : [];
+
+  const riskScore = Number(caseData.risk_score || 0);
+  const riskPct = Math.round(riskScore * 100);
+  const riskLevel = (caseData.risk_level || (riskScore >= 0.8 ? 'HIGH' : riskScore >= 0.5 ? 'MEDIUM' : 'LOW')).toUpperCase();
+  const riskClass = riskLevel === 'HIGH' ? 'high' : (riskLevel === 'MEDIUM' ? 'medium' : 'low');
+
+  // Header & Risk Banner
+  $('fd-case-ref').textContent = `Case ${caseData.case_reference}`;
+  $('fd-case-sub').textContent = `Logged: ${caseData.created_at ? new Date(caseData.created_at).toLocaleString() : 'Recent'} · Target: ${details.user_id || 'Direct Buyer'}`;
+
+  const banner = $('fd-risk-banner');
+  if (banner) {
+    banner.className = 'fraud-risk-banner ' + riskClass;
+    $('fd-risk-pct').textContent = `${riskPct}%`;
+    $('fd-risk-level').textContent = `${riskLevel} ANOMALY`;
+    $('fd-risk-action').textContent = `RECOMMENDED ACTION: ${escapeHtml(caseData.recommended_action || (riskScore >= 0.8 ? 'BLOCK' : 'REVIEW'))}`;
+    $('fd-summary-text').textContent = gSum.summary || 'Transaction flagged by IsolationForest behavioral anomaly model exceeding heuristic baseline thresholds.';
+  }
+
+  // Reservation specs grid
+  const specsGrid = $('fd-specs-grid');
+  if (specsGrid) {
+    specsGrid.innerHTML = `
+      <div class="fraud-spec-item"><span class="fraud-spec-label">Route</span><span class="fraud-spec-val">${escapeHtml(caseData.from_station || details.from_station || 'Colombo')} → ${escapeHtml(caseData.to_station || details.to_station || 'Kandy')}</span></div>
+      <div class="fraud-spec-item"><span class="fraud-spec-label">Train &amp; Service</span><span class="fraud-spec-val">Train #${escapeHtml(caseData.train_id || details.train_id || 'N/A')} (${escapeHtml(caseData.seat_class || details.seat_class || '2nd Class')})</span></div>
+      <div class="fraud-spec-item"><span class="fraud-spec-label">Travel Date</span><span class="fraud-spec-val">${escapeHtml(caseData.travel_date || details.travel_date || 'N/A')}</span></div>
+      <div class="fraud-spec-item"><span class="fraud-spec-label">Seats Requested</span><span class="fraud-spec-val">${escapeHtml(caseData.passenger_count || details.passenger_count || passengers.length || 1)} Passenger(s)</span></div>
+      <div class="fraud-spec-item"><span class="fraud-spec-label">Total Fare</span><span class="fraud-spec-val">${details.fare ? 'LKR ' + Number(details.fare).toLocaleString() : 'Standard'}</span></div>
+      <div class="fraud-spec-item"><span class="fraud-spec-label">Buyer Email</span><span class="fraud-spec-val" style="font-family:monospace;font-size:11px;">${escapeHtml(details.passenger_email || 'Not specified')}</span></div>
+      <div class="fraud-spec-item"><span class="fraud-spec-label">Lead Masked NIC</span><span class="fraud-spec-val" style="font-family:monospace;font-size:11.5px;color:#1D4ED8;">${escapeHtml(caseData.primary_nic_masked || (passengers[0] && passengers[0].nic_masked) || 'N/A')}</span></div>
+      <div class="fraud-spec-item"><span class="fraud-spec-label">Request Reference</span><span class="fraud-spec-val" style="font-family:monospace;font-size:11px;">${escapeHtml(caseData.request_reference || 'N/A')}</span></div>
+    `;
+  }
+
+  // Passengers list
+  const paxListEl = $('fd-pax-list');
+  const paxSec = $('fd-passengers-section');
+  if (paxListEl) {
+    if (passengers.length > 0) {
+      if (paxSec) paxSec.style.display = 'block';
+      paxListEl.innerHTML = passengers.map((p, idx) => `
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:var(--bg-card, #F8FAFC);border:1px solid #E2E8F0;border-radius:6px;font-size:12px;">
+          <div><strong>${idx + 1}. ${escapeHtml(p.name || 'Passenger')}</strong></div>
+          <div style="font-family:monospace;color:#64748B;">NIC: <strong>${escapeHtml(p.nic_masked || p.nic || 'N/A')}</strong></div>
+        </div>
+      `).join('');
+    } else {
+      if (paxSec) paxSec.style.display = 'none';
+    }
+  }
+
+  // Observed Facts
+  const factsList = $('fd-facts-list');
+  const factsSec = $('fd-facts-section');
+  const observedFacts = gSum.observed_facts || [];
+  if (factsList) {
+    if (observedFacts.length > 0) {
+      if (factsSec) factsSec.style.display = 'block';
+      factsList.innerHTML = observedFacts.map(f => `<li>${escapeHtml(f)}</li>`).join('');
+    } else {
+      if (factsSec) factsSec.style.display = 'none';
+    }
+  }
+
+  // Reasons list
+  const reasonsList = $('fd-reasons-list');
+  const rawReasons = Array.isArray(caseData.reasons) ? caseData.reasons : (gSum.reasons_for_review || (caseData.reasons ? [caseData.reasons] : []));
+  if (reasonsList) {
+    reasonsList.innerHTML = rawReasons.map(r => `<li>${escapeHtml(r)}</li>`).join('');
+  }
+
+  // Policy citations
+  const policiesList = $('fd-policies-list');
+  const policiesSec = $('fd-policies-section');
+  const citations = gSum.policy_citations || [];
+  if (policiesList) {
+    if (citations.length > 0) {
+      if (policiesSec) policiesSec.style.display = 'block';
+      policiesList.innerHTML = citations.map(cit => `
+        <div class="fraud-policy-chip" title="${escapeHtml(cit.description || '')}">
+          <strong>${escapeHtml(cit.citation || cit.title || 'Policy')}</strong>${cit.title && cit.citation ? ` · ${escapeHtml(cit.title)}` : ''}
+        </div>
+      `).join('');
+    } else {
+      if (policiesSec) policiesSec.style.display = 'none';
+    }
+  }
+
+  // Matters to check
+  const mattersList = $('fd-matters-list');
+  const mattersSec = $('fd-matters-section');
+  const matters = gSum.matters_to_check || [];
+  if (mattersList) {
+    if (matters.length > 0) {
+      if (mattersSec) mattersSec.style.display = 'block';
+      mattersList.innerHTML = matters.map(m => `
+        <div class="fraud-check-item">
+          <span style="color:#3B82F6;font-weight:700;flex-shrink:0;">☑</span>
+          <span>${escapeHtml(m)}</span>
+        </div>
+      `).join('');
+    } else {
+      if (mattersSec) mattersSec.style.display = 'none';
+    }
+  }
+
+  // Model uncertainty
+  const uncertEl = $('fd-uncertainty-text');
+  const uncertSec = $('fd-uncertainty-section');
+  if (uncertEl) {
+    if (gSum.uncertainty) {
+      if (uncertSec) uncertSec.style.display = 'block';
+      uncertEl.textContent = gSum.uncertainty;
+    } else {
+      if (uncertSec) uncertSec.style.display = 'none';
+    }
+  }
+
+  // Decision audit if resolved
+  const decSec = $('fd-decision-section');
+  const decContent = $('fd-decision-content');
+  if (decSec && decContent) {
+    if (caseData.status !== 'PENDING_REVIEW') {
+      decSec.style.display = 'block';
+      decContent.innerHTML = `
+        <div><strong>Status:</strong> ${escapeHtml(caseData.admin_decision || caseData.status)}</div>
+        <div style="margin-top:3px;"><strong>Reason:</strong> "${escapeHtml(caseData.admin_reason || 'None specified')}"</div>
+        <div style="margin-top:3px;font-size:11px;color:#64748B;">Reviewed: ${caseData.reviewed_at ? new Date(caseData.reviewed_at).toLocaleString() : 'N/A'}</div>
+        ${caseData.booking_reference ? `<div style="margin-top:4px;font-weight:700;color:#059669;">Issued Ticket: ${escapeHtml(caseData.booking_reference)}</div>` : ''}
+      `;
+    } else {
+      decSec.style.display = 'none';
+    }
+  }
+
+  // Footer action buttons
+  const footerEl = $('fd-footer-actions');
+  if (footerEl) {
+    if (caseData.status === 'PENDING_REVIEW') {
+      footerEl.innerHTML = `
+        <button type="button" class="fraud-btn reject" style="padding:8px 16px;font-size:12.5px;" onclick="closeFraudDetailDrawer(); openFraudRejectionModal('${escapeHtml(caseData.case_reference)}')">Reject (Block)</button>
+        <button type="button" class="fraud-btn approve" style="padding:8px 16px;font-size:12.5px;" onclick="closeFraudDetailDrawer(); reviewFraudCase('${escapeHtml(caseData.case_reference)}', 'APPROVE')">Approve &amp; Issue Ticket</button>
+      `;
+    } else {
+      footerEl.innerHTML = `
+        <button type="button" class="mira-tool-btn" onclick="closeFraudDetailDrawer()">Close</button>
+      `;
+    }
+  }
+
+  const drawer = $('drawer-fraud-detail');
+  if (drawer) drawer.classList.add('active');
+}
+
+function closeFraudDetailDrawer() {
+  const drawer = $('drawer-fraud-detail');
+  if (drawer) drawer.classList.remove('active');
+  currentFraudDetailCase = null;
+}
+
+function exportFraudCasesCsv() {
+  if (!allFraudCases || allFraudCases.length === 0) {
+    alert('No cases available to export.');
+    return;
+  }
+  const headers = ['Case_Reference', 'Request_Reference', 'Risk_Score', 'Risk_Level', 'Status', 'From_Station', 'To_Station', 'Train_ID', 'Travel_Date', 'Seat_Class', 'Pax_Count', 'Masked_NIC', 'Reasons', 'Admin_Decision', 'Admin_Reason', 'Created_At'];
+  const rows = allFraudCases.map(c => {
+    const details = c.booking_details || {};
+    const reasons = Array.isArray(c.reasons) ? c.reasons.join('; ') : (c.reasons || '');
+    return [
+      c.case_reference || '',
+      c.request_reference || '',
+      c.risk_score || '',
+      c.risk_level || '',
+      c.status || '',
+      c.from_station || details.from_station || '',
+      c.to_station || details.to_station || '',
+      c.train_id || details.train_id || '',
+      c.travel_date || details.travel_date || '',
+      c.seat_class || details.seat_class || '',
+      c.passenger_count || details.passenger_count || 1,
+      c.primary_nic_masked || '',
+      reasons,
+      c.admin_decision || '',
+      c.admin_reason || '',
+      c.created_at || ''
+    ].map(val => `"${String(val).replace(/"/g, '""')}"`).join(',');
+  });
+
+  const csv = [headers.join(','), ...rows].join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `railsense_fraud_reviews_${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+function addRejectReason(reason) {
+  const input = $('modal-fraud-reject-reason-input');
+  if (!input) return;
+  if (!input.value.trim()) {
+    input.value = reason;
+  } else {
+    input.value += '; ' + reason;
+  }
+  input.focus();
 }
 
 function openFraudRejectionModal(caseRef) {
   const caseData = allFraudCases.find(c => c.case_reference === caseRef);
   if (!caseData) return;
   currentFraudRejectionCase = caseData;
+  const leadNic = caseData.primary_nic_masked || (caseData.booking_details && caseData.booking_details.passengers && caseData.booking_details.passengers[0] && caseData.booking_details.passengers[0].nic_masked) || 'N/A';
   $('modal-fraud-reject-case-ref').textContent = caseData.case_reference;
-  $('modal-fraud-reject-nic').textContent = caseData.primary_nic_masked || 'N/A';
+  $('modal-fraud-reject-nic').textContent = leadNic;
   $('modal-fraud-reject-reason-input').value = '';
   $('modal-fraud-rejection').classList.add('active');
 }
@@ -4325,7 +5909,7 @@ async function submitFraudRejectionDecision() {
   if (!currentFraudRejectionCase) return;
   const reasonText = $('modal-fraud-reject-reason-input').value.trim();
   if (!reasonText) {
-    alert('Please enter an official reason.');
+    alert('Please enter an official administrative reason.');
     return;
   }
 
@@ -4348,7 +5932,7 @@ async function submitFraudRejectionDecision() {
 }
 
 async function reviewFraudCase(caseRef, decision) {
-  if (!confirm(`Are you sure you want to APPROVE booking for case ${caseRef}? This will confirm real-time seats and issue the ticket.`)) return;
+  if (!confirm(`Are you sure you want to APPROVE booking for case ${caseRef}? This will confirm real-time seats and issue the official ticket.`)) return;
 
   try {
     const resp = await fetch(`/api/admin/fraud-reviews/${caseRef}/review`, {
@@ -4367,108 +5951,286 @@ async function reviewFraudCase(caseRef, decision) {
   }
 }
 
+// ── Shared KPI tile click handler ───────────────────────────────────
+function handleKpiTileClick(key) {
+  if (_bkActiveSub === 'canc') {
+    const map = { ALL: 'all', PENDING: 'PENDING_ADMIN_REVIEW', APPROVED: 'APPROVED', REJECTED: 'REJECTED' };
+    filterAdminCases(map[key] || 'all');
+  } else {
+    const map = { ALL: 'ALL', PENDING: 'PENDING_REVIEW', APPROVED: 'APPROVED', REJECTED: 'REJECTED' };
+    filterFraudCases(map[key] || 'ALL');
+  }
+}
+
 // ── Cancellation Queue Logic ────────────────────────────────────────
 let allAdminCases = [];
 let currentAdminFilter = 'all';
 let currentRejectionCase = null;
+let currentCancDetailCase = null;
 let currentPolishedExplanation = '';
 
 async function loadAdminCancellations() {
-  const container = $('admin-cases-container');
-  if (!container) return;
+  const tbody = $('admin-canc-cases-tbody');
+  const stateEl = $('admin-canc-cases-state');
+  if (stateEl) {
+    stateEl.style.display = 'block';
+    stateEl.innerHTML = '<div style="padding:24px;text-align:center;color:var(--mx-mute);">Loading cancellation cases from database...</div>';
+  }
 
   try {
     const cases = await bkFetchJson('/api/admin/cancellations');
     if (!Array.isArray(cases)) throw new Error('Unexpected response from the Booking Agent.');
     allAdminCases = cases;
-    const pending = cases.filter(c => c.status === 'PENDING_ADMIN_REVIEW').length;
-    const kpi = $('kpi-canc-pending');
-    if (kpi) kpi.textContent = pending;
-    updateBkKpis(cases, 'PENDING_ADMIN_REVIEW');
+
+    const pendingCount = cases.filter(c => c.status === 'PENDING_ADMIN_REVIEW').length;
+    const approvedCount = cases.filter(c => c.status === 'APPROVED').length;
+    const rejectedCount = cases.filter(c => c.status === 'REJECTED').length;
+
+    // Update KPI strip for cancellations
+    const kpiTotal = $('bk-kpi-total');
+    const kpiPending = $('bk-kpi-pending');
+    const kpiApproved = $('bk-kpi-approved');
+    const kpiRejected = $('bk-kpi-rejected');
+    if (kpiTotal) kpiTotal.textContent = cases.length;
+    if (kpiPending) kpiPending.textContent = pendingCount;
+    if (kpiApproved) kpiApproved.textContent = approvedCount;
+    if (kpiRejected) kpiRejected.textContent = rejectedCount;
+
+    // Update KPI labels for cancellation context
+    const lblTot = $('kpi-label-total');
+    const lblPend = $('kpi-label-pending');
+    const lblApp = $('kpi-label-approved');
+    const lblRej = $('kpi-label-rejected');
+    if (lblTot) lblTot.textContent = 'Total Refund Cases';
+    if (lblPend) lblPend.textContent = 'Pending Review';
+    if (lblApp) lblApp.textContent = 'Approved & Refunded';
+    if (lblRej) lblRej.textContent = 'Rejected & Retained';
+
+    // Dynamic ratio bar & sub-labels
+    const totalCount = cases.length;
+    const rPending = $('ratio-pending');
+    const rApproved = $('ratio-approved');
+    const rRejected = $('ratio-rejected');
+    if (totalCount > 0 && rPending && rApproved && rRejected) {
+      rPending.style.width = ((pendingCount / totalCount) * 100).toFixed(1) + '%';
+      rApproved.style.width = ((approvedCount / totalCount) * 100).toFixed(1) + '%';
+      rRejected.style.width = ((rejectedCount / totalCount) * 100).toFixed(1) + '%';
+    }
+    const sTot = $('fraud-stat-total-sub');
+    const sPend = $('fraud-stat-pending-sub');
+    const sApp = $('fraud-stat-approved-sub');
+    const sRej = $('fraud-stat-rejected-sub');
+    if (sTot) sTot.textContent = `${totalCount} Cancellation Requests`;
+    if (sPend) sPend.textContent = totalCount > 0 ? `${Math.round((pendingCount/totalCount)*100)}% · Action Needed` : 'Action Needed';
+    if (sApp) sApp.textContent = totalCount > 0 ? `${Math.round((approvedCount/totalCount)*100)}% Refunded` : 'Refunded';
+    if (sRej) sRej.textContent = totalCount > 0 ? `${Math.round((rejectedCount/totalCount)*100)}% Retained` : 'Retained';
+
+    // Legacy sync
+    const kpiLegacy = $('kpi-canc-pending');
+    if (kpiLegacy) kpiLegacy.textContent = pendingCount;
+
+    // Update filter chip badges
+    const bAll = $('badge-canc-all');
+    const bPend = $('badge-canc-pending');
+    const bApp = $('badge-canc-approved');
+    const bRej = $('badge-canc-rejected');
+    if (bAll) bAll.textContent = cases.length;
+    if (bPend) bPend.textContent = pendingCount;
+    if (bApp) bApp.textContent = approvedCount;
+    if (bRej) bRej.textContent = rejectedCount;
+
     renderAdminCases();
   } catch (err) {
     console.warn('[admin] cancellations failed:', err);
-    bkLoadError(container, 'cancellation requests', err, 'loadAdminCancellations');
+    if (tbody) tbody.innerHTML = '';
+    if (stateEl) {
+      stateEl.style.display = 'block';
+      stateEl.innerHTML = `
+        <div style="padding:32px 18px;text-align:center;">
+          <div style="font-size:14px;font-weight:700;color:#DC2626;margin-bottom:6px;">Couldn't load cancellation queue</div>
+          <div style="font-size:12px;color:var(--mx-mute);margin-bottom:12px;">${escapeHtml(err && err.message ? err.message : 'Unknown network error')}</div>
+          <button type="button" class="mira-tool-btn" onclick="loadAdminCancellations()">⟳ Retry Connection</button>
+        </div>
+      `;
+    }
   }
 }
 
 function filterAdminCases(filter) {
   currentAdminFilter = filter;
-  const idMap = { all: 'filter-canc-all', PENDING_ADMIN_REVIEW: 'filter-canc-pending', APPROVED: 'filter-canc-approved', REJECTED: 'filter-canc-rejected' };
-  Object.entries(idMap).forEach(([val, id]) => { const el = $(id); if (el) el.classList.toggle('active', val === filter); });
+  const idMap = {
+    all: 'filter-canc-all',
+    PENDING_ADMIN_REVIEW: 'filter-canc-pending',
+    APPROVED: 'filter-canc-approved',
+    REJECTED: 'filter-canc-rejected'
+  };
+  Object.entries(idMap).forEach(([val, id]) => {
+    const el = $(id);
+    if (el) el.classList.toggle('active', val === filter);
+  });
+
+  const segMap = {
+    all: 'stat-seg-total',
+    PENDING_ADMIN_REVIEW: 'stat-seg-pending',
+    APPROVED: 'stat-seg-approved',
+    REJECTED: 'stat-seg-rejected'
+  };
+  Object.entries(segMap).forEach(([val, id]) => {
+    const el = $(id);
+    if (el) el.classList.toggle('active', val === filter);
+  });
+
   renderAdminCases();
 }
 
 function renderAdminCases() {
-  const container = $('admin-cases-container');
-  if (!container) return;
+  const tbody = $('admin-canc-cases-tbody');
+  const stateEl = $('admin-canc-cases-state');
+  if (!tbody) return;
+
+  const searchInput = $('canc-search-input');
+  const searchQuery = (searchInput ? searchInput.value : '').trim().toLowerCase();
+
+  const eligFilterEl = $('canc-eligibility-filter');
+  const eligFilter = eligFilterEl ? eligFilterEl.value : 'ALL';
 
   let filtered = allAdminCases;
+
+  // Filter by status
   if (currentAdminFilter !== 'all') {
-    filtered = allAdminCases.filter(c => c.status === currentAdminFilter);
+    filtered = filtered.filter(c => c.status === currentAdminFilter);
+  }
+
+  // Filter by eligibility
+  if (eligFilter !== 'ALL') {
+    filtered = filtered.filter(c => (c.eligibility || '').toUpperCase() === eligFilter);
+  }
+
+  // Filter by search query
+  if (searchQuery) {
+    filtered = filtered.filter(c => {
+      const text = [
+        c.case_reference || '',
+        c.booking_reference || '',
+        c.from_station || '',
+        c.to_station || '',
+        c.route || '',
+        c.train_id || '',
+        c.seat_class || '',
+        c.passenger_email || '',
+        c.reason || '',
+        c.reason_category || '',
+        c.eligibility || '',
+        c.status || ''
+      ].join(' ').toLowerCase();
+      return text.includes(searchQuery);
+    });
   }
 
   if (filtered.length === 0) {
-    container.innerHTML = `
-      <div class="bk-empty">
-        <div class="bk-empty-ico">🔄</div>
-        <div class="bk-empty-title">No Cancellation Requests</div>
-        <div class="bk-empty-sub">No cancellation cases match the current filter — nothing awaiting adjudication.</div>
-      </div>
-    `;
+    tbody.innerHTML = '';
+    if (stateEl) {
+      stateEl.style.display = 'block';
+      stateEl.innerHTML = `
+        <div style="padding:46px 18px;text-align:center;">
+          <div style="font-size:15px;font-weight:700;color:var(--mx-ink);margin-bottom:5px;">No Cancellation Cases Match Filter</div>
+          <div style="font-size:12.5px;color:var(--mx-mute);margin-bottom:14px;">The current queue contains no records matching your query or filter criteria.</div>
+          ${searchQuery ? `<button type="button" class="mira-tool-btn" onclick="$('canc-search-input').value=''; renderAdminCases();">Clear Search Query</button>` : ''}
+        </div>
+      `;
+    }
     return;
   }
 
-  container.innerHTML = '';
+  if (stateEl) stateEl.style.display = 'none';
+  tbody.innerHTML = '';
+
   filtered.forEach(c => {
-    const card = document.createElement('div');
-    card.className = 'bk-case-card ' + bkStatusClass(c.status);
-
+    const tr = document.createElement('tr');
     const isPending = c.status === 'PENDING_ADMIN_REVIEW';
-    let actionsHtml = '';
+    const isApproved = c.status === 'APPROVED';
+    const isRejected = c.status === 'REJECTED';
 
+    let statusPillClass = 'pending';
+    let statusLabel = 'Pending Review';
+    if (isApproved) {
+      statusPillClass = 'approved';
+      statusLabel = 'Approved & Refunded';
+    } else if (isRejected) {
+      statusPillClass = 'rejected';
+      statusLabel = 'Rejected / Retained';
+    }
+
+    // Eligibility formatting
+    const rawElig = (c.eligibility || 'EVALUATED').toUpperCase();
+    const eligClass = (rawElig === 'ELIGIBLE' ? 'eligible' : (rawElig === 'PARTIAL' ? 'partial' : 'ineligible'));
+    const refundAmt = c.suggested_refund !== undefined && c.suggested_refund !== null ? `Rs. ${c.suggested_refund}` : 'Rs. 0.00';
+
+    // Actions cell
+    let actionsHtml = '';
     if (isPending) {
       actionsHtml = `
-        <div class="bk-case-actions">
-          <button class="btn-reject" onclick="openRejectionModal('${c.case_reference}')">Reject Request</button>
-          <button class="btn-approve" onclick="reviewCancellationCase('${c.case_reference}', 'APPROVE')">Approve Cancellation</button>
+        <div class="fraud-actions-col">
+          <button type="button" class="fraud-act-btn approve" onclick="reviewCancellationCase('${escapeHtml(c.case_reference)}', 'APPROVE')" title="Approve cancellation &amp; refund">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>Approve</span>
+          </button>
+          <button type="button" class="fraud-act-btn reject" onclick="openRejectionModal('${escapeHtml(c.case_reference)}')" title="Reject cancellation &amp; retain fare">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            <span>Reject</span>
+          </button>
+          <button type="button" class="fraud-act-btn inspect-icon" onclick="inspectCancellationCase('${escapeHtml(c.case_reference)}')" title="Inspect AI policy advisory &amp; refund evidence">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          </button>
         </div>
       `;
     } else {
-      actionsHtml = bkDecisionBlock(c);
+      actionsHtml = `
+        <div class="fraud-actions-col">
+          <button type="button" class="fraud-act-btn inspect-only" onclick="inspectCancellationCase('${escapeHtml(c.case_reference)}')" title="View AI policy advisory &amp; audit trail">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <span>Inspect</span>
+          </button>
+        </div>
+      `;
     }
 
-    card.innerHTML = `
-      <div class="bk-case-top">
-        <div class="bk-case-id-row">
-          <div class="bk-case-ico">↻</div>
-          <div>
-            <div class="bk-case-ref">${escapeHtml(c.case_reference)}</div>
-            <div class="bk-case-nic">Booking: <strong>${escapeHtml(c.booking_reference)}</strong></div>
-          </div>
-        </div>
-        ${bkStatusBadge(c.status)}
-      </div>
+    const catName = (c.reason_category || 'other').replace(/_/g, ' ').toUpperCase();
+    const reasonSnippet = c.reason ? (c.reason.length > 55 ? c.reason.substring(0, 55) + '…' : c.reason) : 'No reason given';
 
-      <div class="bk-case-grid">
-        <div class="bk-cell"><div class="bk-cell-label"><span class="bk-cell-ico">📍</span>Route</div><div class="bk-cell-val">${escapeHtml(c.route)}</div></div>
-        <div class="bk-cell"><div class="bk-cell-label"><span class="bk-cell-ico">📅</span>Date</div><div class="bk-cell-val">${escapeHtml(c.travel_date)}</div></div>
-        <div class="bk-cell"><div class="bk-cell-label"><span class="bk-cell-ico">💵</span>Gross Fare</div><div class="bk-cell-val">Rs. ${escapeHtml(String(c.fare))}</div></div>
-        <div class="bk-cell"><div class="bk-cell-label"><span class="bk-cell-ico">🧠</span>NLP Category</div><div class="bk-cell-val">${escapeHtml(c.reason_category)}</div></div>
-        <div class="bk-cell"><div class="bk-cell-label"><span class="bk-cell-ico">✅</span>Eligibility</div><div class="bk-cell-val" style="color:#34D399">${escapeHtml(c.eligibility)}</div></div>
-        <div class="bk-cell"><div class="bk-cell-label"><span class="bk-cell-ico">💰</span>Suggested Refund</div><div class="bk-cell-val" style="color:#FDE68A">Rs. ${escapeHtml(String(c.suggested_refund))}</div></div>
-      </div>
-
-      <div class="bk-note">
-        <span class="bk-note-label">Passenger Reason</span>
-        <span class="bk-note-text">"${escapeHtml(c.reason)}"</span>
-      </div>
-
-      ${c.ai_summary ? `<div class="bk-ai"><span class="bk-ai-label">AI Grounded Advisory</span><span class="bk-ai-text">${escapeHtml(c.ai_summary)}</span></div>` : ''}
-
-      ${actionsHtml}
+    tr.innerHTML = `
+      <td>
+        <span class="fraud-ref-badge">${escapeHtml(c.case_reference)}</span>
+        <span class="fraud-nic-sub">${escapeHtml(c.booking_reference)}</span>
+      </td>
+      <td>
+        <div style="font-weight:700;color:var(--mx-ink);font-size:11.5px;max-width:135px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(c.passenger_email || '')}">${escapeHtml(c.passenger_email || 'Direct Passenger')}</div>
+        <div class="fraud-nic-sub">${escapeHtml(c.seat_class || 'Standard')} (${c.passenger_count || 1} Pax)</div>
+      </td>
+      <td>
+        <div style="font-weight:600;color:var(--mx-ink);white-space:nowrap;font-size:12px;">${escapeHtml(c.from_station || 'Origin')} → ${escapeHtml(c.to_station || 'Destination')}</div>
+        <div class="fraud-nic-sub">Train #${escapeHtml(c.train_id || 'N/A')} · 📅 ${escapeHtml(c.travel_date || 'N/A')}</div>
+        <div class="fraud-nic-sub" style="font-size:10px;">Gross: <strong>Rs. ${escapeHtml(String(c.fare || '0.00'))}</strong></div>
+      </td>
+      <td>
+        <div><span class="canc-cat-chip">${escapeHtml(catName)}</span></div>
+        <div class="fraud-nic-sub" style="font-size:10px;color:#64748B;font-style:italic;max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(c.reason || '')}">"${escapeHtml(reasonSnippet)}"</div>
+      </td>
+      <td style="text-align:center;">
+        <span class="canc-elig-pill ${eligClass}">${escapeHtml(rawElig)}</span>
+        <div style="font-size:11px;font-weight:700;color:var(--mx-ink);margin-top:2px;">${escapeHtml(refundAmt)}</div>
+      </td>
+      <td style="text-align:center;">
+        <span class="fraud-status-pill ${statusPillClass}">
+          <span class="fraud-dot ${isPending ? 'pulse' : ''}"></span>
+          ${statusLabel}
+        </span>
+      </td>
+      <td style="text-align:center;white-space:nowrap;padding:8px 6px;">
+        ${actionsHtml}
+      </td>
     `;
-    container.appendChild(card);
+    tbody.appendChild(tr);
   });
 }
 
@@ -4564,6 +6326,136 @@ async function reviewCancellationCase(caseRef, decision) {
   } catch (err) {
     alert('Adjudication communication error');
   }
+}
+
+function inspectCancellationCase(caseRef) {
+  const caseData = allAdminCases.find(c => c.case_reference === caseRef);
+  if (!caseData) return;
+  currentCancDetailCase = caseData;
+
+  $('cd-case-ref').textContent = `Case ${caseData.case_reference}`;
+  $('cd-case-sub').textContent = `Booking: ${caseData.booking_reference || 'N/A'} · Contact: ${caseData.passenger_email || 'Direct Buyer'}`;
+
+  const isEligible = caseData.eligibility === 'ELIGIBLE';
+  const isPartial = caseData.eligibility === 'PARTIAL';
+  const refundBanner = $('cd-refund-banner');
+  if (refundBanner) {
+    refundBanner.className = 'fraud-risk-banner ' + (isEligible ? 'low' : (isPartial ? 'medium' : 'high'));
+    $('cd-refund-amount').textContent = `Rs. ${caseData.suggested_refund || '0.00'}`;
+    $('cd-eligibility-lbl').textContent = `${(caseData.eligibility || 'EVALUATED').toUpperCase()} PROPOSAL`;
+    $('cd-recommended-action').textContent = `RECOMMENDED: ${isEligible ? 'APPROVE REFUND' : (isPartial ? 'APPROVE PARTIAL REFUND' : 'RETAIN / REVIEW DISCRETION')}`;
+    $('cd-summary-text').textContent = `Gross ticket fare: Rs. ${caseData.fare || '0.00'}. Calculated refund according to deterministic schedule POL-REF-003.`;
+  }
+
+  // Specs grid
+  const specsGrid = $('cd-specs-grid');
+  if (specsGrid) {
+    specsGrid.innerHTML = `
+      <div class="fraud-spec-item"><span class="fraud-spec-label">Route</span><span class="fraud-spec-val">${escapeHtml(caseData.from_station || 'Origin')} → ${escapeHtml(caseData.to_station || 'Destination')}</span></div>
+      <div class="fraud-spec-item"><span class="fraud-spec-label">Train &amp; Service</span><span class="fraud-spec-val">Train #${escapeHtml(caseData.train_id || 'N/A')} (${escapeHtml(caseData.seat_class || 'Standard')})</span></div>
+      <div class="fraud-spec-item"><span class="fraud-spec-label">Travel Date</span><span class="fraud-spec-val">${escapeHtml(caseData.travel_date || 'N/A')}</span></div>
+      <div class="fraud-spec-item"><span class="fraud-spec-label">Gross Ticket Fare</span><span class="fraud-spec-val">Rs. ${escapeHtml(String(caseData.fare || '0.00'))}</span></div>
+      <div class="fraud-spec-item"><span class="fraud-spec-label">Passenger Email</span><span class="fraud-spec-val">${escapeHtml(caseData.passenger_email || 'Not on file')}</span></div>
+      <div class="fraud-spec-item"><span class="fraud-spec-label">Ticket Status</span><span class="fraud-spec-val">${escapeHtml(caseData.booking_status || 'CONFIRMED')}</span></div>
+    `;
+  }
+
+  // Reason box
+  const reasonBox = $('cd-reason-box');
+  if (reasonBox) {
+    const catLabel = (caseData.reason_category || 'other').replace(/_/g, ' ').toUpperCase();
+    reasonBox.innerHTML = `
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+        <span class="canc-cat-chip">${escapeHtml(catLabel)}</span>
+        <span style="font-size:11px;color:#64748B;">NLP Classified Category</span>
+      </div>
+      <div style="font-style:italic;font-size:12.5px;color:var(--mx-ink);line-height:1.4;">"${escapeHtml(caseData.reason || 'No statement provided')}"</div>
+    `;
+  }
+
+  // Advisory briefing
+  const advEl = $('cd-advisory-text');
+  if (advEl) {
+    advEl.textContent = caseData.ai_summary || 'No detailed advisory generated for this case.';
+  }
+
+  // Decision audit
+  const decSec = $('cd-decision-section');
+  const decContent = $('cd-decision-content');
+  if (decSec && decContent) {
+    if (caseData.status !== 'PENDING_ADMIN_REVIEW') {
+      decSec.style.display = 'block';
+      decContent.innerHTML = `
+        <div><strong>Status:</strong> ${escapeHtml(caseData.admin_decision || caseData.status)}</div>
+        <div style="margin-top:3px;"><strong>Administrative Grounds:</strong> "${escapeHtml(caseData.admin_reason || 'None specified')}"</div>
+        <div style="margin-top:3px;font-size:11px;color:#64748B;">Adjudicated At: ${caseData.reviewed_at ? new Date(caseData.reviewed_at).toLocaleString() : 'N/A'}</div>
+      `;
+    } else {
+      decSec.style.display = 'none';
+    }
+  }
+
+  // Footer buttons
+  const footerEl = $('cd-footer-actions');
+  if (footerEl) {
+    if (caseData.status === 'PENDING_ADMIN_REVIEW') {
+      footerEl.innerHTML = `
+        <button type="button" class="fraud-btn reject" style="padding:8px 16px;font-size:12.5px;" onclick="closeCancDetailDrawer(); openRejectionModal('${escapeHtml(caseData.case_reference)}')">Reject (Retain Fare)</button>
+        <button type="button" class="fraud-btn approve" style="padding:8px 16px;font-size:12.5px;" onclick="closeCancDetailDrawer(); reviewCancellationCase('${escapeHtml(caseData.case_reference)}', 'APPROVE')">Approve Cancellation &amp; Refund</button>
+      `;
+    } else {
+      footerEl.innerHTML = `
+        <button type="button" class="mira-tool-btn" onclick="closeCancDetailDrawer()">Close</button>
+      `;
+    }
+  }
+
+  const drawer = $('drawer-canc-detail');
+  if (drawer) drawer.classList.add('active');
+}
+
+function closeCancDetailDrawer() {
+  const drawer = $('drawer-canc-detail');
+  if (drawer) drawer.classList.remove('active');
+  currentCancDetailCase = null;
+}
+
+function exportCancellationCasesCsv() {
+  if (!allAdminCases || allAdminCases.length === 0) {
+    alert('No cancellation cases available to export.');
+    return;
+  }
+  const headers = ['Case_Reference', 'Booking_Reference', 'Status', 'From_Station', 'To_Station', 'Train_ID', 'Travel_Date', 'Seat_Class', 'Gross_Fare', 'Passenger_Email', 'Passenger_Reason', 'Reason_Category', 'Eligibility', 'Suggested_Refund', 'Admin_Decision', 'Admin_Reason', 'Reviewed_At', 'Created_At'];
+  const rows = allAdminCases.map(c => [
+    c.case_reference || '',
+    c.booking_reference || '',
+    c.status || '',
+    c.from_station || '',
+    c.to_station || '',
+    c.train_id || '',
+    c.travel_date || '',
+    c.seat_class || '',
+    c.fare || '',
+    c.passenger_email || '',
+    c.reason || '',
+    c.reason_category || '',
+    c.eligibility || '',
+    c.suggested_refund || '',
+    c.admin_decision || '',
+    c.admin_reason || '',
+    c.reviewed_at || '',
+    c.created_at || ''
+  ].map(val => `"${String(val).replace(/"/g, '""')}"`).join(','));
+
+  const csv = [headers.join(','), ...rows].join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `railsense_cancellation_cases_${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
 }
 
 // ── Interactive Schedule & Operations Tools ─────────────────────────

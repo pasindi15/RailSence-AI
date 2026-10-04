@@ -1,0 +1,47 @@
+{
+  "test_id": "TC-PD-014",
+  "test_category": "JWT/session security",
+  "objective": "Evaluate Central Hub JWT validation against alg:none, expired tokens, forged secrets, and sender mismatches",
+  "attack_scenario": "Attacker submits crafted JWTs (alg:none, expired, forged signature) to bypass inter-agent authentication.",
+  "input_request": {
+    "scenarios_evaluated": [
+      "alg_none",
+      "expired",
+      "sub_mismatch",
+      "whitespace"
+    ]
+  },
+  "expected_behaviour": "All forged, expired, or tampered tokens must be strictly rejected with HTTP 401 Unauthorized.",
+  "actual_behaviour": "Probed 4 token variations. Failures: 0.",
+  "status": "PASS",
+  "evidence": {
+    "test_outcomes": {
+      "alg_none": {
+        "status_code": 401,
+        "body_snippet": "{\"detail\":\"Invalid or expired authentication token\"}"
+      },
+      "expired": {
+        "status_code": 401,
+        "body_snippet": "{\"detail\":\"Invalid or expired authentication token\"}"
+      },
+      "sub_mismatch": {
+        "status_code": 401,
+        "body_snippet": "{\"detail\":\"Token subject does not match sender agent\"}"
+      },
+      "whitespace": {
+        "status_code": 422,
+        "body_snippet": "{\"detail\":[{\"type\":\"string_too_short\",\"loc\":[\"body\",\"auth_token\"],\"msg\":\"String should have at least 1 character\",\"input\":\"   \",\"ctx\":{\"min_length\":1}"
+      }
+    },
+    "vulnerabilities_detected": []
+  },
+  "observation": "All 4 JWT forgery scenarios (alg:none, expired signature, sender claim mismatch, whitespace) were rejected with HTTP 401/422.",
+  "conclusion": "Central Hub enforces strict cryptographic pinning (HS256) and validates token claims rigorously.",
+  "potential_impact": "Forging valid tokens enables unauthorized inter-agent RPC commands across the railway network.",
+  "likelihood": "Low",
+  "severity": "Low",
+  "risk_level": "Low",
+  "endpoint_tested": "/messages",
+  "timestamp": "2026-10-04T08:29:05.392335+00:00",
+  "technical_justification": "agent-hub/auth/jwt_utils.py pins algorithms=['HS256'] and verifies subject against sender_agent."
+}

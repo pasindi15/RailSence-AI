@@ -1,0 +1,46 @@
+{
+  "test_id": "TC-PD-015",
+  "test_category": "CORS-related data exposure",
+  "objective": "Verify whether local services permit cross-origin requests from arbitrary untrusted origins alongside credentials",
+  "attack_scenario": "Attacker lures railway staff to an external website that executes cross-origin fetch requests to local RailSense APIs with credentials.",
+  "input_request": {
+    "headers": {
+      "Origin": "https://evil-attacker.com"
+    },
+    "endpoint": "/health"
+  },
+  "expected_behaviour": "Services must reject arbitrary origins or omit Access-Control-Allow-Credentials when using wildcard policies.",
+  "actual_behaviour": "Probed services: ['hub', 'booking']. Reflected untrusted origins: ['hub', 'booking'].",
+  "status": "FAIL",
+  "evidence": {
+    "untrusted_origin_tested": "https://evil-attacker.com",
+    "results_by_service": {
+      "hub": {
+        "origin_sent": "https://evil-attacker.com",
+        "access_control_allow_origin": "https://evil-attacker.com",
+        "access_control_allow_credentials": "true",
+        "reflects_untrusted_origin": true,
+        "credentials_allowed": true,
+        "vulnerable": true
+      },
+      "booking": {
+        "origin_sent": "https://evil-attacker.com",
+        "access_control_allow_origin": "https://evil-attacker.com",
+        "access_control_allow_credentials": "true",
+        "reflects_untrusted_origin": true,
+        "credentials_allowed": true,
+        "vulnerable": true
+      }
+    },
+    "vulnerable_count": 2
+  },
+  "observation": "CORS origin reflection confirmed on: hub, booking. Arbitrary untrusted origin 'https://evil-attacker.com' was reflected in Access-Control-Allow-Origin with credentials.",
+  "conclusion": "MEDIUM DEFICIENCY CONFIRMED: Permissive CORS configuration (allow_origins=['*'] + allow_credentials=True) exposes internal microservice endpoints to browser-based cross-origin exfiltration.",
+  "potential_impact": "Allows malicious third-party websites to read internal API responses and exfiltrate session data via browser side-channels.",
+  "likelihood": "High",
+  "severity": "Medium",
+  "risk_level": "Medium",
+  "endpoint_tested": "agent-hub/main.py & booking-agent/main.py (CORSMiddleware)",
+  "timestamp": "2026-10-04T08:29:06.430176+00:00",
+  "technical_justification": "FastAPI CORSMiddleware configured with allow_origins=['*'] and allow_credentials=True reflects incoming Origin headers."
+}

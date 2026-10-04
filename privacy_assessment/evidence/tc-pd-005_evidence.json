@@ -1,0 +1,31 @@
+{
+  "test_id": "TC-PD-005",
+  "test_category": "Authorization / IDOR",
+  "objective": "Verify whether an attacker (USER_B) can read a victim's (USER_A) booking by providing user_id parameter",
+  "attack_scenario": "Attacker (USER_B) learns USER_A's booking reference and calls GET /bookings/{ref}?user_id=USER_B.",
+  "input_request": {
+    "endpoint": "/bookings/RS-39230",
+    "query_param": {
+      "user_id": "synthetic-user-b-it3041"
+    }
+  },
+  "expected_behaviour": "The system must deny access with HTTP 403 Forbidden when user_id does not match the booking owner.",
+  "actual_behaviour": "HTTP 403. Cross-user access permitted: False.",
+  "status": "PASS",
+  "evidence": {
+    "victim_booking_ref": "RS-39230",
+    "victim_user_id": "synthetic-user-a-it3041",
+    "attacker_user_id": "synthetic-user-b-it3041",
+    "http_status": 403,
+    "response_body_redacted": "{\"detail\":\"Unauthorized access to this booking.\"}"
+  },
+  "observation": "Cross-user access denied with HTTP 403 Forbidden. Ownership validation is functioning when user_id parameter is present.",
+  "conclusion": "Direct parameter modification is successfully blocked by the authorization check.",
+  "potential_impact": "Breaches passenger confidentiality and exposes personal travel itineraries to unauthorized users.",
+  "likelihood": "Low",
+  "severity": "Low",
+  "risk_level": "Low",
+  "endpoint_tested": "/bookings/RS-39230?user_id=synthetic-user-b-it3041",
+  "timestamp": "2026-10-04T08:28:56.396404+00:00",
+  "technical_justification": "Evaluated against booking-agent/main.py:391 authorization guard."
+}

@@ -1,0 +1,42 @@
+{
+  "test_id": "TC-PD-001",
+  "test_category": "Sensitive Information Leakage",
+  "objective": "Verify that API status and dashboard endpoints do not leak credentials or passenger PII",
+  "attack_scenario": "Attacker queries public /ready and /api/hub/dashboard endpoints to extract environment credentials or database secrets.",
+  "input_request": {
+    "endpoints": [
+      "/health",
+      "/ready",
+      "/api/hub/dashboard"
+    ]
+  },
+  "expected_behaviour": "Endpoints should return operational metrics without reflecting environment secrets or credentials.",
+  "actual_behaviour": "Queried 3 endpoints. Leaks found: 0.",
+  "status": "PASS",
+  "evidence": {
+    "inspected_responses": {
+      "/health": {
+        "status_code": 200,
+        "body_snippet": "{\"service\":\"agent-hub\",\"status\":\"ok\"}"
+      },
+      "/ready": {
+        "status_code": 200,
+        "body_snippet": "{\"service\":\"agent-hub\",\"ready\":true,\"circuit_breakers\":[]}"
+      },
+      "/api/hub/dashboard": {
+        "status_code": 200,
+        "body_snippet": "{\"status\":\"online\",\"metrics\":{\"total_messages\":672,\"routed_count\":395,\"rejected_count\":114,\"failed_count\":162},\"agents\":[{\"name\":\"booking-agent\",\"base_url\":\"http://127.0.0.1:8003\",\"description\":\"Booki"
+      }
+    },
+    "findings": []
+  },
+  "observation": "No environment secrets, API keys, or raw passenger PII were identified in /health, /ready, or /api/hub/dashboard responses.",
+  "conclusion": "The system successfully prevents sensitive credential leakage across examined diagnostic endpoints.",
+  "potential_impact": "Exposure of environment secrets or PII could lead to account takeover or database compromise.",
+  "likelihood": "Low",
+  "severity": "Low",
+  "risk_level": "Low",
+  "endpoint_tested": "/api/hub/dashboard",
+  "timestamp": "2026-10-04T08:31:40.550929+00:00",
+  "technical_justification": "Verified by regex and pattern analysis across serialized endpoint JSON payloads."
+}

@@ -1,0 +1,30 @@
+{
+  "test_id": "TC-PD-011",
+  "test_category": "Sensitive Information Leakage",
+  "objective": "Verify that Central Hub observability dashboard does not disclose internal microservice topology and addresses without auth",
+  "attack_scenario": "Adversary queries GET /api/hub/dashboard to map the internal microservice architecture, private IP bindings, and agent URLs.",
+  "input_request": {
+    "method": "GET",
+    "endpoint": "/api/hub/dashboard",
+    "headers": {
+      "Authorization": null
+    }
+  },
+  "expected_behaviour": "Observability metrics and internal service topologies must require administrator authentication (HTTP 401/403).",
+  "actual_behaviour": "HTTP 200. Network topology disclosed: True.",
+  "status": "FAIL",
+  "evidence": {
+    "http_status": 200,
+    "content_length": 2746,
+    "body_preview": "{\"status\":\"online\",\"metrics\":{\"total_messages\":669,\"routed_count\":395,\"rejected_count\":111,\"failed_count\":162},\"agents\":[{\"name\":\"booking-agent\",\"base_url\":\"http://127.0.0.1:8003\",\"description\":\"Booking & Reservation Agent (Member C). Processes booking_request and cancel_booking intents against the "
+  },
+  "observation": "GET /api/hub/dashboard returned HTTP 200 without authentication. Discloses 5 registered agent services: ['booking-agent', 'maintenance-agent', 'operations-agent', 'passenger-agent', 'security-agent'], URLs: ['http://127.0.0.1:8003', 'http://127.0.0.1:8006', 'http://127.0.0.1:8005', 'http://127.0.0.1:8001', 'http://127.0.0.1:8004'].",
+  "conclusion": "MEDIUM DEFICIENCY CONFIRMED: System topology, agent network registry, and loopback URLs are exposed to unauthenticated callers.",
+  "potential_impact": "Facilitates attacker reconnaissance by exposing internal RPC endpoints, agent topologies, and circuit breaker states.",
+  "likelihood": "High",
+  "severity": "Medium",
+  "risk_level": "Medium",
+  "endpoint_tested": "/api/hub/dashboard",
+  "timestamp": "2026-10-04T08:29:01.125593+00:00",
+  "technical_justification": "In agent-hub/main.py:184, get_hub_dashboard() lacks authentication or role dependencies."
+}

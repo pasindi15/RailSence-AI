@@ -1,0 +1,33 @@
+{
+  "test_id": "TC-PD-009",
+  "test_category": "Unauthorized Admin Endpoint Access",
+  "objective": "Verify that administrative booking manifests cannot be retrieved without administrator credentials",
+  "attack_scenario": "Attacker requests GET /admin/bookings to dump the complete passenger manifest for a travel date.",
+  "input_request": {
+    "method": "GET",
+    "endpoint": "/admin/bookings",
+    "params": {
+      "travel_date": "2026-11-03"
+    }
+  },
+  "expected_behaviour": "Endpoint must strictly require administrator credentials / RBAC role (HTTP 401/403).",
+  "actual_behaviour": "HTTP 200. Public manifest disclosure: True.",
+  "status": "FAIL",
+  "evidence": {
+    "http_status": 200,
+    "headers": {
+      "content-length": "102",
+      "content-type": "application/json"
+    },
+    "body_preview": "{\"count\":0,\"filters\":{\"train_id\":null,\"travel_date\":\"2026-11-03\",\"booking_status\":null},\"bookings\":[]}"
+  },
+  "observation": "GET /admin/bookings returned HTTP 200 with 0 passenger records without credentials. Sample emails: [].",
+  "conclusion": "CRITICAL ADMINISTRATIVE EXPOSURE: Full passenger manifests are reachable without authentication, directly violating Sri Lanka PDPA No. 9 of 2022.",
+  "potential_impact": "Mass leak of citizen travel patterns, contact emails, and payment statuses without any authentication.",
+  "likelihood": "High",
+  "severity": "High",
+  "risk_level": "High",
+  "endpoint_tested": "/admin/bookings",
+  "timestamp": "2026-10-04T08:28:59.438382+00:00",
+  "technical_justification": "In booking-agent/main.py:829, list_admin_bookings has no authentication or role dependency."
+}

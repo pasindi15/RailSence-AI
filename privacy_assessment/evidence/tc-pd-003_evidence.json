@@ -1,0 +1,29 @@
+{
+  "test_id": "TC-PD-003",
+  "test_category": "Error-message leakage",
+  "objective": "Verify that application error responses do not leak stack traces, database schema, or submitted PII",
+  "attack_scenario": "Attacker submits malformed payloads to force server errors and observe reflected sensitive data or stack traces.",
+  "input_request": {
+    "intent": "booking_request",
+    "malformed_travel_date": "INVALID_DATE_FORMAT",
+    "passenger_email": "victim.synthetic@gmail.com"
+  },
+  "expected_behaviour": "System returns standard HTTP 422 or 400 error schema without echoing input PII or internal stack traces.",
+  "actual_behaviour": "HTTP 422. Stack trace: False, PII reflected: False.",
+  "status": "PASS",
+  "evidence": {
+    "status_code": 422,
+    "stack_trace_detected": false,
+    "pii_echoed_in_error": false,
+    "response_body_redacted": "{\"detail\":\"Invalid booking_request payload: 1 validation error for BookingRequest\\nseat_class\\n  Value error, seat_class 'INVALID_SEAT_CLASS' is not supported. Must be one of: ['First Class', 'Second Class'] [type=value_error, input_value='INVALID_SEAT_CLASS', input_type=str]\\n    For further inform"
+  },
+  "observation": "HTTP 422 returned sanitized error structure. No stack traces or PII echoed.",
+  "conclusion": "FastAPI validation handlers suppress internal traces and prevent PII reflection.",
+  "potential_impact": "Error message leakage facilitates fingerprinting and provides attackers with internal execution context.",
+  "likelihood": "Low",
+  "severity": "Low",
+  "risk_level": "Low",
+  "endpoint_tested": "/internal/messages",
+  "timestamp": "2026-10-04T08:36:35.077505+00:00",
+  "technical_justification": "Pydantic validation schemas intercept invalid types before reaching business logic layers."
+}

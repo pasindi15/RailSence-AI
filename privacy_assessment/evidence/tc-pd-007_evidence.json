@@ -1,0 +1,26 @@
+{
+  "test_id": "TC-PD-007",
+  "test_category": "Unauthenticated access",
+  "objective": "Verify that internal booking mutation endpoints reject requests lacking valid authentication tokens",
+  "attack_scenario": "Adversary attempts to invoke internal booking endpoints directly without providing an authentication token.",
+  "input_request": {
+    "endpoint": "/internal/messages",
+    "auth_token": ""
+  },
+  "expected_behaviour": "Internal mutation endpoints must reject requests with missing or empty authentication tokens (HTTP 401/422).",
+  "actual_behaviour": "HTTP 422 returned when submitting empty auth_token.",
+  "status": "PASS",
+  "evidence": {
+    "http_status": 422,
+    "response_body": "{\"detail\":[{\"type\":\"string_too_short\",\"loc\":[\"body\",\"auth_token\"],\"msg\":\"String should have at least 1 character\",\"input\":\"\",\"ctx\":{\"min_length\":1}}]}"
+  },
+  "observation": "Request with empty auth_token rejected with HTTP 422.",
+  "conclusion": "The system enforces presence and basic validation on incoming inter-agent message tokens.",
+  "potential_impact": "Unauthenticated message injection permits unauthorized seat booking and inventory exhaustion.",
+  "likelihood": "Low",
+  "severity": "Low",
+  "risk_level": "Low",
+  "endpoint_tested": "/internal/messages",
+  "timestamp": "2026-10-04T08:28:57.977027+00:00",
+  "technical_justification": "FastAPI Pydantic schema validation or JWT verification intercept empty token fields."
+}

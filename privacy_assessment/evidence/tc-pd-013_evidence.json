@@ -1,0 +1,29 @@
+{
+  "test_id": "TC-PD-013",
+  "test_category": "Audit/log leakage",
+  "objective": "Verify whether logging and audit services write raw JWT tokens, API keys, or passwords to persistent storage",
+  "attack_scenario": "Attacker with database read access queries audit_logs table looking for leaked Bearer tokens or passwords.",
+  "input_request": {
+    "db_inspected": "railsense_hub_audit.db",
+    "sample_limit": 50
+  },
+  "expected_behaviour": "Audit logging service must redact authentication tokens, secrets, and raw NICs prior to writing to database.",
+  "actual_behaviour": "Inspected 50 audit records. Raw credential leaks found: 0.",
+  "status": "PASS",
+  "evidence": {
+    "audit_db_found": true,
+    "rows_inspected": 50,
+    "leak_findings": [],
+    "sanitizer_function_tested": true,
+    "sample_sanitization": "Error verifying header: Bearer [REDACTED_TOKEN] and password=[REDACTED]"
+  },
+  "observation": "Verified audit logging sanitization. 50 database entries checked; raw Bearer tokens and passwords are scrubbed before persistence.",
+  "conclusion": "Audit logging engine enforces proactive credential scrubbing on logged error streams.",
+  "potential_impact": "Exposure of active session tokens in log databases allows replay and impersonation attacks.",
+  "likelihood": "Low",
+  "severity": "Low",
+  "risk_level": "Low",
+  "endpoint_tested": "agent-hub/audit/service.py:write_audit_log",
+  "timestamp": "2026-10-04T08:29:01.970463+00:00",
+  "technical_justification": "sanitize_audit_text() applies regex scrubbing before saving AuditLog instances to SQLite."
+}
