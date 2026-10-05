@@ -804,6 +804,7 @@ def get_login_page():
 @app.get("/admin/maintenance", include_in_schema=False)
 @app.get("/admin/security", include_in_schema=False)
 @app.get("/admin/hub", include_in_schema=False)
+@app.get("/admin/commercial", include_in_schema=False)
 def get_admin_portal():
     if ADMIN_HTML_FILE.is_file():
         return FileResponse(ADMIN_HTML_FILE)
