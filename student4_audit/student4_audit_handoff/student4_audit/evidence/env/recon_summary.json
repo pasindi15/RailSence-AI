@@ -1,0 +1,948 @@
+{
+  "captured_at": "2026-09-28T17:33:47.355262+05:30",
+  "services": {
+    "gateway_user": {
+      "port": 3000,
+      "base": "http://127.0.0.1:3000",
+      "/health": {
+        "status": 404,
+        "body": "{\"detail\":\"Not Found\"}"
+      },
+      "/ready": {
+        "status": 404,
+        "body": "{\"detail\":\"Not Found\"}"
+      },
+      "/docs": {
+        "status": 200,
+        "len": 1045,
+        "is_swagger": true
+      },
+      "/openapi.json": {
+        "status": 200
+      },
+      "endpoint_count": 23,
+      "security_headers": {
+        "server": "uvicorn"
+      },
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/api/train-board",
+          "summary": "Train Board"
+        },
+        {
+          "method": "POST",
+          "path": "/api/auth/login",
+          "summary": "Proxy Auth Login"
+        },
+        {
+          "method": "POST",
+          "path": "/api/auth/logout",
+          "summary": "Proxy Auth Logout"
+        },
+        {
+          "method": "GET",
+          "path": "/api/auth/me",
+          "summary": "Proxy Auth Me"
+        },
+        {
+          "method": "POST",
+          "path": "/api/chat",
+          "summary": "Chat Endpoint"
+        },
+        {
+          "method": "GET",
+          "path": "/api/booking-options",
+          "summary": "Booking Options Proxy"
+        },
+        {
+          "method": "POST",
+          "path": "/api/bookings/confirm",
+          "summary": "Confirm Booking Endpoint"
+        },
+        {
+          "method": "POST",
+          "path": "/api/cancellations/confirm",
+          "summary": "Confirm Cancellation Endpoint"
+        },
+        {
+          "method": "GET",
+          "path": "/api/admin/cancellations",
+          "summary": "List Admin Cancellations"
+        },
+        {
+          "method": "POST",
+          "path": "/api/admin/cancellations/{case_reference}/review",
+          "summary": "Review Admin Cancellation"
+        },
+        {
+          "method": "POST",
+          "path": "/api/admin/cancellations/nlp-preview",
+          "summary": "Preview Cancellation Nlp"
+        },
+        {
+          "method": "GET",
+          "path": "/api/admin/trains",
+          "summary": "List Admin Trains Proxy"
+        },
+        {
+          "method": "GET",
+          "path": "/api/admin/bookings",
+          "summary": "List Admin Bookings Proxy"
+        },
+        {
+          "method": "GET",
+          "path": "/api/admin/fraud-reviews",
+          "summary": "List Admin Fraud Reviews"
+        },
+        {
+          "method": "POST",
+          "path": "/api/admin/fraud-reviews/{case_reference}/review",
+          "summary": "Review Admin Fraud Case"
+        },
+        {
+          "method": "GET",
+          "path": "/api/admin/system-health",
+          "summary": "Get System Health"
+        },
+        {
+          "method": "GET",
+          "path": "/api/hub/dashboard",
+          "summary": "Hub Dashboard Proxy"
+        },
+        {
+          "method": "GET",
+          "path": "/api/hub/timeline",
+          "summary": "Hub Timeline Proxy"
+        },
+        {
+          "method": "GET",
+          "path": "/api/tickets/verify/{ticket_token}",
+          "summary": "Verify Ticket Endpoint"
+        },
+        {
+          "method": "GET",
+          "path": "/api/tickets/{booking_reference}",
+          "summary": "Get Booking Ticket"
+        },
+        {
+          "method": "POST",
+          "path": "/api/holds",
+          "summary": "Create Hold Endpoint"
+        },
+        {
+          "method": "POST",
+          "path": "/api/waiting-list",
+          "summary": "Join Waiting List Endpoint"
+        },
+        {
+          "method": "POST",
+          "path": "/api/admin/booking-chat",
+          "summary": "Proxy Admin Booking Chat"
+        }
+      ]
+    },
+    "gateway_admin": {
+      "port": 3001,
+      "base": "http://127.0.0.1:3001",
+      "/health": {
+        "status": 404,
+        "body": "{\"detail\":\"Not Found\"}"
+      },
+      "/ready": {
+        "status": 404,
+        "body": "{\"detail\":\"Not Found\"}"
+      },
+      "/docs": {
+        "status": 200,
+        "len": 1045,
+        "is_swagger": true
+      },
+      "/openapi.json": {
+        "status": 200
+      },
+      "endpoint_count": 23,
+      "security_headers": {
+        "server": "uvicorn"
+      },
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/api/train-board",
+          "summary": "Train Board"
+        },
+        {
+          "method": "POST",
+          "path": "/api/auth/login",
+          "summary": "Proxy Auth Login"
+        },
+        {
+          "method": "POST",
+          "path": "/api/auth/logout",
+          "summary": "Proxy Auth Logout"
+        },
+        {
+          "method": "GET",
+          "path": "/api/auth/me",
+          "summary": "Proxy Auth Me"
+        },
+        {
+          "method": "POST",
+          "path": "/api/chat",
+          "summary": "Chat Endpoint"
+        },
+        {
+          "method": "GET",
+          "path": "/api/booking-options",
+          "summary": "Booking Options Proxy"
+        },
+        {
+          "method": "POST",
+          "path": "/api/bookings/confirm",
+          "summary": "Confirm Booking Endpoint"
+        },
+        {
+          "method": "POST",
+          "path": "/api/cancellations/confirm",
+          "summary": "Confirm Cancellation Endpoint"
+        },
+        {
+          "method": "GET",
+          "path": "/api/admin/cancellations",
+          "summary": "List Admin Cancellations"
+        },
+        {
+          "method": "POST",
+          "path": "/api/admin/cancellations/{case_reference}/review",
+          "summary": "Review Admin Cancellation"
+        },
+        {
+          "method": "POST",
+          "path": "/api/admin/cancellations/nlp-preview",
+          "summary": "Preview Cancellation Nlp"
+        },
+        {
+          "method": "GET",
+          "path": "/api/admin/trains",
+          "summary": "List Admin Trains Proxy"
+        },
+        {
+          "method": "GET",
+          "path": "/api/admin/bookings",
+          "summary": "List Admin Bookings Proxy"
+        },
+        {
+          "method": "GET",
+          "path": "/api/admin/fraud-reviews",
+          "summary": "List Admin Fraud Reviews"
+        },
+        {
+          "method": "POST",
+          "path": "/api/admin/fraud-reviews/{case_reference}/review",
+          "summary": "Review Admin Fraud Case"
+        },
+        {
+          "method": "GET",
+          "path": "/api/admin/system-health",
+          "summary": "Get System Health"
+        },
+        {
+          "method": "GET",
+          "path": "/api/hub/dashboard",
+          "summary": "Hub Dashboard Proxy"
+        },
+        {
+          "method": "GET",
+          "path": "/api/hub/timeline",
+          "summary": "Hub Timeline Proxy"
+        },
+        {
+          "method": "GET",
+          "path": "/api/tickets/verify/{ticket_token}",
+          "summary": "Verify Ticket Endpoint"
+        },
+        {
+          "method": "GET",
+          "path": "/api/tickets/{booking_reference}",
+          "summary": "Get Booking Ticket"
+        },
+        {
+          "method": "POST",
+          "path": "/api/holds",
+          "summary": "Create Hold Endpoint"
+        },
+        {
+          "method": "POST",
+          "path": "/api/waiting-list",
+          "summary": "Join Waiting List Endpoint"
+        },
+        {
+          "method": "POST",
+          "path": "/api/admin/booking-chat",
+          "summary": "Proxy Admin Booking Chat"
+        }
+      ]
+    },
+    "m1": {
+      "port": 8001,
+      "base": "http://127.0.0.1:8001",
+      "/health": {
+        "status": 200,
+        "body": "{\"status\":\"ok\",\"time\":\"2026-09-28T12:03:49.052200+00:00\"}"
+      },
+      "/ready": {
+        "status": 404,
+        "body": "{\"detail\":\"Not Found\"}"
+      },
+      "/docs": {
+        "status": 200,
+        "len": 1039,
+        "is_swagger": true
+      },
+      "/openapi.json": {
+        "status": 200
+      },
+      "endpoint_count": 9,
+      "security_headers": {
+        "server": "uvicorn"
+      },
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/health",
+          "summary": "Health"
+        },
+        {
+          "method": "GET",
+          "path": "/trains/{train_id}/details",
+          "summary": "Train Details"
+        },
+        {
+          "method": "GET",
+          "path": "/chat",
+          "summary": "List Sessions"
+        },
+        {
+          "method": "POST",
+          "path": "/chat",
+          "summary": "Chat"
+        },
+        {
+          "method": "GET",
+          "path": "/chat/{session_id}/history",
+          "summary": "History"
+        },
+        {
+          "method": "DELETE",
+          "path": "/chat/{session_id}",
+          "summary": "Delete Chat"
+        },
+        {
+          "method": "PATCH",
+          "path": "/chat/{session_id}/title",
+          "summary": "Rename Chat"
+        },
+        {
+          "method": "PATCH",
+          "path": "/chat/{session_id}/pin",
+          "summary": "Pin Chat"
+        },
+        {
+          "method": "POST",
+          "path": "/feedback",
+          "summary": "Feedback"
+        }
+      ]
+    },
+    "hub": {
+      "port": 8002,
+      "base": "http://127.0.0.1:8002",
+      "/health": {
+        "status": 200,
+        "body": "{\"service\":\"agent-hub\",\"status\":\"ok\"}"
+      },
+      "/ready": {
+        "status": 200,
+        "body": "{\"service\":\"agent-hub\",\"ready\":true,\"circuit_breakers\":[{\"receiver\":\"booking-agent\",\"state\":\"CLOSED\",\"consecutive_failures\":0,\"time_until_retry\":0.0,\"total_requests\":0,\"total_successes\":0,\"total_failures\":0},{\"receiver\":\"maintenance-agent\",\"state\":\"CLOSED\",\"consecutive_failures\":0,\"time_until_retry\":0.0,\"total_requests\":0,\"total_successes\":0,\"total_failures\":0},{\"receiver\":\"operations-agent\",\"state\":\"CLOSED\",\"consecutive_failures\":0,\"time_until_retry\":0.0,\"total_requests\":0,\"total_successes\":0,\"total_failures\":0},{\"receiver\":\"passenger-agent\",\"state\":\"CLOSED\",\"consecutive_failures\":0,\"time_unt"
+      },
+      "/docs": {
+        "status": 200,
+        "len": 1037,
+        "is_swagger": true
+      },
+      "/openapi.json": {
+        "status": 200
+      },
+      "endpoint_count": 6,
+      "security_headers": {
+        "server": "uvicorn"
+      },
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/health",
+          "summary": "Liveness probe"
+        },
+        {
+          "method": "GET",
+          "path": "/ready",
+          "summary": "Readiness probe"
+        },
+        {
+          "method": "POST",
+          "path": "/register",
+          "summary": "Agent start-up handshake (static registry)"
+        },
+        {
+          "method": "GET",
+          "path": "/api/hub/dashboard",
+          "summary": "Hub Observability Dashboard Data"
+        },
+        {
+          "method": "GET",
+          "path": "/api/hub/timeline",
+          "summary": "Hub Request Timeline Logs"
+        },
+        {
+          "method": "POST",
+          "path": "/messages",
+          "summary": "Receive and route an inter-agent message"
+        }
+      ]
+    },
+    "booking": {
+      "port": 8003,
+      "base": "http://127.0.0.1:8003",
+      "/health": {
+        "status": 200,
+        "body": "{\"service\":\"booking-agent\",\"status\":\"ok\"}"
+      },
+      "/ready": {
+        "status": 404,
+        "body": "{\"detail\":\"Not Found\"}"
+      },
+      "/docs": {
+        "status": 200,
+        "len": 1041,
+        "is_swagger": true
+      },
+      "/openapi.json": {
+        "status": 200
+      },
+      "endpoint_count": 19,
+      "security_headers": {
+        "server": "uvicorn"
+      },
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/health",
+          "summary": "Liveness probe"
+        },
+        {
+          "method": "GET",
+          "path": "/booking-options",
+          "summary": "Get available train schedules and seat counts for route and date"
+        },
+        {
+          "method": "POST",
+          "path": "/internal/messages",
+          "summary": "Receive a forwarded AgentMessage from the Hub (Phase 3: Booking dispatch)"
+        },
+        {
+          "method": "GET",
+          "path": "/bookings/{booking_reference}",
+          "summary": "Retrieve a confirmed or held booking by reference"
+        },
+        {
+          "method": "POST",
+          "path": "/internal/seat-holds",
+          "summary": "Create a temporary 5-minute seat hold (Project prototype setting)"
+        },
+        {
+          "method": "POST",
+          "path": "/internal/waiting-list",
+          "summary": "Enqueue passenger into FIFO waiting list when train is fully booked"
+        },
+        {
+          "method": "GET",
+          "path": "/internal/waiting-list/{queue_id}",
+          "summary": "Check position in waiting list queue"
+        },
+        {
+          "method": "GET",
+          "path": "/api/tickets/verify/{ticket_token}",
+          "summary": "Live server-side verification of QR e-ticket without exposing raw PII"
+        },
+        {
+          "method": "GET",
+          "path": "/operations/status/{idempotency_key}",
+          "summary": "Check status of an asynchronous or idempotent mutation"
+        },
+        {
+          "method": "GET",
+          "path": "/cancellations",
+          "summary": "List cancellation requests with optional status filter"
+        },
+        {
+          "method": "GET",
+          "path": "/cancellations/{case_reference}",
+          "summary": "Retrieve a cancellation request by case reference"
+        },
+        {
+          "method": "POST",
+          "path": "/internal/cancellations/{case_reference}/review",
+          "summary": "Human-in-the-Loop Admin Review (Approve or Reject)"
+        },
+        {
+          "method": "POST",
+          "path": "/internal/cancellations/nlp-preview",
+          "summary": "Real-time NLP preview and classification for admin rejection reason"
+        },
+        {
+          "method": "GET",
+          "path": "/internal/fraud-reviews",
+          "summary": "List fraud review cases with optional status filter"
+        },
+        {
+          "method": "GET",
+          "path": "/internal/fraud-reviews/{case_reference}",
+          "summary": "Retrieve a fraud review case by case reference"
+        },
+        {
+          "method": "POST",
+          "path": "/internal/fraud-reviews/{case_reference}/review",
+          "summary": "Adjudicate a flagged booking (Approve or Reject)"
+        },
+        {
+          "method": "GET",
+          "path": "/admin/trains",
+          "summary": "List active trains for admin dropdown selector"
+        },
+        {
+          "method": "GET",
+          "path": "/admin/bookings",
+          "summary": "Retrieve booked tickets filtered by train and travel date"
+        },
+        {
+          "method": "POST",
+          "path": "/admin/chat",
+          "summary": "Admin Booking Intelligence Assistant (NLP + IR/RAG + LLM)"
+        }
+      ]
+    },
+    "security": {
+      "port": 8004,
+      "base": "http://127.0.0.1:8004",
+      "/health": {
+        "status": 200,
+        "body": "{\"service\":\"security-agent\",\"status\":\"ok\"}"
+      },
+      "/ready": {
+        "status": 404,
+        "body": "{\"detail\":\"Not Found\"}"
+      },
+      "/docs": {
+        "status": 200,
+        "len": 1036,
+        "is_swagger": true
+      },
+      "/openapi.json": {
+        "status": 200
+      },
+      "endpoint_count": 6,
+      "security_headers": {
+        "server": "uvicorn"
+      },
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/health",
+          "summary": "Health Check"
+        },
+        {
+          "method": "POST",
+          "path": "/internal/fraud-score",
+          "summary": "Evaluate passenger behavioral features for fraud risk"
+        },
+        {
+          "method": "POST",
+          "path": "/internal/messages",
+          "summary": "Receive inter-agent message from Communication Hub"
+        },
+        {
+          "method": "POST",
+          "path": "/internal/grounded-summary",
+          "summary": "Generate 4-section grounded LLM summary from raw evidence"
+        },
+        {
+          "method": "POST",
+          "path": "/internal/investigation-feedback",
+          "summary": "Record human adjudicator label for model evaluation"
+        },
+        {
+          "method": "GET",
+          "path": "/internal/investigation-feedback",
+          "summary": "Retrieve recorded investigation feedback history"
+        }
+      ]
+    },
+    "m2": {
+      "port": 8005,
+      "base": "http://127.0.0.1:8005",
+      "/health": {
+        "status": 200,
+        "body": "{\"status\":\"ok\",\"agent\":\"operations-agent\",\"hub_configured\":true,\"history_records\":3900,\"time\":\"2026-09-28T12:03:50.231765+00:00\"}"
+      },
+      "/ready": {
+        "status": 404,
+        "body": "{\"detail\":\"Not Found\"}"
+      },
+      "/docs": {
+        "status": 200,
+        "len": 1039,
+        "is_swagger": true
+      },
+      "/openapi.json": {
+        "status": 200
+      },
+      "endpoint_count": 41,
+      "security_headers": {
+        "server": "uvicorn"
+      },
+      "endpoints": [
+        {
+          "method": "POST",
+          "path": "/admin/api/login",
+          "summary": "Login"
+        },
+        {
+          "method": "POST",
+          "path": "/admin/api/logout",
+          "summary": "Logout"
+        },
+        {
+          "method": "GET",
+          "path": "/admin/api/me",
+          "summary": "Me"
+        },
+        {
+          "method": "GET",
+          "path": "/admin/api/officers",
+          "summary": "List Officers Endpoint"
+        },
+        {
+          "method": "POST",
+          "path": "/admin/api/officers",
+          "summary": "Create Officer Endpoint"
+        },
+        {
+          "method": "GET",
+          "path": "/admin/api/officers/audit",
+          "summary": "List Officer Audits Endpoint"
+        },
+        {
+          "method": "GET",
+          "path": "/admin/api/officers/{officer_id}",
+          "summary": "Get Officer Endpoint"
+        },
+        {
+          "method": "PUT",
+          "path": "/admin/api/officers/{officer_id}",
+          "summary": "Update Officer Endpoint"
+        },
+        {
+          "method": "POST",
+          "path": "/admin/api/officers/{officer_id}/reset-password",
+          "summary": "Reset Password Endpoint"
+        },
+        {
+          "method": "POST",
+          "path": "/admin/api/officers/{officer_id}/status",
+          "summary": "Toggle Officer Status Endpoint"
+        },
+        {
+          "method": "GET",
+          "path": "/admin/api/roles/matrix",
+          "summary": "Get Roles Matrix Endpoint"
+        },
+        {
+          "method": "GET",
+          "path": "/admin/api/health/status",
+          "summary": "Health Status"
+        },
+        {
+          "method": "GET",
+          "path": "/admin/api/model/metrics",
+          "summary": "Model Metrics"
+        },
+        {
+          "method": "GET",
+          "path": "/admin/api/model/metrics-history",
+          "summary": "Model Metrics History"
+        },
+        {
+          "method": "GET",
+          "path": "/admin/api/model/feature-importances",
+          "summary": "Model Feature Importances"
+        },
+        {
+          "method": "POST",
+          "path": "/admin/api/model/retrain",
+          "summary": "Retrain Model"
+        },
+        {
+          "method": "GET",
+          "path": "/admin/api/model/versions",
+          "summary": "Model Versions"
+        },
+        {
+          "method": "POST",
+          "path": "/admin/api/model/rollback/{filename}",
+          "summary": "Rollback Model"
+        },
+        {
+          "method": "GET",
+          "path": "/admin/api/audit/events",
+          "summary": "Audit Events"
+        },
+        {
+          "method": "GET",
+          "path": "/admin/api/audit/summary",
+          "summary": "Audit Summary"
+        },
+        {
+          "method": "POST",
+          "path": "/internal/messages",
+          "summary": "Receive Internal Message"
+        },
+        {
+          "method": "GET",
+          "path": "/health",
+          "summary": "Health"
+        },
+        {
+          "method": "GET",
+          "path": "/api/dashboard",
+          "summary": "Dashboard Data"
+        },
+        {
+          "method": "GET",
+          "path": "/api/route-options",
+          "summary": "Route Options"
+        },
+        {
+          "method": "POST",
+          "path": "/passenger/ask",
+          "summary": "Passenger Ask"
+        },
+        {
+          "method": "POST",
+          "path": "/passenger/query",
+          "summary": "Passenger Query"
+        },
+        {
+          "method": "POST",
+          "path": "/predict-delay",
+          "summary": "Predict Delay"
+        },
+        {
+          "method": "GET",
+          "path": "/route-status/{route_id}",
+          "summary": "Route Status"
+        },
+        {
+          "method": "POST",
+          "path": "/incident-report",
+          "summary": "Incident Report"
+        },
+        {
+          "method": "GET",
+          "path": "/incidents",
+          "summary": "List Incidents"
+        },
+        {
+          "method": "POST",
+          "path": "/incidents/{incident_id}/approve",
+          "summary": "Approve Incident"
+        },
+        {
+          "method": "POST",
+          "path": "/incidents/{incident_id}/reject",
+          "summary": "Reject Incident"
+        },
+        {
+          "method": "GET",
+          "path": "/api/incidents/map-feed",
+          "summary": "Incident Map Feed"
+        },
+        {
+          "method": "GET",
+          "path": "/api/trains",
+          "summary": "Train Catalog"
+        },
+        {
+          "method": "GET",
+          "path": "/api/stations",
+          "summary": "Stations"
+        },
+        {
+          "method": "PATCH",
+          "path": "/incidents/{incident_id}",
+          "summary": "Update Incident"
+        },
+        {
+          "method": "DELETE",
+          "path": "/incidents/{incident_id}",
+          "summary": "Delete Incident"
+        },
+        {
+          "method": "POST",
+          "path": "/hub/message",
+          "summary": "Hub Message"
+        },
+        {
+          "method": "GET",
+          "path": "/api/ops-agent/capabilities",
+          "summary": "Ops Agent Capabilities"
+        },
+        {
+          "method": "POST",
+          "path": "/api/ops-agent/ask",
+          "summary": "Ops Agent Ask"
+        },
+        {
+          "method": "GET",
+          "path": "/api/ops-agent/history",
+          "summary": "Ops Agent History"
+        }
+      ]
+    },
+    "m4": {
+      "port": 8006,
+      "base": "http://127.0.0.1:8006",
+      "/health": {
+        "status": 200,
+        "body": "{\"status\":\"ok\",\"agent\":\"maintenance-agent\",\"timestamp\":\"2026-09-28T12:03:50.822902+00:00\"}"
+      },
+      "/ready": {
+        "status": 404,
+        "body": "{\"detail\":\"Not Found\"}"
+      },
+      "/docs": {
+        "status": 200,
+        "len": 1042,
+        "is_swagger": true
+      },
+      "/openapi.json": {
+        "status": 200
+      },
+      "endpoint_count": 20,
+      "security_headers": {
+        "server": "uvicorn"
+      },
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/health",
+          "summary": "Health"
+        },
+        {
+          "method": "GET",
+          "path": "/",
+          "summary": "Dashboard Ui"
+        },
+        {
+          "method": "GET",
+          "path": "/api/dashboard",
+          "summary": "Api Dashboard"
+        },
+        {
+          "method": "GET",
+          "path": "/api/assets",
+          "summary": "Api Assets"
+        },
+        {
+          "method": "POST",
+          "path": "/asset-health",
+          "summary": "Asset Health"
+        },
+        {
+          "method": "GET",
+          "path": "/asset-status/{asset_id}",
+          "summary": "Asset Status"
+        },
+        {
+          "method": "GET",
+          "path": "/api/asset-trend/{asset_id}",
+          "summary": "Asset Trend"
+        },
+        {
+          "method": "GET",
+          "path": "/api/fleet-health-summary",
+          "summary": "Fleet Health Summary"
+        },
+        {
+          "method": "POST",
+          "path": "/maintenance-report",
+          "summary": "Maintenance Report"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/reports/{report_id}/resolve",
+          "summary": "Resolve Report"
+        },
+        {
+          "method": "GET",
+          "path": "/manual-search",
+          "summary": "Manual Search"
+        },
+        {
+          "method": "POST",
+          "path": "/api/engineer-login",
+          "summary": "Engineer Login"
+        },
+        {
+          "method": "GET",
+          "path": "/chat-ui",
+          "summary": "Chatbot Ui"
+        },
+        {
+          "method": "POST",
+          "path": "/chat",
+          "summary": "Chat"
+        },
+        {
+          "method": "POST",
+          "path": "/api/flag-train",
+          "summary": "Flag Train"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/flag-train/{train_id}",
+          "summary": "Clear Train Flag"
+        },
+        {
+          "method": "GET",
+          "path": "/api/train-status/{train_id}",
+          "summary": "Get Train Status"
+        },
+        {
+          "method": "GET",
+          "path": "/api/trains-under-maintenance",
+          "summary": "Get Trains Under Maintenance"
+        },
+        {
+          "method": "POST",
+          "path": "/hub/message",
+          "summary": "Hub Message"
+        },
+        {
+          "method": "POST",
+          "path": "/internal/messages",
+          "summary": "Receive Internal Message"
+        }
+      ]
+    }
+  }
+}

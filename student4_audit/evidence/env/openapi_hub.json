@@ -1,0 +1,459 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "RailSense AI - Agent Communication Hub",
+    "description": "Central hub responsible for receiving, validating, authenticating, auditing, and routing structured inter-agent messages across the RailSense AI system.",
+    "version": "0.3.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Liveness probe",
+        "description": "Returns 200 OK when hub is running.",
+        "operationId": "health_check_health_get",
+        "responses": {
+          "200": {
+            "description": "Service health status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Health Check Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ready": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Readiness probe",
+        "description": "Readiness probe evaluating circuit breakers and service availability.",
+        "operationId": "readiness_check_ready_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Readiness Check Ready Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/register": {
+      "post": {
+        "tags": [
+          "registry"
+        ],
+        "summary": "Agent start-up handshake (static registry)",
+        "description": "Acknowledge an agent announcing itself at start-up.\n\nOperations (M2) and Maintenance (M4) post here when they boot. Routing uses\nthe static registry (registry.py, configured from .env), so this endpoint is\nread-only: it confirms the agent is known and reports the URL the Hub will\nroute to. It never changes routing, so a caller can't redirect traffic.",
+        "operationId": "register_agent_register_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "type": "object",
+                "title": "Body"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hub/dashboard": {
+      "get": {
+        "tags": [
+          "monitoring"
+        ],
+        "summary": "Hub Observability Dashboard Data",
+        "description": "Return agent health, request counts, circuit breakers, and system metrics.",
+        "operationId": "get_hub_dashboard_api_hub_dashboard_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hub/timeline": {
+      "get": {
+        "tags": [
+          "monitoring"
+        ],
+        "summary": "Hub Request Timeline Logs",
+        "description": "Query paginated audit logs with optional filters.",
+        "operationId": "get_hub_timeline_api_hub_timeline_get",
+        "parameters": [
+          {
+            "name": "sender",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sender"
+            }
+          },
+          {
+            "name": "receiver",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Receiver"
+            }
+          },
+          {
+            "name": "intent",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Intent"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "correlation_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Correlation Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/messages": {
+      "post": {
+        "tags": [
+          "messages"
+        ],
+        "summary": "Receive and route an inter-agent message",
+        "description": "Central Communication Hub routing pipeline:\n1. Schema validation (handled by FastAPI Pydantic v2)\n2. JWT signature, issuer, audience, and sender verification\n3. Loop detection (hop_count bounded)\n4. Rate limit verification\n5. Interaction allowlist authorization: deny unspecified (sender, receiver, intent)\n6. Message deduplication\n7. Receiver registry verification\n8. Circuit-breaker evaluation & asynchronous HTTP dispatch\n9. Audit trail logging with correlation ID and duration",
+        "operationId": "receive_message_messages_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentMessage"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Message routed and destination response returned",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AgentMessage": {
+        "properties": {
+          "message_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Message Id",
+            "description": "Unique message identifier"
+          },
+          "sender_agent": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Sender Agent",
+            "description": "Originating agent name"
+          },
+          "receiver_agent": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Receiver Agent",
+            "description": "Target agent name"
+          },
+          "intent": {
+            "$ref": "#/components/schemas/MemberCIntent",
+            "description": "Action the receiver should perform"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Payload",
+            "description": "Intent-specific payload data"
+          },
+          "auth_token": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Auth Token",
+            "description": "Bearer token"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Timestamp",
+            "description": "Message creation time"
+          },
+          "correlation_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Correlation Id",
+            "description": "End-to-end workflow correlation ID"
+          },
+          "parent_message_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Message Id",
+            "description": "Predecessor message ID"
+          },
+          "schema_version": {
+            "type": "string",
+            "title": "Schema Version",
+            "description": "Schema version",
+            "default": "1.1"
+          },
+          "hop_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Hop Count",
+            "description": "Monotonic hop counter",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "message_id",
+          "sender_agent",
+          "receiver_agent",
+          "intent",
+          "payload",
+          "auth_token",
+          "timestamp"
+        ],
+        "title": "AgentMessage",
+        "description": "Standard message envelope exchanged between agents via the Agent Hub.\n\nAttributes\n----------\nmessage_id:        Unique identifier for this message (e.g. \"MSG-2001\").\nsender_agent:      Logical name of the originating agent.\nreceiver_agent:    Logical name of the target agent.\nintent:            The action the receiver should perform.\npayload:           Arbitrary JSON-compatible dict carrying intent-specific data.\nauth_token:        Raw bearer token forwarded from the originating request.\ntimestamp:         ISO-8601 datetime (timezone-aware recommended) of when the\n                   message was created.\ncorrelation_id:    Unique ID spanning all related messages in a business workflow.\nparent_message_id: Direct causal predecessor message ID if applicable.\nschema_version:    Version identifier for the envelope schema.\nhop_count:         Monotonically incremented dispatch counter for loop prevention."
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "MemberCIntent": {
+        "type": "string",
+        "enum": [
+          "booking_request",
+          "cancel_booking",
+          "delay_check",
+          "delay_check_response",
+          "delay_alert",
+          "issue_report",
+          "incident_report",
+          "fraud_score_request",
+          "train_status_query",
+          "ack"
+        ],
+        "title": "MemberCIntent",
+        "description": "Supported intents handled by RailSense AI agents."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}

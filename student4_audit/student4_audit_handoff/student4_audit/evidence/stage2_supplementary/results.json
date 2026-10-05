@@ -1,0 +1,144 @@
+{
+  "run_at": "2026-09-29T00:15:17.915015+05:30",
+  "G1_engineer_login": {
+    "hardcoded_admin_login": {
+      "status": 200,
+      "success": true,
+      "eng_id": "ENG-001",
+      "role": "Chief Mechanical Engineer",
+      "token_masked": "b14f96…[MASKED]"
+    },
+    "wrong_password_control": {
+      "status": 401,
+      "body": "{\"detail\":\"Invalid engineer credentials. Please try again.\"}"
+    }
+  },
+  "G2_telemetry_fuzz": [
+    {
+      "case": "valid_baseline",
+      "status": 200,
+      "is_500": false,
+      "body": "{\"asset_id\":\"S4TEST-A9\",\"asset_type\":\"brake_system\",\"health_score\":100.0,\"health_status\":\"GREEN\",\"confidence\":\"medium\",\"confidence_low\":92.0,\"confidence_high\":1"
+    },
+    {
+      "case": "negative_days",
+      "status": 422,
+      "is_500": false,
+      "body": "{\"detail\":[{\"type\":\"greater_than_equal\",\"loc\":[\"body\",\"days_since_service\"],\"msg\":\"Input should be greater than or equal to 0\",\"input\":-5,\"ctx\":{\"ge\":0}}]}"
+    },
+    {
+      "case": "huge_days",
+      "status": 422,
+      "is_500": false,
+      "body": "{\"detail\":[{\"type\":\"less_than_equal\",\"loc\":[\"body\",\"days_since_service\"],\"msg\":\"Input should be less than or equal to 3650\",\"input\":999999,\"ctx\":{\"le\":3650}}]}"
+    },
+    {
+      "case": "string_for_int",
+      "status": 422,
+      "is_500": false,
+      "body": "{\"detail\":[{\"type\":\"int_parsing\",\"loc\":[\"body\",\"days_since_service\"],\"msg\":\"Input should be a valid integer, unable to parse string as an integer\",\"input\":\"abc\""
+    },
+    {
+      "case": "fault_count_over_max",
+      "status": 422,
+      "is_500": false,
+      "body": "{\"detail\":[{\"type\":\"less_than_equal\",\"loc\":[\"body\",\"fault_count_30d\"],\"msg\":\"Input should be less than or equal to 100\",\"input\":1000,\"ctx\":{\"le\":100}}]}"
+    },
+    {
+      "case": "nan_sensor",
+      "status": 200,
+      "is_500": false,
+      "body": "{\"asset_id\":\"S4TEST-A9\",\"asset_type\":\"brake_system\",\"health_score\":100.0,\"health_status\":\"GREEN\",\"confidence\":\"medium\",\"confidence_low\":92.0,\"confidence_high\":1"
+    },
+    {
+      "case": "inf_sensor",
+      "status": 200,
+      "is_500": false,
+      "body": "{\"asset_id\":\"S4TEST-A9\",\"asset_type\":\"brake_system\",\"health_score\":100.0,\"health_status\":\"GREEN\",\"confidence\":\"medium\",\"confidence_low\":92.0,\"confidence_high\":1"
+    },
+    {
+      "case": "huge_sensor_dict",
+      "status": 200,
+      "is_500": false,
+      "body": "{\"asset_id\":\"S4TEST-A9\",\"asset_type\":\"brake_system\",\"health_score\":100.0,\"health_status\":\"GREEN\",\"confidence\":\"medium\",\"confidence_low\":92.0,\"confidence_high\":1"
+    },
+    {
+      "case": "invalid_asset_type",
+      "status": 422,
+      "is_500": false,
+      "body": "{\"detail\":[{\"type\":\"value_error\",\"loc\":[\"body\",\"asset_type\"],\"msg\":\"Value error, asset_type must be one of: bogie, brake_system, diesel_engine, electric_loco, l"
+    },
+    {
+      "case": "asset_id_too_long",
+      "status": 422,
+      "is_500": false,
+      "body": "{\"detail\":[{\"type\":\"string_too_long\",\"loc\":[\"body\",\"asset_id\"],\"msg\":\"String should have at most 50 characters\",\"input\":\"S4TESTXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+    },
+    {
+      "case": "html_in_fault_type",
+      "status": 200,
+      "is_500": false,
+      "body": "{\"asset_id\":\"S4TEST-A9\",\"asset_type\":\"brake_system\",\"health_score\":100.0,\"health_status\":\"GREEN\",\"confidence\":\"medium\",\"confidence_low\":92.0,\"confidence_high\":1"
+    }
+  ],
+  "G3_replay_dedup": {
+    "message_id": "S4TEST-replay2-ce0948ab-bd4a-41cb-98a3-f8ddf5e94354",
+    "first": {
+      "status": 200,
+      "body": "{\"message_id\":\"S4TEST-replay2-ce0948ab-bd4a-41cb-98a3-f8ddf5e94354\",\"correlation_id\":\"S4TEST-replay2-ce0948ab-bd4a-41cb-98a3-f8ddf5e94354\",\"status\":\"routed\",\"receiver_agent\":\"operations-agent\",\"respon"
+    },
+    "second": {
+      "status": 200,
+      "body": "{\"message_id\":\"S4TEST-replay2-ce0948ab-bd4a-41cb-98a3-f8ddf5e94354\",\"correlation_id\":\"S4TEST-replay2-ce0948ab-bd4a-41cb-98a3-f8ddf5e94354\",\"status\":\"routed\",\"receiver_agent\":\"operations-agent\",\"respon"
+    },
+    "bodies_identical": true,
+    "audit_rows_for_message_id": 1,
+    "audit_statuses": [
+      "ROUTED"
+    ],
+    "interpretation": "dedup proven if first=200, second=200 identical body, and only ONE audit row (dedup returns at step 7 before the step-8 audit insert, agent-hub/main.py:361-365)"
+  },
+  "G4_nic_reverify": {
+    "status_unauth_port3000": 200,
+    "record_count": 17,
+    "nic_like_matches_by_field": {
+      "nic": 8
+    },
+    "matches_outside_hash_fields": {
+      "nic": 8
+    },
+    "note": "hex-bounded regex; Stage-1 unbounded regex matched 12-digit runs inside nic_hash hex strings"
+  },
+  "G6_cleanup_verify": {
+    "m2_incidents_with_S4TEST": 0,
+    "m2_map_feed_S4TEST": 0,
+    "m4_trains_under_maintenance_S4TEST": 0,
+    "m2_s4test_officers": [
+      {
+        "email_prefix": "s4test_operat",
+        "status": "inactive"
+      }
+    ],
+    "m4_engineer_logout_status": 404,
+    "m4_field_reports_S4TEST": [
+      {
+        "report_id": "b10b7cc1",
+        "status": null
+      },
+      {
+        "report_id": "73066a02",
+        "status": null
+      }
+    ]
+  },
+  "G5_bind_listing": [
+    "TCP 0.0.0.0:3000 0.0.0.0:0 LISTENING",
+    "TCP 0.0.0.0:3001 0.0.0.0:0 LISTENING",
+    "TCP 127.0.0.1:8001 0.0.0.0:0 LISTENING",
+    "TCP 127.0.0.1:8002 0.0.0.0:0 LISTENING",
+    "TCP 127.0.0.1:8003 0.0.0.0:0 LISTENING",
+    "TCP 127.0.0.1:8004 0.0.0.0:0 LISTENING",
+    "TCP 127.0.0.1:8005 0.0.0.0:0 LISTENING",
+    "TCP 127.0.0.1:8006 0.0.0.0:0 LISTENING"
+  ]
+}

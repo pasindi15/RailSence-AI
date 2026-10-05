@@ -1,5 +1,17 @@
 [
   {
+    "id": "f2b0c6a7-a7c1-4659-a45b-16e6f6bbdfc7",
+    "full_name": "S4TEST Operator",
+    "email": "s4test_operator@railsense.lk",
+    "password_hash": "$2b$12$m7SFU65ws/ajAg1E7nRoKO6feMvniDmulHj/S4iy4gtiNaaX5VZCG",
+    "role": "operations_engineer",
+    "status": "inactive",
+    "created_at": "2026-09-28T12:08:29.802799+00:00",
+    "updated_at": "2026-09-28T12:11:46.581159+00:00",
+    "last_login_at": "2026-09-28T12:11:17.946204+00:00",
+    "created_by": "admin@railsense.lk"
+  },
+  {
     "id": "bcf013fb-6f44-46a7-b2a7-136c4720c4e5",
     "full_name": "AdminRailsence",
     "email": "railsence@gmail.com",
@@ -7,8 +19,8 @@
     "role": "admin",
     "status": "active",
     "created_at": "2026-09-28T07:54:45.6218+00:00",
-    "updated_at": "2026-09-28T10:57:39.360339+00:00",
-    "last_login_at": "2026-09-28T10:57:39.360296+00:00",
+    "updated_at": "2026-09-28T18:07:15.047877+00:00",
+    "last_login_at": "2026-09-28T18:07:15.047848+00:00",
     "created_by": "admin1@gmail.com"
   },
   {
@@ -31,8 +43,8 @@
     "role": "admin",
     "status": "active",
     "created_at": "2026-09-21T19:31:10.754231+00:00",
-    "updated_at": "2026-09-28T09:21:16.353074+00:00",
-    "last_login_at": "2026-09-28T09:21:16.353043+00:00",
+    "updated_at": "2026-10-01T16:01:16.228493+00:00",
+    "last_login_at": "2026-10-01T16:01:16.228466+00:00",
     "created_by": "operations@gmail.com"
   },
   {
@@ -43,8 +55,8 @@
     "role": "operations_engineer",
     "status": "active",
     "created_at": "2026-09-20T16:16:26.915952+00:00",
-    "updated_at": "2026-09-27T16:55:50.097359+00:00",
-    "last_login_at": "2026-09-27T16:55:50.097331+00:00",
+    "updated_at": "2026-10-04T13:24:38.977658+00:00",
+    "last_login_at": "2026-10-04T13:24:38.977623+00:00",
     "created_by": "operations@gmail.com"
   },
   {
@@ -67,8 +79,8 @@
     "role": "operations_engineer",
     "status": "active",
     "created_at": "2026-09-20T08:48:10.122906+00:00",
-    "updated_at": "2026-09-20T22:02:40.600457+00:00",
-    "last_login_at": "2026-09-20T22:02:40.600418+00:00",
+    "updated_at": "2026-09-28T20:02:10.442682+00:00",
+    "last_login_at": "2026-09-28T20:02:07.303725+00:00",
     "created_by": "admin@railsense.lk"
   },
   {
@@ -77,10 +89,10 @@
     "email": "admin@railsense.lk",
     "password_hash": "$2b$12$x81yP.OATcuUDAoc1tyINuYIe9pBKwv7rIhUFNkAXQh4x164XIIC6",
     "role": "admin",
-    "status": "active",
+    "status": "inactive",
     "created_at": "2026-09-20T08:41:09.480856+00:00",
-    "updated_at": "2026-09-23T06:23:38.607778+00:00",
-    "last_login_at": "2026-09-23T06:23:38.607758+00:00",
+    "updated_at": "2026-09-28T20:02:11.575502+00:00",
+    "last_login_at": "2026-09-28T20:02:09.535575+00:00",
     "created_by": "bootstrap"
   }
 ]

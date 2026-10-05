@@ -2,21 +2,26 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import RailScene from '../RailScene';
 import ThemeToggle from '../ThemeToggle.jsx';
+import { login } from '../../api.js';
 import '../login.css';
 
-const PASSENGER_ACCOUNTS = [
-  { id: "PSG-001", username: "kavya",   password: "kavya2024",   name: "Kavya Perera",    nic: "200012345678" },
-  { id: "PSG-002", username: "dilshan", password: "dilshan2024", name: "Dilshan Silva",   nic: "199887654321" },
-  { id: "PSG-003", username: "nimal",   password: "nimal2024",   name: "Nimal Fernando",  nic: "200198765432" },
-  { id: "PSG-004", username: "guest",   password: "guest123",    name: "Guest Passenger", nic: "N/A"          },
+// Autofill hints for the demo chips below - NOT an authentication mechanism.
+// Credentials are verified by the backend against bcrypt hashes in the
+// `passengers` table (POST /auth/login); nothing here grants access, and
+// editing it in devtools achieves nothing. These four are deliberately
+// published demo logins. Delete this block to hide them from the login screen.
+const DEMO_HINTS = [
+  { id: "PSG-001", username: "kavya",   password: "kavya2024",   name: "Kavya Perera"    },
+  { id: "PSG-002", username: "dilshan", password: "dilshan2024", name: "Dilshan Silva"   },
+  { id: "PSG-003", username: "nimal",   password: "nimal2024",   name: "Nimal Fernando"  },
+  { id: "PSG-004", username: "guest",   password: "guest123",    name: "Guest Passenger" },
 ];
 
 interface PassengerAccount {
   id: string;
   username: string;
-  password: string;
   name: string;
-  nic: string;
+  nic?: string;
 }
 
 interface AnimatedSignInProps {
@@ -75,26 +80,30 @@ const AnimatedSignIn: React.FC<AnimatedSignInProps> = ({ onLogin }) => {
     shakeTimeout.current = window.setTimeout(() => setShake(false), 520);
   };
 
-  const handleSignIn = (e: React.FormEvent) => {
+  const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
-    setTimeout(() => {
-      const match = PASSENGER_ACCOUNTS.find(
-        a => a.username === username.trim().toLowerCase() && a.password === password
-      );
-      if (match) {
-        setPassenger(match);
-        setSuccess(true);
-        setIsLoading(false);
-        setTimeout(() => setWhoosh(true), 450);
-        setTimeout(() => onLogin(match), 1150);
-      } else {
-        setError('Invalid username or password.');
-        setIsLoading(false);
-        triggerShake();
-      }
-    }, 700);
+    try {
+      // The backend checks the password against a bcrypt hash and returns a
+      // signed token. The browser no longer decides who is logged in.
+      const account = await login(username.trim().toLowerCase(), password);
+      const signedIn: PassengerAccount = {
+        id: account.user_id,
+        username: account.username,
+        name: account.full_name,
+        nic: account.nic,
+      };
+      setPassenger(signedIn);
+      setSuccess(true);
+      setIsLoading(false);
+      setTimeout(() => setWhoosh(true), 450);
+      setTimeout(() => onLogin(signedIn), 1150);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Invalid username or password.');
+      setIsLoading(false);
+      triggerShake();
+    }
   };
 
   const typing = !success && !error && (username.length > 0 || password.length > 0);
@@ -260,7 +269,7 @@ const AnimatedSignIn: React.FC<AnimatedSignInProps> = ({ onLogin }) => {
                 <div className="login-demo">
                   <p className="login-demo-label">Demo accounts — click to autofill</p>
                   <div className="login-demo-grid">
-                    {PASSENGER_ACCOUNTS.map(a => (
+                    {DEMO_HINTS.map(a => (
                       <button
                         key={a.id}
                         type="button"

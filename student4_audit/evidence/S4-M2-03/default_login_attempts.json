@@ -1,0 +1,15 @@
+{
+  "tested_at": "2026-09-28T17:36:41.988686+05:30",
+  "endpoint": "http://127.0.0.1:8005/admin/api/login",
+  "attempts": [
+    {
+      "email": "admin@railsense.lk",
+      "pw_masked": "Op****",
+      "status": 200,
+      "ok": true,
+      "body_snippet": "<success, body withheld>"
+    }
+  ],
+  "login_succeeded": true,
+  "token_prefix": "eyJhbGciOiJI\u2026"
+}

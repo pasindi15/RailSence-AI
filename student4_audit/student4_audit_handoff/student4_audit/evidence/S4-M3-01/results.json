@@ -1,0 +1,95 @@
+{
+  "tested_at": "2026-09-28T17:53:24.599739+05:30",
+  "probes": [
+    {
+      "probe": "a_valid_delay_check",
+      "expected": "200/forwarded",
+      "status": 502,
+      "body": "{\"detail\":\"Destination agent 'operations-agent' returned an error (HTTP 422): delay_check requires a train identifier\"}"
+    },
+    {
+      "probe": "b_no_token",
+      "expected": "401",
+      "status": 422,
+      "body": "{\"detail\":[{\"type\":\"string_too_short\",\"loc\":[\"body\",\"auth_token\"],\"msg\":\"String should have at least 1 character\",\"input\":\"\",\"ctx\":{\"min_length\":1}}]}"
+    },
+    {
+      "probe": "c_tampered_sig",
+      "expected": "401",
+      "status": 401,
+      "body": "{\"detail\":\"Invalid or expired authentication token\"}"
+    },
+    {
+      "probe": "d_alg_none",
+      "expected": "401",
+      "status": 401,
+      "body": "{\"detail\":\"Invalid or expired authentication token\"}"
+    },
+    {
+      "probe": "e_expired",
+      "expected": "401",
+      "status": 401,
+      "body": "{\"detail\":\"Invalid or expired authentication token\"}"
+    },
+    {
+      "probe": "f_wrong_audience",
+      "expected": "401",
+      "status": 401,
+      "body": "{\"detail\":\"Token audience 'security-agent' does not match expected 'operations-agent'\"}"
+    },
+    {
+      "probe": "g_replay_1st",
+      "expected": "200",
+      "status": 502,
+      "body": "{\"detail\":\"Destination agent 'operations-agent' returned an error (HTTP 422): delay_check requires a train identifier\"}"
+    },
+    {
+      "probe": "g_replay_2nd",
+      "expected": "deduped/200-cached",
+      "status": 502,
+      "body": "{\"detail\":\"Destination agent 'operations-agent' returned an error (HTTP 422): delay_check requires a train identifier\"}"
+    },
+    {
+      "probe": "h_disallowed_passenger_to_security",
+      "expected": "403",
+      "status": 403,
+      "body": "{\"detail\":\"Interaction not permitted by policy: passenger-agent -> security-agent [fraud_score_request]\"}"
+    },
+    {
+      "probe": "i_sender_spoof",
+      "expected": "401",
+      "status": 401,
+      "body": "{\"detail\":\"Token subject does not match sender agent\"}"
+    },
+    {
+      "probe": "j_missing_fields",
+      "expected": "422",
+      "status": 422,
+      "body": "{\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message_id\"],\"msg\":\"Field required\",\"input\":{\"sender_agent\":\"passenger-agent\"}},{\"type\":\"missing\",\"loc\":[\"body\",\"receiver_agent\"],\"msg\":\"Field required\",\"in"
+    },
+    {
+      "probe": "j2_oversized_payload",
+      "expected": "handled",
+      "status": 502,
+      "body": "{\"detail\":\"Destination agent 'operations-agent' returned an error (HTTP 422): delay_check requires a train identifier\"}"
+    },
+    {
+      "probe": "k_register_rogue",
+      "expected": "404/read-only",
+      "status": 404,
+      "body": "{\"registered\":false,\"detail\":\"Unknown agent 'S4TEST-rogue'. Agents are configured in the Hub's static registry.\",\"known_agents\":[\"booking-agent\",\"maintenance-agent\",\"operations-agent\",\"passenger-agent"
+    },
+    {
+      "probe": "k_register_overwrite_existing",
+      "expected": "read-only-no-change",
+      "status": 200,
+      "body": "{\"registered\":true,\"agent_name\":\"operations-agent\",\"mode\":\"static_registry\",\"routes_to\":\"http://127.0.0.1:8005\",\"callback_matches_registry\":false,\"capabilities\":[]}"
+    }
+  ],
+  "audit_timeline": {
+    "status": 200,
+    "mentions_S4TEST": true,
+    "has_REJECTED": true,
+    "snippet": "{\"total\":510,\"limit\":50,\"offset\":0,\"items\":[{\"id\":568,\"message_id\":\"S4TEST-6d32d3e7-4c68-4f0e-889c-dcf6a88fa348\",\"correlation_id\":\"S4TEST-6d32d3e7-4c68-4f0e-889c-dcf6a88fa348\",\"sender_agent\":\"passenger-agent\",\"receiver_agent\":\"operations-agent\",\"intent\":\"delay_check\",\"status\":\"FAILED\",\"error_message\":\"Destination agent 'operations-agent' returned an error (HTTP 422): delay_check requires a train i"
+  }
+}

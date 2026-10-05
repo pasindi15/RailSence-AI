@@ -1,33 +1,57 @@
 # Passenger Assistant Agent — RailSense AI (Member A)
 
 Chat dashboard UI + language detection + intent classification + entity
-extraction, backed by Gemini and a ChromaDB RAG pipeline over the FAQ/fare/
-schedule docs. Chat history and feedback persist to Supabase when configured.
-Hub calls (delay_check, complaint, booking_request) are still stubbed pending
-Phase 3 wiring with the real Agent Hub.
+extraction, backed by Gemini/OpenRouter and a ChromaDB RAG pipeline over the
+FAQ/fare/schedule docs. Chat history and feedback persist to Supabase when
+configured. Hub calls (`delay_check` → Operations, `complaint` → Maintenance,
+`booking_request`/`cancel_booking` → Booking) are wired to the real Agent Hub
+over HTTP, with a local mock fallback (`USE_MOCK_HUB=true`) for dev without
+the Hub running.
+
+Two passenger-facing features worth knowing about before touching the NLU
+layer:
+- **Romanized Sinhala ("Singlish") support** — a passenger typing Sinhala in
+  Latin letters (`"mata colomba idala badullata ticket ekak ganna oni"`, or
+  even heavily abbreviated txt-speak like `"ek kiyd"`) is detected as Sinhala
+  and answered in Sinhala script. See `backend/nlu/romanized.py` and
+  `evaluation/romanized_sinhala/`.
+- **Session-sticky conversation language** — the language detected from a
+  session's first meaningful message is persisted and reused for every
+  follow-up in that session (a bare `"3"` answering "how many passengers?"
+  doesn't flip the reply back to English). See `resolve_session_language()`
+  in `backend/main.py`.
 
 ## Folder structure
 
 ```
 M1-passenger_assistant/
 ├── backend/
-│   ├── main.py                 # FastAPI app: /chat /feedback /health /chat/{id}/history
+│   ├── main.py                 # FastAPI app: /chat /chat/quick /feedback /health /chat/{id}/history
+│   ├── auth.py                  # passenger JWT auth (bcrypt + short-lived JWTs), guards chat ownership
+│   ├── llm_client.py            # Gemini or OpenRouter, chosen by LLM_PROVIDER — same generate_content() surface either way
+│   ├── hub_client.py             # real HTTP calls to the Agent Hub; USE_MOCK_HUB=true for local dev without it
+│   ├── i18n.py                   # en/si/ta message catalog for every fixed (non-Gemini) passenger-facing string
+│   ├── supabase_schema.sql       # chat_sessions / chat_messages schema, incl. the sticky-language column
 │   ├── nlu/
 │   │   ├── intent_classifier.py
 │   │   ├── ner_extractor.py    # regex/alias extraction + Gemini fallback for stations
-│   │   └── lang_detect.py
+│   │   ├── lang_detect.py      # si/ta/en detection: Unicode script → romanized-Sinhala lexicon → langdetect fallback
+│   │   └── romanized.py        # romanized Sinhala ("Singlish") detection, intent keywords, station aliases
 │   ├── rag/
 │   │   ├── embed_documents.py  # builds the ChromaDB "passenger_faq" collection
-│   │   └── retriever.py        # top-k FAQ chunk retrieval (MiniLM embeddings)
-│   ├── hub_client.py            # Phase 3 TODO: still returns stubbed Hub responses
+│   │   ├── retriever.py        # top-k FAQ chunk retrieval (MiniLM embeddings)
+│   │   └── sync_from_m3.py     # regenerates fares.md from M3's DEMO_FARE_RULES
 │   ├── prompts/system_prompt.md
 │   ├── data/faq_docs/           # fares.md / schedules.md / policies.md source docs
 │   ├── .chroma/                 # persisted ChromaDB index (generated, gitignored)
-│   ├── tests/
-│   │   ├── test_chat.py
-│   │   └── test_rag.py
+│   ├── tests/                    # ~14 files — chat flow, ownership, RAG, routing, romanized Sinhala,
+│   │   │                         # conversation language/context, multilingual + language-consistency, Hub client
+│   │   └── ...
 │   ├── requirements.txt
-│   └── .env                     # SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, OPENROUTER_API_KEY
+│   └── .env                     # SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, OPENROUTER_API_KEY / GEMINI key, JWT_SECRET_KEY, AGENT_HUB_URL
+├── evaluation/
+│   ├── romanized_sinhala/        # offline NLU accuracy eval (no server/LLM) — run_eval.py, queries.csv, results.md
+│   └── prompt_injection/         # PI/jailbreak security assessment — test plan, run_pi_tests.py, evidence/*.json
 └── frontend/
     ├── src/
     │   ├── components/
@@ -70,9 +94,13 @@ Build the RAG index (only needed once, or after editing `data/faq_docs/`):
 python -m rag.embed_documents
 ```
 
-Start the API on port **8010** (match whatever `VITE_M1_URL`/gateway config the
-frontend is using). Always launch uvicorn through the venv's own Python
-directly - don't rely on `uvicorn` being on PATH / the venv being activated.
+Start the API on port **8010** for standalone backend dev (match whatever
+`VITE_M1_URL`/gateway config the frontend is using). When launched as part of
+the full system via the repo root's `start_all.ps1` / `start.py`, M1 instead
+runs on whatever `railsense_ports.json` assigns it (currently **8001**) —
+check that file rather than assuming a port. Always launch uvicorn through
+the venv's own Python directly - don't rely on `uvicorn` being on PATH / the
+venv being activated.
 If a global Python is ever picked up instead, the `.chroma` index (built with
 `chromadb==1.5.9`) becomes unreadable and every RAG query silently falls back
 to "I'm having trouble looking that up right now" (`KeyError: '_type'`):
@@ -104,10 +132,11 @@ Open `http://localhost:5173/user/chat/` for dev. In the full system, run `npm ru
 Type any of these into the chat box:
 - "What time does the next train to Kandy leave?" → schedule_query (RAG-grounded answer)
 - "How much is a ticket to Galle?" → fare_query (RAG-grounded answer)
-- "Is the 14:35 Colombo Fort to Kandy train delayed?" → delay_check (stubbed Hub call)
-- "The AC is broken in my compartment" → complaint (stubbed Hub call)
-- "Book a second class ticket from Colombo Fort to Kandy" → booking_request (stubbed Hub call)
-- Try one in Sinhala or Tamil script to confirm language detection and station extraction.
+- "Is the 14:35 Colombo Fort to Kandy train delayed?" → delay_check (real Hub call to Operations)
+- "The AC is broken in my compartment" → complaint (real Hub call to Maintenance)
+- "Book a second class ticket from Colombo Fort to Kandy" → booking_request (real Hub call to Booking)
+- Try one in Sinhala or Tamil script (or romanized Sinhala, e.g. "mata colomba idala badullata ticket ekak ganna oni") to confirm language detection and station extraction.
+- Ask a follow-up with just a number ("3") after a fare question — the reply should stay in whatever language the first question was in.
 
 ### 4. Run backend tests
 
@@ -143,9 +172,20 @@ engineer-only and are never reachable from the passenger chat.
 
 ## Language: the passenger's language controls every reply
 
-`detect_language()` runs **once** at the top of `/chat` (Sinhala `si`, Tamil `ta`, else English `en`;
-mixed text goes by the script with more letters). That single `language` value is then used by every
-path, and is also sent to every agent in the Hub payload (`payload.language`):
+`resolve_session_language(session_id, text)` decides the language for every `/chat` turn (Sinhala
+`si`, Tamil `ta`, else English `en`). It is **not** per-message detection: once a session's first
+meaningful message establishes a language, every later turn in that session reuses the *stored*
+language regardless of what script/words that later message itself contains — so a bare `"3"`
+answering "how many passengers?" in a Sinhala session stays Sinhala. `detect_language()` only runs
+to establish the language on a session's first turn (or if the passenger explicitly asks to switch,
+e.g. "in Tamil please" / "தமிழில் பதில் சொல்லுங்கள்" — matched by name, in any of the three scripts).
+For real (non-Choo) sessions this is persisted in `chat_sessions.language` in Supabase (see
+`supabase_schema.sql`) and restored automatically whenever that session is reopened; Choo
+(`/chat/quick`) keeps the same per-session stickiness in-process instead, since it never writes to
+Supabase. `detect_language()` itself goes Unicode script → romanized-Sinhala lexicon
+(`nlu/romanized.py`) → `langdetect` fallback; mixed script text goes by whichever script has more
+letters. The resolved `language` value is then used by every downstream path, and is also sent to
+every agent in the Hub payload (`payload.language`):
 
 | Reply type | Who writes it, in the detected language |
 |---|---|
@@ -158,15 +198,55 @@ base (`data/faq_docs/*.md`) stays English: retrieval language and answer languag
 To add a passenger-facing message, add it to `i18n.MESSAGES` with `en`, `si` and `ta` (a test checks
 that every key has all three and the same placeholders).
 
+## Romanized Sinhala ("Singlish") support
+
+A passenger typing Sinhala in Latin letters — `"mata colomba idala badullata ticket ekak ganna oni"`
+— is detected as `si` and answered in Sinhala script, not English. `nlu/romanized.py` handles this in
+three parts: `is_romanized_sinhala()` (language detection — a Sinhala-only domain word like
+`"kochchiya"` trusts a single hit, grammar/function words need two hits or a high ratio of the
+message), `match_intent()` / `match_stations()` (a parallel romanized lexicon + station-alias table,
+with a fuzzy fallback for misspellings like `"kolombo"`). Casual vowel-dropped txt-speak
+(`"kiyd"` for `"kiyada"`, `"clmbo"` for `"colombo"`, `"indn"` for `"indan"`) is tolerated via a
+`SequenceMatcher`-based fuzzy match against the function-word lexicon only — deliberately **not**
+against the single-hit-trust domain-word list, because that fuzzy-matches plain English place names
+(`"colombo"` → `"colomba"`) closely enough to misfire. `evaluation/romanized_sinhala/run_eval.py` is
+an offline, server-free accuracy check over 56 queries (`queries.csv`) — currently 100% on language
+detection, intent classification, and both station roles; re-run it after any change to
+`nlu/romanized.py` or `nlu/lang_detect.py`.
+
+## Security evaluation: prompt injection / jailbreak resistance
+
+`evaluation/prompt_injection/` holds a 15-case adversarial test plan
+(`PI_Jailbreak_Vulnerability_Assessment_TestPlan.md`) covering system-prompt extraction, persona
+jailbreaks, policy/authority spoofing, Base64 obfuscation, grounding/hallucination induction,
+cross-passenger data access, agentic abuse of the booking/cancellation actions, a Sinhala-language
+guardrail-bypass attempt, Hub command injection, and multi-turn context poisoning. `run_pi_tests.py`
+executes all 15 against the live `/chat` endpoint and saves the complete raw JSON for each to
+`evidence/PI-XX.json` (no retries, no cherry-picking — first attempt is the record).
+
+Latest run (2026-10-01): **13/15 PASS**. Neither of the 2 FAILs is an actual injection or jailbreak
+success — no system prompt, grounding rule, or other passenger's data was ever disclosed in any
+case. They're a missing-refusal gap (a "list another passenger's bookings" request got misrouted
+into the booking flow instead of being refused) and a RAG retrieval miss on one Sinhala-language
+query (it correctly declined to invent a fare rather than hallucinating one, but didn't retrieve the
+real fare either). Both are written up as DRAFT findings in the test plan's `Vulnerability findings`
+section, pending TK's review before being treated as closed.
+
 ## Current status
 
-- **Working now:** language detection, intent classification, entity
+- **Working now:** language detection (including romanized Sinhala and
+  session-sticky conversation language), intent classification, entity
   extraction (regex/alias + Gemini fallback for stations), ChromaDB RAG
   retrieval over the FAQ docs with Gemini-composed grounded replies, chat
-  history persistence via Supabase, feedback endpoint.
-- **Still stubbed:** `hub_client.py` — `delay_check`, `complaint`, and
-  `booking_request` intents build a Hub envelope but `send_to_hub()` returns a
-  hardcoded fake response instead of calling a real Hub over HTTP.
+  history persistence + ownership via Supabase + JWT auth, feedback endpoint,
+  real Hub calls for `delay_check` (Operations), `complaint` (Maintenance),
+  and `booking_request`/`cancel_booking` (Booking), with `USE_MOCK_HUB=true`
+  as a local-dev fallback when the Hub isn't running.
+- **Known gaps (see Vulnerability findings, both low-severity):** a
+  natural-language "list another passenger's data" request isn't explicitly
+  refused (no data leaks, but it should redirect instead of falling into the
+  booking flow); RAG retrieval is less reliable on at least one tested
+  Sinhala-language query shape.
 
 ## Phase roadmap
 
@@ -174,16 +254,19 @@ that every key has all three and the same placeholders).
   extraction, stubbed Hub calls.
 - **Phase 2 (done):** ChromaDB RAG retrieval + citations, Gemini-composed
   answers, Supabase-backed chat history.
-- **Phase 3 (pending):** replace `hub_client.py` stub with a real HTTP call
-  once the message envelope is agreed with Member C. Wire `delay_check` →
-  Operations, `complaint` → Maintenance, `booking_request` → Booking for real.
-- **Phase 4 (pending):** input sanitization hardening, multilingual accuracy
-  testing, Mid-Eval / Viva demo prep.
+- **Phase 3 (done):** `hub_client.py` makes real HTTP calls to the Agent Hub.
+  `delay_check` → Operations, `complaint` → Maintenance, `booking_request` /
+  `cancel_booking` → Booking are all wired for real, not stubbed.
+- **Phase 4 (in progress):** romanized Sinhala support, session-sticky
+  conversation language, and a 15-case prompt-injection/jailbreak assessment
+  are done (see sections above); multilingual accuracy testing and remaining
+  input-sanitization hardening (the 2 open low-severity findings) continue
+  ahead of Mid-Eval / Viva demo prep.
 
-## JSON contract to share with Members B, C, D now
+## JSON contract to share with Members B, C, D
 
-This is the shape your `/chat` endpoint already produces internally — share it
-early so they can build against it before Phase 3 wiring begins:
+This is the shape M1 actually sends in the Hub envelope now that Phase 3 wiring
+is live — the reference for anyone building against it:
 
 ```json
 {

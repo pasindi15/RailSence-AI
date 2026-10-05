@@ -1,0 +1,2822 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "M2 \u2014 Operations & Delay-Prediction Agent",
+    "description": "RailSense AI \u00b7 Operations & Delay-Prediction Agent (Member B / M2)",
+    "version": "0.5.0"
+  },
+  "paths": {
+    "/admin/api/login": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Login",
+        "description": "Authenticate officer via email (or username) and password. Issues JWT.",
+        "operationId": "login_admin_api_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/api/logout": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Logout",
+        "description": "Logs out officer and records an audit log entry.",
+        "operationId": "logout_admin_api_logout_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/api/me": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Me",
+        "description": "Returns current officer profile and capability set.",
+        "operationId": "me_admin_api_me_get",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/api/officers": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "List Officers Endpoint",
+        "description": "List all officers with optional role, status, and text search filters.",
+        "operationId": "list_officers_endpoint_admin_api_officers_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          },
+          {
+            "name": "role",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Role"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Search"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Create Officer Endpoint",
+        "description": "Create a new officer account with bcrypt hashed password. Audited.",
+        "operationId": "create_officer_endpoint_admin_api_officers_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OfficerCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/api/officers/audit": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "List Officer Audits Endpoint",
+        "description": "Returns security audit logs (LOGIN, LOGOUT, OFFICER_CREATED, ROLE_CHANGED, etc.).",
+        "operationId": "list_officer_audits_endpoint_admin_api_officers_audit_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "default": 100,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Action"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/api/officers/{officer_id}": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Get Officer Endpoint",
+        "operationId": "get_officer_endpoint_admin_api_officers__officer_id__get",
+        "parameters": [
+          {
+            "name": "officer_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Officer Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Update Officer Endpoint",
+        "description": "Update officer details, role, or status with lockout prevention guards.",
+        "operationId": "update_officer_endpoint_admin_api_officers__officer_id__put",
+        "parameters": [
+          {
+            "name": "officer_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Officer Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OfficerUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/api/officers/{officer_id}/reset-password": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Reset Password Endpoint",
+        "description": "Admin triggers password reset for an officer. Hashes with bcrypt and audits.",
+        "operationId": "reset_password_endpoint_admin_api_officers__officer_id__reset_password_post",
+        "parameters": [
+          {
+            "name": "officer_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Officer Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OfficerPasswordResetRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/api/officers/{officer_id}/status": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Toggle Officer Status Endpoint",
+        "description": "Toggle officer account status (active/inactive) with lockout guard.",
+        "operationId": "toggle_officer_status_endpoint_admin_api_officers__officer_id__status_post",
+        "parameters": [
+          {
+            "name": "officer_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Officer Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OfficerStatusRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/api/roles/matrix": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Get Roles Matrix Endpoint",
+        "description": "Returns RBAC roles, capability assignments, and descriptions for UI inspection.",
+        "operationId": "get_roles_matrix_endpoint_admin_api_roles_matrix_get",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/api/health/status": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Health Status",
+        "operationId": "health_status_admin_api_health_status_get",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/api/model/metrics": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Model Metrics",
+        "description": "All three committed evaluation artifacts, as produced by the eval scripts.",
+        "operationId": "model_metrics_admin_api_model_metrics_get",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/api/model/metrics-history": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Model Metrics History",
+        "description": "Current held-out metrics plus the real retrain/rollback run log.",
+        "operationId": "model_metrics_history_admin_api_model_metrics_history_get",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/api/model/feature-importances": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Model Feature Importances",
+        "description": "Feature importances written by the most recent training run.\n\nRead from disk on every request rather than from a cached copy, so the ML\nscreen reflects a retrain without a service restart.",
+        "operationId": "model_feature_importances_admin_api_model_feature_importances_get",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/api/model/retrain": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Retrain Model",
+        "description": "Retrain the delay model against the live operations corpus.\n\nRuns ml/train_delay_model.py, which loads Supabase operations_history when\nreachable and the CSV otherwise, archives the outgoing delay_model.pkl to\nml/model_versions/ with a metrics sidecar, then writes the new model,\nfeature_importances.json and delay_model_metrics.json. The in-process\npredictor is reloaded afterwards so /predict-delay serves the new model\nwithout a restart.",
+        "operationId": "retrain_model_admin_api_model_retrain_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/api/model/versions": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Model Versions",
+        "description": "Real backup files on disk, with the metrics each one scored.",
+        "operationId": "model_versions_admin_api_model_versions_get",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/api/model/rollback/{filename}": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Rollback Model",
+        "description": "Restore a previous .pkl, archiving the current one first.",
+        "operationId": "rollback_model_admin_api_model_rollback__filename__post",
+        "parameters": [
+          {
+            "name": "filename",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Filename"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/api/audit/events": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Audit Events",
+        "description": "Filtered, paginated read of the real inter-agent audit trail.\n\nFiltering is pushed down to Postgres when Supabase is reachable, so a large\naudit_events table is never pulled into the process to be filtered in\nPython. The data/audit_log.jsonl fallback applies the same predicates\nlocally and reports `offline: true` so the UI can say so plainly.",
+        "operationId": "audit_events_admin_api_audit_events_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "default": 100,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          },
+          {
+            "name": "agent",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Match sender_agent or receiver_agent",
+              "title": "Agent"
+            },
+            "description": "Match sender_agent or receiver_agent"
+          },
+          {
+            "name": "intent",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Match the message intent / action",
+              "title": "Intent"
+            },
+            "description": "Match the message intent / action"
+          },
+          {
+            "name": "date_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "ISO date, inclusive lower bound",
+              "title": "Date From"
+            },
+            "description": "ISO date, inclusive lower bound"
+          },
+          {
+            "name": "date_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "ISO date, inclusive upper bound",
+              "title": "Date To"
+            },
+            "description": "ISO date, inclusive upper bound"
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/api/audit/summary": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Audit Summary",
+        "description": "Intent and sender distribution across the audit trail.",
+        "operationId": "audit_summary_admin_api_audit_summary_get",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/internal/messages": {
+      "post": {
+        "summary": "Receive Internal Message",
+        "description": "Accept messages forwarded by the central hub.\n\nThis is the contract that the shared Agent Hub uses when it routes traffic to\na destination agent via {base_url}/internal/messages. M3 validates and\nauthenticates first, so this endpoint only needs to process the forwarded\npayload and respond in the same shape the hub expects.",
+        "operationId": "receive_internal_message_internal_messages_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HubMessage"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dashboard": {
+      "get": {
+        "summary": "Dashboard Data",
+        "description": "Single aggregate behind the consolidated Control Room dashboard.\n\nNetwork KPIs, the route delay heatmap and the hourly delay-pressure curve\nwere three separate panels making three calls; they are now one section\nserved by this one query. Every number is computed from the live\noperations corpus (Supabase when reachable, data/operations_history.csv\notherwise) or from a committed evaluation artifact \u2014 nothing is synthesised\nhere. `data_source.offline` tells the UI to show the offline banner rather\nthan passing stale data off as live.",
+        "operationId": "dashboard_data_api_dashboard_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/route-options": {
+      "get": {
+        "summary": "Route Options",
+        "description": "Route -> train ids and stations, feeding the prediction form dropdowns.",
+        "operationId": "route_options_api_route_options_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/passenger/ask": {
+      "post": {
+        "summary": "Passenger Ask",
+        "description": "Friendly, grounded answer to a passenger's question about one train.\n\nPowers the Delay / Operations popup on the user portal. The question is\nclassified by nlp/passenger_answer.detect_intent() (keyword rules, TF-IDF\nfallback) and any station it names is extracted. The answer is built from\na server-side live journey (live_tracker: per-station timetable, position\non the Asia/Colombo clock, delays from verified map incidents on this\ntrain's path, each sized by retrieving similar past incidents), the delay\nmodel, retrieved incident precedent and today's incident reports.\nBooking/fare questions come back with handoff=true for the Booking flow.",
+        "operationId": "passenger_ask_passenger_ask_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PassengerAskRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/passenger/query": {
+      "post": {
+        "summary": "Passenger Query",
+        "description": "Free-text operations question from the passenger chat (Choo / M1).\n\nNLP (nlp/passenger_query.parse): intent, time window, date, stations with\norigin/destination roles, and the train by id, number or name. Data: the\nday's real timetable from Supabase, the live journey (live_tracker) and\ntoday's verified map incidents, each sized by IR over past incidents.\nReturns handled=false when it isn't an operations question (fares,\nbookings...) so the caller can answer it another way.",
+        "operationId": "passenger_query_passenger_query_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PassengerQueryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/predict-delay": {
+      "post": {
+        "summary": "Predict Delay",
+        "description": "Delay prediction with its operational side effects (Hub alert + audit).",
+        "operationId": "predict_delay_predict_delay_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DelayPredictionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DelayPredictionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/route-status/{route_id}": {
+      "get": {
+        "summary": "Route Status",
+        "operationId": "route_status_route_status__route_id__get",
+        "parameters": [
+          {
+            "name": "route_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Route Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RouteStatusResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/incident-report": {
+      "post": {
+        "summary": "Incident Report",
+        "description": "Phase 3: runs real summarization + classification on the sanitized\nincident text.\n\nUses a rule-based baseline by default (deterministic, no API cost,\ndirectly evaluable against the dataset's ground-truth incident_type\nlabels \u2014 see nlp/evaluate_nlp.py). If ANTHROPIC_API_KEY is set, an\nLLM-based mode is available (not the default here, to keep this\nendpoint fast/free for iteration \u2014 Phase 4 is where the LLM becomes\ncentral, for the explanation layer).\n\nThe request/response contract is unchanged. What is new behind it: the\nrow is persisted through admin_db (Supabase primary, local JSONL\nfallback) instead of Supabase-only, and the incident is fed into the\nembeddings pipeline so RAG can retrieve it as precedent from now on.",
+        "operationId": "incident_report_incident_report_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IncidentReportRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentReportResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/incidents": {
+      "get": {
+        "summary": "List Incidents",
+        "description": "Paginated live read of triaged incidents for the Incident Management screen.\n\nAdditive to the API surface \u2014 POST /incident-report is untouched. Rows\ncome from Supabase `incident_reports` when reachable and the local JSONL\nmirror otherwise; `offline` drives the UI's offline-mode banner.",
+        "operationId": "list_incidents_incidents_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 25,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          },
+          {
+            "name": "review_status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Review Status"
+            }
+          },
+          {
+            "name": "classified_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Classified Type"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Search"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/incidents/{incident_id}/approve": {
+      "post": {
+        "summary": "Approve Incident",
+        "description": "Admin approval: PENDING/corrected -> VERIFIED, which publishes it to the map.",
+        "operationId": "approve_incident_incidents__incident_id__approve_post",
+        "parameters": [
+          {
+            "name": "incident_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Incident Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/incidents/{incident_id}/reject": {
+      "post": {
+        "summary": "Reject Incident",
+        "description": "Admin rejection: the incident never appears on any map.",
+        "operationId": "reject_incident_incidents__incident_id__reject_post",
+        "parameters": [
+          {
+            "name": "incident_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Incident Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/incidents/map-feed": {
+      "get": {
+        "summary": "Incident Map Feed",
+        "description": "VERIFIED incidents only, allowlisted fields only (safe for passengers).\n\nPolled every ~5 s by all three maps. Never raises: when the incident store\nis unreachable the last known feed is returned with stale=true.",
+        "operationId": "incident_map_feed_api_incidents_map_feed_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/trains": {
+      "get": {
+        "summary": "Train Catalog",
+        "description": "Trains for the incident form's picker (named services first).",
+        "operationId": "train_catalog_api_trains_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/stations": {
+      "get": {
+        "summary": "Stations",
+        "description": "Corpus stations with map coordinates (incident form + map bounds).",
+        "operationId": "stations_api_stations_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/incidents/{incident_id}": {
+      "patch": {
+        "summary": "Update Incident",
+        "description": "Write a controller's correction back to the incident's DB row.",
+        "operationId": "update_incident_incidents__incident_id__patch",
+        "parameters": [
+          {
+            "name": "incident_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Incident Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IncidentUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete Incident",
+        "description": "Delete an incident and its embedding, so RAG never cites a ghost record.",
+        "operationId": "delete_incident_incidents__incident_id__delete",
+        "parameters": [
+          {
+            "name": "incident_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Incident Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hub/message": {
+      "post": {
+        "summary": "Hub Message",
+        "description": "Receive a Passenger Agent delay_check through the shared Hub.",
+        "operationId": "hub_message_hub_message_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HubMessage"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ops-agent/capabilities": {
+      "get": {
+        "summary": "Ops Agent Capabilities",
+        "description": "What this officer's role may ask; the widget uses it for examples and help.",
+        "operationId": "ops_agent_capabilities_api_ops_agent_capabilities_get",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ops-agent/ask": {
+      "post": {
+        "summary": "Ops Agent Ask",
+        "description": "Answer an officer's question by calling M2's own data tools (never free-form).\n\nThe tools offered to the model are filtered by the officer's role, so an\noperations engineer asking about admin-only data gets a clear\n\"restricted\" reply instead of an answer.",
+        "operationId": "ops_agent_ask_api_ops_agent_ask_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OpsAgentAskRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ops-agent/history": {
+      "get": {
+        "summary": "Ops Agent History",
+        "description": "This officer's own past questions, newest first (feeds the history rail).",
+        "operationId": "ops_agent_history_api_ops_agent_history_get",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "User Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "DayType": {
+        "type": "string",
+        "enum": [
+          "weekday",
+          "weekend",
+          "public_holiday"
+        ],
+        "title": "DayType"
+      },
+      "DelayPredictionRequest": {
+        "properties": {
+          "route": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 3,
+            "title": "Route",
+            "examples": [
+              "Colombo Fort - Kandy"
+            ]
+          },
+          "train_id": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 1,
+            "title": "Train Id",
+            "examples": [
+              "PM-4082",
+              "50"
+            ]
+          },
+          "scheduled_time": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Scheduled Time",
+            "description": "ISO 8601 scheduled departure/arrival time"
+          },
+          "weather": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WeatherCondition"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "day_type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DayType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "station": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 80,
+                "minLength": 2
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Station"
+          },
+          "incident_type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IncidentType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "route",
+          "train_id",
+          "scheduled_time"
+        ],
+        "title": "DelayPredictionRequest"
+      },
+      "DelayPredictionResponse": {
+        "properties": {
+          "route": {
+            "type": "string",
+            "title": "Route"
+          },
+          "train_id": {
+            "type": "string",
+            "title": "Train Id"
+          },
+          "predicted_delay_minutes": {
+            "type": "number",
+            "title": "Predicted Delay Minutes"
+          },
+          "confidence": {
+            "type": "string",
+            "title": "Confidence"
+          },
+          "explanation": {
+            "type": "string",
+            "title": "Explanation"
+          },
+          "top_contributing_features": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Top Contributing Features",
+            "default": []
+          },
+          "similar_past_incidents": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Similar Past Incidents",
+            "default": []
+          },
+          "model_version": {
+            "type": "string",
+            "title": "Model Version"
+          },
+          "retrieval_method": {
+            "type": "string",
+            "title": "Retrieval Method",
+            "default": "local_tfidf"
+          },
+          "explanation_method": {
+            "type": "string",
+            "title": "Explanation Method",
+            "default": "template_grounded"
+          }
+        },
+        "type": "object",
+        "required": [
+          "route",
+          "train_id",
+          "predicted_delay_minutes",
+          "confidence",
+          "explanation",
+          "model_version"
+        ],
+        "title": "DelayPredictionResponse"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HubMessage": {
+        "properties": {
+          "message_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message Id"
+          },
+          "sender_agent": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 2,
+            "title": "Sender Agent"
+          },
+          "receiver_agent": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 2,
+            "title": "Receiver Agent",
+            "default": "operations-agent"
+          },
+          "intent": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 2,
+            "title": "Intent"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Payload"
+          },
+          "auth_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Token"
+          },
+          "timestamp": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timestamp"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sender_agent",
+          "intent"
+        ],
+        "title": "HubMessage"
+      },
+      "IncidentClassification": {
+        "type": "string",
+        "enum": [
+          "signal_fault",
+          "mechanical",
+          "weather",
+          "track_obstruction",
+          "staffing",
+          "other"
+        ],
+        "title": "IncidentClassification",
+        "description": "Labels the NLP classifier can assign \u2014 the correctable set in the UI.\n\nMirrors nlp/classify_incident.CATEGORIES so a controller can only correct a\nclassification to a label the model could itself have produced, keeping\ncorrected rows usable as evaluation ground truth."
+      },
+      "IncidentReportRequest": {
+        "properties": {
+          "train_id": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 1,
+            "title": "Train Id"
+          },
+          "station": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 2,
+            "title": "Station"
+          },
+          "raw_text": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 5,
+            "title": "Raw Text"
+          }
+        },
+        "type": "object",
+        "required": [
+          "train_id",
+          "station",
+          "raw_text"
+        ],
+        "title": "IncidentReportRequest"
+      },
+      "IncidentReportResponse": {
+        "properties": {
+          "incident_id": {
+            "type": "string",
+            "title": "Incident Id"
+          },
+          "train_id": {
+            "type": "string",
+            "title": "Train Id"
+          },
+          "station": {
+            "type": "string",
+            "title": "Station"
+          },
+          "summary": {
+            "type": "string",
+            "title": "Summary"
+          },
+          "classified_type": {
+            "type": "string",
+            "title": "Classified Type"
+          },
+          "nlp_method": {
+            "type": "string",
+            "title": "Nlp Method"
+          },
+          "received_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Received At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "incident_id",
+          "train_id",
+          "station",
+          "summary",
+          "classified_type",
+          "nlp_method",
+          "received_at"
+        ],
+        "title": "IncidentReportResponse"
+      },
+      "IncidentType": {
+        "type": "string",
+        "enum": [
+          "none",
+          "signal_fault",
+          "mechanical",
+          "weather",
+          "track_obstruction",
+          "staffing"
+        ],
+        "title": "IncidentType"
+      },
+      "IncidentUpdateRequest": {
+        "properties": {
+          "classified_type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IncidentClassification"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 600,
+                "minLength": 3
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Summary"
+          },
+          "review_status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReviewStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "IncidentUpdateRequest",
+        "description": "Controller correction to a triaged incident. Both fields are optional."
+      },
+      "LoginRequest": {
+        "properties": {
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "username": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Username"
+          },
+          "password": {
+            "type": "string",
+            "title": "Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "password"
+        ],
+        "title": "LoginRequest"
+      },
+      "OfficerCreateRequest": {
+        "properties": {
+          "full_name": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 2,
+            "title": "Full Name"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 6,
+            "title": "Password"
+          },
+          "role": {
+            "type": "string",
+            "title": "Role",
+            "default": "operations_engineer"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "default": "active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "full_name",
+          "email",
+          "password"
+        ],
+        "title": "OfficerCreateRequest"
+      },
+      "OfficerPasswordResetRequest": {
+        "properties": {
+          "new_password": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 6,
+            "title": "New Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "new_password"
+        ],
+        "title": "OfficerPasswordResetRequest"
+      },
+      "OfficerStatusRequest": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "pattern": "^(active|inactive)$",
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "OfficerStatusRequest"
+      },
+      "OfficerUpdateRequest": {
+        "properties": {
+          "full_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255,
+                "minLength": 2
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Full Name"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "email"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "title": "OfficerUpdateRequest"
+      },
+      "OpsAgentAskRequest": {
+        "properties": {
+          "question": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 2,
+            "title": "Question"
+          },
+          "session_user_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session User Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "question"
+        ],
+        "title": "OpsAgentAskRequest"
+      },
+      "PassengerAskRequest": {
+        "properties": {
+          "question": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Question"
+          },
+          "mode": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(delay|operations)$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mode"
+          },
+          "service": {
+            "$ref": "#/components/schemas/PassengerServiceContext"
+          }
+        },
+        "type": "object",
+        "required": [
+          "question",
+          "service"
+        ],
+        "title": "PassengerAskRequest"
+      },
+      "PassengerQueryRequest": {
+        "properties": {
+          "question": {
+            "type": "string",
+            "maxLength": 400,
+            "minLength": 1,
+            "title": "Question"
+          },
+          "language": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 8
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language"
+          }
+        },
+        "type": "object",
+        "required": [
+          "question"
+        ],
+        "title": "PassengerQueryRequest"
+      },
+      "PassengerServiceContext": {
+        "properties": {
+          "train_id": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 1,
+            "title": "Train Id"
+          },
+          "train_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 80
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Train Name"
+          },
+          "route": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Route"
+          },
+          "from_station": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 80
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "From Station"
+          },
+          "to_station": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 80
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "To Station"
+          },
+          "departure_time": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 8
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departure Time"
+          },
+          "arrival_time": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 8
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Arrival Time"
+          },
+          "service_status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 30
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Service Status"
+          },
+          "maintenance_status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 30
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maintenance Status"
+          },
+          "live_status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 30
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Live Status"
+          },
+          "current_station": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 80
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Station"
+          },
+          "next_station": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 80
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Station"
+          },
+          "progress_percent": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Progress Percent"
+          },
+          "stops": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 40,
+            "title": "Stops"
+          }
+        },
+        "type": "object",
+        "required": [
+          "train_id"
+        ],
+        "title": "PassengerServiceContext",
+        "description": "Today's-board snapshot of the train the passenger clicked on."
+      },
+      "ReviewStatus": {
+        "type": "string",
+        "enum": [
+          "pending",
+          "approved",
+          "rejected",
+          "corrected"
+        ],
+        "title": "ReviewStatus"
+      },
+      "RouteStatusResponse": {
+        "properties": {
+          "route_id": {
+            "type": "string",
+            "title": "Route Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "active_trains": {
+            "type": "integer",
+            "title": "Active Trains"
+          },
+          "average_delay_minutes": {
+            "type": "number",
+            "title": "Average Delay Minutes"
+          },
+          "last_updated": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Last Updated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "route_id",
+          "status",
+          "active_trains",
+          "average_delay_minutes",
+          "last_updated"
+        ],
+        "title": "RouteStatusResponse"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "WeatherCondition": {
+        "type": "string",
+        "enum": [
+          "clear",
+          "light_rain",
+          "heavy_rain",
+          "fog",
+          "extreme_heat"
+        ],
+        "title": "WeatherCondition"
+      }
+    }
+  }
+}

@@ -3550,6 +3550,9 @@ body.bk-mira #ticket-manifest-table tbody tr:hover{background:#FAFBFF !important
     <button class="admin-nav-tab" id="nav-hub" onclick="navigateTo('/admin?tab=hub')">
       <span>⚡</span> Hub Monitor
     </button>
+    <button class="admin-nav-tab" id="nav-commercial" onclick="navigateTo('/admin/commercial')">
+      <span>💼</span> Commercialisation
+    </button>
   </nav>
 
   <!-- ==================== SECTION 1: DASHBOARD ==================== -->
@@ -4467,6 +4470,496 @@ body.bk-mira #ticket-manifest-table tbody tr:hover{background:#FAFBFF !important
       </div>
     </div>
   </main>
+
+  <!-- ==================== SECTION 7: COMMERCIALISATION PLAN ====================
+       Static business view of the commercialisation plan (report section 9):
+       value proposition, customer segments, tiers and pricing, cost structure,
+       deployment, go-to-market and revenue model. Prices are indicative. -->
+  <style>
+  #view-commercial{
+    --cm-bg:#0B1222; --cm-card:#0F1A2E; --cm-card-2:#13203A; --cm-line:rgba(148,163,184,.16);
+    --cm-ink:#E2E8F0; --cm-ink-2:#94A3B8; --cm-head:#F8FAFC;
+    --cm-blue:#60A5FA; --cm-blue-bg:rgba(59,130,246,.14); --cm-blue-line:rgba(96,165,250,.45);
+    --cm-teal:#2DD4BF; --cm-teal-bg:rgba(20,184,166,.14); --cm-teal-line:rgba(45,212,191,.5); --cm-teal-btn:#0D9488;
+    --cm-amber:#FBBF24; --cm-amber-bg:rgba(245,158,11,.14); --cm-amber-line:rgba(251,191,36,.45);
+    --cm-violet:#A78BFA; --cm-violet-bg:rgba(139,92,246,.14);
+    --cm-green:#34D399; --cm-green-bg:rgba(16,185,129,.14);
+    --cm-shadow:0 10px 30px rgba(0,0,0,.35);
+    font-family:'Plus Jakarta Sans','Inter',system-ui,sans-serif; color:var(--cm-ink);
+    padding:8px 0 48px;
+  }
+  [data-theme="light"] #view-commercial{
+    --cm-bg:#F4F8FD; --cm-card:#FFFFFF; --cm-card-2:#F8FAFC; --cm-line:#E2E8F0;
+    --cm-ink:#334155; --cm-ink-2:#64748B; --cm-head:#0F172A;
+    --cm-blue:#2563EB; --cm-blue-bg:#EFF6FF; --cm-blue-line:#BFDBFE;
+    --cm-teal:#0D9488; --cm-teal-bg:#ECFDF8; --cm-teal-line:#5EEAD4; --cm-teal-btn:#0F9F8F;
+    --cm-amber:#D97706; --cm-amber-bg:#FFF7E6; --cm-amber-line:#FDE2A7;
+    --cm-violet:#7C3AED; --cm-violet-bg:#F3EEFF;
+    --cm-green:#059669; --cm-green-bg:#ECFDF5;
+    --cm-shadow:0 10px 30px rgba(15,23,42,.07);
+  }
+  #view-commercial *{box-sizing:border-box}
+  #view-commercial .cm-wrap{max-width:1180px;margin:0 auto;padding:0 16px}
+  #view-commercial .cm-hero{text-align:center;padding:28px 0 26px}
+  #view-commercial .cm-pill{display:inline-block;font-size:11px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;
+    color:var(--cm-blue);background:var(--cm-blue-bg);border:1px solid var(--cm-blue-line);padding:5px 14px;border-radius:999px}
+  #view-commercial h2.cm-title{font-size:clamp(26px,4vw,40px);font-weight:800;color:var(--cm-head);margin:14px 0 8px;letter-spacing:-.5px;line-height:1.15}
+  #view-commercial .cm-sub{font-size:15px;color:var(--cm-ink-2);max-width:720px;margin:0 auto;line-height:1.6}
+  #view-commercial .cm-section{margin-top:44px}
+  #view-commercial .cm-sec-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+  #view-commercial .cm-sec-num{font-size:12px;font-weight:700;color:var(--cm-blue);font-family:'Share Tech Mono',monospace}
+  #view-commercial h3.cm-h{font-size:21px;font-weight:800;color:var(--cm-head);margin:0}
+  #view-commercial .cm-lead{font-size:13.5px;color:var(--cm-ink-2);margin:0 0 18px;line-height:1.6;max-width:820px}
+
+  /* Value proposition */
+  #view-commercial .cm-values{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+  #view-commercial .cm-value{background:var(--cm-card);border:1px solid var(--cm-line);border-radius:16px;padding:18px;box-shadow:var(--cm-shadow)}
+  #view-commercial .cm-ico{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;margin-bottom:12px}
+  #view-commercial .cm-ico svg{width:20px;height:20px}
+  #view-commercial .cm-value b{display:block;color:var(--cm-head);font-size:14.5px;margin-bottom:5px}
+  #view-commercial .cm-value p{margin:0;font-size:12.5px;line-height:1.55;color:var(--cm-ink-2)}
+  .cm-c-blue{color:var(--cm-blue);background:var(--cm-blue-bg)}
+  .cm-c-teal{color:var(--cm-teal);background:var(--cm-teal-bg)}
+  .cm-c-amber{color:var(--cm-amber);background:var(--cm-amber-bg)}
+  .cm-c-violet{color:var(--cm-violet);background:var(--cm-violet-bg)}
+  .cm-c-green{color:var(--cm-green);background:var(--cm-green-bg)}
+
+  /* Segment cards (reference layout) */
+  #view-commercial .cm-plans{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;align-items:stretch}
+  #view-commercial .cm-plan{position:relative;display:flex;flex-direction:column;background:var(--cm-card);border:1px solid var(--cm-line);
+    border-radius:20px;padding:22px 22px 20px;box-shadow:var(--cm-shadow);transition:transform .2s ease,box-shadow .2s ease}
+  #view-commercial .cm-plan:hover{transform:translateY(-3px)}
+  #view-commercial .cm-plan.is-blue{border-top:4px solid var(--cm-blue)}
+  #view-commercial .cm-plan.is-teal{border:2px solid var(--cm-teal-line);background:linear-gradient(180deg,var(--cm-teal-bg),var(--cm-card) 45%)}
+  #view-commercial .cm-plan.is-amber{border-top:4px solid var(--cm-amber)}
+  #view-commercial .cm-badge{position:absolute;top:14px;right:14px;font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;
+    color:#fff;background:var(--cm-teal-btn);padding:4px 10px;border-radius:999px}
+  #view-commercial .cm-plan-top{display:flex;align-items:center;gap:12px}
+  #view-commercial .cm-plan-top .cm-ico{margin:0;width:44px;height:44px;border-radius:13px}
+  #view-commercial .cm-plan-top .cm-ico svg{width:24px;height:24px}
+  #view-commercial .cm-plan h4{margin:0;font-size:21px;font-weight:800;color:var(--cm-head)}
+  #view-commercial .cm-who{font-size:13px;color:var(--cm-ink-2);line-height:1.5;margin:12px 0 10px;min-height:40px}
+  #view-commercial .cm-art{border-radius:14px;overflow:hidden;margin:4px 0 14px;background:var(--cm-card-2)}
+  #view-commercial .cm-art svg{display:block;width:100%;height:auto}
+  #view-commercial .cm-feats{list-style:none;margin:0 0 14px;padding:0;display:flex;flex-direction:column;gap:10px;flex:1}
+  #view-commercial .cm-feats li{display:flex;align-items:flex-start;gap:10px;font-size:13px;color:var(--cm-ink);line-height:1.45}
+  #view-commercial .cm-feats .cm-dot{flex:0 0 26px;height:26px;border-radius:8px;display:grid;place-items:center}
+  #view-commercial .cm-feats .cm-dot svg{width:14px;height:14px}
+  #view-commercial .cm-note{font-size:12px;color:var(--cm-ink-2);margin:-4px 0 14px}
+  #view-commercial .cm-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;border:0;border-radius:11px;padding:12px 14px;
+    font:700 13.5px 'Plus Jakarta Sans',sans-serif;cursor:pointer;transition:filter .15s ease,transform .15s ease}
+  #view-commercial .cm-btn:hover{filter:brightness(1.06);transform:translateY(-1px)}
+  #view-commercial .cm-btn:focus-visible{outline:2px solid var(--cm-blue);outline-offset:2px}
+  #view-commercial .cm-btn.is-blue{background:var(--cm-blue-bg);color:var(--cm-blue);border:1px solid var(--cm-blue-line)}
+  #view-commercial .cm-btn.is-teal{background:var(--cm-teal-btn);color:#fff}
+  #view-commercial .cm-btn.is-amber{background:var(--cm-amber-bg);color:var(--cm-amber);border:1px solid var(--cm-amber-line)}
+
+  /* Tiers */
+  #view-commercial .cm-tiers{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+  #view-commercial .cm-tier{position:relative;background:var(--cm-card);border:1px solid var(--cm-line);border-radius:20px;padding:22px;box-shadow:var(--cm-shadow);
+    display:flex;flex-direction:column;transition:box-shadow .25s ease,border-color .25s ease}
+  #view-commercial .cm-tier.is-featured{border:2px solid var(--cm-blue-line)}
+  #view-commercial .cm-tier.is-flash{border-color:var(--cm-teal);box-shadow:0 0 0 4px var(--cm-teal-bg),var(--cm-shadow)}
+  #view-commercial .cm-tier-name{font-size:12px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;color:var(--cm-blue)}
+  #view-commercial .cm-price{font-size:28px;font-weight:800;color:var(--cm-head);margin:10px 0 2px;letter-spacing:-.5px}
+  #view-commercial .cm-price small{font-size:13px;font-weight:600;color:var(--cm-ink-2);letter-spacing:0}
+  #view-commercial .cm-usd{font-size:12px;color:var(--cm-ink-2);margin-bottom:14px}
+  #view-commercial .cm-rows{margin:0;padding:14px 0 0;border-top:1px dashed var(--cm-line);display:grid;gap:11px;flex:1}
+  #view-commercial .cm-rows div{display:grid;gap:2px}
+  #view-commercial .cm-rows dt{font-size:10.5px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--cm-ink-2)}
+  #view-commercial .cm-rows dd{margin:0;font-size:13px;color:var(--cm-ink);line-height:1.5}
+  #view-commercial .cm-strip{margin-top:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+  #view-commercial .cm-box{background:var(--cm-card);border:1px solid var(--cm-line);border-radius:16px;padding:18px;box-shadow:var(--cm-shadow)}
+  #view-commercial .cm-box h5{margin:0 0 8px;font-size:14.5px;color:var(--cm-head)}
+  #view-commercial .cm-box p{margin:0;font-size:13px;line-height:1.6;color:var(--cm-ink-2)}
+  #view-commercial .cm-tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  #view-commercial .cm-tag{font-size:12px;padding:5px 11px;border-radius:999px;background:var(--cm-card-2);border:1px solid var(--cm-line);color:var(--cm-ink)}
+
+  /* Estimator */
+  #view-commercial .cm-est-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:12px}
+  #view-commercial .cm-field label{display:block;font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--cm-ink-2);margin-bottom:5px}
+  #view-commercial .cm-field input,#view-commercial .cm-field select{width:100%;padding:9px 11px;border-radius:10px;border:1px solid var(--cm-line);
+    background:var(--cm-card-2);color:var(--cm-head);font:600 13.5px 'Plus Jakarta Sans',sans-serif}
+  #view-commercial .cm-out{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:14px}
+  #view-commercial .cm-out div{background:var(--cm-card-2);border:1px solid var(--cm-line);border-radius:12px;padding:10px 12px}
+  #view-commercial .cm-out span{display:block;font-size:10.5px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--cm-ink-2)}
+  #view-commercial .cm-out b{display:block;font-size:16px;color:var(--cm-head);margin-top:3px;font-variant-numeric:tabular-nums}
+
+  /* Tables */
+  #view-commercial .cm-table-wrap{overflow-x:auto;background:var(--cm-card);border:1px solid var(--cm-line);border-radius:16px;box-shadow:var(--cm-shadow)}
+  #view-commercial table.cm-table{width:100%;border-collapse:collapse;font-size:13px;min-width:560px}
+  #view-commercial .cm-table caption{caption-side:top;text-align:left;font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--cm-ink-2);padding:14px 18px 0}
+  #view-commercial .cm-table th{text-align:left;font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--cm-ink-2);padding:12px 18px;border-bottom:1px solid var(--cm-line)}
+  #view-commercial .cm-table td{padding:12px 18px;border-bottom:1px solid var(--cm-line);color:var(--cm-ink);vertical-align:top;line-height:1.5}
+  #view-commercial .cm-table tr:last-child td{border-bottom:0}
+  #view-commercial .cm-table td:first-child{font-weight:700;color:var(--cm-head)}
+
+  /* Deployment, steps, revenue */
+  #view-commercial .cm-three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+  #view-commercial .cm-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;counter-reset:cmstep;margin-bottom:18px}
+  #view-commercial .cm-step{position:relative;padding-top:46px}
+  #view-commercial .cm-step::before{counter-increment:cmstep;content:counter(cmstep);position:absolute;top:16px;left:18px;width:24px;height:24px;border-radius:50%;
+    background:var(--cm-blue);color:#fff;font-size:12px;font-weight:800;display:grid;place-items:center}
+  #view-commercial .cm-foot{margin-top:28px;font-size:11.5px;color:var(--cm-ink-2);text-align:center}
+
+  @media (max-width:960px){
+    #view-commercial .cm-plans,#view-commercial .cm-tiers,#view-commercial .cm-three,#view-commercial .cm-steps{grid-template-columns:1fr}
+    #view-commercial .cm-who{min-height:0}
+  }
+  @media (prefers-reduced-motion:reduce){
+    #view-commercial .cm-plan,#view-commercial .cm-btn,#view-commercial .cm-tier{transition:none}
+    #view-commercial .cm-plan:hover,#view-commercial .cm-btn:hover{transform:none}
+  }
+  </style>
+
+  <main id="view-commercial" class="view-panel">
+    <div class="cm-wrap">
+
+      <header class="cm-hero">
+        <span class="cm-pill">Commercialisation Plan</span>
+        <h2 class="cm-title">Built for Every Railway Network</h2>
+        <p class="cm-sub">RailSense AI is a business-to-government (B2G) software-as-a-service suite for railway authorities. It replaces four disconnected tools with one connected system and delivers measurable operational value.</p>
+      </header>
+
+      <!-- 9.1 Value proposition -->
+      <section class="cm-section" aria-labelledby="cm-h-value">
+        <div class="cm-sec-head"><span class="cm-sec-num">9.1</span><h3 class="cm-h" id="cm-h-value">Value proposition</h3></div>
+        <p class="cm-lead">One platform, five measurable outcomes for the authority, its staff and its passengers.</p>
+        <div class="cm-values">
+          <div class="cm-value">
+            <div class="cm-ico cm-c-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+            <b>Better passenger communication</b>
+            <p>Live, cited, trilingual answers reduce avoidable enquiries and complaints.</p>
+          </div>
+          <div class="cm-value">
+            <div class="cm-ico cm-c-amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+            <b>Earlier warning</b>
+            <p>Delay predictions with explanations and equipment-health scores let staff act before a problem spreads.</p>
+          </div>
+          <div class="cm-value">
+            <div class="cm-ico cm-c-teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9z"/></svg></div>
+            <b>Faster triage</b>
+            <p>Incidents are classified and summarised automatically, then verified by a person before the public sees them.</p>
+          </div>
+          <div class="cm-value">
+            <div class="cm-ico cm-c-violet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9a3 3 0 0 0 0 6v3a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-3a3 3 0 0 0 0-6V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2z"/><path d="M13 5v2M13 17v2M13 11v2"/></svg></div>
+            <b>Safer ticketing</b>
+            <p>Unusual booking behaviour is flagged with plain-language reasons and reviewed by staff.</p>
+          </div>
+          <div class="cm-value">
+            <div class="cm-ico cm-c-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg></div>
+            <b>Trust for government buyers</b>
+            <p>Signed messages, role-based access, masked identifiers and full audit trails answer the first question any authority asks about data protection.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 9.2 Target users and market (Table 16) -->
+      <section class="cm-section" aria-labelledby="cm-h-market">
+        <div class="cm-sec-head"><span class="cm-sec-num">9.2</span><h3 class="cm-h" id="cm-h-market">Target users and market</h3></div>
+        <p class="cm-lead">Choose the plan that fits your railway operations and scale as you grow. Each segment links to the tier we recommend for it.</p>
+        <div class="cm-plans">
+
+          <article class="cm-plan is-blue">
+            <div class="cm-plan-top">
+              <div class="cm-ico cm-c-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="14" rx="3"/><path d="M5 11h14M9 21l-2-4M15 21l2-4"/><circle cx="9" cy="14" r=".6" fill="currentColor"/><circle cx="15" cy="14" r=".6" fill="currentColor"/></svg></div>
+              <h4>Primary</h4>
+            </div>
+            <p class="cm-who">Sri Lanka Railways (Department of Railways) and its stations and control rooms</p>
+            <div class="cm-art" aria-hidden="true">
+              <svg viewBox="0 0 320 130">
+                <defs><linearGradient id="cmSkyB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#DBEAFE"/><stop offset="1" stop-color="#F0F7FF"/></linearGradient></defs>
+                <rect width="320" height="130" fill="url(#cmSkyB)"/>
+                <circle cx="268" cy="30" r="13" fill="#FDE68A" opacity=".8"/>
+                <g fill="#C7D7EE"><rect x="122" y="40" width="96" height="58" rx="2"/><path d="M114 42 170 18l56 24z"/><rect x="162" y="8" width="16" height="16" rx="2"/></g>
+                <circle cx="170" cy="16" r="5" fill="#fff" stroke="#93A9C9"/>
+                <g fill="#A9BEDD"><rect x="132" y="56" width="12" height="20" rx="6"/><rect x="152" y="56" width="12" height="20" rx="6"/><rect x="176" y="56" width="12" height="20" rx="6"/><rect x="196" y="56" width="12" height="20" rx="6"/></g>
+                <rect x="0" y="98" width="320" height="32" fill="#CBD5E1"/>
+                <rect x="0" y="112" width="320" height="3" fill="#94A3B8"/>
+                <g><rect x="18" y="80" width="190" height="28" rx="9" fill="#1E3A8A"/><path d="M208 80h18c12 0 20 8 20 14v0c0 8-6 14-14 14h-24z" fill="#1D4ED8"/>
+                  <rect x="18" y="100" width="228" height="4" fill="#F59E0B"/>
+                  <g fill="#BFDBFE"><rect x="28" y="86" width="22" height="9" rx="2"/><rect x="58" y="86" width="22" height="9" rx="2"/><rect x="88" y="86" width="22" height="9" rx="2"/><rect x="118" y="86" width="22" height="9" rx="2"/><rect x="148" y="86" width="22" height="9" rx="2"/><rect x="178" y="86" width="22" height="9" rx="2"/><path d="M214 86h12c6 0 11 4 12 9h-24z"/></g></g>
+                <g fill="#334155"><circle cx="40" cy="110" r="4"/><circle cx="80" cy="110" r="4"/><circle cx="150" cy="110" r="4"/><circle cx="190" cy="110" r="4"/><circle cx="228" cy="110" r="4"/></g>
+              </svg>
+            </div>
+            <ul class="cm-feats">
+              <li><span class="cm-dot cm-c-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg></span>Passenger information</li>
+              <li><span class="cm-dot cm-c-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>Delay visibility</li>
+              <li><span class="cm-dot cm-c-amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg></span>Incident handling</li>
+              <li><span class="cm-dot cm-c-violet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.8-3.8a6 6 0 0 1-7.9 7.9l-6.9 6.9a2.1 2.1 0 0 1-3-3l6.9-6.9a6 6 0 0 1 7.9-7.9z"/></svg></span>Maintenance planning</li>
+              <li><span class="cm-dot cm-c-amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9a3 3 0 0 0 0 6v3a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-3a3 3 0 0 0 0-6V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2z"/></svg></span>Ticketing integrity</li>
+            </ul>
+            <p class="cm-note">All in one intelligent platform.</p>
+            <button type="button" class="cm-btn is-blue" onclick="cmShowTier('enterprise')">Get Primary Plan <span aria-hidden="true">→</span></button>
+          </article>
+
+          <article class="cm-plan is-teal">
+            <span class="cm-badge">Growth market</span>
+            <div class="cm-plan-top">
+              <div class="cm-ico cm-c-teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V8l5-3v16M10 21V10h9v11M13 13h3M13 16h3"/></svg></div>
+              <h4>Secondary</h4>
+            </div>
+            <p class="cm-who">Regional rail operators, metro and bus authorities</p>
+            <div class="cm-art" aria-hidden="true">
+              <svg viewBox="0 0 320 130">
+                <defs><linearGradient id="cmSkyT" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#CCFBF1"/><stop offset="1" stop-color="#F0FDFA"/></linearGradient></defs>
+                <rect width="320" height="130" fill="url(#cmSkyT)"/>
+                <g fill="#B6DCD6"><rect x="20" y="30" width="28" height="68"/><rect x="54" y="14" width="22" height="84"/><rect x="82" y="40" width="30" height="58"/><rect x="230" y="22" width="26" height="76"/><rect x="262" y="44" width="40" height="54"/></g>
+                <g fill="#E0F2EF"><rect x="58" y="22" width="5" height="5"/><rect x="67" y="22" width="5" height="5"/><rect x="58" y="34" width="5" height="5"/><rect x="67" y="34" width="5" height="5"/><rect x="236" y="30" width="5" height="5"/><rect x="246" y="30" width="5" height="5"/><rect x="236" y="42" width="5" height="5"/><rect x="246" y="42" width="5" height="5"/></g>
+                <rect x="0" y="98" width="320" height="32" fill="#CBD5E1"/>
+                <rect x="0" y="112" width="320" height="3" fill="#94A3B8"/>
+                <g><rect x="10" y="74" width="170" height="32" rx="10" fill="#0F766E"/>
+                  <rect x="10" y="98" width="170" height="4" fill="#5EEAD4"/>
+                  <g fill="#CCFBF1"><rect x="20" y="81" width="24" height="12" rx="2"/><rect x="52" y="81" width="24" height="12" rx="2"/><rect x="84" y="81" width="24" height="12" rx="2"/><rect x="116" y="81" width="24" height="12" rx="2"/><rect x="148" y="81" width="24" height="12" rx="2"/></g></g>
+                <g><rect x="196" y="72" width="104" height="34" rx="8" fill="#F8FAFC" stroke="#94A3B8"/>
+                  <rect x="196" y="92" width="104" height="5" fill="#14B8A6"/>
+                  <g fill="#9CC9C3"><rect x="204" y="78" width="18" height="11" rx="2"/><rect x="228" y="78" width="18" height="11" rx="2"/><rect x="252" y="78" width="18" height="11" rx="2"/><rect x="276" y="78" width="18" height="11" rx="2"/></g></g>
+                <g fill="#334155"><circle cx="40" cy="108" r="4"/><circle cx="150" cy="108" r="4"/><circle cx="216" cy="108" r="6"/><circle cx="280" cy="108" r="6"/></g>
+              </svg>
+            </div>
+            <ul class="cm-feats">
+              <li><span class="cm-dot cm-c-teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>The same agents apply to any scheduled network</li>
+              <li><span class="cm-dot cm-c-teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg></span>Timetables, manuals and policies are loaded as data</li>
+            </ul>
+            <p class="cm-note">No redesign needed to onboard a new network.</p>
+            <button type="button" class="cm-btn is-teal" onclick="cmShowTier('operations')">Get Secondary Plan <span aria-hidden="true">→</span></button>
+          </article>
+
+          <article class="cm-plan is-amber">
+            <div class="cm-plan-top">
+              <div class="cm-ico cm-c-amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m8 3 4 8 5-5 5 15H2z"/></svg></div>
+              <h4>Extension</h4>
+            </div>
+            <p class="cm-who">Private and tourist rail operators, freight operators</p>
+            <div class="cm-art" aria-hidden="true">
+              <svg viewBox="0 0 320 130">
+                <defs><linearGradient id="cmSkyA" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FEF3C7"/><stop offset="1" stop-color="#FFFBEB"/></linearGradient></defs>
+                <rect width="320" height="130" fill="url(#cmSkyA)"/>
+                <circle cx="252" cy="34" r="16" fill="#FCD34D" opacity=".85"/>
+                <path d="M0 80 60 34l50 36 54-46 70 52 40-24 46 30v48H0z" fill="#86C59A" opacity=".55"/>
+                <path d="M0 96 50 70l60 22 70-30 60 28 80-16v56H0z" fill="#4E9F6B" opacity=".7"/>
+                <g fill="#B45309" opacity=".85"><rect x="20" y="70" width="280" height="8" rx="2"/>
+                  <path d="M30 78h40v52H30zM90 78h40v52H90zM150 78h40v52h-40zM210 78h40v52h-40zM270 78h30v52h-30z" fill="#D6A56A"/></g>
+                <g fill="#FFFBEB"><path d="M34 130v-26a16 16 0 0 1 32 0v26zM94 130v-26a16 16 0 0 1 32 0v26zM154 130v-26a16 16 0 0 1 32 0v26zM214 130v-26a16 16 0 0 1 32 0v26z" opacity=".9"/></g>
+                <g><rect x="60" y="52" width="170" height="18" rx="6" fill="#1E40AF"/><path d="M230 52h12c8 0 12 6 12 9s-4 9-10 9h-14z" fill="#2563EB"/>
+                  <rect x="60" y="64" width="194" height="3" fill="#F59E0B"/>
+                  <g fill="#DBEAFE"><rect x="68" y="56" width="18" height="6" rx="1.5"/><rect x="92" y="56" width="18" height="6" rx="1.5"/><rect x="116" y="56" width="18" height="6" rx="1.5"/><rect x="140" y="56" width="18" height="6" rx="1.5"/><rect x="164" y="56" width="18" height="6" rx="1.5"/><rect x="188" y="56" width="18" height="6" rx="1.5"/></g></g>
+              </svg>
+            </div>
+            <ul class="cm-feats">
+              <li><span class="cm-dot cm-c-amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></span>Passenger assistant intelligence</li>
+              <li><span class="cm-dot cm-c-violet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4"/></svg></span>Maintenance intelligence</li>
+              <li><span class="cm-dot cm-c-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 4 13c0-6 7-10 16-10 0 9-4 16-9 17z"/><path d="M4 21c4-6 8-9 12-11"/></svg></span>Lighter deployments</li>
+            </ul>
+            <p class="cm-note">Start small, add agents when needed.</p>
+            <button type="button" class="cm-btn is-amber" onclick="cmShowTier('starter')">Get Extension Plan <span aria-hidden="true">→</span></button>
+          </article>
+        </div>
+
+        <div class="cm-table-wrap" style="margin-top:18px">
+          <table class="cm-table">
+            <caption>Table 16. Customer segments</caption>
+            <thead><tr><th>Segment</th><th>Who</th><th>Why they buy</th></tr></thead>
+            <tbody>
+              <tr><td>Primary</td><td>Sri Lanka Railways (Department of Railways) and its stations and control rooms</td><td>Passenger information, delay visibility, incident handling, maintenance planning and ticketing integrity in one platform</td></tr>
+              <tr><td>Secondary</td><td>Regional rail operators, metro and bus authorities</td><td>The same agents apply to any scheduled network; timetables, manuals and policies are loaded as data</td></tr>
+              <tr><td>Extension</td><td>Private and tourist rail operators, freight operators</td><td>Passenger assistant and maintenance intelligence with lighter deployments</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 9.3 Product tiers and pricing (Table 17) -->
+      <section class="cm-section" id="cm-tiers" aria-labelledby="cm-h-tiers">
+        <div class="cm-sec-head"><span class="cm-sec-num">9.3</span><h3 class="cm-h" id="cm-h-tiers">Product tiers and pricing</h3></div>
+        <p class="cm-lead">Pricing follows the platform’s modular design: each tier switches on more agents. Prices are per station per month, billed annually, and are indicative planning figures to be finalised with the customer after a pilot. USD values are approximate at LKR 300 per USD.</p>
+        <div class="cm-tiers">
+          <article class="cm-tier" id="cm-tier-starter">
+            <div class="cm-tier-name">Starter</div>
+            <div class="cm-price">LKR 40,000 <small>/ station / month</small></div>
+            <div class="cm-usd">≈ USD 135 · billed annually</div>
+            <dl class="cm-rows">
+              <div><dt>Agents included</dt><dd>M1 Passenger Assistant; basic M2 delay prediction and live train board</dd></div>
+              <div><dt>Coverage</dt><dd>One route or region</dd></div>
+              <div><dt>Officer seats</dt><dd>Up to 5</dd></div>
+              <div><dt>Languages</dt><dd>English, Sinhala, Tamil</dd></div>
+              <div><dt>Support</dt><dd>Business-hours email</dd></div>
+              <div><dt>Deployment</dt><dd>Cloud SaaS</dd></div>
+              <div><dt>One-time onboarding</dt><dd>LKR 250,000 per region (≈ USD 830): timetable and knowledge loading, configuration, staff training</dd></div>
+            </dl>
+          </article>
+          <article class="cm-tier is-featured" id="cm-tier-operations">
+            <span class="cm-badge" style="background:var(--cm-blue)">Pilot tier</span>
+            <div class="cm-tier-name">Operations</div>
+            <div class="cm-price">LKR 85,000 <small>/ station / month</small></div>
+            <div class="cm-usd">≈ USD 285 · billed annually</div>
+            <dl class="cm-rows">
+              <div><dt>Agents included</dt><dd>Starter plus M2 Control Room, Admin Console, incident pipeline and verified map, Operations Assistant; M4 Maintenance agent with manual RAG and train flags</dd></div>
+              <div><dt>Coverage</dt><dd>One region, multiple routes</dd></div>
+              <div><dt>Officer seats</dt><dd>Up to 25</dd></div>
+              <div><dt>Languages</dt><dd>English, Sinhala, Tamil</dd></div>
+              <div><dt>Support</dt><dd>Priority support</dd></div>
+              <div><dt>Deployment</dt><dd>Cloud SaaS or single server</dd></div>
+              <div><dt>One-time onboarding</dt><dd>LKR 250,000 per region</dd></div>
+            </dl>
+          </article>
+          <article class="cm-tier" id="cm-tier-enterprise">
+            <div class="cm-tier-name">Enterprise</div>
+            <div class="cm-price">Custom <small>annual contract</small></div>
+            <div class="cm-usd">From about LKR 9,000,000 per year (≈ USD 30,000)</div>
+            <dl class="cm-rows">
+              <div><dt>Agents included</dt><dd>All four agents: adds M3 Booking with QR ticketing, Security and Fraud screening, and the Hub with signed integrations to existing systems</dd></div>
+              <div><dt>Coverage</dt><dd>Network-wide, multiple regions</dd></div>
+              <div><dt>Officer seats</dt><dd>Unlimited, custom roles</dd></div>
+              <div><dt>Languages</dt><dd>English, Sinhala, Tamil, plus custom</dd></div>
+              <div><dt>Support</dt><dd>Dedicated support with a service-level agreement</dd></div>
+              <div><dt>Deployment</dt><dd>Cloud, on-premise or hybrid</dd></div>
+              <div><dt>One-time onboarding</dt><dd>Included in the custom quote</dd></div>
+            </dl>
+          </article>
+        </div>
+
+        <div class="cm-strip">
+          <div class="cm-box">
+            <h5>Add-ons (quoted separately)</h5>
+            <div class="cm-tags">
+              <span class="cm-tag">Extra LLM usage packs</span>
+              <span class="cm-tag">Additional languages</span>
+              <span class="cm-tag">Custom integrations with existing ticketing or timetable systems</span>
+              <span class="cm-tag">On-site training</span>
+            </div>
+          </div>
+          <div class="cm-box">
+            <h5>Illustrative example</h5>
+            <p>A regional pilot with 10 stations on the Operations tier would cost LKR 850,000 per month (LKR 10.2 million per year) plus a one-time onboarding fee of LKR 250,000. The Starter tier lets a smaller authority begin with passenger information alone and upgrade tier by tier.</p>
+          </div>
+        </div>
+
+        <div class="cm-box" style="margin-top:16px">
+          <h5>Pilot cost estimator</h5>
+          <p>Indicative figures from Table 17. Enterprise is quoted per contract, so it is not estimated here.</p>
+          <div class="cm-est-grid">
+            <div class="cm-field"><label for="cm-est-tier">Tier</label>
+              <select id="cm-est-tier" onchange="cmEstimate()"><option value="40000">Starter</option><option value="85000" selected>Operations</option></select></div>
+            <div class="cm-field"><label for="cm-est-stations">Stations</label>
+              <input id="cm-est-stations" type="number" min="1" max="500" value="10" oninput="cmEstimate()"></div>
+            <div class="cm-field"><label for="cm-est-regions">Regions</label>
+              <input id="cm-est-regions" type="number" min="1" max="25" value="1" oninput="cmEstimate()"></div>
+          </div>
+          <div class="cm-out" aria-live="polite">
+            <div><span>Per month</span><b id="cm-out-month">—</b></div>
+            <div><span>Per year</span><b id="cm-out-year">—</b></div>
+            <div><span>Onboarding (once)</span><b id="cm-out-onb">—</b></div>
+            <div><span>First-year total</span><b id="cm-out-total">—</b></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 9.4 Cost structure (Table 18) -->
+      <section class="cm-section" aria-labelledby="cm-h-cost">
+        <div class="cm-sec-head"><span class="cm-sec-num">9.4</span><h3 class="cm-h" id="cm-h-cost">Cost structure</h3></div>
+        <p class="cm-lead">The architecture keeps running costs predictable. Facts come from trained models, databases and deterministic services; language models only phrase answers, so usage is bounded, and providers can be swapped through configuration.</p>
+        <div class="cm-table-wrap">
+          <table class="cm-table">
+            <caption>Table 18. Cost drivers and their current basis</caption>
+            <thead><tr><th>Cost driver</th><th>Used by</th><th>Basis</th></tr></thead>
+            <tbody>
+              <tr><td>OpenRouter LLM</td><td>M1</td><td>Free-tier models during development and pilot; metered in production</td></tr>
+              <tr><td>Google Gemini API</td><td>M2, M3, Security</td><td>Flash and Flash-Lite models, low cost per request</td></tr>
+              <tr><td>Groq API</td><td>M4</td><td>Hosted Qwen model, low-latency inference</td></tr>
+              <tr><td>Supabase (PostgreSQL and pgvector)</td><td>All agents</td><td>Free tier for pilot; managed paid plan at scale</td></tr>
+              <tr><td>Upstash Redis</td><td>M2, M4</td><td>Serverless alert channels, free tier for pilot</td></tr>
+              <tr><td>Email (SMTP)</td><td>Booking confirmations</td><td>Any SMTP provider</td></tr>
+              <tr><td>Hosting</td><td>6 agents and 2 gateway sides</td><td>Single server with <code>start.py</code> or containers via <code>docker-compose.yml</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 9.5 Deployment options -->
+      <section class="cm-section" aria-labelledby="cm-h-deploy">
+        <div class="cm-sec-head"><span class="cm-sec-num">9.5</span><h3 class="cm-h" id="cm-h-deploy">Deployment options</h3></div>
+        <div class="cm-three" style="margin-top:14px">
+          <div class="cm-box">
+            <div class="cm-ico cm-c-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.3A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg></div>
+            <h5>Cloud multi-tenant SaaS</h5>
+            <p>Stateless services with managed Supabase and Upstash; fastest to start and easiest to update.</p>
+          </div>
+          <div class="cm-box">
+            <div class="cm-ico cm-c-teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="8" rx="2"/><rect x="2" y="13" width="20" height="8" rx="2"/><path d="M6 7h.01M6 17h.01"/></svg></div>
+            <h5>Single server or containers</h5>
+            <p><code>start.py</code> or <code>docker-compose.yml</code> on the authority’s own infrastructure.</p>
+          </div>
+          <div class="cm-box">
+            <div class="cm-ico cm-c-violet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
+            <h5>On-premise</h5>
+            <p>For data-residency-sensitive contracts: because every LLM path has a deterministic fallback and retrieval can run on local TF-IDF, the platform can operate with minimal external dependencies.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 9.6 Go-to-market (Table 19) -->
+      <section class="cm-section" aria-labelledby="cm-h-gtm">
+        <div class="cm-sec-head"><span class="cm-sec-num">9.6</span><h3 class="cm-h" id="cm-h-gtm">Go-to-market</h3></div>
+        <div class="cm-steps" style="margin-top:14px">
+          <div class="cm-box cm-step"><h5>Pilot</h5><p>One region or route: deploy the Starter or Operations tier, load real timetables and manuals, and agree success indicators with the authority.</p></div>
+          <div class="cm-box cm-step"><h5>Measure</h5><p>Record usage and accuracy from the pilot and compare it with the indicators below.</p></div>
+          <div class="cm-box cm-step"><h5>Expand</h5><p>Move up a tier or add regions using the pilot evidence; negotiate an Enterprise contract for the full suite and integrations.</p></div>
+        </div>
+        <div class="cm-table-wrap">
+          <table class="cm-table">
+            <caption>Table 19. Pilot success indicators</caption>
+            <thead><tr><th>Indicator</th><th>What it shows</th></tr></thead>
+            <tbody>
+              <tr><td>Passenger questions answered without staff help</td><td>Value of the Passenger Assistant</td></tr>
+              <tr><td>Time from incident report to verified alert</td><td>Value of incident classification, summarisation and review</td></tr>
+              <tr><td>Delay-prediction error against actual delays</td><td>Model accuracy on real operations</td></tr>
+              <tr><td>Fraud reviews opened and confirmed</td><td>Usefulness of screening and reviewer workload</td></tr>
+              <tr><td>Unplanned maintenance events avoided</td><td>Value of asset-health scoring</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 9.7 Revenue model and sustainability -->
+      <section class="cm-section" aria-labelledby="cm-h-rev">
+        <div class="cm-sec-head"><span class="cm-sec-num">9.7</span><h3 class="cm-h" id="cm-h-rev">Revenue model and sustainability</h3></div>
+        <p class="cm-lead">Revenue is recurring subscription revenue per station, with onboarding fees and add-ons on top. Growth comes from three directions:</p>
+        <div class="cm-three">
+          <div class="cm-box"><div class="cm-ico cm-c-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></div><h5>More stations per customer</h5><p>Each additional station adds recurring subscription revenue.</p></div>
+          <div class="cm-box"><div class="cm-ico cm-c-teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 17 6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg></div><h5>Movement up the tiers</h5><p>Authorities adopt more agents as they grow, from Starter to Operations to Enterprise.</p></div>
+          <div class="cm-box"><div class="cm-ico cm-c-amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg></div><h5>New customers in adjacent sectors</h5><p>Metro, bus, tourist and freight operators in the wider transport sector.</p></div>
+        </div>
+        <p class="cm-lead" style="margin-top:16px">Because the agents are separate services with clear interfaces, new capabilities can be sold as additional modules without redesigning the platform.</p>
+      </section>
+
+      <p class="cm-foot">All prices are indicative planning figures, to be finalised with the customer after a pilot.</p>
+    </div>
+  </main>
+
+  <script>
+  /* Commercialisation page: segment buttons jump to the recommended tier, and
+     the estimator applies the indicative Table 17 prices. */
+  function cmShowTier(tier) {
+    const el = document.getElementById('cm-tier-' + tier);
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.classList.add('is-flash');
+    setTimeout(() => el.classList.remove('is-flash'), 1600);
+  }
+  function cmEstimate() {
+    const fmt = n => 'LKR ' + Math.round(n).toLocaleString('en-US');
+    const price = Number(document.getElementById('cm-est-tier').value);
+    const stations = Math.max(1, Number(document.getElementById('cm-est-stations').value) || 1);
+    const regions = Math.max(1, Number(document.getElementById('cm-est-regions').value) || 1);
+    const month = price * stations, year = month * 12, onb = 250000 * regions;
+    document.getElementById('cm-out-month').textContent = fmt(month);
+    document.getElementById('cm-out-year').textContent = fmt(year);
+    document.getElementById('cm-out-onb').textContent = fmt(onb);
+    document.getElementById('cm-out-total').textContent = fmt(year + onb);
+  }
+  document.addEventListener('DOMContentLoaded', cmEstimate);
+  </script>
 </div>
 
 <!-- ═══ M4 Chatbot Popup UI ═══ -->
@@ -5040,6 +5533,8 @@ function handleUrlRouting() {
     switchSection('security');
   } else if (path.includes('/hub') || path.includes('/monitor') || hash === '#hub' || hash === '#view-hub' || search.includes('tab=hub') || search.includes('tab=monitor')) {
     switchSection('hub');
+  } else if (path.includes('/commercial') || hash === '#commercial' || search.includes('tab=commercial')) {
+    switchSection('commercial');
   } else {
     switchSection('dashboard');
   }

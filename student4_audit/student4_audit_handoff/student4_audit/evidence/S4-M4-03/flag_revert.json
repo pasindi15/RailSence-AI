@@ -1,0 +1,8 @@
+{
+  "flag_status": 200,
+  "present_after_flag": true,
+  "revert_status": 200,
+  "present_after_revert": false,
+  "flag_body": "{\"status\":\"flagged\",\"record\":{\"train_id\":\"S4TEST-TRAIN-001\",\"under_maintenance\":true,\"reason\":\"S4TEST audit\",\"severity\":\"AMBER\",\"flagged_by\":\"engineer\",\"estimated_clear\":null,\"delay_minutes\":null,\"fla",
+  "revert_body": "{\"status\":\"cleared\",\"previous_record\":{\"train_id\":\"S4TEST-TRAIN-001\",\"under_maintenance\":true,\"reason\":\"S4TEST audit\",\"severity\":\"AMBER\",\"flagged_by\":"
+}

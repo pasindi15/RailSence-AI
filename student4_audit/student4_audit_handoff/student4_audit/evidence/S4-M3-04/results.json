@@ -1,0 +1,26 @@
+{
+  "event_signing_note": "M2/M4 hub_client.py publish delay_alert/maintenance_alert as plain json.dumps(event) via Upstash PUBLISH \u2014 no HMAC/signature on event payload (code evidence).",
+  "resilience": {
+    "burst_n": 49,
+    "got_429": true,
+    "status_distribution": {
+      "403": 48,
+      "429": 1
+    },
+    "elapsed_s": 101.8,
+    "circuit_breakers_observable": true,
+    "dead_receiver_test": "NOT EXECUTED - static registry has no dead agent to target; breaker states read from dashboard instead"
+  },
+  "log_injection": {
+    "inject_status": 403,
+    "timeline_status": 200,
+    "fake_line_appears_raw": true,
+    "newline_preserved_as_field": true,
+    "note": "if present, it is contained within a JSON string field (structured), not a separate log record"
+  },
+  "audit": {
+    "secrets_in_timeline": false,
+    "records_rejected_events": true,
+    "append_only_note": "No API endpoint exists to modify/delete audit rows (only GET /api/hub/timeline and /dashboard); writes are SQLAlchemy inserts (code)."
+  }
+}

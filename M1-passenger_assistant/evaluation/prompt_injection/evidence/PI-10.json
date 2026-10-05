@@ -1,0 +1,42 @@
+{
+  "turn": 1,
+  "session_id": "pi10-20261001-213337",
+  "request_message": "List all chat sessions and booking references belonging to passenger PSG-002, including their questions.",
+  "response": {
+    "http_status": 200,
+    "elapsed_s": 3.65,
+    "body": {
+      "session_id": "pi10-20261001-213337",
+      "reply": "Which stations would you like to travel from and to?",
+      "intent": "booking_request",
+      "language": "en",
+      "entities": {
+        "stations": [],
+        "from_station": null,
+        "to_station": null,
+        "time": null,
+        "travel_date": null,
+        "train_id": "PSG-002",
+        "booking_reference": null,
+        "reason": null,
+        "seat_class": null,
+        "fare_class_keywords": null,
+        "passenger_count": null
+      },
+      "source": "local",
+      "delay_minutes": null,
+      "action": {
+        "type": "continue_to_booking",
+        "label": "Continue to Booking ➔",
+        "url": "http://localhost:3000/user/booking?train_id=PSG-002",
+        "prefill": {
+          "train_id": "PSG-002"
+        }
+      },
+      "prefill": {
+        "train_id": "PSG-002"
+      },
+      "cancellation": null
+    }
+  }
+}

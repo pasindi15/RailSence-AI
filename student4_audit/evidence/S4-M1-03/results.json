@@ -1,0 +1,45 @@
+{
+  "probes": [
+    {
+      "probe": "a_read_other_history",
+      "expected": "200 returns A content (no authz) OR 401",
+      "status": 200,
+      "body": "{\"session_id\":\"548e81a3-2ba2-440f-983c-938ea2d2b857\",\"messages\":[{\"id\":\"68f5d79a-d992-4450-8a5a-4392c463e838\",\"session_id\":\"548e81a3-2ba2-440f-983c-938ea2d2b857\",\"role\":\"user\",\"mes",
+      "contains_S4TEST_A": true
+    },
+    {
+      "probe": "b_all_zeros_uuid",
+      "expected": "400 invalid / 200 empty",
+      "status": 200,
+      "body": "{\"session_id\":\"00000000-0000-0000-0000-000000000000\",\"messages\":[]}"
+    },
+    {
+      "probe": "b_non_uuid",
+      "expected": "400 invalid / 200 empty",
+      "status": 200,
+      "body": "{\"session_id\":\"abc123\",\"messages\":[]}"
+    },
+    {
+      "probe": "b_traversal",
+      "expected": "400 invalid / 200 empty",
+      "status": 404,
+      "body": "{\"detail\":\"Not Found\"}"
+    },
+    {
+      "probe": "b_sql",
+      "expected": "400 invalid / 200 empty",
+      "status": 400,
+      "body": "{\"detail\":\"Invalid session_id\"}"
+    },
+    {
+      "probe": "d_gateway_svc_m1_history",
+      "expected": "same as direct",
+      "status": 200,
+      "body": "{\"session_id\":\"548e81a3-2ba2-440f-983c-938ea2d2b857\",\"messages\":[{\"id\":\"68f5d79a-d992-4450-8a5a-4392c463e838\",\"session_id\":\"548e81a3-2ba2-440f-983c-938ea2d2b857\",\"role\":\"user\",\"mes",
+      "contains_S4TEST_A": true
+    }
+  ],
+  "A_session_created": true,
+  "B_session_created": true,
+  "session_id_A_sample": "548e81a3-2ba2-440f-983c-938ea2d2b857"
+}

@@ -2,9 +2,19 @@
 Language detection for Passenger Assistant Agent.
 Order of checks:
  1. Unicode range check (fast, reliable for Sinhala & Tamil scripts)
- 2. langdetect fallback (for English / mixed / ambiguous text)
+ 2. Romanized-Sinhala lexicon check (Sinhala written in Latin letters)
+ 3. langdetect fallback (for English / mixed / ambiguous text)
 
 Returns one of: "si" (Sinhala), "ta" (Tamil), "en" (English)
+
+Romanized Sinhala ("Singlish", e.g. "mata colomba idala badullata ticket
+ekak ganna oni") deliberately returns "si", not a separate code - i18n.py's
+t() and every `language == "si"` / `.get(language, ...)` branch in main.py
+already have full Sinhala-script handling, and reusing "si" gets all of that
+for free instead of silently falling through to English everywhere an
+unrecognised code would hit a `.get(..., ["en"])` default. See
+nlu/romanized.py for why replies are still written in Sinhala script even
+though the question came in Latin letters.
 """
 try:
     # pyrefly: ignore [missing-import]
@@ -12,6 +22,8 @@ try:
     DetectorFactory.seed = 0
 except ImportError:
     detect = None
+
+from nlu.romanized import is_romanized_sinhala
 
 # Unicode block ranges
 SINHALA_RANGE = (0x0D80, 0x0DFF)
@@ -48,7 +60,12 @@ def detect_language(text: str) -> str:
     if script_lang:
         return script_lang
 
-    # Step 2: fallback to langdetect (mainly disambiguates English vs others)
+    # Step 2: romanized Sinhala (no Sinhala/Tamil script present, but the
+    # words are Sinhala spelled in Latin letters)
+    if is_romanized_sinhala(text):
+        return "si"
+
+    # Step 3: fallback to langdetect (mainly disambiguates English vs others)
     try:
         if detect is None:
             return "en"

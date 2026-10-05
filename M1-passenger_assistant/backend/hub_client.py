@@ -26,7 +26,7 @@ from pydantic import BaseModel
 # Same reasoning as main.py's load_dotenv() call: anchor to this file's own
 # directory rather than the CWD. Safe to call again if main.py already did -
 # and needed here too since this module's tests import it standalone.
-load_dotenv(Path(__file__).parent / ".env")
+load_dotenv(Path(__file__).parent / ".env", override=True)
 
 # Reuses the .env var name the team already settled on (AGENT_HUB_URL) rather
 # than introducing a second one for the same thing.

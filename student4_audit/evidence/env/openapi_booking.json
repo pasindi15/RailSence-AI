@@ -1,0 +1,1449 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "RailSense AI - Booking & Reservation Agent",
+    "description": "Handles structured booking and cancellation requests forwarded by the Agent Communication Hub.",
+    "version": "0.3.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Liveness probe",
+        "description": "Returns 200 OK when the booking agent is running.\nUsed by container orchestrators and the Agent Hub's readiness checks.",
+        "operationId": "health_check_health_get",
+        "responses": {
+          "200": {
+            "description": "Service health status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Health Check Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/booking-options": {
+      "get": {
+        "tags": [
+          "schedules"
+        ],
+        "summary": "Get available train schedules and seat counts for route and date",
+        "operationId": "get_booking_options_booking_options_get",
+        "parameters": [
+          {
+            "name": "from_station",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "From Station"
+            }
+          },
+          {
+            "name": "to_station",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "To Station"
+            }
+          },
+          {
+            "name": "travel_date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Travel Date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/internal/messages": {
+      "post": {
+        "tags": [
+          "internal"
+        ],
+        "summary": "Receive a forwarded AgentMessage from the Hub (Phase 3: Booking dispatch)",
+        "description": "Handle forwarded AgentMessage from the Central Communication Hub.\n\nSupported intents:\n- booking_request: validates payload using BookingRequest, calls BookingService,\n  and returns structured booking confirmation.\n- cancel_booking: returns not-implemented response (reserved for subsequent phases).",
+        "operationId": "receive_internal_message_internal_messages_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentMessage"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Message processed and booking confirmation returned",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/bookings/{booking_reference}": {
+      "get": {
+        "tags": [
+          "bookings"
+        ],
+        "summary": "Retrieve a confirmed or held booking by reference",
+        "description": "Retrieve full booking details for given booking_reference,\nincluding masked passenger identities and QR e-ticket verification representation.",
+        "operationId": "get_booking_bookings__booking_reference__get",
+        "parameters": [
+          {
+            "name": "booking_reference",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Booking Reference"
+            }
+          },
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Booking details",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/internal/seat-holds": {
+      "post": {
+        "tags": [
+          "holds"
+        ],
+        "summary": "Create a temporary 5-minute seat hold (Project prototype setting)",
+        "operationId": "create_seat_hold_endpoint_internal_seat_holds_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SeatHoldRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SeatHoldResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/internal/waiting-list": {
+      "post": {
+        "tags": [
+          "waiting-list"
+        ],
+        "summary": "Enqueue passenger into FIFO waiting list when train is fully booked",
+        "operationId": "join_waiting_list_endpoint_internal_waiting_list_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WaitingListRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/internal/waiting-list/{queue_id}": {
+      "get": {
+        "tags": [
+          "waiting-list"
+        ],
+        "summary": "Check position in waiting list queue",
+        "operationId": "get_waiting_list_status_endpoint_internal_waiting_list__queue_id__get",
+        "parameters": [
+          {
+            "name": "queue_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Queue Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tickets/verify/{ticket_token}": {
+      "get": {
+        "tags": [
+          "tickets"
+        ],
+        "summary": "Live server-side verification of QR e-ticket without exposing raw PII",
+        "operationId": "verify_ticket_endpoint_api_tickets_verify__ticket_token__get",
+        "parameters": [
+          {
+            "name": "ticket_token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Ticket Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/operations/status/{idempotency_key}": {
+      "get": {
+        "tags": [
+          "operations"
+        ],
+        "summary": "Check status of an asynchronous or idempotent mutation",
+        "operationId": "get_operation_status_operations_status__idempotency_key__get",
+        "parameters": [
+          {
+            "name": "idempotency_key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Idempotency Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cancellations": {
+      "get": {
+        "tags": [
+          "cancellations"
+        ],
+        "summary": "List cancellation requests with optional status filter",
+        "description": "Query cancellation_requests from database and return case records with\nassociated booking details, NLP category, RAG evidence, and AI summary.",
+        "operationId": "list_cancellations_cancellations_get",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of cancellation request summaries",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cancellations/{case_reference}": {
+      "get": {
+        "tags": [
+          "cancellations"
+        ],
+        "summary": "Retrieve a cancellation request by case reference",
+        "description": "Query the cancellation_requests table by case_reference.",
+        "operationId": "get_cancellation_cancellations__case_reference__get",
+        "parameters": [
+          {
+            "name": "case_reference",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Case Reference"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cancellation request details",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/internal/cancellations/{case_reference}/review": {
+      "post": {
+        "tags": [
+          "cancellations"
+        ],
+        "summary": "Human-in-the-Loop Admin Review (Approve or Reject)",
+        "description": "Execute human administrator review:\n- APPROVE: transitions Booking.status -> CANCELLED and CancellationRequest.status -> APPROVED\n- REJECT: keeps Booking.status as CONFIRMED and transitions CancellationRequest.status -> REJECTED",
+        "operationId": "review_cancellation_endpoint_internal_cancellations__case_reference__review_post",
+        "parameters": [
+          {
+            "name": "case_reference",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Case Reference"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminReviewInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Adjudication outcome",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/internal/cancellations/nlp-preview": {
+      "post": {
+        "tags": [
+          "cancellations"
+        ],
+        "summary": "Real-time NLP preview and classification for admin rejection reason",
+        "description": "Analyze proposed administrator rejection explanation using NLP.\nReturns category classification, extracted policy markers, and polite phrasing.",
+        "operationId": "preview_admin_rejection_nlp_internal_cancellations_nlp_preview_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminNLPPreviewInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "NLP classification, tone assessment, and polished passenger message",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/internal/fraud-reviews": {
+      "get": {
+        "tags": [
+          "fraud-review"
+        ],
+        "summary": "List fraud review cases with optional status filter",
+        "description": "List fraud review cases for human administrator inspection.",
+        "operationId": "list_fraud_reviews_internal_fraud_reviews_get",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of fraud review cases",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/internal/fraud-reviews/{case_reference}": {
+      "get": {
+        "tags": [
+          "fraud-review"
+        ],
+        "summary": "Retrieve a fraud review case by case reference",
+        "description": "Query the fraud_reviews table by case_reference.",
+        "operationId": "get_fraud_review_internal_fraud_reviews__case_reference__get",
+        "parameters": [
+          {
+            "name": "case_reference",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Case Reference"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Fraud review case details",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/internal/fraud-reviews/{case_reference}/review": {
+      "post": {
+        "tags": [
+          "fraud-review"
+        ],
+        "summary": "Adjudicate a flagged booking (Approve or Reject)",
+        "description": "Execute human administrator fraud review:\n- APPROVE: re-verifies train, schedule, duplicate active tickets, cross-train time conflicts,\n  and seat availability (HTTP 409 if seats taken), then confirms booking and creates passenger records.\n- REJECT: transitions FraudReview.status -> REJECTED and creates no booking.",
+        "operationId": "review_fraud_case_endpoint_internal_fraud_reviews__case_reference__review_post",
+        "parameters": [
+          {
+            "name": "case_reference",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Case Reference"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminReviewInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Adjudication outcome",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/trains": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "List active trains for admin dropdown selector",
+        "description": "Return all active trains with id, train_id, train_name, and route\nso the admin dashboard can populate the train filter dropdown.",
+        "operationId": "list_admin_trains_admin_trains_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/bookings": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Retrieve booked tickets filtered by train and travel date",
+        "description": "Return a manifest of bookings filtered by train (train_id string) and\ntravel_date (YYYY-MM-DD), with optional booking_status filter.\n\n- travel_date refers to the JOURNEY date (Booking.travel_date), NOT created_at.\n- CANCELLED bookings are always included unless explicitly filtered out.\n- Requires at least one of train_id or travel_date to avoid full-table scans.",
+        "operationId": "list_admin_bookings_admin_bookings_get",
+        "parameters": [
+          {
+            "name": "train_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Train Id"
+            }
+          },
+          {
+            "name": "travel_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Travel Date"
+            }
+          },
+          {
+            "name": "booking_status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Booking Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/chat": {
+      "post": {
+        "tags": [
+          "admin-chat"
+        ],
+        "summary": "Admin Booking Intelligence Assistant (NLP + IR/RAG + LLM)",
+        "description": "Process natural-language administrative questions regarding:\n1. \ud83d\udee1\ufe0f Fraud Review Queue\n2. \ud83d\udd04 Cancellation Queue\n3. \ud83d\udccb Schedules & Seat Inventory\n4. \ud83c\udfab Booked Tickets \u2014 Manifest",
+        "operationId": "admin_chat_endpoint_admin_chat_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminChatRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminChatResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AdminChatMessage": {
+        "properties": {
+          "role": {
+            "type": "string",
+            "title": "Role",
+            "description": "'user' or 'assistant'"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content",
+            "description": "Message text"
+          }
+        },
+        "type": "object",
+        "required": [
+          "role",
+          "content"
+        ],
+        "title": "AdminChatMessage"
+      },
+      "AdminChatRequest": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Message",
+            "description": "Natural language question from administrator"
+          },
+          "conversation_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conversation Id",
+            "description": "Optional conversation tracking ID"
+          },
+          "history": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/AdminChatMessage"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "History",
+            "description": "Recent conversation turns for follow-up context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "AdminChatRequest"
+      },
+      "AdminChatResponse": {
+        "properties": {
+          "answer": {
+            "type": "string",
+            "title": "Answer",
+            "description": "Grounded natural-language answer for the administrator"
+          },
+          "intent": {
+            "type": "string",
+            "title": "Intent",
+            "description": "Classified intent"
+          },
+          "entities": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Entities",
+            "description": "Extracted entities"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/SourceEvidence"
+            },
+            "type": "array",
+            "title": "Sources",
+            "description": "Verified evidence sources"
+          },
+          "data_source": {
+            "type": "string",
+            "title": "Data Source",
+            "description": "Database used for the live answer",
+            "default": "m3_database"
+          },
+          "card": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CardPayload"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional structured presentation card"
+          },
+          "retrieved_records": {
+            "type": "integer",
+            "title": "Retrieved Records",
+            "description": "Number of primary database records retrieved",
+            "default": 0
+          },
+          "is_fallback": {
+            "type": "boolean",
+            "title": "Is Fallback",
+            "description": "True if response generated via deterministic synthesizer",
+            "default": false
+          },
+          "conversation_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conversation Id",
+            "description": "Conversation tracking ID"
+          }
+        },
+        "type": "object",
+        "required": [
+          "answer",
+          "intent"
+        ],
+        "title": "AdminChatResponse"
+      },
+      "AdminNLPPreviewInput": {
+        "properties": {
+          "reason": {
+            "type": "string",
+            "title": "Reason",
+            "description": "Administrator's proposed rejection explanation"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reason"
+        ],
+        "title": "AdminNLPPreviewInput"
+      },
+      "AdminReviewInput": {
+        "properties": {
+          "decision": {
+            "type": "string",
+            "title": "Decision",
+            "description": "APPROVE or REJECT"
+          },
+          "admin_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Admin Reason",
+            "description": "Optional reasoning from administrator"
+          }
+        },
+        "type": "object",
+        "required": [
+          "decision"
+        ],
+        "title": "AdminReviewInput"
+      },
+      "AgentMessage": {
+        "properties": {
+          "message_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Message Id",
+            "description": "Unique message identifier"
+          },
+          "sender_agent": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Sender Agent",
+            "description": "Originating agent name"
+          },
+          "receiver_agent": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Receiver Agent",
+            "description": "Target agent name"
+          },
+          "intent": {
+            "$ref": "#/components/schemas/MemberCIntent",
+            "description": "Action the receiver should perform"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Payload",
+            "description": "Intent-specific payload data"
+          },
+          "auth_token": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Auth Token",
+            "description": "Bearer token"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Timestamp",
+            "description": "Message creation time"
+          },
+          "correlation_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Correlation Id",
+            "description": "End-to-end workflow correlation ID"
+          },
+          "parent_message_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Message Id",
+            "description": "Predecessor message ID"
+          },
+          "schema_version": {
+            "type": "string",
+            "title": "Schema Version",
+            "description": "Schema version",
+            "default": "1.1"
+          },
+          "hop_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Hop Count",
+            "description": "Monotonic hop counter",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "message_id",
+          "sender_agent",
+          "receiver_agent",
+          "intent",
+          "payload",
+          "auth_token",
+          "timestamp"
+        ],
+        "title": "AgentMessage",
+        "description": "Standard message envelope exchanged between agents via the Agent Hub.\n\nAttributes\n----------\nmessage_id:        Unique identifier for this message (e.g. \"MSG-2001\").\nsender_agent:      Logical name of the originating agent.\nreceiver_agent:    Logical name of the target agent.\nintent:            The action the receiver should perform.\npayload:           Arbitrary JSON-compatible dict carrying intent-specific data.\nauth_token:        Raw bearer token forwarded from the originating request.\ntimestamp:         ISO-8601 datetime (timezone-aware recommended) of when the\n                   message was created.\ncorrelation_id:    Unique ID spanning all related messages in a business workflow.\nparent_message_id: Direct causal predecessor message ID if applicable.\nschema_version:    Version identifier for the envelope schema.\nhop_count:         Monotonically incremented dispatch counter for loop prevention."
+      },
+      "CardPayload": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "title": "Type",
+            "description": "Card type e.g. 'seat_availability', 'fraud_review', 'cancellation', 'booking_summary'"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "description": "Card title"
+          },
+          "subtitle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subtitle",
+            "description": "Card subtitle"
+          },
+          "items": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "Key-value pairs or row entries"
+          }
+        },
+        "type": "object",
+        "required": [
+          "type",
+          "title"
+        ],
+        "title": "CardPayload"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "MemberCIntent": {
+        "type": "string",
+        "enum": [
+          "booking_request",
+          "cancel_booking",
+          "delay_check",
+          "delay_check_response",
+          "delay_alert",
+          "issue_report",
+          "incident_report",
+          "fraud_score_request",
+          "train_status_query",
+          "ack"
+        ],
+        "title": "MemberCIntent",
+        "description": "Supported intents handled by RailSense AI agents."
+      },
+      "SeatHoldRequest": {
+        "properties": {
+          "train_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Train Id",
+            "description": "Train identifier"
+          },
+          "from_station": {
+            "type": "string",
+            "minLength": 1,
+            "title": "From Station",
+            "description": "Departure station"
+          },
+          "to_station": {
+            "type": "string",
+            "minLength": 1,
+            "title": "To Station",
+            "description": "Arrival station"
+          },
+          "travel_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Travel Date",
+            "description": "Date of travel"
+          },
+          "seat_class": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Seat Class",
+            "description": "Class"
+          },
+          "passenger_count": {
+            "type": "integer",
+            "maximum": 10.0,
+            "minimum": 1.0,
+            "title": "Passenger Count",
+            "description": "Seats requested"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Id",
+            "description": "User identifier"
+          }
+        },
+        "type": "object",
+        "required": [
+          "train_id",
+          "from_station",
+          "to_station",
+          "travel_date",
+          "seat_class",
+          "passenger_count"
+        ],
+        "title": "SeatHoldRequest"
+      },
+      "SeatHoldResponse": {
+        "properties": {
+          "hold_token": {
+            "type": "string",
+            "title": "Hold Token"
+          },
+          "expires_at": {
+            "type": "string",
+            "title": "Expires At"
+          },
+          "duration_seconds": {
+            "type": "integer",
+            "title": "Duration Seconds"
+          },
+          "train_id": {
+            "type": "string",
+            "title": "Train Id"
+          },
+          "seat_class": {
+            "type": "string",
+            "title": "Seat Class"
+          },
+          "seat_count": {
+            "type": "integer",
+            "title": "Seat Count"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "default": "ACTIVE"
+          }
+        },
+        "type": "object",
+        "required": [
+          "hold_token",
+          "expires_at",
+          "duration_seconds",
+          "train_id",
+          "seat_class",
+          "seat_count"
+        ],
+        "title": "SeatHoldResponse"
+      },
+      "SourceEvidence": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "title": "Type",
+            "description": "Source type e.g. 'schedule', 'seat_inventory', 'policy', 'cancellation', 'fraud_review', 'manifest'"
+          },
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "Entity ID or passage ID e.g. '1005', 'POL-REF-003-ART-2'"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label",
+            "description": "Human-readable reference description"
+          },
+          "details": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Details",
+            "description": "Optional structured metadata"
+          }
+        },
+        "type": "object",
+        "required": [
+          "type",
+          "id",
+          "label"
+        ],
+        "title": "SourceEvidence"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "WaitingListRequest": {
+        "properties": {
+          "train_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Train Id"
+          },
+          "from_station": {
+            "type": "string",
+            "minLength": 1,
+            "title": "From Station"
+          },
+          "to_station": {
+            "type": "string",
+            "minLength": 1,
+            "title": "To Station"
+          },
+          "travel_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Travel Date"
+          },
+          "seat_class": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Seat Class"
+          },
+          "passenger_count": {
+            "type": "integer",
+            "maximum": 10.0,
+            "minimum": 1.0,
+            "title": "Passenger Count"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Id"
+          },
+          "passenger_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passenger Email"
+          }
+        },
+        "type": "object",
+        "required": [
+          "train_id",
+          "from_station",
+          "to_station",
+          "travel_date",
+          "seat_class",
+          "passenger_count"
+        ],
+        "title": "WaitingListRequest"
+      }
+    }
+  }
+}

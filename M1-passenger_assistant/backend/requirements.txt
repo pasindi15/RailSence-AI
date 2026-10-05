@@ -4,6 +4,11 @@ pydantic>=2.0
 python-dotenv
 supabase
 httpx
+# Passenger auth (see auth.py). Both already arrive transitively via supabase,
+# but /auth/login and the ownership guards import them directly, so they are
+# pinned here rather than left to another package's dependency tree.
+PyJWT>=2.8
+bcrypt>=4.0
 langdetect
 openai
 # Pinned: the on-disk .chroma index is not readable across chromadb versions

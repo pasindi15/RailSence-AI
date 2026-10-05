@@ -1,0 +1,106 @@
+{
+  "probes": [
+    {
+      "probe": "a_large_body_120kb",
+      "expected": "handled (413/422/200)",
+      "status": 200,
+      "resp_headers": {
+        "server": "uvicorn"
+      },
+      "body": "{\"session_id\":\"54650f85-8455-4935-84c9-86231040b762\",\"reply\":\"This service only supports Sri Lanka Railways passenger services: train schedules, fares, booking and cancellation, refund and travel poli"
+    },
+    {
+      "probe": "b_control_null",
+      "expected": "no 500",
+      "status": 200,
+      "resp_headers": {
+        "server": "uvicorn"
+      },
+      "body": "{\"session_id\":\"1bfbd9a6-e992-41bb-b075-b0f110807860\",\"reply\":\"This service only supports Sri Lanka Railways passenger services: train schedules, fares, booking and cancellation, refund and travel poli"
+    },
+    {
+      "probe": "c_html_script",
+      "expected": "sanitised/echoed-safely",
+      "status": 200,
+      "resp_headers": {
+        "server": "uvicorn"
+      },
+      "body": "{\"session_id\":\"52101ef9-d4cc-415c-ad2a-4252fc1b427a\",\"reply\":\"I'd be happy to help with fare information to Kandy! I have fare details for a couple of routes that end at Kandy:\\n\\n- **Colombo Fort \u2192 K"
+    },
+    {
+      "probe": "d_malformed_json",
+      "expected": "400/422",
+      "status": 422,
+      "resp_headers": {
+        "server": "uvicorn"
+      },
+      "body": "{\"detail\":[{\"type\":\"json_invalid\",\"loc\":[\"body\",12],\"msg\":\"JSON decode error\",\"input\":{},\"ctx\":{\"error\":\"Expecting value\"}}]}"
+    },
+    {
+      "probe": "d2_wrong_type",
+      "expected": "422",
+      "status": 422,
+      "resp_headers": {
+        "server": "uvicorn"
+      },
+      "body": "{\"detail\":[{\"type\":\"string_type\",\"loc\":[\"body\",\"message\"],\"msg\":\"Input should be a valid string\",\"input\":12345}]}"
+    },
+    {
+      "probe": "e_missing_message",
+      "expected": "422",
+      "status": 422,
+      "resp_headers": {
+        "server": "uvicorn"
+      },
+      "body": "{\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"session_id\":\"983c4b79-07dc-407e-9cd1-5a3770e63f4b\"}}]}"
+    },
+    {
+      "probe": "g_error_body",
+      "expected": "no stack/keys",
+      "status": 200,
+      "resp_headers": {
+        "server": "uvicorn"
+      },
+      "body": "{\"session_id\":\"5ee758c3-3c6f-46cd-bc6f-6ed49e499318\",\"reply\":\"This service only supports Sri Lanka Railways passenger services: train schedules, fares, booking and cancellation, refund and travel poli"
+    },
+    {
+      "probe": "h_cors_preflight_evil",
+      "expected": "ACAO not evil-reflected-with-creds",
+      "status": 200,
+      "resp_headers": {
+        "server": "uvicorn",
+        "access-control-allow-origin": "*"
+      },
+      "body": "OK",
+      "acao": "*",
+      "acac": null
+    }
+  ],
+  "burst": {
+    "n": 20,
+    "codes": [
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200
+    ],
+    "got_429": false,
+    "elapsed_s": 50.4
+  }
+}

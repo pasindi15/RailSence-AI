@@ -1,0 +1,1227 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "RailSense AI - Passenger Web & Booking Gateway",
+    "description": "Serves passenger chat, booking UI, and secure server-side inter-agent dispatch.",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/train-board": {
+      "get": {
+        "tags": [
+          "passenger"
+        ],
+        "summary": "Train Board",
+        "description": "Return the canonical date-specific train board with in-memory caching and fast fallback.",
+        "operationId": "train_board_api_train_board_get",
+        "parameters": [
+          {
+            "name": "travel_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Travel Date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "summary": "Proxy Auth Login",
+        "operationId": "proxy_auth_login_api_auth_login_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "summary": "Proxy Auth Logout",
+        "operationId": "proxy_auth_logout_api_auth_logout_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "summary": "Proxy Auth Me",
+        "operationId": "proxy_auth_me_api_auth_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/chat": {
+      "post": {
+        "tags": [
+          "passenger"
+        ],
+        "summary": "Chat Endpoint",
+        "description": "Passenger Assistant Chat Endpoint.\nDetects cancel_booking or booking_request intent.\nReturns assistant message and structured action card.",
+        "operationId": "chat_endpoint_api_chat_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Chat Endpoint Api Chat Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/booking-options": {
+      "get": {
+        "tags": [
+          "booking"
+        ],
+        "summary": "Booking Options Proxy",
+        "description": "Proxy available schedule queries to the authoritative Booking Agent.\nNever invents mock train data.",
+        "operationId": "booking_options_proxy_api_booking_options_get",
+        "parameters": [
+          {
+            "name": "from_station",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "title": "From Station"
+            }
+          },
+          {
+            "name": "to_station",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "title": "To Station"
+            }
+          },
+          {
+            "name": "travel_date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "title": "Travel Date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bookings/confirm": {
+      "post": {
+        "tags": [
+          "booking"
+        ],
+        "summary": "Confirm Booking Endpoint",
+        "description": "Secure Server-Side Booking Submission:\n1. Validates form data.\n2. Generates trusted inter-agent JWT (JWT_SECRET_KEY never leaves server).\n3. Builds AgentMessage envelope (sender: passenger-agent -> receiver: booking-agent).\n4. Posts to Central Agent Communication Hub (/messages).\n5. Translates error responses to clean, user-friendly messages.",
+        "operationId": "confirm_booking_endpoint_api_bookings_confirm_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmBookingInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cancellations/confirm": {
+      "post": {
+        "tags": [
+          "cancellation"
+        ],
+        "summary": "Confirm Cancellation Endpoint",
+        "description": "Secure Server-Side Cancellation Submission:\n1. Validates form data (booking_reference, reason).\n2. Generates trusted inter-agent JWT (JWT_SECRET_KEY never leaves server).\n3. Builds AgentMessage envelope (sender: passenger-agent -> receiver: booking-agent, intent: cancel_booking).\n4. Posts to Central Agent Communication Hub (/messages).\n5. Fallback directly through in-memory CancellationService if Hub process is offline.",
+        "operationId": "confirm_cancellation_endpoint_api_cancellations_confirm_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmCancellationInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/cancellations": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "List Admin Cancellations",
+        "description": "List cancellation cases for Admin Dashboard review.",
+        "operationId": "list_admin_cancellations_api_admin_cancellations_get",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/cancellations/{case_reference}/review": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Review Admin Cancellation",
+        "description": "Execute human administrator review:\n- APPROVE: transitions Booking.status -> CANCELLED and CancellationRequest.status -> APPROVED\n- REJECT: keeps Booking.status as CONFIRMED and transitions CancellationRequest.status -> REJECTED",
+        "operationId": "review_admin_cancellation_api_admin_cancellations__case_reference__review_post",
+        "parameters": [
+          {
+            "name": "case_reference",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Case Reference"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminReviewActionInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/cancellations/nlp-preview": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Preview Cancellation Nlp",
+        "description": "Analyze proposed rejection reason with NLP for real-time frontend feedback.",
+        "operationId": "preview_cancellation_nlp_api_admin_cancellations_nlp_preview_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminNLPPreviewReq"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/trains": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "List Admin Trains Proxy",
+        "description": "Proxy to booking-agent /admin/trains \u2014 returns active trains for dropdown.\nFalls back to direct DB query if booking-agent is offline.",
+        "operationId": "list_admin_trains_proxy_api_admin_trains_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/bookings": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "List Admin Bookings Proxy",
+        "description": "Proxy to booking-agent /admin/bookings \u2014 returns ticket manifest filtered\nby train_id (string) and travel_date (YYYY-MM-DD journey date).\nFalls back to direct DB query if booking-agent is offline.",
+        "operationId": "list_admin_bookings_proxy_api_admin_bookings_get",
+        "parameters": [
+          {
+            "name": "train_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Train Id"
+            }
+          },
+          {
+            "name": "travel_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Travel Date"
+            }
+          },
+          {
+            "name": "booking_status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Booking Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/fraud-reviews": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "List Admin Fraud Reviews",
+        "description": "List fraud review cases for Admin Console adjudication.",
+        "operationId": "list_admin_fraud_reviews_api_admin_fraud_reviews_get",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/fraud-reviews/{case_reference}/review": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Review Admin Fraud Case",
+        "description": "Adjudicate a flagged booking (APPROVE or REJECT):\n- APPROVE: Re-checks train active, schedule, seat availability (409 if full),\n  and NIC duplicate/conflicts, then confirms ticket.\n- REJECT: Updates FraudReview to REJECTED with reason; no ticket is created.",
+        "operationId": "review_admin_fraud_case_api_admin_fraud_reviews__case_reference__review_post",
+        "parameters": [
+          {
+            "name": "case_reference",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Case Reference"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminReviewActionInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/system-health": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Get System Health",
+        "description": "Real-time multi-agent health checker for Admin Suite.\nProbes M1 (8001), M2 (8005), M3 Hub (8002), M3 Booking (8003), Security (8004), M4 (8006).",
+        "operationId": "get_system_health_api_admin_system_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hub/dashboard": {
+      "get": {
+        "tags": [
+          "hub"
+        ],
+        "summary": "Hub Dashboard Proxy",
+        "description": "Proxy hub metrics for live monitoring dashboard.",
+        "operationId": "hub_dashboard_proxy_api_hub_dashboard_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hub/timeline": {
+      "get": {
+        "tags": [
+          "hub"
+        ],
+        "summary": "Hub Timeline Proxy",
+        "description": "Proxy inter-agent message timeline.",
+        "operationId": "hub_timeline_proxy_api_hub_timeline_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tickets/verify/{ticket_token}": {
+      "get": {
+        "tags": [
+          "tickets"
+        ],
+        "summary": "Verify Ticket Endpoint",
+        "description": "Server-side ticket verification without PII exposure.",
+        "operationId": "verify_ticket_endpoint_api_tickets_verify__ticket_token__get",
+        "parameters": [
+          {
+            "name": "ticket_token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Ticket Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tickets/{booking_reference}": {
+      "get": {
+        "tags": [
+          "tickets"
+        ],
+        "summary": "Get Booking Ticket",
+        "description": "Retrieve booking details with opaque ticket token and QR SVG.",
+        "operationId": "get_booking_ticket_api_tickets__booking_reference__get",
+        "parameters": [
+          {
+            "name": "booking_reference",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Booking Reference"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/holds": {
+      "post": {
+        "tags": [
+          "booking"
+        ],
+        "summary": "Create Hold Endpoint",
+        "description": "Create a 5-minute prototype seat hold.",
+        "operationId": "create_hold_endpoint_api_holds_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SeatHoldInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/waiting-list": {
+      "post": {
+        "tags": [
+          "booking"
+        ],
+        "summary": "Join Waiting List Endpoint",
+        "description": "Join the FIFO waiting list for sold-out services.",
+        "operationId": "join_waiting_list_endpoint_api_waiting_list_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WaitingListInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/booking-chat": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Proxy Admin Booking Chat",
+        "description": "Proxy endpoint for the Admin Booking Intelligence Assistant.\nForwards natural-language queries to Booking Agent (/api/admin/booking-chat).\nFalls back to direct in-memory AdminChatService if backend is offline.",
+        "operationId": "proxy_admin_booking_chat_api_admin_booking_chat_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AdminNLPPreviewReq": {
+        "properties": {
+          "reason": {
+            "type": "string",
+            "title": "Reason",
+            "description": "Administrator rejection text to analyze"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reason"
+        ],
+        "title": "AdminNLPPreviewReq"
+      },
+      "AdminReviewActionInput": {
+        "properties": {
+          "decision": {
+            "type": "string",
+            "title": "Decision",
+            "default": "APPROVE"
+          },
+          "admin_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Admin Reason"
+          }
+        },
+        "type": "object",
+        "title": "AdminReviewActionInput"
+      },
+      "ChatInput": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Message",
+            "description": "Passenger user message"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Id",
+            "description": "Optional session tracking ID"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "ChatInput"
+      },
+      "ConfirmBookingInput": {
+        "properties": {
+          "from_station": {
+            "type": "string",
+            "title": "From Station",
+            "default": ""
+          },
+          "to_station": {
+            "type": "string",
+            "title": "To Station",
+            "default": ""
+          },
+          "travel_date": {
+            "type": "string",
+            "title": "Travel Date",
+            "default": ""
+          },
+          "train_id": {
+            "type": "string",
+            "title": "Train Id",
+            "default": ""
+          },
+          "seat_class": {
+            "type": "string",
+            "title": "Seat Class",
+            "default": ""
+          },
+          "passenger_count": {
+            "type": "integer",
+            "maximum": 10.0,
+            "minimum": 1.0,
+            "title": "Passenger Count",
+            "default": 1
+          },
+          "passenger_email": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "email"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passenger Email"
+          },
+          "contact_phone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact Phone"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Id"
+          },
+          "passengers": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passengers"
+          },
+          "schedule_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Schedule Id"
+          }
+        },
+        "type": "object",
+        "title": "ConfirmBookingInput"
+      },
+      "ConfirmCancellationInput": {
+        "properties": {
+          "booking_reference": {
+            "type": "string",
+            "title": "Booking Reference",
+            "default": ""
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "title": "ConfirmCancellationInput"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "SeatHoldInput": {
+        "properties": {
+          "train_id": {
+            "type": "string",
+            "title": "Train Id"
+          },
+          "from_station": {
+            "type": "string",
+            "title": "From Station"
+          },
+          "to_station": {
+            "type": "string",
+            "title": "To Station"
+          },
+          "travel_date": {
+            "type": "string",
+            "title": "Travel Date"
+          },
+          "seat_class": {
+            "type": "string",
+            "title": "Seat Class"
+          },
+          "passenger_count": {
+            "type": "integer",
+            "maximum": 10.0,
+            "minimum": 1.0,
+            "title": "Passenger Count",
+            "default": 1
+          },
+          "user_id": {
+            "type": "string",
+            "title": "User Id",
+            "default": "web_user"
+          }
+        },
+        "type": "object",
+        "required": [
+          "train_id",
+          "from_station",
+          "to_station",
+          "travel_date",
+          "seat_class"
+        ],
+        "title": "SeatHoldInput"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "WaitingListInput": {
+        "properties": {
+          "train_id": {
+            "type": "string",
+            "title": "Train Id"
+          },
+          "from_station": {
+            "type": "string",
+            "title": "From Station"
+          },
+          "to_station": {
+            "type": "string",
+            "title": "To Station"
+          },
+          "travel_date": {
+            "type": "string",
+            "title": "Travel Date"
+          },
+          "seat_class": {
+            "type": "string",
+            "title": "Seat Class"
+          },
+          "passenger_count": {
+            "type": "integer",
+            "maximum": 10.0,
+            "minimum": 1.0,
+            "title": "Passenger Count",
+            "default": 1
+          },
+          "passenger_email": {
+            "type": "string",
+            "format": "email",
+            "title": "Passenger Email"
+          },
+          "user_id": {
+            "type": "string",
+            "title": "User Id",
+            "default": "web_user"
+          }
+        },
+        "type": "object",
+        "required": [
+          "train_id",
+          "from_station",
+          "to_station",
+          "travel_date",
+          "seat_class",
+          "passenger_email"
+        ],
+        "title": "WaitingListInput"
+      }
+    }
+  }
+}

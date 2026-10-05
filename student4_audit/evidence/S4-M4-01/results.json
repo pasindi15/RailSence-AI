@@ -1,0 +1,266 @@
+{
+  "retrieval_method": "local_tfidf",
+  "readme_claim": "P@1=P@3=P@5=1.000 (shipped eval prepends asset_type+fault_type + keyword-overlap relevance)",
+  "independent_query_only": {
+    "n": 24,
+    "P@1": 0.7917,
+    "P@3": 0.9583,
+    "P@5": 0.9583,
+    "MRR": 0.8681
+  },
+  "per_category": {
+    "symptom": {
+      "P@1": 0.917,
+      "n": 12
+    },
+    "keyword": {
+      "P@1": 0.833,
+      "n": 6
+    },
+    "typo": {
+      "P@1": 0.667,
+      "n": 3
+    },
+    "crosslingual": {
+      "P@1": 0.333,
+      "n": 3
+    }
+  },
+  "hard_negatives": {
+    "n": 6,
+    "no_relevance_threshold": true,
+    "false_positive_rate_score_gt_0.05": 0.5,
+    "rows": [
+      {
+        "q": "best biryani in colombo",
+        "returned_any": true,
+        "top1_score": 0.1108,
+        "top1": "signal_equipment_manual_1"
+      },
+      {
+        "q": "how do I reset my gmail password",
+        "returned_any": true,
+        "top1_score": 0.0744,
+        "top1": "platform_gate_manual_2"
+      },
+      {
+        "q": "what is the capital of france",
+        "returned_any": false,
+        "top1_score": 0,
+        "top1": null
+      },
+      {
+        "q": "cricket match schedule this weekend",
+        "returned_any": true,
+        "top1_score": 0.0643,
+        "top1": "diesel_engine_manual_8"
+      },
+      {
+        "q": "how to cook string hoppers",
+        "returned_any": false,
+        "top1_score": 0,
+        "top1": null
+      },
+      {
+        "q": "bitcoin price prediction 2027",
+        "returned_any": false,
+        "top1_score": 0,
+        "top1": null
+      }
+    ]
+  },
+  "rows": [
+    {
+      "q": "engine is dripping oil onto the floor under the loco",
+      "cat": "symptom",
+      "expected": "diesel_engine_manual_3",
+      "top1": "diesel_engine_manual_3",
+      "rank": 1,
+      "top1_score": 0.5573
+    },
+    {
+      "q": "locomotive keeps overheating and temperature warning comes on",
+      "cat": "symptom",
+      "expected": "diesel_engine_manual_4",
+      "top1": "diesel_engine_manual_4",
+      "rank": 1,
+      "top1_score": 0.2044
+    },
+    {
+      "q": "black smoke and poor fuel burn from the diesel engine",
+      "cat": "symptom",
+      "expected": "diesel_engine_manual_5",
+      "top1": "diesel_engine_manual_5",
+      "rank": 1,
+      "top1_score": 0.3426
+    },
+    {
+      "q": "whining noise from turbo and loss of boost pressure",
+      "cat": "symptom",
+      "expected": "diesel_engine_manual_9",
+      "top1": "diesel_engine_manual_9",
+      "rank": 1,
+      "top1_score": 0.1541
+    },
+    {
+      "q": "brake pads look very thin, when do I replace them",
+      "cat": "symptom",
+      "expected": "brake_system_manual_3",
+      "top1": "brake_system_manual_5",
+      "rank": 2,
+      "top1_score": 0.4026
+    },
+    {
+      "q": "air hissing from brake cylinder, seal seems gone",
+      "cat": "symptom",
+      "expected": "brake_system_manual_4",
+      "top1": "brake_system_manual_4",
+      "rank": 1,
+      "top1_score": 0.5444
+    },
+    {
+      "q": "flat spot on wheel causing thumping at low speed",
+      "cat": "symptom",
+      "expected": "bogie_inspection_guide_2",
+      "top1": "bogie_inspection_guide_2",
+      "rank": 1,
+      "top1_score": 0.39
+    },
+    {
+      "q": "growling sound from axle bearing needs grease",
+      "cat": "symptom",
+      "expected": "bogie_inspection_guide_3",
+      "top1": "bogie_inspection_guide_3",
+      "rank": 1,
+      "top1_score": 0.4542
+    },
+    {
+      "q": "excess vibration from the bogie at speed",
+      "cat": "symptom",
+      "expected": "bogie_inspection_guide_5",
+      "top1": "bogie_inspection_guide_5",
+      "rank": 1,
+      "top1_score": 0.5849
+    },
+    {
+      "q": "pantograph not making good contact with the wire",
+      "cat": "symptom",
+      "expected": "electric_locomotive_manual_2",
+      "top1": "electric_locomotive_manual_2",
+      "rank": 1,
+      "top1_score": 0.6595
+    },
+    {
+      "q": "barrier arm at the level crossing does not lower",
+      "cat": "symptom",
+      "expected": "level_crossing_manual_4",
+      "top1": "level_crossing_manual_4",
+      "rank": 1,
+      "top1_score": 0.4408
+    },
+    {
+      "q": "platform screen door will not open for passengers",
+      "cat": "symptom",
+      "expected": "platform_gate_manual_2",
+      "top1": "platform_gate_manual_2",
+      "rank": 1,
+      "top1_score": 0.3715
+    },
+    {
+      "q": "oil system maintenance diesel",
+      "cat": "keyword",
+      "expected": "diesel_engine_manual_3",
+      "top1": "diesel_engine_manual_3",
+      "rank": 1,
+      "top1_score": 0.4446
+    },
+    {
+      "q": "cooling system coolant radiator",
+      "cat": "keyword",
+      "expected": "diesel_engine_manual_4",
+      "top1": "diesel_engine_manual_4",
+      "rank": 1,
+      "top1_score": 0.341
+    },
+    {
+      "q": "brake pad inspection thickness",
+      "cat": "keyword",
+      "expected": "brake_system_manual_3",
+      "top1": "brake_system_manual_3",
+      "rank": 1,
+      "top1_score": 0.526
+    },
+    {
+      "q": "wheel inspection profile",
+      "cat": "keyword",
+      "expected": "bogie_inspection_guide_2",
+      "top1": "bogie_inspection_guide_2",
+      "rank": 1,
+      "top1_score": 0.514
+    },
+    {
+      "q": "axle bearing maintenance",
+      "cat": "keyword",
+      "expected": "bogie_inspection_guide_3",
+      "top1": "bogie_inspection_guide_3",
+      "rank": 1,
+      "top1_score": 0.5469
+    },
+    {
+      "q": "pantograph system",
+      "cat": "keyword",
+      "expected": "electric_locomotive_manual_2",
+      "top1": "electric_locomotive_manual_9",
+      "rank": 2,
+      "top1_score": 0.4215
+    },
+    {
+      "q": "brak pad insepction thicknes",
+      "cat": "typo",
+      "expected": "brake_system_manual_3",
+      "top1": "brake_system_manual_3",
+      "rank": 1,
+      "top1_score": 0.3464
+    },
+    {
+      "q": "diesle engine oill leek",
+      "cat": "typo",
+      "expected": "diesel_engine_manual_3",
+      "top1": "diesel_engine_manual_12",
+      "rank": 0,
+      "top1_score": 0.3505
+    },
+    {
+      "q": "panttograph contatc wire",
+      "cat": "typo",
+      "expected": "electric_locomotive_manual_2",
+      "top1": "electric_locomotive_manual_2",
+      "rank": 1,
+      "top1_score": 0.3988
+    },
+    {
+      "q": "brake eka weda karanne na (brakes not working)",
+      "cat": "crosslingual",
+      "expected": "brake_system_manual_1",
+      "top1": "brake_system_manual_6",
+      "rank": 2,
+      "top1_score": 0.3409
+    },
+    {
+      "q": "enjima r\u0dad\u0dca\u0dad\u0dd2\u0dbb\u0dd2 weiola (engine oil leak sinhala)",
+      "cat": "crosslingual",
+      "expected": "diesel_engine_manual_3",
+      "top1": "diesel_engine_manual_3",
+      "rank": 1,
+      "top1_score": 0.4533
+    },
+    {
+      "q": "kadhavu thiranam thirakkavillai (door not opening tamil)",
+      "cat": "crosslingual",
+      "expected": "platform_gate_manual_2",
+      "top1": "platform_gate_manual_4",
+      "rank": 3,
+      "top1_score": 0.4768
+    }
+  ]
+}
