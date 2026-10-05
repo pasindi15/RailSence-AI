@@ -96,14 +96,24 @@ else:
 
 # Engine setup
 _connect_args = {}
+_pool_kwargs = {}
 if DATABASE_URL.startswith("sqlite"):
     _connect_args["check_same_thread"] = False
+else:
+    # The Supabase session pooler allows only 15 clients for the whole
+    # project (shared with Booking and the gateways), so keep this pool small.
+    _pool_kwargs = {
+        "pool_size": int(os.getenv("HUB_DB_POOL_SIZE", "2")),
+        "max_overflow": int(os.getenv("HUB_DB_MAX_OVERFLOW", "2")),
+        "pool_timeout": float(os.getenv("DB_POOL_TIMEOUT", "10")),
+    }
 
 engine = create_engine(
     DATABASE_URL,
     connect_args=_connect_args,
     pool_pre_ping=True if not DATABASE_URL.startswith("sqlite") else False,
     echo=False,
+    **_pool_kwargs,
 )
 
 SessionLocal = sessionmaker(

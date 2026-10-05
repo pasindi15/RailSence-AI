@@ -51,6 +51,15 @@ for env_file in (_M3_ROOT / ".env", _WORKSPACE_ROOT / ".env"):
         load_dotenv(dotenv_path=env_file, override=False)
 load_dotenv()
 
+# The direct-database fallbacks below import the Booking and Hub engines into
+# this process. Supabase's session pooler allows only 15 clients for the whole
+# project, so each gateway side keeps at most 2 + 1 connections. Worst case
+# overall: Booking 5 + Hub 4 + two gateway sides x 3 = 15.
+os.environ.setdefault("DB_POOL_SIZE", "2")
+os.environ.setdefault("DB_MAX_OVERFLOW", "0")
+os.environ.setdefault("HUB_DB_POOL_SIZE", "1")
+os.environ.setdefault("HUB_DB_MAX_OVERFLOW", "0")
+
 def is_test_environment() -> bool:
     return (
         "PYTEST_CURRENT_TEST" in os.environ
@@ -1564,7 +1573,11 @@ async def list_admin_cancellations(status: str | None = None) -> JSONResponse:
     except Exception:
         pass
 
-    # Direct database fallback
+    return await asyncio.to_thread(_admin_cancellations_from_db, status)
+
+
+def _admin_cancellations_from_db(status: str | None) -> JSONResponse:
+    """Direct database fallback, run in a worker thread so the gateway stays responsive."""
     try:
         sys.path.insert(0, str(_M3_ROOT / "booking-agent"))
         from database.database import SessionLocal
@@ -1670,13 +1683,20 @@ async def list_admin_trains_proxy() -> JSONResponse:
     Falls back to direct DB query if booking-agent is offline.
     """
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
+        # The agent's train list can take ~15 s over a slow link; wait for it
+        # rather than repeating the same query from here.
+        async with httpx.AsyncClient(timeout=30.0) as client:
             resp = await client.get(f"{BOOKING_AGENT_URL}/admin/trains")
             if resp.status_code == 200:
                 return JSONResponse(status_code=200, content=resp.json())
     except Exception:
         pass
 
+    return await asyncio.to_thread(_admin_trains_from_db)
+
+
+def _admin_trains_from_db() -> JSONResponse:
+    """Direct database fallback, run in a worker thread so the gateway stays responsive."""
     try:
         sys.path.insert(0, str(_M3_ROOT / "booking-agent"))
         from database.database import SessionLocal
@@ -1747,7 +1767,18 @@ async def list_admin_bookings_proxy(
         except Exception:
             pass
 
-    # Direct DB fallback
+    return await asyncio.to_thread(
+        _admin_bookings_from_db, train_id, travel_date, booking_status, max_rows
+    )
+
+
+def _admin_bookings_from_db(
+    train_id: str | None,
+    travel_date: str | None,
+    booking_status: str | None,
+    max_rows: int | None,
+) -> JSONResponse:
+    """Direct DB read, run in a worker thread so the gateway stays responsive."""
     try:
         from datetime import date as _date
         sys.path.insert(0, str(_M3_ROOT / "booking-agent"))
@@ -1881,7 +1912,11 @@ async def list_admin_fraud_reviews(status: str | None = None) -> JSONResponse:
     except Exception:
         pass
 
-    # Direct database fallback
+    return await asyncio.to_thread(_admin_fraud_reviews_from_db, status)
+
+
+def _admin_fraud_reviews_from_db(status: str | None) -> JSONResponse:
+    """Direct database fallback, run in a worker thread so the gateway stays responsive."""
     try:
         sys.path.insert(0, str(_M3_ROOT / "booking-agent"))
         from database.database import SessionLocal
@@ -2011,7 +2046,9 @@ async def get_system_health() -> JSONResponse:
 async def hub_dashboard_proxy() -> JSONResponse:
     """Proxy hub metrics for live monitoring dashboard."""
     try:
-        async with httpx.AsyncClient(timeout=5.0) as client:
+        # The Hub needs 2-3 s per call over a slow database link; a 5 s limit
+        # sent every busy poll to the (slower) direct-database fallback.
+        async with httpx.AsyncClient(timeout=15.0) as client:
             resp = await client.get(f"{HUB_URL}/api/hub/dashboard")
             if resp.status_code == 200:
                 data = resp.json()
@@ -2037,6 +2074,11 @@ async def hub_dashboard_proxy() -> JSONResponse:
     except Exception:
         pass
 
+    return await asyncio.to_thread(_hub_dashboard_from_db)
+
+
+def _hub_dashboard_from_db() -> JSONResponse:
+    """Direct database fallback, run in a worker thread so the gateway stays responsive."""
     try:
         sys.path.insert(0, str(_M3_ROOT / "agent-hub"))
         from hub_database import SessionLocal, AuditLog
@@ -2187,7 +2229,7 @@ def humanize_hub_error(raw_err: str | None, intent: str = "", receiver: str = ""
 async def hub_timeline_proxy(limit: int = Query(default=20, ge=1, le=100)) -> JSONResponse:
     """Proxy inter-agent message timeline."""
     try:
-        async with httpx.AsyncClient(timeout=5.0) as client:
+        async with httpx.AsyncClient(timeout=15.0) as client:
             resp = await client.get(f"{HUB_URL}/api/hub/timeline", params={"limit": limit})
             if resp.status_code == 200:
                 data = resp.json()
@@ -2225,6 +2267,11 @@ async def hub_timeline_proxy(limit: int = Query(default=20, ge=1, le=100)) -> JS
     except Exception:
         pass
 
+    return await asyncio.to_thread(_hub_timeline_from_db, limit)
+
+
+def _hub_timeline_from_db(limit: int) -> JSONResponse:
+    """Direct database fallback, run in a worker thread so the gateway stays responsive."""
     try:
         sys.path.insert(0, str(_M3_ROOT / "agent-hub"))
         from hub_database import SessionLocal, AuditLog

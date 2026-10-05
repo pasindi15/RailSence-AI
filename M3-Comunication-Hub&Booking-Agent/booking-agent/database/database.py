@@ -112,8 +112,13 @@ else:
     _connect_args["keepalives_interval"] = 10
     _connect_args["keepalives_count"] = 5
     _engine_kwargs["pool_pre_ping"] = False
-    _engine_kwargs["pool_size"] = 10
-    _engine_kwargs["max_overflow"] = 20
+    # The Supabase session pooler (port 5432) allows only 15 clients for the
+    # whole project, shared by Booking, the Hub and both gateway sides. Keep
+    # each pool small (override with DB_POOL_SIZE / DB_MAX_OVERFLOW) and give
+    # up after DB_POOL_TIMEOUT seconds instead of hanging the request.
+    _engine_kwargs["pool_size"] = int(os.getenv("DB_POOL_SIZE", "3"))
+    _engine_kwargs["max_overflow"] = int(os.getenv("DB_MAX_OVERFLOW", "2"))
+    _engine_kwargs["pool_timeout"] = float(os.getenv("DB_POOL_TIMEOUT", "10"))
     _engine_kwargs["pool_recycle"] = 1800
 
 engine = create_engine(
