@@ -521,32 +521,6 @@ RailSence-AI/
 
 ---
 
-## Known limitations
-
-- **Open audit findings:** see [the audit section](#independent-security-and-retrieval-audit) — most
-  urgently the default M2 admin password (F-01), M4 hard-coded engineer credentials (F-02) and admin /
-  fraud / Hub endpoints reachable without auth on the public port (F-03, F-16).
-- **Multilingual retrieval:** M1 FAQ retrieval uses English-only embeddings, so Sinhala and Tamil
-  questions retrieve less accurately than English (P@1 0.375 / 0.250 vs 1.000), and no retriever has a
-  relevance cut-off yet.
-- **M1 prompt-injection gaps:** a request for another passenger's data is not refused explicitly
-  (nothing leaks, but no refusal is shown — PI-10), and one Sinhala fare question misses retrieval
-  (PI-13).
-- **M4 is not connected to the shared database yet** (it reads only its own `.env`, which has no
-  Supabase keys). It works on local data, so the "flag a train → Booking stops selling seats" link does
-  not reach M3, and the invented-train-ID check is skipped. Loading the root `.env` in M4 is the fix
-  (owner decision).
-- **M4 uses its own train numbers** (e.g. Yal Devi #1001 / `T-003`) while the rest of RailSense uses
-  service numbers such as 4085; the M4 assistant accepts both.
-- **M1 routing:** "which trains are unavailable due to maintenance" and "is my booked train running"
-  are not yet routed to M4 from the passenger chat.
-- Intermediate station times are estimated from track distance between the published departure and
-  arrival, not from an official per-stop timetable.
-- Commercialisation prices are indicative planning figures, not a quote.
-- `spacy` is listed in M1's requirements but not used by the code.
-
----
-
 ## Troubleshooting
 
 | Symptom | Fix |
