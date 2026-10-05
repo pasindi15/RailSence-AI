@@ -41,6 +41,6 @@
   "severity": "Medium",
   "risk_level": "Medium",
   "endpoint_tested": "agent-hub/main.py & booking-agent/main.py (CORSMiddleware)",
-  "timestamp": "2026-10-04T08:29:06.430176+00:00",
+  "timestamp": "2026-10-04T15:14:44.413751+00:00",
   "technical_justification": "FastAPI CORSMiddleware configured with allow_origins=['*'] and allow_credentials=True reflects incoming Origin headers."
 }

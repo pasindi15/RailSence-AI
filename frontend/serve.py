@@ -1547,6 +1547,22 @@ async def confirm_cancellation_endpoint(req: ConfirmCancellationInput) -> JSONRe
 # Admin Review API Endpoints
 # ---------------------------------------------------------------------------
 
+
+def _mint_admin_service_jwt() -> str:
+    """Mint an internal administrator JWT token for proxying admin dashboard calls."""
+    now = datetime.now(timezone.utc)
+    claims = {
+        "sub": "admin-portal",
+        "role": "admin",
+        "iss": "railsense-hub",
+        "aud": "railsense-services",
+        "iat": int(now.timestamp()),
+        "nbf": int(now.timestamp()),
+        "exp": int((now + timedelta(seconds=3600)).timestamp()),
+    }
+    return jwt.encode(claims, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
+
+
 @app.get("/api/admin/cancellations", tags=["admin"])
 async def list_admin_cancellations(status: str | None = None) -> JSONResponse:
     """
@@ -1554,9 +1570,11 @@ async def list_admin_cancellations(status: str | None = None) -> JSONResponse:
     """
     try:
         async with httpx.AsyncClient(timeout=25.0) as client:
+            token = _mint_admin_service_jwt()
             resp = await client.get(
                 f"{BOOKING_AGENT_URL}/cancellations",
                 params={"status": status} if status else {},
+                headers={"Authorization": f"Bearer {token}"},
             )
             if resp.status_code == 200:
                 return JSONResponse(status_code=200, content=resp.json())
@@ -1737,9 +1755,11 @@ async def list_admin_bookings_proxy(
     if not unfiltered:
         try:
             async with httpx.AsyncClient(timeout=15.0) as client:
+                token = _mint_admin_service_jwt()
                 resp = await client.get(
                     f"{BOOKING_AGENT_URL}/admin/bookings",
                     params=params,
+                    headers={"Authorization": f"Bearer {token}"},
                 )
                 if resp.status_code in (200, 400, 404):
                     return JSONResponse(status_code=resp.status_code, content=resp.json())
@@ -2296,7 +2316,11 @@ async def get_booking_ticket(booking_reference: str) -> JSONResponse:
     """Retrieve booking details with opaque ticket token and QR SVG."""
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
-            resp = await client.get(f"{BOOKING_AGENT_URL}/bookings/{booking_reference}")
+            token = _mint_admin_service_jwt()
+            resp = await client.get(
+                f"{BOOKING_AGENT_URL}/bookings/{booking_reference}",
+                headers={"Authorization": f"Bearer {token}"},
+            )
             if resp.status_code == 200:
                 return JSONResponse(status_code=200, content=resp.json())
     except Exception:

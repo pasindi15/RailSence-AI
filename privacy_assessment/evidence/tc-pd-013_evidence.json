@@ -24,6 +24,6 @@
   "severity": "Low",
   "risk_level": "Low",
   "endpoint_tested": "agent-hub/audit/service.py:write_audit_log",
-  "timestamp": "2026-10-04T08:29:01.970463+00:00",
+  "timestamp": "2026-10-04T15:14:39.794810+00:00",
   "technical_justification": "sanitize_audit_text() applies regex scrubbing before saving AuditLog instances to SQLite."
 }

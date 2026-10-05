@@ -8,22 +8,22 @@
     "query_params": {}
   },
   "expected_behaviour": "Endpoint must require caller authentication and reject unverified requests (HTTP 401/403).",
-  "actual_behaviour": "HTTP 200. Authorization bypassed on omission: True.",
-  "status": "FAIL",
+  "actual_behaviour": "HTTP 401. Authorization bypassed on omission: False.",
+  "status": "PASS",
   "evidence": {
     "booking_reference": "RS-39230",
     "owner_user_id": "synthetic-user-a-it3041",
     "query_params_sent": {},
-    "http_status": 200,
-    "body_preview": "{\"booking_reference\":\"RS-39230\",\"ticket_token\":\"TKT-kt3Dre73P9s1WXj_KpqHQQDZyRk3a-sfMWWtl8ddYYI\",\"train_id\":\"1020\",\"from_station\":\"Colombo Fort\",\"to_station\":\"Kandy\",\"travel_date\":\"2026-09-18\",\"seat_class\":\"First Class\",\"passenger_count\":1,\"passenger"
+    "http_status": 401,
+    "body_preview": "{\"detail\":\"Authentication required: passenger booking records cannot be retrieved anonymously.\"}"
   },
-  "observation": "Omitting user_id completely bypassed authorization. HTTP 200 returned with full booking details for RS-39230.",
-  "conclusion": "CRITICAL AUTHORIZATION DEFICIENCY: booking-agent/main.py:391 check 'if user_id and booking.user_id ...' is bypassed when user_id is None.",
+  "observation": "Access rejected with HTTP 401 when user_id was omitted.",
+  "conclusion": "Endpoint enforces mandatory user identity verification.",
   "potential_impact": "Permits anonymous enumeration and exfiltration of all passenger records if references are guessed or observed.",
-  "likelihood": "High",
-  "severity": "High",
-  "risk_level": "High",
+  "likelihood": "Low",
+  "severity": "Low",
+  "risk_level": "Low",
   "endpoint_tested": "/bookings/RS-39230",
-  "timestamp": "2026-10-04T08:28:57.459800+00:00",
+  "timestamp": "2026-10-04T15:14:35.658117+00:00",
   "technical_justification": "In booking-agent/main.py:391, the ownership condition is only evaluated if user_id is truthy."
 }

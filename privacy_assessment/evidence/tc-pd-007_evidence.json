@@ -21,6 +21,6 @@
   "severity": "Low",
   "risk_level": "Low",
   "endpoint_tested": "/internal/messages",
-  "timestamp": "2026-10-04T08:28:57.977027+00:00",
+  "timestamp": "2026-10-04T15:14:36.167733+00:00",
   "technical_justification": "FastAPI Pydantic schema validation or JWT verification intercept empty token fields."
 }

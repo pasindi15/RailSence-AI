@@ -11,23 +11,24 @@
     }
   },
   "expected_behaviour": "Endpoint must strictly require administrator credentials / RBAC role (HTTP 401/403).",
-  "actual_behaviour": "HTTP 200. Public manifest disclosure: True.",
-  "status": "FAIL",
+  "actual_behaviour": "HTTP 401. Public manifest disclosure: False.",
+  "status": "PASS",
   "evidence": {
-    "http_status": 200,
+    "http_status": 401,
     "headers": {
-      "content-length": "102",
+      "www-authenticate": "Bearer",
+      "content-length": "80",
       "content-type": "application/json"
     },
-    "body_preview": "{\"count\":0,\"filters\":{\"train_id\":null,\"travel_date\":\"2026-11-03\",\"booking_status\":null},\"bookings\":[]}"
+    "body_preview": "{\"detail\":\"Administrator authentication required. Missing authorization token.\"}"
   },
-  "observation": "GET /admin/bookings returned HTTP 200 with 0 passenger records without credentials. Sample emails: [].",
-  "conclusion": "CRITICAL ADMINISTRATIVE EXPOSURE: Full passenger manifests are reachable without authentication, directly violating Sri Lanka PDPA No. 9 of 2022.",
+  "observation": "Access denied with HTTP 401. Admin authentication enforced.",
+  "conclusion": "Administrative manifest endpoint enforces access control.",
   "potential_impact": "Mass leak of citizen travel patterns, contact emails, and payment statuses without any authentication.",
-  "likelihood": "High",
-  "severity": "High",
-  "risk_level": "High",
+  "likelihood": "Low",
+  "severity": "Low",
+  "risk_level": "Low",
   "endpoint_tested": "/admin/bookings",
-  "timestamp": "2026-10-04T08:28:59.438382+00:00",
+  "timestamp": "2026-10-04T15:14:37.191820+00:00",
   "technical_justification": "In booking-agent/main.py:829, list_admin_bookings has no authentication or role dependency."
 }

@@ -25,7 +25,7 @@
       },
       "/api/hub/dashboard": {
         "status_code": 200,
-        "body_snippet": "{\"status\":\"online\",\"metrics\":{\"total_messages\":672,\"routed_count\":395,\"rejected_count\":114,\"failed_count\":162},\"agents\":[{\"name\":\"booking-agent\",\"base_url\":\"http://127.0.0.1:8003\",\"description\":\"Booki"
+        "body_snippet": "{\"status\":\"online\",\"metrics\":{\"total_messages\":681,\"routed_count\":395,\"rejected_count\":123,\"failed_count\":162},\"agents\":[{\"name\":\"booking-agent\",\"base_url\":\"http://127.0.0.1:8003\",\"description\":\"Booki"
       }
     },
     "findings": []
@@ -37,6 +37,6 @@
   "severity": "Low",
   "risk_level": "Low",
   "endpoint_tested": "/api/hub/dashboard",
-  "timestamp": "2026-10-04T08:31:40.550929+00:00",
+  "timestamp": "2026-10-04T15:14:28.891605+00:00",
   "technical_justification": "Verified by regex and pattern analysis across serialized endpoint JSON payloads."
 }

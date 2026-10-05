@@ -26,7 +26,7 @@
         },
         "/api/hub/dashboard": {
           "status_code": 200,
-          "body_snippet": "{\"status\":\"online\",\"metrics\":{\"total_messages\":669,\"routed_count\":395,\"rejected_count\":111,\"failed_count\":162},\"agents\":[{\"name\":\"booking-agent\",\"base_url\":\"http://127.0.0.1:8003\",\"description\":\"Booki"
+          "body_snippet": "{\"status\":\"online\",\"metrics\":{\"total_messages\":681,\"routed_count\":395,\"rejected_count\":123,\"failed_count\":162},\"agents\":[{\"name\":\"booking-agent\",\"base_url\":\"http://127.0.0.1:8003\",\"description\":\"Booki"
         }
       },
       "findings": []
@@ -38,7 +38,7 @@
     "severity": "Low",
     "risk_level": "Low",
     "endpoint_tested": "/api/hub/dashboard",
-    "timestamp": "2026-10-04T08:28:49.124680+00:00",
+    "timestamp": "2026-10-04T15:14:28.891605+00:00",
     "technical_justification": "Verified by regex and pattern analysis across serialized endpoint JSON payloads."
   },
   {
@@ -67,7 +67,7 @@
     "severity": "Low",
     "risk_level": "Low",
     "endpoint_tested": "/internal/messages",
-    "timestamp": "2026-10-04T08:28:51.615391+00:00",
+    "timestamp": "2026-10-04T15:14:31.825211+00:00",
     "technical_justification": "The system utilizes HMAC-SHA256 database hashing and response masking for passenger identity fields."
   },
   {
@@ -96,7 +96,7 @@
     "severity": "Low",
     "risk_level": "Low",
     "endpoint_tested": "/internal/messages",
-    "timestamp": "2026-10-04T08:28:52.133977+00:00",
+    "timestamp": "2026-10-04T15:14:32.337225+00:00",
     "technical_justification": "Pydantic validation schemas intercept invalid types before reaching business logic layers."
   },
   {
@@ -112,25 +112,26 @@
       }
     },
     "expected_behaviour": "Endpoint must require valid user/agent authentication (HTTP 401 or HTTP 403).",
-    "actual_behaviour": "HTTP 200. Anonymous access permitted: True.",
-    "status": "FAIL",
+    "actual_behaviour": "HTTP 401. Anonymous access permitted: False.",
+    "status": "PASS",
     "evidence": {
       "booking_reference_probed": "RS-39230",
-      "http_status": 200,
+      "http_status": 401,
       "headers": {
-        "content-length": "33741",
+        "www-authenticate": "Bearer",
+        "content-length": "96",
         "content-type": "application/json"
       },
-      "body_preview": "{\"booking_reference\":\"RS-39230\",\"ticket_token\":\"TKT-kt3Dre73P9s1WXj_KpqHQQDZyRk3a-sfMWWtl8ddYYI\",\"train_id\":\"1020\",\"from_station\":\"Colombo Fort\",\"to_station\":\"Kandy\",\"travel_date\":\"2026-09-18\",\"seat_class\":\"First Class\",\"passenger_count\":1,\"passenger_email\":\"[REDACTED_EMAIL]\",\"fare\":\"2500"
+      "body_preview": "{\"detail\":\"Authentication required: passenger booking records cannot be retrieved anonymously.\"}"
     },
-    "observation": "Booking RS-39230 returned with HTTP 200 without any authentication credentials. Leaked email: passenger_fresh@example.com.",
-    "conclusion": "CRITICAL DEFICIENCY CONFIRMED: GET /bookings/{booking_reference} lacks an authentication guard (Depends(verify_token)), permitting anonymous passenger data retrieval.",
+    "observation": "Anonymous access rejected with HTTP 401.",
+    "conclusion": "Authentication guard is active on booking retrieval endpoint.",
     "potential_impact": "Direct exposure of passenger journey itineraries, contact emails, and e-ticket QR tokens to anonymous callers.",
-    "likelihood": "High",
-    "severity": "High",
-    "risk_level": "High",
+    "likelihood": "Low",
+    "severity": "Low",
+    "risk_level": "Low",
     "endpoint_tested": "/bookings/RS-39230",
-    "timestamp": "2026-10-04T08:28:55.594594+00:00",
+    "timestamp": "2026-10-04T15:14:34.203502+00:00",
     "technical_justification": "Route definition in booking-agent/main.py:365 does not declare an authentication dependency."
   },
   {
@@ -161,7 +162,7 @@
     "severity": "Low",
     "risk_level": "Low",
     "endpoint_tested": "/bookings/RS-39230?user_id=synthetic-user-b-it3041",
-    "timestamp": "2026-10-04T08:28:56.396404+00:00",
+    "timestamp": "2026-10-04T15:14:34.941266+00:00",
     "technical_justification": "Evaluated against booking-agent/main.py:391 authorization guard."
   },
   {
@@ -174,23 +175,23 @@
       "query_params": {}
     },
     "expected_behaviour": "Endpoint must require caller authentication and reject unverified requests (HTTP 401/403).",
-    "actual_behaviour": "HTTP 200. Authorization bypassed on omission: True.",
-    "status": "FAIL",
+    "actual_behaviour": "HTTP 401. Authorization bypassed on omission: False.",
+    "status": "PASS",
     "evidence": {
       "booking_reference": "RS-39230",
       "owner_user_id": "synthetic-user-a-it3041",
       "query_params_sent": {},
-      "http_status": 200,
-      "body_preview": "{\"booking_reference\":\"RS-39230\",\"ticket_token\":\"TKT-kt3Dre73P9s1WXj_KpqHQQDZyRk3a-sfMWWtl8ddYYI\",\"train_id\":\"1020\",\"from_station\":\"Colombo Fort\",\"to_station\":\"Kandy\",\"travel_date\":\"2026-09-18\",\"seat_class\":\"First Class\",\"passenger_count\":1,\"passenger"
+      "http_status": 401,
+      "body_preview": "{\"detail\":\"Authentication required: passenger booking records cannot be retrieved anonymously.\"}"
     },
-    "observation": "Omitting user_id completely bypassed authorization. HTTP 200 returned with full booking details for RS-39230.",
-    "conclusion": "CRITICAL AUTHORIZATION DEFICIENCY: booking-agent/main.py:391 check 'if user_id and booking.user_id ...' is bypassed when user_id is None.",
+    "observation": "Access rejected with HTTP 401 when user_id was omitted.",
+    "conclusion": "Endpoint enforces mandatory user identity verification.",
     "potential_impact": "Permits anonymous enumeration and exfiltration of all passenger records if references are guessed or observed.",
-    "likelihood": "High",
-    "severity": "High",
-    "risk_level": "High",
+    "likelihood": "Low",
+    "severity": "Low",
+    "risk_level": "Low",
     "endpoint_tested": "/bookings/RS-39230",
-    "timestamp": "2026-10-04T08:28:57.459800+00:00",
+    "timestamp": "2026-10-04T15:14:35.658117+00:00",
     "technical_justification": "In booking-agent/main.py:391, the ownership condition is only evaluated if user_id is truthy."
   },
   {
@@ -216,7 +217,7 @@
     "severity": "Low",
     "risk_level": "Low",
     "endpoint_tested": "/internal/messages",
-    "timestamp": "2026-10-04T08:28:57.977027+00:00",
+    "timestamp": "2026-10-04T15:14:36.167733+00:00",
     "technical_justification": "FastAPI Pydantic schema validation or JWT verification intercept empty token fields."
   },
   {
@@ -230,21 +231,21 @@
       "auth": null
     },
     "expected_behaviour": "Endpoint must require administrative or authenticated operator credentials (HTTP 401/403).",
-    "actual_behaviour": "HTTP 200. Public access allowed: True.",
-    "status": "FAIL",
+    "actual_behaviour": "HTTP 401. Public access allowed: False.",
+    "status": "PASS",
     "evidence": {
-      "http_status": 200,
-      "content_length": 23761,
-      "body_preview": "[{\"case_reference\":\"CN-99531\",\"booking_reference\":\"RS-29048\",\"route\":\"Colombo Fort \u2794 Kandy\",\"from_station\":\"Colombo Fort\",\"to_station\":\"Kandy\",\"travel_date\":\"2026-09-24\",\"train_id\":\"IC-8746\",\"seat_class\":\"First Class\",\"passenger_count\":1,\"fare\":\"2500"
+      "http_status": 401,
+      "content_length": 81,
+      "body_preview": "{\"detail\":\"Authentication required. Please provide a valid authorization token.\"}"
     },
-    "observation": "GET /cancellations returned HTTP 200 with 17 cancellation records without requiring authentication.",
-    "conclusion": "HIGH/MEDIUM DEFICIENCY: Cancellation cases and refund claims are exposed to unauthenticated callers.",
+    "observation": "Access denied with HTTP 401. Authentication required.",
+    "conclusion": "Cancellation management endpoint enforces authentication.",
     "potential_impact": "Allows competitors or unauthorized third parties to harvest railway refund cases and cancellation rates.",
-    "likelihood": "High",
-    "severity": "Medium",
-    "risk_level": "Medium",
+    "likelihood": "Low",
+    "severity": "Low",
+    "risk_level": "Low",
     "endpoint_tested": "/cancellations",
-    "timestamp": "2026-10-04T08:28:58.768637+00:00",
+    "timestamp": "2026-10-04T15:14:36.682641+00:00",
     "technical_justification": "Route booking-agent/main.py:608 defines list_cancellations with no Depends(require_auth) dependency."
   },
   {
@@ -260,24 +261,25 @@
       }
     },
     "expected_behaviour": "Endpoint must strictly require administrator credentials / RBAC role (HTTP 401/403).",
-    "actual_behaviour": "HTTP 200. Public manifest disclosure: True.",
-    "status": "FAIL",
+    "actual_behaviour": "HTTP 401. Public manifest disclosure: False.",
+    "status": "PASS",
     "evidence": {
-      "http_status": 200,
+      "http_status": 401,
       "headers": {
-        "content-length": "102",
+        "www-authenticate": "Bearer",
+        "content-length": "80",
         "content-type": "application/json"
       },
-      "body_preview": "{\"count\":0,\"filters\":{\"train_id\":null,\"travel_date\":\"2026-11-03\",\"booking_status\":null},\"bookings\":[]}"
+      "body_preview": "{\"detail\":\"Administrator authentication required. Missing authorization token.\"}"
     },
-    "observation": "GET /admin/bookings returned HTTP 200 with 0 passenger records without credentials. Sample emails: [].",
-    "conclusion": "CRITICAL ADMINISTRATIVE EXPOSURE: Full passenger manifests are reachable without authentication, directly violating Sri Lanka PDPA No. 9 of 2022.",
+    "observation": "Access denied with HTTP 401. Admin authentication enforced.",
+    "conclusion": "Administrative manifest endpoint enforces access control.",
     "potential_impact": "Mass leak of citizen travel patterns, contact emails, and payment statuses without any authentication.",
-    "likelihood": "High",
-    "severity": "High",
-    "risk_level": "High",
+    "likelihood": "Low",
+    "severity": "Low",
+    "risk_level": "Low",
     "endpoint_tested": "/admin/bookings",
-    "timestamp": "2026-10-04T08:28:59.438382+00:00",
+    "timestamp": "2026-10-04T15:14:37.191820+00:00",
     "technical_justification": "In booking-agent/main.py:829, list_admin_bookings has no authentication or role dependency."
   },
   {
@@ -307,7 +309,7 @@
     "severity": "Medium",
     "risk_level": "Medium",
     "endpoint_tested": "/internal/fraud-reviews",
-    "timestamp": "2026-10-04T08:29:00.184661+00:00",
+    "timestamp": "2026-10-04T15:14:37.952167+00:00",
     "technical_justification": "In booking-agent/main.py:704, list_fraud_reviews() does not declare an authentication dependency."
   },
   {
@@ -328,7 +330,7 @@
     "evidence": {
       "http_status": 200,
       "content_length": 2746,
-      "body_preview": "{\"status\":\"online\",\"metrics\":{\"total_messages\":669,\"routed_count\":395,\"rejected_count\":111,\"failed_count\":162},\"agents\":[{\"name\":\"booking-agent\",\"base_url\":\"http://127.0.0.1:8003\",\"description\":\"Booking & Reservation Agent (Member C). Processes booking_request and cancel_booking intents against the "
+      "body_preview": "{\"status\":\"online\",\"metrics\":{\"total_messages\":681,\"routed_count\":395,\"rejected_count\":123,\"failed_count\":162},\"agents\":[{\"name\":\"booking-agent\",\"base_url\":\"http://127.0.0.1:8003\",\"description\":\"Booking & Reservation Agent (Member C). Processes booking_request and cancel_booking intents against the "
     },
     "observation": "GET /api/hub/dashboard returned HTTP 200 without authentication. Discloses 5 registered agent services: ['booking-agent', 'maintenance-agent', 'operations-agent', 'passenger-agent', 'security-agent'], URLs: ['http://127.0.0.1:8003', 'http://127.0.0.1:8006', 'http://127.0.0.1:8005', 'http://127.0.0.1:8001', 'http://127.0.0.1:8004'].",
     "conclusion": "MEDIUM DEFICIENCY CONFIRMED: System topology, agent network registry, and loopback URLs are exposed to unauthenticated callers.",
@@ -337,7 +339,7 @@
     "severity": "Medium",
     "risk_level": "Medium",
     "endpoint_tested": "/api/hub/dashboard",
-    "timestamp": "2026-10-04T08:29:01.125593+00:00",
+    "timestamp": "2026-10-04T15:14:38.884059+00:00",
     "technical_justification": "In agent-hub/main.py:184, get_hub_dashboard() lacks authentication or role dependencies."
   },
   {
@@ -361,16 +363,16 @@
         "content-length": "7035",
         "content-type": "application/json"
       },
-      "body_preview": "{\"total\":669,\"limit\":20,\"offset\":0,\"items\":[{\"id\":669,\"message_id\":\"MSG-AUDIT-PD014-SUB_MISMATCH\",\"correlation_id\":\"MSG-AUDIT-PD014-SUB_MISMATCH\",\"sender_agent\":\"passenger-agent\",\"receiver_agent\":\"booking-agent\",\"intent\":\"booking_request\",\"status\":\"REJECTED\",\"error_message\":\"Token subject does not m"
+      "body_preview": "{\"total\":681,\"limit\":20,\"offset\":0,\"items\":[{\"id\":681,\"message_id\":\"MSG-AUDIT-PD014-SUB_MISMATCH\",\"correlation_id\":\"MSG-AUDIT-PD014-SUB_MISMATCH\",\"sender_agent\":\"passenger-agent\",\"receiver_agent\":\"booking-agent\",\"intent\":\"booking_request\",\"status\":\"REJECTED\",\"error_message\":\"Token subject does not m"
     },
-    "observation": "GET /api/hub/timeline returned HTTP 200 without authentication. Discloses 669 inter-agent message traces, topologies, and intents.",
+    "observation": "GET /api/hub/timeline returned HTTP 200 without authentication. Discloses 681 inter-agent message traces, topologies, and intents.",
     "conclusion": "MEDIUM DEFICIENCY CONFIRMED: Operational audit timeline is accessible to unauthenticated callers, exposing internal routing topology.",
     "potential_impact": "Allows passive reconnaissance of inter-agent communication flows, system errors, and routing volumes.",
     "likelihood": "High",
     "severity": "Medium",
     "risk_level": "Medium",
     "endpoint_tested": "/api/hub/timeline",
-    "timestamp": "2026-10-04T08:29:01.958222+00:00",
+    "timestamp": "2026-10-04T15:14:39.783829+00:00",
     "technical_justification": "agent-hub/main.py:209 defines get_hub_timeline with no security dependency."
   },
   {
@@ -399,7 +401,7 @@
     "severity": "Low",
     "risk_level": "Low",
     "endpoint_tested": "agent-hub/audit/service.py:write_audit_log",
-    "timestamp": "2026-10-04T08:29:01.970463+00:00",
+    "timestamp": "2026-10-04T15:14:39.794810+00:00",
     "technical_justification": "sanitize_audit_text() applies regex scrubbing before saving AuditLog instances to SQLite."
   },
   {
@@ -446,7 +448,7 @@
     "severity": "Low",
     "risk_level": "Low",
     "endpoint_tested": "/messages",
-    "timestamp": "2026-10-04T08:29:05.392335+00:00",
+    "timestamp": "2026-10-04T15:14:43.397738+00:00",
     "technical_justification": "agent-hub/auth/jwt_utils.py pins algorithms=['HS256'] and verifies subject against sender_agent."
   },
   {
@@ -492,7 +494,7 @@
     "severity": "Medium",
     "risk_level": "Medium",
     "endpoint_tested": "agent-hub/main.py & booking-agent/main.py (CORSMiddleware)",
-    "timestamp": "2026-10-04T08:29:06.430176+00:00",
+    "timestamp": "2026-10-04T15:14:44.413751+00:00",
     "technical_justification": "FastAPI CORSMiddleware configured with allow_origins=['*'] and allow_credentials=True reflects incoming Origin headers."
   }
 ]

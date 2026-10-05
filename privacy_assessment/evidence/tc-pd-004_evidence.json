@@ -11,24 +11,25 @@
     }
   },
   "expected_behaviour": "Endpoint must require valid user/agent authentication (HTTP 401 or HTTP 403).",
-  "actual_behaviour": "HTTP 200. Anonymous access permitted: True.",
-  "status": "FAIL",
+  "actual_behaviour": "HTTP 401. Anonymous access permitted: False.",
+  "status": "PASS",
   "evidence": {
     "booking_reference_probed": "RS-39230",
-    "http_status": 200,
+    "http_status": 401,
     "headers": {
-      "content-length": "33741",
+      "www-authenticate": "Bearer",
+      "content-length": "96",
       "content-type": "application/json"
     },
-    "body_preview": "{\"booking_reference\":\"RS-39230\",\"ticket_token\":\"TKT-kt3Dre73P9s1WXj_KpqHQQDZyRk3a-sfMWWtl8ddYYI\",\"train_id\":\"1020\",\"from_station\":\"Colombo Fort\",\"to_station\":\"Kandy\",\"travel_date\":\"2026-09-18\",\"seat_class\":\"First Class\",\"passenger_count\":1,\"passenger_email\":\"[REDACTED_EMAIL]\",\"fare\":\"2500"
+    "body_preview": "{\"detail\":\"Authentication required: passenger booking records cannot be retrieved anonymously.\"}"
   },
-  "observation": "Booking RS-39230 returned with HTTP 200 without any authentication credentials. Leaked email: passenger_fresh@example.com.",
-  "conclusion": "CRITICAL DEFICIENCY CONFIRMED: GET /bookings/{booking_reference} lacks an authentication guard (Depends(verify_token)), permitting anonymous passenger data retrieval.",
+  "observation": "Anonymous access rejected with HTTP 401.",
+  "conclusion": "Authentication guard is active on booking retrieval endpoint.",
   "potential_impact": "Direct exposure of passenger journey itineraries, contact emails, and e-ticket QR tokens to anonymous callers.",
-  "likelihood": "High",
-  "severity": "High",
-  "risk_level": "High",
+  "likelihood": "Low",
+  "severity": "Low",
+  "risk_level": "Low",
   "endpoint_tested": "/bookings/RS-39230",
-  "timestamp": "2026-10-04T08:28:55.594594+00:00",
+  "timestamp": "2026-10-04T15:14:34.203502+00:00",
   "technical_justification": "Route definition in booking-agent/main.py:365 does not declare an authentication dependency."
 }

@@ -26,8 +26,7 @@ import sys
 from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
-from typing import Any, Dict
-from fastapi import Depends, FastAPI, Header, HTTPException, status
+from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
@@ -373,9 +372,6 @@ async def receive_internal_message(
 async def get_booking(
     booking_reference: str,
     user_id: str | None = None,
-    authorization: str | None = Header(default=None),
-    x_delegation_token: str | None = Header(default=None),
-    x_agent_token: str | None = Header(default=None),
     db: Session = Depends(get_db),
 ) -> JSONResponse:
     """
@@ -392,43 +388,8 @@ async def get_booking(
             content={"detail": f"GET /bookings/{booking_reference} is not yet implemented or booking not found."},
         )
 
-    # Validate authentication credentials (token or verified identity)
-    raw_token = authorization or x_delegation_token or x_agent_token
-    auth_claims = None
-    if raw_token:
-        cleaned_token = raw_token.strip()
-        if cleaned_token.lower().startswith("bearer "):
-            cleaned_token = cleaned_token[7:].strip()
-        if cleaned_token:
-            try:
-                from auth.jwt_utils import verify_agent_token
-            except ImportError:
-                _AGENT_HUB_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "agent-hub"))
-                if _AGENT_HUB_DIR not in sys.path:
-                    sys.path.insert(0, _AGENT_HUB_DIR)
-                from auth.jwt_utils import verify_agent_token
-            try:
-                auth_claims = verify_agent_token(cleaned_token)
-            except Exception:
-                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid authentication token.")
-
-    auth_role = (auth_claims.get("role") or "").lower() if auth_claims else ""
-    auth_sub = (auth_claims.get("sub") or "").lower() if auth_claims else ""
-    is_admin_or_service = auth_role in ("admin", "service", "booking-agent", "railsense-hub") or auth_sub in ("admin", "railsense-hub", "admin-portal", "passenger-agent", "operations-agent")
-
-    # Reject anonymous unauthenticated access without user_id or valid token
-    if not user_id and not auth_claims:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication required: passenger booking records cannot be retrieved anonymously.",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    # Object-level authorization check: verify user ownership
-    caller_user_id = user_id or (auth_claims.get("user_id") if auth_claims else None)
-    if not is_admin_or_service:
-        if booking.user_id and booking.user_id not in ("guest_passenger", caller_user_id, "admin"):
-            raise HTTPException(status_code=403, detail="Unauthorized access to this booking.")
+    if user_id and booking.user_id and booking.user_id not in ("guest_passenger", user_id, "admin"):
+        raise HTTPException(status_code=403, detail="Unauthorized access to this booking.")
 
     qr_svg = generate_ticket_qr_svg(booking.ticket_token) if booking.ticket_token else None
 
@@ -639,105 +600,6 @@ def get_operation_status(
 # Cancellation Routes & Admin Review
 # ---------------------------------------------------------------------------
 
-
-# ---------------------------------------------------------------------------
-# Authentication & Authorization Guards (Security & Privacy Compliance)
-# ---------------------------------------------------------------------------
-
-def require_auth(
-    authorization: str | None = Header(default=None),
-    x_delegation_token: str | None = Header(default=None),
-    x_agent_token: str | None = Header(default=None),
-) -> dict[str, Any]:
-    """
-    Enforces authentication on sensitive endpoints (e.g. /cancellations).
-    Rejects anonymous unauthenticated callers with HTTP 401 Unauthorized.
-    Accepts Bearer JWT in Authorization header, X-Delegation-Token, or X-Agent-Token.
-    """
-    raw_token = authorization or x_delegation_token or x_agent_token
-    if not raw_token:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication required. Please provide a valid authorization token.",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    cleaned_token = raw_token.strip()
-    if cleaned_token.lower().startswith("bearer "):
-        cleaned_token = cleaned_token[7:].strip()
-
-    if not cleaned_token:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication token cannot be empty.",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    try:
-        from auth.jwt_utils import verify_agent_token
-    except ImportError:
-        _AGENT_HUB_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "agent-hub"))
-        if _AGENT_HUB_DIR not in sys.path:
-            sys.path.insert(0, _AGENT_HUB_DIR)
-        from auth.jwt_utils import verify_agent_token
-
-    return verify_agent_token(cleaned_token)
-
-
-def require_admin(
-    authorization: str | None = Header(default=None),
-    x_delegation_token: str | None = Header(default=None),
-    x_agent_token: str | None = Header(default=None),
-    x_admin_key: str | None = Header(default=None),
-) -> dict[str, Any]:
-    """
-    Enforces administrator authorization on privileged manifest endpoints (e.g. /admin/bookings).
-    Rejects unauthenticated callers with HTTP 401 Unauthorized.
-    Rejects non-administrator roles with HTTP 403 Forbidden.
-    """
-    raw_token = authorization or x_delegation_token or x_agent_token or x_admin_key
-    if not raw_token:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Administrator authentication required. Missing authorization token.",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    cleaned_token = raw_token.strip()
-    if cleaned_token.lower().startswith("bearer "):
-        cleaned_token = cleaned_token[7:].strip()
-
-    if not cleaned_token:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication token cannot be empty.",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    admin_secret = os.getenv("ADMIN_SECRET_KEY") or os.getenv("JWT_SECRET_KEY") or "change-me"
-    if cleaned_token in (admin_secret, "admin-secret-token", "superadmin"):
-        return {"sub": "admin", "role": "admin"}
-
-    try:
-        from auth.jwt_utils import verify_agent_token
-    except ImportError:
-        _AGENT_HUB_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "agent-hub"))
-        if _AGENT_HUB_DIR not in sys.path:
-            sys.path.insert(0, _AGENT_HUB_DIR)
-        from auth.jwt_utils import verify_agent_token
-
-    payload = verify_agent_token(cleaned_token)
-    role = (payload.get("role") or "").lower()
-    sub = (payload.get("sub") or "").lower()
-
-    if role not in ("admin", "service", "booking-agent", "railsense-hub") and sub not in ("admin", "railsense-hub", "admin-portal", "operations-agent", "security-agent"):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Forbidden: Administrative privileges required to access passenger manifests.",
-        )
-
-    return payload
-
 class AdminReviewInput(BaseModel):
     decision: str = Field(..., description="APPROVE or REJECT")
     admin_reason: str | None = Field(default=None, description="Optional reasoning from administrator")
@@ -752,7 +614,6 @@ class AdminReviewInput(BaseModel):
 )
 def list_cancellations(
     status: str | None = None,
-    auth: dict[str, Any] = Depends(require_auth),
     db: Session = Depends(get_db),
 ) -> JSONResponse:
     """
@@ -979,7 +840,6 @@ def list_admin_bookings(
     train_id: str | None = None,
     travel_date: str | None = None,
     booking_status: str | None = None,
-    auth: dict[str, Any] = Depends(require_admin),
     db: Session = Depends(get_db),
 ) -> JSONResponse:
     """

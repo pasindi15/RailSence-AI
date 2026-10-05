@@ -19,15 +19,15 @@
       "content-length": "7035",
       "content-type": "application/json"
     },
-    "body_preview": "{\"total\":669,\"limit\":20,\"offset\":0,\"items\":[{\"id\":669,\"message_id\":\"MSG-AUDIT-PD014-SUB_MISMATCH\",\"correlation_id\":\"MSG-AUDIT-PD014-SUB_MISMATCH\",\"sender_agent\":\"passenger-agent\",\"receiver_agent\":\"booking-agent\",\"intent\":\"booking_request\",\"status\":\"REJECTED\",\"error_message\":\"Token subject does not m"
+    "body_preview": "{\"total\":681,\"limit\":20,\"offset\":0,\"items\":[{\"id\":681,\"message_id\":\"MSG-AUDIT-PD014-SUB_MISMATCH\",\"correlation_id\":\"MSG-AUDIT-PD014-SUB_MISMATCH\",\"sender_agent\":\"passenger-agent\",\"receiver_agent\":\"booking-agent\",\"intent\":\"booking_request\",\"status\":\"REJECTED\",\"error_message\":\"Token subject does not m"
   },
-  "observation": "GET /api/hub/timeline returned HTTP 200 without authentication. Discloses 669 inter-agent message traces, topologies, and intents.",
+  "observation": "GET /api/hub/timeline returned HTTP 200 without authentication. Discloses 681 inter-agent message traces, topologies, and intents.",
   "conclusion": "MEDIUM DEFICIENCY CONFIRMED: Operational audit timeline is accessible to unauthenticated callers, exposing internal routing topology.",
   "potential_impact": "Allows passive reconnaissance of inter-agent communication flows, system errors, and routing volumes.",
   "likelihood": "High",
   "severity": "Medium",
   "risk_level": "Medium",
   "endpoint_tested": "/api/hub/timeline",
-  "timestamp": "2026-10-04T08:29:01.958222+00:00",
+  "timestamp": "2026-10-04T15:14:39.783829+00:00",
   "technical_justification": "agent-hub/main.py:209 defines get_hub_timeline with no security dependency."
 }

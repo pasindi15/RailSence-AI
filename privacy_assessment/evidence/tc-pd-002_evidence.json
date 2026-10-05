@@ -24,6 +24,6 @@
   "severity": "Low",
   "risk_level": "Low",
   "endpoint_tested": "/internal/messages",
-  "timestamp": "2026-10-04T08:28:51.615391+00:00",
+  "timestamp": "2026-10-04T15:14:31.825211+00:00",
   "technical_justification": "The system utilizes HMAC-SHA256 database hashing and response masking for passenger identity fields."
 }

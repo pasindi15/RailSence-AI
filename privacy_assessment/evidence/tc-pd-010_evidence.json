@@ -25,6 +25,6 @@
   "severity": "Medium",
   "risk_level": "Medium",
   "endpoint_tested": "/internal/fraud-reviews",
-  "timestamp": "2026-10-04T08:29:00.184661+00:00",
+  "timestamp": "2026-10-04T15:14:37.952167+00:00",
   "technical_justification": "In booking-agent/main.py:704, list_fraud_reviews() does not declare an authentication dependency."
 }

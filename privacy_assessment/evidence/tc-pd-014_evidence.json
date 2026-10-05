@@ -42,6 +42,6 @@
   "severity": "Low",
   "risk_level": "Low",
   "endpoint_tested": "/messages",
-  "timestamp": "2026-10-04T08:29:05.392335+00:00",
+  "timestamp": "2026-10-04T15:14:43.397738+00:00",
   "technical_justification": "agent-hub/auth/jwt_utils.py pins algorithms=['HS256'] and verifies subject against sender_agent."
 }

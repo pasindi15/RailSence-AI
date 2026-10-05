@@ -303,7 +303,7 @@ class TestPrivacyDataLeakageAssessmentV2:
             print("[TC-PD-017] Root cause: No JWT Depends() guard. user_id is optional. Auth at L391 bypassed.")
         elif r_no_uid.status_code == 403:
             print("[TC-PD-017] Blocked HTTP 403. PASS")
-        assert r_no_uid.status_code in (200, 403, 404, 501)
+        assert r_no_uid.status_code in (200, 401, 403, 404, 501)
 
     def test_tc_pd_018_fraud_reviews_unauthenticated_access(self):
         """TC-PD-018: GET /internal/fraud-reviews - nic_hash/booking_payload exposed without auth."""

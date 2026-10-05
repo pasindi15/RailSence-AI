@@ -2,7 +2,7 @@
 ### Automated Security Testing & Vulnerability Assessment Report (Student 2)
 **Module:** IT3041 — Information Retrieval and Web Analytics  
 **Specialisation:** Privacy and Data Leakage Assessment  
-**Generated At:** `2026-10-04 08:29:06 UTC`  
+**Generated At:** `2026-10-04 15:14:44 UTC`  
 
 ---
 
@@ -14,14 +14,14 @@ This assessment evaluated the privacy boundaries, Personally Identifiable Inform
 | Evaluation Metric | Count | Percentage |
 | :--- | :--- | :--- |
 | **Total Test Cases** | **15** | 100.0% |
-| **Controls Verified (PASS)** | **7** | 46.7% |
-| **Deficiencies Identified (FAIL)** | **8** | 53.3% |
+| **Controls Verified (PASS)** | **11** | 73.3% |
+| **Deficiencies Identified (FAIL)** | **4** | 26.7% |
 | **Inconclusive (Environment Offline)** | **0** | 0.0% |
 
 ### Identified Risk Distribution (Deficiencies)
 - 🟣 **Critical:** 0
-- 🔴 **High:** 3
-- 🟠 **Medium:** 5
+- 🔴 **High:** 0
+- 🟠 **Medium:** 4
 - 🟡 **Low:** 0
 - 🔵 **Informational:** 0
 
@@ -47,12 +47,12 @@ Low           Low          Low          Medium       HIGH
 | `TC-PD-001` | Sensitive Information Leakage | `/api/hub/dashboard` | 🟢 PASS | Low | **Low** |
 | `TC-PD-002` | Personally Identifiable Information (PII) Exposure | `/internal/messages` | 🟢 PASS | Low | **Low** |
 | `TC-PD-003` | Error-message leakage | `/internal/messages` | 🟢 PASS | Low | **Low** |
-| `TC-PD-004` | Authentication Weaknesses | `/bookings/RS-39230` | 🔴 FAIL | High | **High** |
+| `TC-PD-004` | Authentication Weaknesses | `/bookings/RS-39230` | 🟢 PASS | Low | **Low** |
 | `TC-PD-005` | Authorization / IDOR | `/bookings/RS-39230?user_id=synthetic-user-b-it3041` | 🟢 PASS | Low | **Low** |
-| `TC-PD-006` | Authorization / IDOR | `/bookings/RS-39230` | 🔴 FAIL | High | **High** |
+| `TC-PD-006` | Authorization / IDOR | `/bookings/RS-39230` | 🟢 PASS | Low | **Low** |
 | `TC-PD-007` | Unauthenticated access | `/internal/messages` | 🟢 PASS | Low | **Low** |
-| `TC-PD-008` | Unauthenticated access | `/cancellations` | 🔴 FAIL | Medium | **Medium** |
-| `TC-PD-009` | Unauthorized Admin Endpoint Access | `/admin/bookings` | 🔴 FAIL | High | **High** |
+| `TC-PD-008` | Unauthenticated access | `/cancellations` | 🟢 PASS | Low | **Low** |
+| `TC-PD-009` | Unauthorized Admin Endpoint Access | `/admin/bookings` | 🟢 PASS | Low | **Low** |
 | `TC-PD-010` | Unauthenticated access | `/internal/fraud-reviews` | 🔴 FAIL | Medium | **Medium** |
 | `TC-PD-011` | Sensitive Information Leakage | `/api/hub/dashboard` | 🔴 FAIL | Medium | **Medium** |
 | `TC-PD-012` | Inter-agent data leakage | `/api/hub/timeline` | 🔴 FAIL | Medium | **Medium** |
@@ -64,43 +64,7 @@ Low           Low          Low          Medium       HIGH
 
 ## 4. Key Findings & Identified Vulnerabilities
 
-### Finding 1: [TC-PD-004] Verify that passenger booking records cannot be retrieved anonymously without authentication
-- **Vulnerability Category:** Authentication Weaknesses
-- **Endpoint Affected:** `/bookings/RS-39230`
-- **Risk Rating:** High (Impact: High, Likelihood: High)
-- **Technical Observation:** Booking RS-39230 returned with HTTP 200 without any authentication credentials. Leaked email: passenger_fresh@example.com.
-- **Root Cause & Justification:** Route definition in booking-agent/main.py:365 does not declare an authentication dependency.
-- **Potential Impact:** Direct exposure of passenger journey itineraries, contact emails, and e-ticket QR tokens to anonymous callers.
-- **Conclusion:** CRITICAL DEFICIENCY CONFIRMED: GET /bookings/{booking_reference} lacks an authentication guard (Depends(verify_token)), permitting anonymous passenger data retrieval.
-
-### Finding 2: [TC-PD-006] Verify whether omitting user_id query parameter completely bypasses booking ownership enforcement
-- **Vulnerability Category:** Authorization / IDOR
-- **Endpoint Affected:** `/bookings/RS-39230`
-- **Risk Rating:** High (Impact: High, Likelihood: High)
-- **Technical Observation:** Omitting user_id completely bypassed authorization. HTTP 200 returned with full booking details for RS-39230.
-- **Root Cause & Justification:** In booking-agent/main.py:391, the ownership condition is only evaluated if user_id is truthy.
-- **Potential Impact:** Permits anonymous enumeration and exfiltration of all passenger records if references are guessed or observed.
-- **Conclusion:** CRITICAL AUTHORIZATION DEFICIENCY: booking-agent/main.py:391 check 'if user_id and booking.user_id ...' is bypassed when user_id is None.
-
-### Finding 3: [TC-PD-008] Verify that cancellation management endpoints require authentication before exposing cancellation records
-- **Vulnerability Category:** Unauthenticated access
-- **Endpoint Affected:** `/cancellations`
-- **Risk Rating:** Medium (Impact: Medium, Likelihood: High)
-- **Technical Observation:** GET /cancellations returned HTTP 200 with 17 cancellation records without requiring authentication.
-- **Root Cause & Justification:** Route booking-agent/main.py:608 defines list_cancellations with no Depends(require_auth) dependency.
-- **Potential Impact:** Allows competitors or unauthorized third parties to harvest railway refund cases and cancellation rates.
-- **Conclusion:** HIGH/MEDIUM DEFICIENCY: Cancellation cases and refund claims are exposed to unauthenticated callers.
-
-### Finding 4: [TC-PD-009] Verify that administrative booking manifests cannot be retrieved without administrator credentials
-- **Vulnerability Category:** Unauthorized Admin Endpoint Access
-- **Endpoint Affected:** `/admin/bookings`
-- **Risk Rating:** High (Impact: High, Likelihood: High)
-- **Technical Observation:** GET /admin/bookings returned HTTP 200 with 0 passenger records without credentials. Sample emails: [].
-- **Root Cause & Justification:** In booking-agent/main.py:829, list_admin_bookings has no authentication or role dependency.
-- **Potential Impact:** Mass leak of citizen travel patterns, contact emails, and payment statuses without any authentication.
-- **Conclusion:** CRITICAL ADMINISTRATIVE EXPOSURE: Full passenger manifests are reachable without authentication, directly violating Sri Lanka PDPA No. 9 of 2022.
-
-### Finding 5: [TC-PD-010] Verify that internal fraud screening review queues require authentication before exposing flagged cases
+### Finding 1: [TC-PD-010] Verify that internal fraud screening review queues require authentication before exposing flagged cases
 - **Vulnerability Category:** Unauthenticated access
 - **Endpoint Affected:** `/internal/fraud-reviews`
 - **Risk Rating:** Medium (Impact: Medium, Likelihood: High)
@@ -109,7 +73,7 @@ Low           Low          Low          Medium       HIGH
 - **Potential Impact:** Exposes flagged traveler identities, risk evaluation metrics, and adjudication notes to unauthorized actors.
 - **Conclusion:** MEDIUM DEFICIENCY CONFIRMED: Internal security and fraud adjudication records are accessible to anonymous callers.
 
-### Finding 6: [TC-PD-011] Verify that Central Hub observability dashboard does not disclose internal microservice topology and addresses without auth
+### Finding 2: [TC-PD-011] Verify that Central Hub observability dashboard does not disclose internal microservice topology and addresses without auth
 - **Vulnerability Category:** Sensitive Information Leakage
 - **Endpoint Affected:** `/api/hub/dashboard`
 - **Risk Rating:** Medium (Impact: Medium, Likelihood: High)
@@ -118,16 +82,16 @@ Low           Low          Low          Medium       HIGH
 - **Potential Impact:** Facilitates attacker reconnaissance by exposing internal RPC endpoints, agent topologies, and circuit breaker states.
 - **Conclusion:** MEDIUM DEFICIENCY CONFIRMED: System topology, agent network registry, and loopback URLs are exposed to unauthenticated callers.
 
-### Finding 7: [TC-PD-012] Verify that inter-agent audit timeline logs do not expose sensitive PII or unauthenticated message traces
+### Finding 3: [TC-PD-012] Verify that inter-agent audit timeline logs do not expose sensitive PII or unauthenticated message traces
 - **Vulnerability Category:** Inter-agent data leakage
 - **Endpoint Affected:** `/api/hub/timeline`
 - **Risk Rating:** Medium (Impact: Medium, Likelihood: High)
-- **Technical Observation:** GET /api/hub/timeline returned HTTP 200 without authentication. Discloses 669 inter-agent message traces, topologies, and intents.
+- **Technical Observation:** GET /api/hub/timeline returned HTTP 200 without authentication. Discloses 681 inter-agent message traces, topologies, and intents.
 - **Root Cause & Justification:** agent-hub/main.py:209 defines get_hub_timeline with no security dependency.
 - **Potential Impact:** Allows passive reconnaissance of inter-agent communication flows, system errors, and routing volumes.
 - **Conclusion:** MEDIUM DEFICIENCY CONFIRMED: Operational audit timeline is accessible to unauthenticated callers, exposing internal routing topology.
 
-### Finding 8: [TC-PD-015] Verify whether local services permit cross-origin requests from arbitrary untrusted origins alongside credentials
+### Finding 4: [TC-PD-015] Verify whether local services permit cross-origin requests from arbitrary untrusted origins alongside credentials
 - **Vulnerability Category:** CORS-related data exposure
 - **Endpoint Affected:** `agent-hub/main.py & booking-agent/main.py (CORSMiddleware)`
 - **Risk Rating:** Medium (Impact: Medium, Likelihood: High)
@@ -151,7 +115,7 @@ Low           Low          Low          Medium       HIGH
 | **Severity (Impact)** | 🟡 **LOW** |
 | **Likelihood** | Low |
 | **Derived Risk Level** | **Low** |
-| **Timestamp** | `2026-10-04T08:28:49.124680+00:00` |
+| **Timestamp** | `2026-10-04T15:14:28.891605+00:00` |
 
 #### 1. Attack Scenario & Objective
 > **Objective:** Verify that API status and dashboard endpoints do not leak credentials or passenger PII
@@ -193,7 +157,7 @@ Low           Low          Low          Medium       HIGH
     },
     "/api/hub/dashboard": {
       "status_code": 200,
-      "body_snippet": "{\"status\":\"online\",\"metrics\":{\"total_messages\":669,\"routed_count\":395,\"rejected_count\":111,\"failed_count\":162},\"agents\":[{\"name\":\"booking-agent\",\"base_url\":\"http://127.0.0.1:8003\",\"description\":\"Booki"
+      "body_snippet": "{\"status\":\"online\",\"metrics\":{\"total_messages\":681,\"routed_count\":395,\"rejected_count\":123,\"failed_count\":162},\"agents\":[{\"name\":\"booking-agent\",\"base_url\":\"http://127.0.0.1:8003\",\"description\":\"Booki"
     }
   },
   "findings": []
@@ -212,7 +176,7 @@ Low           Low          Low          Medium       HIGH
 | **Severity (Impact)** | 🟡 **LOW** |
 | **Likelihood** | Low |
 | **Derived Risk Level** | **Low** |
-| **Timestamp** | `2026-10-04T08:28:51.615391+00:00` |
+| **Timestamp** | `2026-10-04T15:14:31.825211+00:00` |
 
 #### 1. Attack Scenario & Objective
 > **Objective:** Verify that raw Sri Lankan National Identity Card (NIC) numbers are masked or hashed in booking responses
@@ -260,7 +224,7 @@ Low           Low          Low          Medium       HIGH
 | **Severity (Impact)** | 🟡 **LOW** |
 | **Likelihood** | Low |
 | **Derived Risk Level** | **Low** |
-| **Timestamp** | `2026-10-04T08:28:52.133977+00:00` |
+| **Timestamp** | `2026-10-04T15:14:32.337225+00:00` |
 
 #### 1. Attack Scenario & Objective
 > **Objective:** Verify that application error responses do not leak stack traces, database schema, or submitted PII
@@ -304,11 +268,11 @@ Low           Low          Low          Medium       HIGH
 | **Test ID** | `TC-PD-004` |
 | **Category** | Authentication Weaknesses |
 | **Endpoint Tested** | `/bookings/RS-39230` |
-| **Test Outcome** | 🔴 **DEFICIENCY / VULNERABILITY CONFIRMED (FAIL)** |
-| **Severity (Impact)** | 🔴 **HIGH** |
-| **Likelihood** | High |
-| **Derived Risk Level** | **High** |
-| **Timestamp** | `2026-10-04T08:28:55.594594+00:00` |
+| **Test Outcome** | 🟢 **PASS** |
+| **Severity (Impact)** | 🟡 **LOW** |
+| **Likelihood** | Low |
+| **Derived Risk Level** | **Low** |
+| **Timestamp** | `2026-10-04T15:14:34.203502+00:00` |
 
 #### 1. Attack Scenario & Objective
 > **Objective:** Verify that passenger booking records cannot be retrieved anonymously without authentication
@@ -328,24 +292,25 @@ Low           Low          Low          Medium       HIGH
 
 #### 3. Expected vs. Actual Behaviour
 - **Expected Behaviour:** Endpoint must require valid user/agent authentication (HTTP 401 or HTTP 403).
-- **Actual Behaviour:** HTTP 200. Anonymous access permitted: True.
+- **Actual Behaviour:** HTTP 401. Anonymous access permitted: False.
 
 #### 4. Empirical Observation & Technical Justification
-- **Observation:** Booking RS-39230 returned with HTTP 200 without any authentication credentials. Leaked email: passenger_fresh@example.com.
+- **Observation:** Anonymous access rejected with HTTP 401.
 - **Technical Justification:** Route definition in booking-agent/main.py:365 does not declare an authentication dependency.
 - **Potential Impact:** Direct exposure of passenger journey itineraries, contact emails, and e-ticket QR tokens to anonymous callers.
-- **Conclusion:** CRITICAL DEFICIENCY CONFIRMED: GET /bookings/{booking_reference} lacks an authentication guard (Depends(verify_token)), permitting anonymous passenger data retrieval.
+- **Conclusion:** Authentication guard is active on booking retrieval endpoint.
 
 #### 5. Sanitized Test Evidence
 ```json
 {
   "booking_reference_probed": "RS-39230",
-  "http_status": 200,
+  "http_status": 401,
   "headers": {
-    "content-length": "33741",
+    "www-authenticate": "Bearer",
+    "content-length": "96",
     "content-type": "application/json"
   },
-  "body_preview": "{\"booking_reference\":\"RS-39230\",\"ticket_token\":\"TKT-kt3Dre73P9s1WXj_KpqHQQDZyRk3a-sfMWWtl8ddYYI\",\"train_id\":\"1020\",\"from_station\":\"Colombo Fort\",\"to_station\":\"Kandy\",\"travel_date\":\"2026-09-18\",\"seat_class\":\"First Class\",\"passenger_count\":1,\"passenger_email\":\"[REDACTED_EMAIL]\",\"fare\":\"2500"
+  "body_preview": "{\"detail\":\"Authentication required: passenger booking records cannot be retrieved anonymously.\"}"
 }
 ```
 
@@ -361,7 +326,7 @@ Low           Low          Low          Medium       HIGH
 | **Severity (Impact)** | 🟡 **LOW** |
 | **Likelihood** | Low |
 | **Derived Risk Level** | **Low** |
-| **Timestamp** | `2026-10-04T08:28:56.396404+00:00` |
+| **Timestamp** | `2026-10-04T15:14:34.941266+00:00` |
 
 #### 1. Attack Scenario & Objective
 > **Objective:** Verify whether an attacker (USER_B) can read a victim's (USER_A) booking by providing user_id parameter
@@ -407,11 +372,11 @@ Low           Low          Low          Medium       HIGH
 | **Test ID** | `TC-PD-006` |
 | **Category** | Authorization / IDOR |
 | **Endpoint Tested** | `/bookings/RS-39230` |
-| **Test Outcome** | 🔴 **DEFICIENCY / VULNERABILITY CONFIRMED (FAIL)** |
-| **Severity (Impact)** | 🔴 **HIGH** |
-| **Likelihood** | High |
-| **Derived Risk Level** | **High** |
-| **Timestamp** | `2026-10-04T08:28:57.459800+00:00` |
+| **Test Outcome** | 🟢 **PASS** |
+| **Severity (Impact)** | 🟡 **LOW** |
+| **Likelihood** | Low |
+| **Derived Risk Level** | **Low** |
+| **Timestamp** | `2026-10-04T15:14:35.658117+00:00` |
 
 #### 1. Attack Scenario & Objective
 > **Objective:** Verify whether omitting user_id query parameter completely bypasses booking ownership enforcement
@@ -428,13 +393,13 @@ Low           Low          Low          Medium       HIGH
 
 #### 3. Expected vs. Actual Behaviour
 - **Expected Behaviour:** Endpoint must require caller authentication and reject unverified requests (HTTP 401/403).
-- **Actual Behaviour:** HTTP 200. Authorization bypassed on omission: True.
+- **Actual Behaviour:** HTTP 401. Authorization bypassed on omission: False.
 
 #### 4. Empirical Observation & Technical Justification
-- **Observation:** Omitting user_id completely bypassed authorization. HTTP 200 returned with full booking details for RS-39230.
+- **Observation:** Access rejected with HTTP 401 when user_id was omitted.
 - **Technical Justification:** In booking-agent/main.py:391, the ownership condition is only evaluated if user_id is truthy.
 - **Potential Impact:** Permits anonymous enumeration and exfiltration of all passenger records if references are guessed or observed.
-- **Conclusion:** CRITICAL AUTHORIZATION DEFICIENCY: booking-agent/main.py:391 check 'if user_id and booking.user_id ...' is bypassed when user_id is None.
+- **Conclusion:** Endpoint enforces mandatory user identity verification.
 
 #### 5. Sanitized Test Evidence
 ```json
@@ -442,8 +407,8 @@ Low           Low          Low          Medium       HIGH
   "booking_reference": "RS-39230",
   "owner_user_id": "synthetic-user-a-it3041",
   "query_params_sent": {},
-  "http_status": 200,
-  "body_preview": "{\"booking_reference\":\"RS-39230\",\"ticket_token\":\"TKT-kt3Dre73P9s1WXj_KpqHQQDZyRk3a-sfMWWtl8ddYYI\",\"train_id\":\"1020\",\"from_station\":\"Colombo Fort\",\"to_station\":\"Kandy\",\"travel_date\":\"2026-09-18\",\"seat_class\":\"First Class\",\"passenger_count\":1,\"passenger"
+  "http_status": 401,
+  "body_preview": "{\"detail\":\"Authentication required: passenger booking records cannot be retrieved anonymously.\"}"
 }
 ```
 
@@ -459,7 +424,7 @@ Low           Low          Low          Medium       HIGH
 | **Severity (Impact)** | 🟡 **LOW** |
 | **Likelihood** | Low |
 | **Derived Risk Level** | **Low** |
-| **Timestamp** | `2026-10-04T08:28:57.977027+00:00` |
+| **Timestamp** | `2026-10-04T15:14:36.167733+00:00` |
 
 #### 1. Attack Scenario & Objective
 > **Objective:** Verify that internal booking mutation endpoints reject requests lacking valid authentication tokens
@@ -500,11 +465,11 @@ Low           Low          Low          Medium       HIGH
 | **Test ID** | `TC-PD-008` |
 | **Category** | Unauthenticated access |
 | **Endpoint Tested** | `/cancellations` |
-| **Test Outcome** | 🔴 **DEFICIENCY / VULNERABILITY CONFIRMED (FAIL)** |
-| **Severity (Impact)** | 🟠 **MEDIUM** |
-| **Likelihood** | High |
-| **Derived Risk Level** | **Medium** |
-| **Timestamp** | `2026-10-04T08:28:58.768637+00:00` |
+| **Test Outcome** | 🟢 **PASS** |
+| **Severity (Impact)** | 🟡 **LOW** |
+| **Likelihood** | Low |
+| **Derived Risk Level** | **Low** |
+| **Timestamp** | `2026-10-04T15:14:36.682641+00:00` |
 
 #### 1. Attack Scenario & Objective
 > **Objective:** Verify that cancellation management endpoints require authentication before exposing cancellation records
@@ -522,20 +487,20 @@ Low           Low          Low          Medium       HIGH
 
 #### 3. Expected vs. Actual Behaviour
 - **Expected Behaviour:** Endpoint must require administrative or authenticated operator credentials (HTTP 401/403).
-- **Actual Behaviour:** HTTP 200. Public access allowed: True.
+- **Actual Behaviour:** HTTP 401. Public access allowed: False.
 
 #### 4. Empirical Observation & Technical Justification
-- **Observation:** GET /cancellations returned HTTP 200 with 17 cancellation records without requiring authentication.
+- **Observation:** Access denied with HTTP 401. Authentication required.
 - **Technical Justification:** Route booking-agent/main.py:608 defines list_cancellations with no Depends(require_auth) dependency.
 - **Potential Impact:** Allows competitors or unauthorized third parties to harvest railway refund cases and cancellation rates.
-- **Conclusion:** HIGH/MEDIUM DEFICIENCY: Cancellation cases and refund claims are exposed to unauthenticated callers.
+- **Conclusion:** Cancellation management endpoint enforces authentication.
 
 #### 5. Sanitized Test Evidence
 ```json
 {
-  "http_status": 200,
-  "content_length": 23761,
-  "body_preview": "[{\"case_reference\":\"CN-99531\",\"booking_reference\":\"RS-29048\",\"route\":\"Colombo Fort \u2794 Kandy\",\"from_station\":\"Colombo Fort\",\"to_station\":\"Kandy\",\"travel_date\":\"2026-09-24\",\"train_id\":\"IC-8746\",\"seat_class\":\"First Class\",\"passenger_count\":1,\"fare\":\"2500"
+  "http_status": 401,
+  "content_length": 81,
+  "body_preview": "{\"detail\":\"Authentication required. Please provide a valid authorization token.\"}"
 }
 ```
 
@@ -547,11 +512,11 @@ Low           Low          Low          Medium       HIGH
 | **Test ID** | `TC-PD-009` |
 | **Category** | Unauthorized Admin Endpoint Access |
 | **Endpoint Tested** | `/admin/bookings` |
-| **Test Outcome** | 🔴 **DEFICIENCY / VULNERABILITY CONFIRMED (FAIL)** |
-| **Severity (Impact)** | 🔴 **HIGH** |
-| **Likelihood** | High |
-| **Derived Risk Level** | **High** |
-| **Timestamp** | `2026-10-04T08:28:59.438382+00:00` |
+| **Test Outcome** | 🟢 **PASS** |
+| **Severity (Impact)** | 🟡 **LOW** |
+| **Likelihood** | Low |
+| **Derived Risk Level** | **Low** |
+| **Timestamp** | `2026-10-04T15:14:37.191820+00:00` |
 
 #### 1. Attack Scenario & Objective
 > **Objective:** Verify that administrative booking manifests cannot be retrieved without administrator credentials
@@ -571,23 +536,24 @@ Low           Low          Low          Medium       HIGH
 
 #### 3. Expected vs. Actual Behaviour
 - **Expected Behaviour:** Endpoint must strictly require administrator credentials / RBAC role (HTTP 401/403).
-- **Actual Behaviour:** HTTP 200. Public manifest disclosure: True.
+- **Actual Behaviour:** HTTP 401. Public manifest disclosure: False.
 
 #### 4. Empirical Observation & Technical Justification
-- **Observation:** GET /admin/bookings returned HTTP 200 with 0 passenger records without credentials. Sample emails: [].
+- **Observation:** Access denied with HTTP 401. Admin authentication enforced.
 - **Technical Justification:** In booking-agent/main.py:829, list_admin_bookings has no authentication or role dependency.
 - **Potential Impact:** Mass leak of citizen travel patterns, contact emails, and payment statuses without any authentication.
-- **Conclusion:** CRITICAL ADMINISTRATIVE EXPOSURE: Full passenger manifests are reachable without authentication, directly violating Sri Lanka PDPA No. 9 of 2022.
+- **Conclusion:** Administrative manifest endpoint enforces access control.
 
 #### 5. Sanitized Test Evidence
 ```json
 {
-  "http_status": 200,
+  "http_status": 401,
   "headers": {
-    "content-length": "102",
+    "www-authenticate": "Bearer",
+    "content-length": "80",
     "content-type": "application/json"
   },
-  "body_preview": "{\"count\":0,\"filters\":{\"train_id\":null,\"travel_date\":\"2026-11-03\",\"booking_status\":null},\"bookings\":[]}"
+  "body_preview": "{\"detail\":\"Administrator authentication required. Missing authorization token.\"}"
 }
 ```
 
@@ -603,7 +569,7 @@ Low           Low          Low          Medium       HIGH
 | **Severity (Impact)** | 🟠 **MEDIUM** |
 | **Likelihood** | High |
 | **Derived Risk Level** | **Medium** |
-| **Timestamp** | `2026-10-04T08:29:00.184661+00:00` |
+| **Timestamp** | `2026-10-04T15:14:37.952167+00:00` |
 
 #### 1. Attack Scenario & Objective
 > **Objective:** Verify that internal fraud screening review queues require authentication before exposing flagged cases
@@ -652,7 +618,7 @@ Low           Low          Low          Medium       HIGH
 | **Severity (Impact)** | 🟠 **MEDIUM** |
 | **Likelihood** | High |
 | **Derived Risk Level** | **Medium** |
-| **Timestamp** | `2026-10-04T08:29:01.125593+00:00` |
+| **Timestamp** | `2026-10-04T15:14:38.884059+00:00` |
 
 #### 1. Attack Scenario & Objective
 > **Objective:** Verify that Central Hub observability dashboard does not disclose internal microservice topology and addresses without auth
@@ -685,7 +651,7 @@ Low           Low          Low          Medium       HIGH
 {
   "http_status": 200,
   "content_length": 2746,
-  "body_preview": "{\"status\":\"online\",\"metrics\":{\"total_messages\":669,\"routed_count\":395,\"rejected_count\":111,\"failed_count\":162},\"agents\":[{\"name\":\"booking-agent\",\"base_url\":\"http://127.0.0.1:8003\",\"description\":\"Booking & Reservation Agent (Member C). Processes booking_request and cancel_booking intents against the "
+  "body_preview": "{\"status\":\"online\",\"metrics\":{\"total_messages\":681,\"routed_count\":395,\"rejected_count\":123,\"failed_count\":162},\"agents\":[{\"name\":\"booking-agent\",\"base_url\":\"http://127.0.0.1:8003\",\"description\":\"Booking & Reservation Agent (Member C). Processes booking_request and cancel_booking intents against the "
 }
 ```
 
@@ -701,7 +667,7 @@ Low           Low          Low          Medium       HIGH
 | **Severity (Impact)** | 🟠 **MEDIUM** |
 | **Likelihood** | High |
 | **Derived Risk Level** | **Medium** |
-| **Timestamp** | `2026-10-04T08:29:01.958222+00:00` |
+| **Timestamp** | `2026-10-04T15:14:39.783829+00:00` |
 
 #### 1. Attack Scenario & Objective
 > **Objective:** Verify that inter-agent audit timeline logs do not expose sensitive PII or unauthenticated message traces
@@ -724,7 +690,7 @@ Low           Low          Low          Medium       HIGH
 - **Actual Behaviour:** HTTP 200. Public timeline access: True.
 
 #### 4. Empirical Observation & Technical Justification
-- **Observation:** GET /api/hub/timeline returned HTTP 200 without authentication. Discloses 669 inter-agent message traces, topologies, and intents.
+- **Observation:** GET /api/hub/timeline returned HTTP 200 without authentication. Discloses 681 inter-agent message traces, topologies, and intents.
 - **Technical Justification:** agent-hub/main.py:209 defines get_hub_timeline with no security dependency.
 - **Potential Impact:** Allows passive reconnaissance of inter-agent communication flows, system errors, and routing volumes.
 - **Conclusion:** MEDIUM DEFICIENCY CONFIRMED: Operational audit timeline is accessible to unauthenticated callers, exposing internal routing topology.
@@ -737,7 +703,7 @@ Low           Low          Low          Medium       HIGH
     "content-length": "7035",
     "content-type": "application/json"
   },
-  "body_preview": "{\"total\":669,\"limit\":20,\"offset\":0,\"items\":[{\"id\":669,\"message_id\":\"MSG-AUDIT-PD014-SUB_MISMATCH\",\"correlation_id\":\"MSG-AUDIT-PD014-SUB_MISMATCH\",\"sender_agent\":\"passenger-agent\",\"receiver_agent\":\"booking-agent\",\"intent\":\"booking_request\",\"status\":\"REJECTED\",\"error_message\":\"Token subject does not m"
+  "body_preview": "{\"total\":681,\"limit\":20,\"offset\":0,\"items\":[{\"id\":681,\"message_id\":\"MSG-AUDIT-PD014-SUB_MISMATCH\",\"correlation_id\":\"MSG-AUDIT-PD014-SUB_MISMATCH\",\"sender_agent\":\"passenger-agent\",\"receiver_agent\":\"booking-agent\",\"intent\":\"booking_request\",\"status\":\"REJECTED\",\"error_message\":\"Token subject does not m"
 }
 ```
 
@@ -753,7 +719,7 @@ Low           Low          Low          Medium       HIGH
 | **Severity (Impact)** | 🟡 **LOW** |
 | **Likelihood** | Low |
 | **Derived Risk Level** | **Low** |
-| **Timestamp** | `2026-10-04T08:29:01.970463+00:00` |
+| **Timestamp** | `2026-10-04T15:14:39.794810+00:00` |
 
 #### 1. Attack Scenario & Objective
 > **Objective:** Verify whether logging and audit services write raw JWT tokens, API keys, or passwords to persistent storage
@@ -801,7 +767,7 @@ Low           Low          Low          Medium       HIGH
 | **Severity (Impact)** | 🟡 **LOW** |
 | **Likelihood** | Low |
 | **Derived Risk Level** | **Low** |
-| **Timestamp** | `2026-10-04T08:29:05.392335+00:00` |
+| **Timestamp** | `2026-10-04T15:14:43.397738+00:00` |
 
 #### 1. Attack Scenario & Objective
 > **Objective:** Evaluate Central Hub JWT validation against alg:none, expired tokens, forged secrets, and sender mismatches
@@ -867,7 +833,7 @@ Low           Low          Low          Medium       HIGH
 | **Severity (Impact)** | 🟠 **MEDIUM** |
 | **Likelihood** | High |
 | **Derived Risk Level** | **Medium** |
-| **Timestamp** | `2026-10-04T08:29:06.430176+00:00` |
+| **Timestamp** | `2026-10-04T15:14:44.413751+00:00` |
 
 #### 1. Attack Scenario & Objective
 > **Objective:** Verify whether local services permit cross-origin requests from arbitrary untrusted origins alongside credentials

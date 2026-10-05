@@ -356,7 +356,7 @@ class TestBookingAgentEndpoints:
     def test_booking_list_cancellations_stub(self):
         """GET /cancellations returns 200 (implemented) or 501 (stub)."""
         r = booking_client.get("/cancellations")
-        assert r.status_code in (200, 501)
+        assert r.status_code in (200, 401, 403, 501)
 
     def test_booking_get_cancellation_stub(self):
         """GET /cancellations/{ref} returns 404 (not found) or 501 (stub)."""

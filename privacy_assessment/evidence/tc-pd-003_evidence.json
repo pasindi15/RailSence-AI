@@ -24,6 +24,6 @@
   "severity": "Low",
   "risk_level": "Low",
   "endpoint_tested": "/internal/messages",
-  "timestamp": "2026-10-04T08:36:35.077505+00:00",
+  "timestamp": "2026-10-04T15:14:32.337225+00:00",
   "technical_justification": "Pydantic validation schemas intercept invalid types before reaching business logic layers."
 }

@@ -9,20 +9,20 @@
     "auth": null
   },
   "expected_behaviour": "Endpoint must require administrative or authenticated operator credentials (HTTP 401/403).",
-  "actual_behaviour": "HTTP 200. Public access allowed: True.",
-  "status": "FAIL",
+  "actual_behaviour": "HTTP 401. Public access allowed: False.",
+  "status": "PASS",
   "evidence": {
-    "http_status": 200,
-    "content_length": 23761,
-    "body_preview": "[{\"case_reference\":\"CN-99531\",\"booking_reference\":\"RS-29048\",\"route\":\"Colombo Fort \u2794 Kandy\",\"from_station\":\"Colombo Fort\",\"to_station\":\"Kandy\",\"travel_date\":\"2026-09-24\",\"train_id\":\"IC-8746\",\"seat_class\":\"First Class\",\"passenger_count\":1,\"fare\":\"2500"
+    "http_status": 401,
+    "content_length": 81,
+    "body_preview": "{\"detail\":\"Authentication required. Please provide a valid authorization token.\"}"
   },
-  "observation": "GET /cancellations returned HTTP 200 with 17 cancellation records without requiring authentication.",
-  "conclusion": "HIGH/MEDIUM DEFICIENCY: Cancellation cases and refund claims are exposed to unauthenticated callers.",
+  "observation": "Access denied with HTTP 401. Authentication required.",
+  "conclusion": "Cancellation management endpoint enforces authentication.",
   "potential_impact": "Allows competitors or unauthorized third parties to harvest railway refund cases and cancellation rates.",
-  "likelihood": "High",
-  "severity": "Medium",
-  "risk_level": "Medium",
+  "likelihood": "Low",
+  "severity": "Low",
+  "risk_level": "Low",
   "endpoint_tested": "/cancellations",
-  "timestamp": "2026-10-04T08:28:58.768637+00:00",
+  "timestamp": "2026-10-04T15:14:36.682641+00:00",
   "technical_justification": "Route booking-agent/main.py:608 defines list_cancellations with no Depends(require_auth) dependency."
 }
